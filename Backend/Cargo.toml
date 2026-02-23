@@ -1,0 +1,47 @@
+[package]
+name = "modern_school_backend"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+ocr = ["image", "candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub", "safetensors"]
+
+[dependencies]
+tokio = { version = "1.32", features = ["full"] }
+axum = { version = "0.7", features = ["multipart"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenv = "0.15"
+anyhow = "1.0"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+bcrypt = "0.15"
+rand = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls"] }
+getrandom = { version = "0.2", features = ["js"] } # Pin to 0.2 to avoid 0.3+ issues
+base64 = "0.21"
+image = { version = "0.24", optional = true }
+candle-core = { version = "0.8.4", optional = true }
+candle-nn = { version = "0.8.4", optional = true }
+candle-transformers = { version = "0.8.4", optional = true }
+tokenizers = { version = "0.19", optional = true }
+hf-hub = { version = "0.3.2", optional = true }
+safetensors = { version = "0.4", optional = true }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "=1.10.0", features = ["v4", "serde"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "chrono", "uuid", "json"] }
+redis = { version = "0.24", features = ["tokio-comp", "json"] }
+deadpool-redis = "0.14"
+serde_with = "3.0"
+hex = "0.4"
+
+[profile.release]
+opt-level = 2
+lto = false
+codegen-units = 16
+panic = "unwind"
+strip = true

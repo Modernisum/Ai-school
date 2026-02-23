@@ -1,0 +1,15 @@
+# Rust
+target/
+Cargo.lock
+
+# Node / React
+Admin/node_modules/
+Admin/.env
+Admin/frontend.log
+Admin/build/
+
+# Misc
+*.log
+backend.log
+*.env.local
+.DS_Store

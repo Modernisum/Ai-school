@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: school_postgres
+    environment:
+      POSTGRES_USER: school_user
+      POSTGRES_PASSWORD: school_password
+      POSTGRES_DB: school_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - school_pg_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U school_user -d school_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: school_redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ocr-backend:
+    build:
+      context: .
+      target: ${RUST_ENV:-production}
+      args:
+        - FEATURES= # Leave empty for fast local dev. Add "ocr" to enable AI features.
+    image: ocr-backend:${RUST_ENV:-production}
+    pull_policy: never
+    container_name: school_backend
+    ports:
+      - "8080:8080"
+    volumes:
+      # Development: Bind mount for hot reload
+      - .:/app
+      - /app/target  # Exclude target directory from bind mount
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+    environment:
+      - RUST_LOG=info
+      - DATABASE_URL=postgres://school_user:school_password@postgres:5432/school_db
+      - REDIS_URL=redis://redis:6379
+      - SKIP_OCR_INIT=true
+      - RUST_ENV=${RUST_ENV:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  school_pg_data:

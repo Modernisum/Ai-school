@@ -1,0 +1,25 @@
+// Academic module logic is split into class, subjects, topic, exam routes
+pub mod announcement;
+pub mod attendance;
+pub mod auth;
+pub mod award;
+pub mod class;
+pub mod complains;
+pub mod documentUpload;
+pub mod documentbox;
+pub mod employees;
+pub mod emppay;
+pub mod events;
+pub mod exam;
+pub mod fees;
+pub mod materials;
+pub mod ocr;
+pub mod reminder;
+pub mod responsibility;
+pub mod school;
+pub mod setup;
+pub mod spaces;
+pub mod students;
+pub mod subjects;
+pub mod task;
+pub mod topic;

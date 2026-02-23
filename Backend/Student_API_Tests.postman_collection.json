@@ -1,0 +1,607 @@
+{
+  "info": {
+    "_postman_id": "student-api-collection",
+    "name": "Student APIs - Complete Test Suite",
+    "description": "Complete collection for testing all Student API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "1. CREATE STUDENT",
+      "item": [
+        {
+          "name": "Create Student - Full Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar\",\n  \"className\": \"10-A\",\n  \"gender\": \"male\",\n  \"dob\": \"2010-05-15\",\n  \"contact\": \"9876543210\",\n  \"address\": \"123 Main Street, City\",\n  \"parentName\": \"Kumar Singh\",\n  \"parentContact\": \"9111111111\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student - Minimal Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"className\": \"10-B\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student - Error: Missing className",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student - Error: className Too Long",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"className\": \"10-A-Very-Long-Class-Name-That-Exceeds-Fifty-Characters-ABCDEFGHIJKLMNOP\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student - Error: contact Too Long",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"className\": \"10-A\",\n  \"contact\": \"98765432101234567890123456\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. LIST STUDENTS",
+      "item": [
+        {
+          "name": "List All Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. GET SINGLE STUDENT",
+      "item": [
+        {
+          "name": "Get Student - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student - Error: Not Found",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S999999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student - Error: Empty ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/ ",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", " "]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. UPDATE STUDENT",
+      "item": [
+        {
+          "name": "Update Student - Partial",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar Singh\",\n  \"contact\": \"9876543215\",\n  \"address\": \"New Address, City\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Student - Error: className Too Long",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"className\": \"10-A-Very-Long-Class-Name-That-Exceeds-Fifty-Characters-ABCDEFGHIJKLMNOP\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Student - Error: Empty ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar Singh\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/ ",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", " "]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. DELETE STUDENT",
+      "item": [
+        {
+          "name": "Delete Student - Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000002",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000002"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Student - Error: Empty ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/ ",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", " "]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. LIST STUDENT IDS",
+      "item": [
+        {
+          "name": "Get All Student IDs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/student-ids",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "student-ids"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. FULL TEST SCENARIO",
+      "item": [
+        {
+          "name": "Step 1: Create Student 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar\",\n  \"className\": \"10-A\",\n  \"gender\": \"male\",\n  \"contact\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Create Student 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Priya Singh\",\n  \"className\": \"10-B\",\n  \"gender\": \"female\",\n  \"contact\": \"9876543211\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3: List All Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 4: Get Student 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 5: Update Student 1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Kumar Singh\",\n  \"contact\": \"9876543220\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 6: Verify Update",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 7: Get All Student IDs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/student-ids",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "student-ids"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 8: Delete Student 2",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000002",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000002"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 9: Verify Deletion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students/S000002",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students", "S000002"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 10: List Remaining Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/students/school-001/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "students", "school-001", "students"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "schoolId",
+      "value": "school-001",
+      "type": "string"
+    },
+    {
+      "key": "studentId",
+      "value": "S000001",
+      "type": "string"
+    }
+  ]
+}
