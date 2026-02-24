@@ -20,6 +20,19 @@ impl AuthService for PostgresAuthService {
         if let Some(a) = auth {
             let hashed = a["password"].as_str().unwrap_or("");
             if bcrypt::verify(password, hashed)? {
+                // Check if school is blocked due to billing (SaaS)
+                let school_row = sqlx::query("SELECT billing_status, trial_ends_at FROM schools WHERE school_id = $1")
+                    .bind(school_id)
+                    .fetch_optional(&self.repos.db_client.pool)
+                    .await?;
+
+                if let Some(row) = school_row {
+                    let billing_status: String = sqlx::Row::get(&row, "billing_status");
+                    if billing_status == "suspended" {
+                        return Err("Your account is suspended due to insufficient balance. Please contact the Super Admin to recharge your wallet.".into());
+                    }
+                }
+
                 let token = format!("{:x}", rand::random::<u128>());
                 let token_data = json!({
                     "tokenId": token,

@@ -1,0 +1,490 @@
+    Checking modern_school_backend v0.1.0 (/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend)
+warning: unused import: `std::sync::Arc`
+ --> src/db.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Context` and `Result as AnyResult`
+ --> src/logic/ocr_pipeline.rs:1:14
+  |
+1 | ...::{Context, Result as AnyResult};
+  |       ^^^^^^^  ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `async_trait::async_trait`
+ --> src/repository/mod.rs:4:5
+  |
+4 | use async_trait::async_trait;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `serde_json::Value`
+ --> src/repository/mod.rs:5:5
+  |
+5 | use serde_json::Value;
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `DEFAULT_COST` and `hash`
+ --> src/routes/auth.rs:4:14
+  |
+4 | ...::{hash, verify, DEFAULT_COST};
+  |       ^^^^          ^^^^^^^^^^^^
+
+warning: unused import: `EmployeeResponse`
+ --> src/routes/employees.rs:1:50
+  |
+1 | ...t, EmployeeResponse};
+  |       ^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::process::Command`
+  --> src/routes/ocr.rs:10:5
+   |
+10 | use std::process::Command;
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `StudentResponse`
+ --> src/routes/students.rs:1:49
+  |
+1 | ...t, StudentResponse};
+  |       ^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+ --> src/super_admin/billing_job.rs:2:19
+  |
+2 | ...c, Duration};
+  |       ^^^^^^^^
+
+warning: unused import: `json`
+ --> src/services/resource_service.rs:5:18
+  |
+5 | ...::{json, Va...
+  |       ^^^^
+
+warning: use of deprecated function `base64::encode`: Use Engine::encode
+  --> src/super_admin/service.rs:29:37
+   |
+29 | ...4::encode(&r...
+   |       ^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated function `base64::decode`: Use Engine::decode
+  --> src/super_admin/service.rs:39:31
+   |
+39 | ...4::decode(to...
+   |       ^^^^^^
+
+error[E0277]: the trait bound `BigDecimal: Decode<'_, ...>` is not satisfied
+  --> src/super_admin/billing_job.rs:42:60
+   |
+42 | ...ow.get("pe...
+   |       ^^^ unsatisfied trait bound
+   |
+   = help: the trait `sqlx::Decode<'_, Postgres>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `sqlx::Decode<'r, DB>`:
+             `&'a str` implements `Decode<'a, Any>`
+             `&RawValue` implements `Decode<'r, DB>`
+             `&'r [u8]` implements `Decode<'r, Postgres>`
+             `&'r [u8]` implements `Decode<'r, Any>`
+             `&'r str` implements `Decode<'r, Postgres>`
+             `()` implements `Decode<'r, Postgres>`
+             `(T1, T2)` implements `Decode<'r, Postgres>`
+             `(T1, T2, T3)` implements `Decode<'r, Postgres>`
+           and 50 others
+note: required by a bound in `sqlx::Row::get`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/row.rs:70:12
+   |
+67 | ...fn get<'r, T, I>(&'r self, index: I)...
+   |       --- required by a bound in this associated function
+...
+70 | ...    T: Decode<'r, Self::Database> + ...
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Row::get`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `BigDecimal: Type<...>` is not satisfied
+  --> src/super_admin/billing_job.rs:42:60
+   |
+42 | ...ow.get("pe...
+   |       ^^^ unsatisfied trait bound
+   |
+   = help: the trait `Type<Postgres>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `Type<DB>`:
+             `&T` implements `Type<DB>`
+             `()` implements `Type<Postgres>`
+             `(T1, T2)` implements `Type<Postgres>`
+             `(T1, T2, T3)` implements `Type<Postgres>`
+             `(..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+           and 53 others
+note: required by a bound in `sqlx::Row::get`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/row.rs:70:41
+   |
+67 | ...fn get<'r, T, I>(&'r self, index: I) -> T
+   |       --- required by a bound in this associated function
+...
+70 | ...    T: Decode<'r, Self::Database> + Type<Self::Database>,
+   |                                        ^^^^^^^^^^^^^^^^^^^^ required by this bound in `Row::get`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+help: use a unary tuple instead
+   |
+42 |         let per_student_rate: bigdecimal::BigDecimal = (row,).get("per_student_rate");
+   |                                                        +   ++
+
+error[E0277]: the trait bound `BigDecimal: Decode<'_, ...>` is not satisfied
+  --> src/super_admin/billing_job.rs:43:63
+   |
+43 | ...ow.get("wa...
+   |       ^^^ unsatisfied trait bound
+   |
+   = help: the trait `sqlx::Decode<'_, Postgres>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `sqlx::Decode<'r, DB>`:
+             `&'a str` implements `Decode<'a, Any>`
+             `&RawValue` implements `Decode<'r, DB>`
+             `&'r [u8]` implements `Decode<'r, Postgres>`
+             `&'r [u8]` implements `Decode<'r, Any>`
+             `&'r str` implements `Decode<'r, Postgres>`
+             `()` implements `Decode<'r, Postgres>`
+             `(T1, T2)` implements `Decode<'r, Postgres>`
+             `(T1, T2, T3)` implements `Decode<'r, Postgres>`
+           and 50 others
+note: required by a bound in `sqlx::Row::get`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/row.rs:70:12
+   |
+67 | ...fn get<'r, T, I>(&'r self, index: I)...
+   |       --- required by a bound in this associated function
+...
+70 | ...    T: Decode<'r, Self::Database> + ...
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Row::get`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `BigDecimal: Type<...>` is not satisfied
+  --> src/super_admin/billing_job.rs:43:63
+   |
+43 | ...ow.get("wa...
+   |       ^^^ unsatisfied trait bound
+   |
+   = help: the trait `Type<Postgres>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `Type<DB>`:
+             `&T` implements `Type<DB>`
+             `()` implements `Type<Postgres>`
+             `(T1, T2)` implements `Type<Postgres>`
+             `(T1, T2, T3)` implements `Type<Postgres>`
+             `(..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+           and 53 others
+note: required by a bound in `sqlx::Row::get`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/row.rs:70:41
+   |
+67 | ...fn get<'r, T, I>(&'r self, index: I) -> T
+   |       --- required by a bound in this associated function
+...
+70 | ...    T: Decode<'r, Self::Database> + Type<Self::Database>,
+   |                                        ^^^^^^^^^^^^^^^^^^^^ required by this bound in `Row::get`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+help: use a unary tuple instead
+   |
+43 |         let mut current_balance: bigdecimal::BigDecimal = (row,).get("wallet_balance");
+   |                                                           +   ++
+
+error[E0277]: the trait bound `BigDecimal: Encode<'_, _>` is not satisfied
+  --> src/super_admin/billing_job.rs:94:16
+   |
+94 | ...  .bind(&new_balance)
+   |       ----  ^^^^^^^^^^^ unsatisfied trait bound
+   |       |
+   |       required by a bound introduced by this call
+   |
+   = help: the trait `Encode<'_, _>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `Encode<'q, DB>`:
+             `&'a str` implements `Encode<'a, Any>`
+             `&'q [u8]` implements `Encode<'q, Any>`
+             `&T` implements `Encode<'q, DB>`
+             `&[T]` implements `Encode<'q, Postgres>`
+             `&[u8]` implements `Encode<'_, Postgres>`
+             `&str` implements `Encode<'_, Postgres>`
+             `Box<[u8]>` implements `Encode<'_, Postgres>`
+             `Box<str>` implements `Encode<'_, Postgres>`
+           and 42 others
+   = note: required for `&...` to implement `Encode<'_, _>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:32
+   |
+81 | ... + Encode<'q, DB> + ...
+   |       ^^^^^^^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `BigDecimal: Type<_>` is not satisfied
+  --> src/super_admin/billing_job.rs:94:16
+   |
+94 | ...  .bind(&new_balance)
+   |       ----  ^^^^^^^^^^^ unsatisfied trait bound
+   |       |
+   |       required by a bound introduced by this call
+   |
+   = help: the trait `Type<_>` is not implemented for `BigDecimal`
+   = help: the following other types implement trait `Type<DB>`:
+             `&T` implements `Type<DB>`
+             `()` implements `Type<Postgres>`
+             `(T1, T2)` implements `Type<Postgres>`
+             `(T1, T2, T3)` implements `Type<Postgres>`
+             `(..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+             `(..., ..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+           and 53 others
+   = note: required for `&...` to implement `Type<_>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+  --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:49
+   |
+81 | ... + Type<DB>>(m...
+   |       ^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+help: use a unary tuple instead
+   |
+94 |         .bind((&new_balance,))
+   |               +            ++
+
+error[E0277]: the trait bound `BigDecimal: Encode<'_, _>` is not satisfied
+   --> src/super_admin/billing_job.rs:105:16
+    |
+105 | ...  .bind(&deduction_amount)
+    |       ----  ^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |       |
+    |       required by a bound introduced by this call
+    |
+    = help: the trait `Encode<'_, _>` is not implemented for `BigDecimal`
+    = help: the following other types implement trait `Encode<'q, DB>`:
+              `&'a str` implements `Encode<'a, Any>`
+              `&'q [u8]` implements `Encode<'q, Any>`
+              `&T` implements `Encode<'q, DB>`
+              `&[T]` implements `Encode<'q, Postgres>`
+              `&[u8]` implements `Encode<'_, Postgres>`
+              `&str` implements `Encode<'_, Postgres>`
+              `Box<[u8]>` implements `Encode<'_, Postgres>`
+              `Box<str>` implements `Encode<'_, Postgres>`
+            and 42 others
+    = note: required for `&...` to implement `Encode<'_, _>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:32
+    |
+ 81 | ... + Encode<'q, DB> + ...
+    |       ^^^^^^^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+    = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `BigDecimal: Type<_>` is not satisfied
+   --> src/super_admin/billing_job.rs:105:16
+    |
+105 | ...  .bind(&deduction_amount)
+    |       ----  ^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |       |
+    |       required by a bound introduced by this call
+    |
+    = help: the trait `Type<_>` is not implemented for `BigDecimal`
+    = help: the following other types implement trait `Type<DB>`:
+              `&T` implements `Type<DB>`
+              `()` implements `Type<Postgres>`
+              `(T1, T2)` implements `Type<Postgres>`
+              `(T1, T2, T3)` implements `Type<Postgres>`
+              `(..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+            and 53 others
+    = note: required for `&...` to implement `Type<_>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:49
+    |
+ 81 | ... + Type<DB>>(m...
+    |       ^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+    = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: use a unary tuple instead
+    |
+105 |         .bind((&deduction_amount,))
+    |               +                 ++
+
+error[E0277]: the trait bound `BigDecimal: Encode<'_, _>` is not satisfied
+   --> src/super_admin/billing_job.rs:107:16
+    |
+107 | ...  .bind(&new_balance)
+    |       ----  ^^^^^^^^^^^ unsatisfied trait bound
+    |       |
+    |       required by a bound introduced by this call
+    |
+    = help: the trait `Encode<'_, _>` is not implemented for `BigDecimal`
+    = help: the following other types implement trait `Encode<'q, DB>`:
+              `&'a str` implements `Encode<'a, Any>`
+              `&'q [u8]` implements `Encode<'q, Any>`
+              `&T` implements `Encode<'q, DB>`
+              `&[T]` implements `Encode<'q, Postgres>`
+              `&[u8]` implements `Encode<'_, Postgres>`
+              `&str` implements `Encode<'_, Postgres>`
+              `Box<[u8]>` implements `Encode<'_, Postgres>`
+              `Box<str>` implements `Encode<'_, Postgres>`
+            and 42 others
+    = note: required for `&...` to implement `Encode<'_, _>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:32
+    |
+ 81 | ... + Encode<'q, DB> + ...
+    |       ^^^^^^^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+    = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `BigDecimal: Type<_>` is not satisfied
+   --> src/super_admin/billing_job.rs:107:16
+    |
+107 | ...  .bind(&new_balance)
+    |       ----  ^^^^^^^^^^^ unsatisfied trait bound
+    |       |
+    |       required by a bound introduced by this call
+    |
+    = help: the trait `Type<_>` is not implemented for `BigDecimal`
+    = help: the following other types implement trait `Type<DB>`:
+              `&T` implements `Type<DB>`
+              `()` implements `Type<Postgres>`
+              `(T1, T2)` implements `Type<Postgres>`
+              `(T1, T2, T3)` implements `Type<Postgres>`
+              `(..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+              `(..., ..., ..., ..., ..., ..., ...)` implements `Type<Postgres>`
+            and 53 others
+    = note: required for `&...` to implement `Type<_>`
+note: required by a bound in `sqlx::query::Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+   --> /home/shivnk/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-core-0.7.4/src/query.rs:81:49
+    |
+ 81 | ... + Type<DB>>(m...
+    |       ^^^^^^^^ required by this bound in `Query::<'q, DB, <DB as HasArguments<'q>>::Arguments>::bind`
+    = note: the full name for the type has been written to '/home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/target/debug/deps/modern_school_backend-662cf4d8cf012ca6.long-type-11673223599981028905.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: use a unary tuple instead
+    |
+107 |         .bind((&new_balance,))
+    |               +            ++
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/student_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/setup_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/resource_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/operations_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/employee_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/auth_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::repository::traits`
+ --> src/services/academic_service.rs:1:5
+  |
+1 | use crate::repository::traits::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `image_path`
+   --> src/logic/ocr_pipeline.rs:184:39
+    |
+184 | ...f, image_path: &...
+    |       ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_image_path`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `role`
+   --> src/repository/postgres.rs:891:9
+    |
+891 | ...   role: &...
+    |       ^^^^ help: if this is intentional, prefix it with an underscore: `_role`
+
+warning: unused variable: `ocr_repo`
+  --> src/routes/ocr.rs:34:9
+   |
+34 | ...et ocr_repo = ...
+   |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ocr_repo`
+
+warning: unused variable: `engine`
+  --> src/routes/ocr.rs:40:9
+   |
+40 | ...et engine = ...
+   |       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_engine`
+
+warning: unused variable: `school_id`
+   --> src/services/academic_service.rs:196:9
+    |
+196 | ...   school_id: &...
+    |       ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_school_id`
+
+warning: unused variable: `class_id`
+   --> src/services/academic_service.rs:197:9
+    |
+197 | ...   class_id: &...
+    |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_class_id`
+
+warning: unused variable: `total`
+   --> src/services/operations_service.rs:187:13
+    |
+187 | ...et total = ...
+    |       ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
+
+warning: variable does not need to be mutable
+   --> src/services/operations_service.rs:376:13
+    |
+376 | ...et mut emp = ...
+    |       ----^^^
+    |       |
+    |       help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `salary_id`
+   --> src/services/operations_service.rs:404:17
+    |
+404 | ...et salary_id = ...
+    |       ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_salary_id`
+
+warning: variable does not need to be mutable
+  --> src/main.rs:50:9
+   |
+50 | ...et mut ocr_pipeline = ...
+   |       ----^^^^^^^^^^^^
+   |       |
+   |       help: remove this `mut`
+
+For more information about this error, try `rustc --explain E0277`.
+warning: `modern_school_backend` (bin "modern_school_backend") generated 29 warnings
+error: could not compile `modern_school_backend` (bin "modern_school_backend") due to 10 previous errors; 29 warnings emitted

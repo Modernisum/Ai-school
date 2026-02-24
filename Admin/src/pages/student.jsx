@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Users, Plus, Edit3, Eye, Loader, AlertTriangle,
-    X, CheckCircle, User, GraduationCap, MoreVertical,
-    RefreshCw, ChevronDown
+    X, CheckCircle, User, GraduationCap, RefreshCw
 } from 'lucide-react';
+import AddStudentDrawer from '../component/ui/addstudent';
+import StudentProfile from '../component/ui/studentprofile';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api";
 const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
@@ -28,32 +29,14 @@ export default function StudentManagement() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterClass, setFilterClass] = useState('All');
     const [toast, setToast] = useState(null);
-    const [addDialog, setAddDialog] = useState(false);
-    const [addForm, setAddForm] = useState({ name: '', className: '', gender: '', dob: '', parentName: '', contact: '', address: '' });
-    const [addLoading, setAddLoading] = useState(false);
-    const [viewStudent, setViewStudent] = useState(null);
+
+    // Drawer states
+    const [addDrawerOpen, setAddDrawerOpen] = useState(false);
+    const [profileDrawer, setProfileDrawer] = useState(null); // { student, mode: 'view'|'edit' }
 
     const showToast = (type, msg) => {
         setToast({ type, msg });
         setTimeout(() => setToast(null), 3500);
-    };
-
-    const addStudent = async () => {
-        if (!addForm.name || !addForm.className) return showToast('error', 'Name and Class are required');
-        setAddLoading(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/students/${schoolId}/students`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(addForm)
-            });
-            if (!res.ok) throw new Error();
-            showToast('success', 'Student added successfully');
-            setAddDialog(false);
-            setAddForm({ name: '', className: '', gender: '', dob: '', parentName: '', contact: '', address: '' });
-            fetchData();
-        } catch { showToast('error', 'Failed to add student'); }
-        finally { setAddLoading(false); }
     };
 
     const fetchData = async () => {
@@ -80,10 +63,8 @@ export default function StudentManagement() {
         const name = (s.name || s.studentName || s.student_name || '').toLowerCase();
         const id = (s.studentId || s.student_id || '').toLowerCase();
         const sClass = s.className || s.classId || s.class_id || '';
-
         const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm.toLowerCase());
         const matchesClass = filterClass === 'All' || sClass === filterClass;
-
         return matchesSearch && matchesClass;
     });
 
@@ -102,7 +83,7 @@ export default function StudentManagement() {
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={fetchData} className="btn-secondary p-2"><RefreshCw size={15} /></button>
-                    <button onClick={() => setAddDialog(true)} className="btn-primary">
+                    <button onClick={() => setAddDrawerOpen(true)} className="btn-primary">
                         <Plus size={15} /> Add Student
                     </button>
                 </div>
@@ -154,6 +135,7 @@ export default function StudentManagement() {
                         <div className="text-center py-16">
                             <GraduationCap size={36} className="text-slate-600 mx-auto mb-2" />
                             <p className="text-slate-500">No students found</p>
+                            <p className="text-slate-600 text-xs mt-1">Click "Add Student" to enroll your first student</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -175,8 +157,8 @@ export default function StudentManagement() {
                                             <td className="text-slate-500 text-xs">{i + 1}</td>
                                             <td>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                                                        <User size={13} className="text-indigo-400" />
+                                                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold">
+                                                        {(s.studentName || s.name || 'S')[0].toUpperCase()}
                                                     </div>
                                                     <span className="font-medium text-white">{s.studentName || s.student_name || s.name || 'N/A'}</span>
                                                 </div>
@@ -185,12 +167,22 @@ export default function StudentManagement() {
                                             <td><span className="badge bg-indigo-500/15 border-indigo-500/25 text-indigo-300">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
                                             <td className="text-xs text-slate-500">{formatDate(s.createdAt || s.created_at)}</td>
                                             <td>
-                                                <button
-                                                    onClick={() => setViewStudent(s)}
-                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
-                                                >
-                                                    <Eye size={14} />
-                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => setProfileDrawer({ student: s, mode: 'view' })}
+                                                        title="View profile"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAddDrawerOpen({ studentId: s.studentId || s.student_id, mode: 'edit' })}
+                                                        title="Edit student"
+                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                                                    >
+                                                        <Edit3 size={14} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     ))}
@@ -201,14 +193,29 @@ export default function StudentManagement() {
                 </div>
             </div>
 
-            {/* Drawer: View Student */}
+            {/* Add / Edit Student Drawer */}
             <AnimatePresence>
-                {viewStudent && (
+                {addDrawerOpen && (
+                    <AddStudentDrawer
+                        open={true}
+                        onClose={() => { setAddDrawerOpen(false); }}
+                        onSuccess={() => { setAddDrawerOpen(false); fetchData(); showToast('success', 'Student saved successfully'); }}
+                        classes={classes}
+                        initialClass={typeof addDrawerOpen === 'object' ? '' : ''}
+                        initialStudentId={typeof addDrawerOpen === 'object' ? addDrawerOpen.studentId : ''}
+                        initialMode={typeof addDrawerOpen === 'object' ? addDrawerOpen.mode : 'add'}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Student Profile Drawer */}
+            <AnimatePresence>
+                {profileDrawer && (
                     <>
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-                            onClick={() => setViewStudent(null)}
+                            onClick={() => setProfileDrawer(null)}
                         />
                         <motion.div
                             initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
@@ -216,103 +223,72 @@ export default function StudentManagement() {
                             className="drawer-panel p-6 space-y-5"
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="font-bold text-white">Student Details</h2>
-                                <button onClick={() => setViewStudent(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-all">
-                                    <X size={18} />
-                                </button>
+                                <h2 className="font-bold text-white">Student Profile</h2>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setProfileDrawer(p => ({ ...p, mode: p.mode === 'view' ? 'edit' : 'view' }))}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${profileDrawer.mode === 'edit'
+                                                ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                                                : 'bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30'
+                                            }`}
+                                    >
+                                        {profileDrawer.mode === 'edit' ? <><CheckCircle size={13} /> View</> : <><Edit3 size={13} /> Edit</>}
+                                    </button>
+                                    <button onClick={() => setProfileDrawer(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-all">
+                                        <X size={18} />
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Student Quick Info */}
                             <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-2xl font-bold text-white">
-                                    {(viewStudent.studentName || viewStudent.name || 'S')[0]}
+                                    {(profileDrawer.student.studentName || profileDrawer.student.name || 'S')[0]}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white text-lg">{viewStudent.studentName || viewStudent.student_name || viewStudent.name}</h3>
-                                    <p className="text-xs text-indigo-400 font-mono">{viewStudent.studentId || viewStudent.student_id}</p>
+                                    <h3 className="font-bold text-white text-lg">{profileDrawer.student.studentName || profileDrawer.student.student_name || profileDrawer.student.name}</h3>
+                                    <p className="text-xs text-indigo-400 font-mono">{profileDrawer.student.studentId || profileDrawer.student.student_id}</p>
+                                    <span className="badge bg-indigo-500/15 border-indigo-500/25 text-indigo-300 mt-1">{profileDrawer.student.classId || profileDrawer.student.className || 'N/A'}</span>
                                 </div>
                             </div>
-                            <div className="space-y-3">
+
+                            {/* Student Details */}
+                            <div className="space-y-2">
                                 {[
-                                    ['Class', viewStudent.classId || viewStudent.class_id || viewStudent.className],
-                                    ['Gender', viewStudent.gender],
-                                    ['Date of Birth', formatDate(viewStudent.dob || viewStudent.date_of_birth)],
-                                    ['Parent Name', viewStudent.parentName || viewStudent.parent_name],
-                                    ['Contact', viewStudent.contact || viewStudent.phone],
-                                    ['Address', viewStudent.address],
-                                    ['Joined', formatDate(viewStudent.createdAt || viewStudent.created_at)],
+                                    ['Gender', profileDrawer.student.gender],
+                                    ['Date of Birth', formatDate(profileDrawer.student.dob || profileDrawer.student.date_of_birth)],
+                                    ['Father / Parent', profileDrawer.student.fatherName || profileDrawer.student.parentName || profileDrawer.student.parent_name],
+                                    ['Mother', profileDrawer.student.motherName],
+                                    ['Contact', profileDrawer.student.contact || profileDrawer.student.phone],
+                                    ['Address', profileDrawer.student.permanentAddress || profileDrawer.student.address],
+                                    ['Category', profileDrawer.student.category],
+                                    ['Joined', formatDate(profileDrawer.student.createdAt || profileDrawer.student.created_at)],
                                 ].map(([k, v]) => v ? (
                                     <div key={k} className="flex justify-between items-start gap-3 py-2 border-b border-white/5">
-                                        <span className="text-slate-500 text-xs flex-shrink-0">{k}</span>
-                                        <span className="text-white text-xs text-right">{v}</span>
+                                        <span className="text-slate-500 text-xs flex-shrink-0 w-28">{k}</span>
+                                        <span className={`text-xs text-right ${profileDrawer.mode === 'edit' ? 'text-indigo-300' : 'text-white'}`}>{v}</span>
                                     </div>
                                 ) : null)}
                             </div>
+
+                            {profileDrawer.mode === 'edit' && (
+                                <div className="pt-2">
+                                    <button
+                                        onClick={() => {
+                                            setProfileDrawer(null);
+                                            setAddDrawerOpen({
+                                                studentId: profileDrawer.student.studentId || profileDrawer.student.student_id,
+                                                mode: 'edit'
+                                            });
+                                        }}
+                                        className="btn-primary w-full justify-center"
+                                    >
+                                        <Edit3 size={14} /> Open Full Edit Form
+                                    </button>
+                                </div>
+                            )}
                         </motion.div>
                     </>
-                )}
-            </AnimatePresence>
-
-            {/* Add Student Modal */}
-            <AnimatePresence>
-                {addDialog && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setAddDialog(false)}>
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center justify-between mb-5">
-                                <h3 className="font-bold text-white text-base">Add New Student</h3>
-                                <button onClick={() => setAddDialog(false)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="section-label">Full Name *</label>
-                                        <input className="input-dark" placeholder="Student name" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} />
-                                    </div>
-                                    <div>
-                                        <label className="section-label">Class *</label>
-                                        <select className="input-dark" value={addForm.className} onChange={e => setAddForm(p => ({ ...p, className: e.target.value }))}>
-                                            <option value="">Select class</option>
-                                            {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="section-label">Gender</label>
-                                        <select className="input-dark" value={addForm.gender} onChange={e => setAddForm(p => ({ ...p, gender: e.target.value }))}>
-                                            <option value="">Select</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="section-label">Date of Birth</label>
-                                        <input type="date" className="input-dark" value={addForm.dob} onChange={e => setAddForm(p => ({ ...p, dob: e.target.value }))} />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="section-label">Parent Name</label>
-                                        <input className="input-dark" placeholder="Parent / Guardian" value={addForm.parentName} onChange={e => setAddForm(p => ({ ...p, parentName: e.target.value }))} />
-                                    </div>
-                                    <div>
-                                        <label className="section-label">Contact</label>
-                                        <input className="input-dark" placeholder="Phone number" value={addForm.contact} onChange={e => setAddForm(p => ({ ...p, contact: e.target.value }))} />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="section-label">Address</label>
-                                    <input className="input-dark" placeholder="Home address" value={addForm.address} onChange={e => setAddForm(p => ({ ...p, address: e.target.value }))} />
-                                </div>
-                            </div>
-                            <div className="flex gap-3 justify-end mt-6">
-                                <button onClick={() => setAddDialog(false)} className="btn-secondary">Cancel</button>
-                                <button onClick={addStudent} disabled={addLoading} className="btn-primary">
-                                    {addLoading ? <Loader size={15} className="animate-spin" /> : <Plus size={15} />}
-                                    {addLoading ? 'Adding...' : 'Add Student'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
                 )}
             </AnimatePresence>
 

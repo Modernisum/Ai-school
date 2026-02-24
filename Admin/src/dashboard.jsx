@@ -1,8 +1,8 @@
-// src/layouts/DashboardLayout.jsx
 import React, { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./component/ui/sidebar";
 import SessionHandler from "./component/auth/sessionHandler";
+import SchoolNotifier from "./component/ui/SchoolNotifier";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function DashboardLayout() {
@@ -11,6 +11,7 @@ export default function DashboardLayout() {
 
   return (
     <SessionHandler>
+      <SchoolNotifier />
       <div className="flex h-screen bg-slate-900 font-sans overflow-hidden selection:bg-indigo-500/30">
         <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1 flex flex-col h-full relative overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">

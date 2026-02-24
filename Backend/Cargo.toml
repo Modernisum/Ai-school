@@ -33,11 +33,12 @@ hf-hub = { version = "0.3.2", optional = true }
 safetensors = { version = "0.4", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "=1.10.0", features = ["v4", "serde"] }
-sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "chrono", "uuid", "json"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "chrono", "uuid", "json", "bigdecimal"] }
 redis = { version = "0.24", features = ["tokio-comp", "json"] }
 deadpool-redis = "0.14"
 serde_with = "3.0"
 hex = "0.4"
+bigdecimal = "0.3"
 
 [profile.release]
 opt-level = 2

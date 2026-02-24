@@ -22,8 +22,8 @@ import SpacePage from "./pages/space.jsx";
 import StudentManager from "./pages/student.jsx";
 import SubjectPage from "./pages/subject.jsx";
 import DocumentUploadPage from "./component/module/upload.jsx";
-import Addstudent from "./component/ui/addstudent.jsx";
 import Studentinfo from "./component/ui/studentprofile.jsx";
+
 import EmployeeFormPage from "./component/ui/employeeform.jsx";
 import EmployeeProfilePage from "./component/ui/employeeprofile.jsx";
 import AttendanceManager from "./pages/attendance.jsx";
@@ -50,11 +50,9 @@ export default function App() {
           <Route path="materials" element={<MaterialsPage />} />
           <Route path="school" element={<SchoolPage />} />
           <Route path="space" element={<SpacePage />} />
-          <Route path="addstudent" element={<Addstudent />} />
           <Route path="student" element={<StudentManager />} />
           <Route path="subject" element={<SubjectPage />} />
           <Route path="upload" element={<DocumentUploadPage />} />
-          <Route path="studentinfo" element={<Studentinfo   />} />
           <Route path="employeeform" element={<EmployeeFormPage />} />
           <Route path="employeeprofile" element={<EmployeeProfilePage />} />
           <Route path="attendance" element={<AttendanceManager />} />
