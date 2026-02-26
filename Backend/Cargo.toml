@@ -39,6 +39,7 @@ deadpool-redis = "0.14"
 serde_with = "3.0"
 hex = "0.4"
 bigdecimal = "0.3"
+jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
 
 [profile.release]
 opt-level = 2

@@ -29,6 +29,58 @@ impl EmployeeService for PostgresEmployeeService {
         Ok(emp_data)
     }
 
+    async fn bulk_create_employees(
+        &self,
+        school_id: &str,
+        data: Vec<Value>,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut successful = 0;
+        let mut failed = 0;
+        let mut errors = Vec::new();
+
+        for (index, mut emp_data) in data.into_iter().enumerate() {
+            let row_number = emp_data["rowNumber"].as_u64().unwrap_or((index + 2) as u64);
+
+            let name = match emp_data["name"].as_str() {
+                Some(n) if !n.trim().is_empty() => n.to_string(),
+                _ => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "error": "Missing name" }));
+                    continue;
+                }
+            };
+
+            let employee_id = match self.repos.employee.generate_employee_id().await {
+                Ok(id) => id,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "name": name, "error": format!("Failed to generate employee ID: {}", e) }));
+                    continue;
+                }
+            };
+
+            emp_data["employeeId"] = json!(employee_id);
+            emp_data["status"] = json!("active");
+
+            match self.repos.employee.add_employee(school_id, emp_data).await {
+                Ok(_) => successful += 1,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "name": name, "error": format!("Database Error: {}", e) }));
+                }
+            }
+        }
+
+        tracing::info!("Bulk employee import for school {}: {} successful, {} failed", school_id, successful, failed);
+
+        Ok(json!({
+            "total": successful + failed,
+            "successful": successful,
+            "failed": failed,
+            "errors": errors
+        }))
+    }
+
     async fn list_employees(
         &self,
         school_id: &str,

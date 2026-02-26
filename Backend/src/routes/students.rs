@@ -102,6 +102,8 @@ pub async fn create_student(
         "address": payload.address,
         "parentName": payload.parent_name,
         "parentContact": payload.parent_contact,
+        "totalFee": payload.total_fee,
+        "selectedSubjects": payload.selected_subjects,
     });
 
     match state
@@ -112,6 +114,29 @@ pub async fn create_student(
     {
         Ok(data) => {
             Json(json!({"success": true, "message": "Student added successfully", "data": data}))
+                .into_response()
+        }
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn bulk_create_students(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<Vec<serde_json::Value>>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .student
+        .bulk_create_students(&school_id, payload)
+        .await
+    {
+        Ok(data) => {
+            Json(json!({"success": true, "message": "Bulk import completed", "data": data}))
                 .into_response()
         }
         Err(e) => (
@@ -253,4 +278,54 @@ pub async fn list_student_ids(
         )
             .into_response(),
     }
+}
+
+// POST /api/students/:schoolId/bulk
+pub async fn bulk_import_students(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let rows = match payload["students"].as_array().or(payload.as_array()) {
+        Some(r) => r.clone(),
+        None => {
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(json!({"success": false, "message": "Expected a 'students' array"})),
+            ).into_response();
+        }
+    };
+
+    let mut results = Vec::new();
+    let mut success_count = 0usize;
+    let mut fail_count = 0usize;
+
+    for (i, row) in rows.iter().enumerate() {
+        let student_data = json!({
+            "className": row.get("Class Name").or(row.get("className")).unwrap_or(&serde_json::Value::Null),
+            "name": row.get("Name").or(row.get("name")).unwrap_or(&serde_json::Value::Null),
+            "contact": row.get("Contact").or(row.get("contact")).unwrap_or(&serde_json::Value::Null),
+            "email": row.get("Email").or(row.get("email")).unwrap_or(&serde_json::Value::Null),
+            "address": row.get("Address").or(row.get("address")).unwrap_or(&serde_json::Value::Null),
+        });
+
+        match state.services.student.create_student(&school_id, student_data).await {
+            Ok(created) => {
+                success_count += 1;
+                results.push(json!({"row": i + 1, "status": "success", "studentId": created["studentId"]}));
+            }
+            Err(e) => {
+                fail_count += 1;
+                results.push(json!({"row": i + 1, "status": "error", "message": e.to_string()}));
+            }
+        }
+    }
+
+    Json(json!({
+        "success": true,
+        "message": format!("{} students imported, {} failed", success_count, fail_count),
+        "results": results,
+        "successCount": success_count,
+        "failCount": fail_count,
+    })).into_response()
 }

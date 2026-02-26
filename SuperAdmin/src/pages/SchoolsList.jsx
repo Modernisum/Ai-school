@@ -29,10 +29,22 @@ export default function SchoolsList() {
 
     const load = useCallback(async () => {
         setLoading(true)
-        const r = await listSchools()
-        setSchools(r.data || [])
+        try {
+            const r = await listSchools()
+            if (r.success) {
+                setSchools(r.data || [])
+            } else {
+                setSchools([])
+                toast('error', r.message || 'Failed to load schools')
+                if (r.message && r.message.toLowerCase().includes('token')) {
+                    nav('/login')
+                }
+            }
+        } catch (err) {
+            toast('error', 'Network error fetching schools')
+        }
         setLoading(false)
-    }, [])
+    }, [toast, nav])
     useEffect(() => { load() }, [load])
 
     const filtered = schools

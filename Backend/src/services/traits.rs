@@ -10,6 +10,11 @@ pub trait StudentService: Send + Sync {
         school_id: &str,
         data: Value,
     ) -> Result<Value, AppError>;
+    async fn bulk_create_students(
+        &self,
+        school_id: &str,
+        data: Vec<Value>,
+    ) -> Result<Value, AppError>;
     async fn list_students(
         &self,
         school_id: &str,
@@ -47,6 +52,11 @@ pub trait EmployeeService: Send + Sync {
         &self,
         school_id: &str,
         data: Value,
+    ) -> Result<Value, AppError>;
+    async fn bulk_create_employees(
+        &self,
+        school_id: &str,
+        data: Vec<Value>,
     ) -> Result<Value, AppError>;
     async fn list_employees(
         &self,
@@ -169,6 +179,28 @@ pub trait OperationsService: Send + Sync {
         user_id: &str,
         data: Value,
     ) -> Result<Value, AppError>;
+    async fn mark_holiday(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn update_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn delete_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+    ) -> Result<(), AppError>;
     async fn list_attendance(
         &self,
         school_id: &str,
@@ -265,6 +297,12 @@ pub trait ResourceService: Send + Sync {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError>;
+
+    async fn create_material(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
 }
 
 #[async_trait]

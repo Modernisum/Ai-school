@@ -11,6 +11,8 @@ pub struct CreateStudentRequest {
     pub address: Option<String>,
     pub parent_name: Option<String>,
     pub parent_contact: Option<String>,
+    pub total_fee: Option<f64>,
+    pub selected_subjects: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

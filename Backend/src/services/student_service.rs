@@ -32,7 +32,11 @@ impl StudentService for PostgresStudentService {
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         // Validate required fields
         let class_name = data["className"].as_str().ok_or("Missing className")?;
-        let _name = data["name"].as_str().ok_or("Missing name")?;
+        
+        // Name is explicitly optional because the Admin frontend creates a "shell" 
+        // student immediately after class selection to generate an ID ahead of time.
+        // It patches the name later via update_student.
+        let _name = data["name"].as_str().unwrap_or("");
 
         // 1. Get next roll number
         let roll_number = self
@@ -71,6 +75,84 @@ impl StudentService for PostgresStudentService {
         tracing::info!("Cache invalidated: students:list:{} (new student created)", school_id);
 
         Ok(result)
+    }
+
+    async fn bulk_create_students(
+        &self,
+        school_id: &str,
+        data: Vec<Value>,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut successful = 0;
+        let mut failed = 0;
+        let mut errors = Vec::new();
+
+        for (index, mut student_data) in data.into_iter().enumerate() {
+            // Assume frontend sends "rowNumber" but fallback to index + 2 (Excel header offset)
+            let row_number = student_data["rowNumber"].as_u64().unwrap_or((index + 2) as u64);
+
+            // Validate required fields
+            let class_name = match student_data["className"].as_str() {
+                Some(c) if !c.trim().is_empty() => c.to_string(),
+                _ => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "error": "Missing className" }));
+                    continue;
+                }
+            };
+
+            let name = match student_data["name"].as_str() {
+                Some(n) if !n.trim().is_empty() => n.to_string(),
+                _ => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "error": "Missing name" }));
+                    continue;
+                }
+            };
+            
+            // Generate sequence IDs
+            let roll_number = match self.repos.student.get_next_roll_number(school_id, &class_name).await {
+                Ok(r) => r,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "name": name, "error": format!("Failed to generate roll number: {}", e) }));
+                    continue;
+                }
+            };
+
+            let section = if roll_number <= 60 { "A" } else if roll_number <= 120 { "B" } else { "C" };
+
+            let student_id = match self.repos.student.generate_student_id().await {
+                Ok(id) => id,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "name": name, "error": format!("Failed to generate student ID: {}", e) }));
+                    continue;
+                }
+            };
+
+            student_data["studentId"] = json!(student_id);
+            student_data["rollNumber"] = json!(roll_number);
+            student_data["section"] = json!(section);
+            student_data["status"] = json!("active");
+
+            // Attempt Database Insert
+            match self.repos.student.add_student(school_id, student_data).await {
+                Ok(_) => successful += 1,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({ "row": row_number, "name": name, "error": format!("Database Error: {}", e) }));
+                }
+            }
+        }
+
+        tracing::info!("Bulk student import for school {}: {} successful, {} failed", school_id, successful, failed);
+
+        Ok(json!({
+            "total": successful + failed,
+            "successful": successful,
+            "failed": failed,
+            "errors": errors
+        }))
     }
 
     async fn list_students(

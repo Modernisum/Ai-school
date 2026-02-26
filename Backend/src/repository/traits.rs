@@ -203,6 +203,13 @@ pub trait OperationsRepository: Send + Sync {
         role: &str,
         user_id: &str,
     ) -> Result<Vec<Value>, AppError>;
+    async fn delete_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+    ) -> Result<(), AppError>;
     async fn add_attendance_history(
         &self,
         school_id: &str,

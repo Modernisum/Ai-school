@@ -71,6 +71,112 @@ impl OperationsService for PostgresOperationsService {
         Ok(response_data)
     }
 
+    async fn mark_holiday(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let date = data["date"]
+            .as_str()
+            .ok_or("date is required for holiday")?
+            .to_string();
+
+        let description = data["description"]
+            .as_str()
+            .unwrap_or("Holiday")
+            .to_string();
+
+        let holiday_data = json!({
+            "status": "holiday",
+            "date": date,
+            "description": description,
+        });
+
+        self.repos
+            .operations
+            .mark_attendance(school_id, role, user_id, &date, holiday_data.clone())
+            .await?;
+
+        self.repos
+            .operations
+            .add_attendance_history(school_id, role, user_id, "holiday_marked", holiday_data.clone())
+            .await?;
+
+        Ok(holiday_data)
+    }
+
+    async fn update_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let out_time = data["outTime"]
+            .as_str()
+            .ok_or("outTime is required")?
+            .to_string();
+
+        // Fetch existing to compute duration
+        let existing_list = self
+            .repos
+            .operations
+            .get_attendance(school_id, role, user_id)
+            .await?;
+
+        let existing = existing_list
+            .iter()
+            .find(|a| a["date"].as_str() == Some(date))
+            .ok_or("Attendance record not found")?
+            .clone();
+
+        let in_time = existing["inTime"].as_str().unwrap_or("").to_string();
+        let total_time = if !in_time.is_empty() {
+            self.calculate_duration(&in_time, &out_time)
+        } else {
+            String::new()
+        };
+
+        let mut updated = existing.clone();
+        updated["outTime"] = json!(out_time);
+        updated["totalTime"] = json!(total_time);
+
+        self.repos
+            .operations
+            .mark_attendance(school_id, role, user_id, date, updated.clone())
+            .await?;
+
+        self.repos
+            .operations
+            .add_attendance_history(school_id, role, user_id, "attendance_updated", json!({"outTime": out_time, "totalTime": total_time}))
+            .await?;
+
+        Ok(updated)
+    }
+
+    async fn delete_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos
+            .operations
+            .delete_attendance(school_id, role, user_id, date)
+            .await?;
+
+        self.repos
+            .operations
+            .add_attendance_history(school_id, role, user_id, "attendance_deleted", json!({"date": date}))
+            .await?;
+
+        Ok(())
+    }
+
     async fn list_attendance(
         &self,
         school_id: &str,

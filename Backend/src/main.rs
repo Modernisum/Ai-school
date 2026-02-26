@@ -128,6 +128,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         // Auth Routes
         .route("/api/auth/login", post(routes::auth::login_handler))
+        // Mobile Auth Routes
+        .merge(routes::mobile::router())
 
         .nest(
             "/api/complains",
@@ -175,6 +177,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "/:schoolId/students",
                     post(routes::students::create_student),
                 )
+                .route(
+                    "/:schoolId/students/bulk",
+                    post(routes::students::bulk_import_students),
+                )
                 .route("/:schoolId/students", get(routes::students::list_students))
                 .route(
                     "/:schoolId/studentIds",
@@ -201,6 +207,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     post(routes::employees::create_employee),
                 )
                 .route(
+                    "/:schoolId/employees/bulk",
+                    post(routes::employees::bulk_import_employees),
+                )
+                .route(
                     "/:schoolId/employees",
                     get(routes::employees::list_employees),
                 )
@@ -216,6 +226,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "/:schoolId/employees/:employeeId",
                     delete(routes::employees::delete_employee),
                 ),
+        )
+        // Bulk import for spaces
+        .route(
+            "/api/spaces/:schoolId/spaces/bulk",
+            axum::routing::post(routes::spaces::bulk_import_spaces),
+        )
+        // Bulk import for materials
+        .route(
+            "/api/materials/:schoolId/bulk",
+            axum::routing::post(routes::materials::bulk_import_materials),
         )
         // Academic Routes (Flattened to match frontend API calls)
         .route(
@@ -242,17 +262,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/topics", post(routes::topic::create_topic))
         // Operations Routes
         // Operations Routes
+        // Attendance Routes (matching Node.js: /:schoolId/:role/:userId/*)
         .nest(
             "/api/operations/attendance",
-            Router::new().route(
-                "/:schoolId/:role/:userId",
-                get(routes::attendance::list_attendance).post(routes::attendance::mark_present),
-            ),
+            Router::new()
+                .route(
+                    "/:schoolId/:role/:userId/present",
+                    axum::routing::post(routes::attendance::mark_present),
+                )
+                .route(
+                    "/:schoolId/:role/:userId/holiday",
+                    axum::routing::post(routes::attendance::mark_holiday),
+                )
+                .route(
+                    "/:schoolId/:role/:userId/:date",
+                    axum::routing::put(routes::attendance::update_attendance)
+                        .delete(routes::attendance::delete_attendance),
+                )
+                .route(
+                    "/:schoolId/student/date/:date",
+                    axum::routing::get(routes::attendance::list_attendance_by_date),
+                )
+                .route(
+                    "/:schoolId/:role/:userId",
+                    axum::routing::get(routes::attendance::list_attendance),
+                )
+                // School-level holidays
+                .route(
+                    "/:schoolId/holidays",
+                    axum::routing::get(routes::attendance::list_school_holidays)
+                        .post(routes::attendance::create_school_holiday),
+                )
+                .route(
+                    "/:schoolId/holidays/check",
+                    axum::routing::get(routes::attendance::check_school_holiday),
+                )
+                .route(
+                    "/:schoolId/holidays/:holidayId",
+                    axum::routing::delete(routes::attendance::delete_school_holiday),
+                ),
         )
-        // Standardized Attendance Route
+        // Legacy alias kept for backward compat
         .route(
             "/api/attendance/:schoolId/:role/:userId/present",
-            post(routes::attendance::mark_present),
+            axum::routing::post(routes::attendance::mark_present),
         )
         .nest(
             "/api/fees",
@@ -327,7 +380,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .route(
             "/api/school/:schoolId",
-            get(routes::school::get_school_details),
+            get(routes::school::get_school_details)
+                .put(routes::school::update_school_self)
+                .patch(routes::school::change_password_self),
+        )
+        .route(
+            "/api/school-holidays/:schoolId",
+            get(routes::attendance::list_school_holidays)
+                .post(routes::attendance::create_school_holiday),
+        )
+        .route(
+            "/api/school-holidays/:schoolId/check",
+            get(routes::attendance::check_school_holiday),
+        )
+        .route(
+            "/api/school-holidays/:schoolId/:holidayId",
+            axum::routing::delete(routes::attendance::delete_school_holiday),
         )
         .route("/api/setup/:schoolId", get(routes::setup::get_setup))
         .route(

@@ -59,6 +59,15 @@ impl ResourceService for PostgresResourceService {
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
         self.repos.resource.get_spaces(school_id).await
     }
+
+    async fn create_material(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.resource.add_material(school_id, data.clone()).await?;
+        Ok(data)
+    }
 }
 
 pub struct PostgresOCRService {

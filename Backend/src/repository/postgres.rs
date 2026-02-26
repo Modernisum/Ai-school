@@ -155,14 +155,49 @@ impl StudentRepository for PostgresStudentRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        sqlx::query("INSERT INTO students (student_id, school_id, class_name, name, roll_number, section) VALUES ($1, $2, $3, $4, $5, $6)")
-            .bind(data["studentId"].as_str())
-            .bind(school_id)
-            .bind(data["className"].as_str())
-            .bind(data["name"].as_str())
-            .bind(data["rollNumber"].as_i64())
-            .bind(data["section"].as_str())
-            .execute(&self.client.pool).await?;
+        sqlx::query(
+            "INSERT INTO students (
+                student_id, school_id, class_name, name, roll_number, section, status,
+                dob, gender, father_name, mother_name, aadhaar_number,
+                address_line1, address_city, address_state, address_pincode,
+                tc_number, contact, alternative_contact, email,
+                transport_enabled, transport_radius,
+                additional_subjects, admission_date, room_number
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,'active',
+                $7,$8,$9,$10,$11,
+                $12,$13,$14,$15,
+                $16,$17,$18,$19,
+                $20,$21,
+                $22,$23,$24
+            )"
+        )
+        .bind(data["studentId"].as_str())
+        .bind(school_id)
+        .bind(data["className"].as_str())
+        .bind(data["name"].as_str())
+        .bind(data["rollNumber"].as_i64().map(|v| v as i32))
+        .bind(data["section"].as_str())
+        // extended fields
+        .bind(data["dob"].as_str())
+        .bind(data["gender"].as_str())
+        .bind(data["fatherName"].as_str())
+        .bind(data["motherName"].as_str())
+        .bind(data["aadhaarNumber"].as_str())
+        .bind(data["addressLine1"].as_str())
+        .bind(data["addressCity"].as_str())
+        .bind(data["addressState"].as_str())
+        .bind(data["addressPincode"].as_str())
+        .bind(data["tcNumber"].as_str())
+        .bind(data["contact"].as_str())
+        .bind(data["alternativeContact"].as_str())
+        .bind(data["email"].as_str())
+        .bind(data["transportEnabled"].as_bool().unwrap_or(false))
+        .bind(data["transportRadius"].as_str())
+        .bind(data["additionalSubjects"].as_str())
+        .bind(data["admissionDate"].as_str())
+        .bind(data["roomNumber"].as_str())
+        .execute(&self.client.pool).await?;
         Ok(data)
     }
 
@@ -901,6 +936,26 @@ impl OperationsRepository for PostgresOperationsRepository {
             .execute(&self.client.pool).await?;
         Ok(())
     }
+
+    async fn delete_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        user_id: &str,
+        date: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        sqlx::query(
+            "DELETE FROM attendance WHERE school_id = $1 AND role = $2 AND user_id = $3 AND date = $4",
+        )
+        .bind(school_id)
+        .bind(role)
+        .bind(user_id)
+        .bind(date.parse::<chrono::NaiveDate>()?)
+        .execute(&self.client.pool)
+        .await?;
+        Ok(())
+    }
+
     async fn add_school_fee(
         &self,
         school_id: &str,

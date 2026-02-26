@@ -1,0 +1,61 @@
+# Project Tasks
+
+## v0.0.3 - Dynamic Fees & Attendance Profile
+- [x] Update [addstudent.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/component/ui/addstudent.jsx) class selection to fetch from `/api/class/:schoolId/classes`
+- [x] Fetch class subjects and fees when a class is selected
+- [x] Add subject selection UI to [addstudent.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/component/ui/addstudent.jsx)
+- [x] Sum selected subject fees dynamically into read-only field
+- [x] Implement full attendance API in Rust backend ([attendance.rs](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/routes/attendance.rs))
+- [x]   POST `/:schoolId/:role/:userId/present` (mark present, with inTime/outTime/totalTime)
+- [x]   POST `/:schoolId/:role/:userId/holiday` (mark holiday with description)
+- [x]   PUT `/:schoolId/:role/:userId/:date` (update outTime, recalculate totalTime)
+- [x]   GET `/:schoolId/:role/:userId` (list attendance records)
+- [x]   DELETE `/:schoolId/:role/:userId/:date` (delete record + audit log)
+- [x] Add Attendance Calendar to Student Profile (react-calendar)
+- [x] Add Attendance Doughnut Chart to Student Profile (recharts)
+- [x] Add Attendance Detailed Log filter + PDF Export
+
+## v0.0.2 - Bulk Import Feature
+- [x] Create `POST /api/school/:schoolId/students/bulk`
+- [x] Implement student auto-generation logic (rollNumber, section, studentId) for loops in bulk API.
+- [x] Create `POST /api/school/:schoolId/employees/bulk`
+- [x] Create `POST /api/school/:schoolId/spaces/bulk`
+- [x] Create `POST /api/school/:schoolId/materials/bulk`
+- [x] Ensure DB transactions are used so partial fail/success is tracked
+
+## Frontend — Bulk Import Component (`Admin/src/component/ui`)
+- [x] Install `xlsx` or parsing library.
+- [x] Create `<BulkImportModal />` component.
+- [x] Implement File Upload (Drag & Drop) and reading logic.
+- [x] Implement Data Preview table (showing valid / invalid rows).
+- [x] Implement pre-validation schema matching (e.g. check for `name`)
+- [x] Create function to dispatch valid JSON payload to backend.
+
+## Frontend — Integration (`Admin/src/pages`)
+- [x] Add "Bulk Import" button to [student.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/student.jsx) page.
+- [x] Add "Bulk Import" button to [employee.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/employee.jsx) page.
+- [x] Add "Bulk Import" button to `Space.jsx` page.
+- [x] Add "Bulk Import" button to [Materials.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/Materials.jsx) page.
+- [x] Wire buttons to open `<BulkImportModal />` with correct configuration.
+- [x] Add template download links (e.g., "Download Student Excel Template").
+
+## Phase 2 - Mobile Apps (Adhyapk & Chatra)
+- [x] Install Flutter SDK on the server environment.
+- [x] Initialize teacher app: `adhyapk`
+- [x] Initialize student app: `chatra`
+- [x] Configure `http` or `dio` and `flutter_secure_storage` packages.
+- [x] Implement HTTP client pointing to `http://localhost:8080` (Backend API).
+- [x] Implement Mobile Login Screen (Phone/Student ID -> OTP "1234").
+- [x] Verify WhatsApp-style token saves correctly to secure storage.
+
+## Environment Setup (Testing & Emulation)
+- [x] Install OpenJDK 17 and QEMU/KVM dependencies for Android Emulation.
+- [x] Download and configure Android Command Line Tools (`cmdline-tools`).
+- [x] Accept Android SDK licenses and install `platform-tools` (ADB) and `emulator`.
+- [x] Download Android 34 System Image (`x86_64`).
+- [x] Create Android Virtual Device (`avd`) named `test_device`.
+- [x] Start the Android Emulator for Flutter debugging.
+
+
+
+
