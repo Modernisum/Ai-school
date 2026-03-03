@@ -99,6 +99,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Router::new()
                 // Auth
                 .route("/login", post(crate::super_admin::routes::admin_login))
+                // Promos
+                .route("/promos", get(crate::super_admin::routes::list_promo_codes).post(crate::super_admin::routes::create_promo_code))
+                .route("/promos/:promoId/usage", get(crate::super_admin::routes::get_promo_usage))
                 // Schools CRUD
                 .route("/schools", get(crate::super_admin::routes::list_all_schools))
                 .route("/schools/export/all", get(crate::super_admin::routes::export_all_schools))
@@ -109,17 +112,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .route("/schools/:schoolId/status", axum::routing::patch(crate::super_admin::routes::set_school_status))
                 .route("/schools/:schoolId/password", axum::routing::patch(crate::super_admin::routes::change_school_password))
                 .route("/schools/:schoolId/session", axum::routing::patch(crate::super_admin::routes::set_session_duration))
-                .route("/schools/:schoolId/sessions", get(crate::super_admin::routes::get_school_sessions))
                 .route("/schools/:schoolId/sessions", delete(crate::super_admin::routes::expire_school_sessions))
                 .route("/schools/:schoolId/notify", post(crate::super_admin::routes::send_notification))
                 .route("/schools/:schoolId/notify", delete(crate::super_admin::routes::clear_notification))
+                .route("/schools/:schoolId/apply-promo", post(crate::super_admin::routes::apply_promo_to_school))
                 // Backup / Restore
                 .route("/schools/:schoolId/export", get(crate::super_admin::routes::export_school))
                 .route("/schools/:schoolId/import", post(crate::super_admin::routes::import_school))
                 // Support
                 .route("/support", get(crate::super_admin::routes::list_support_requests))
-                .route("/support/:id/resolve", axum::routing::patch(crate::super_admin::routes::resolve_support_request))
-                .route("/promos", post(crate::super_admin::routes::create_promo_code).get(crate::super_admin::routes::list_promo_codes)),
+                .route("/support/:id/resolve", axum::routing::patch(crate::super_admin::routes::resolve_support_request)),
         )
         // ── School notification polling (called by school frontend) ────────────
         .route(

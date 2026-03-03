@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare
+    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket
 } from 'lucide-react'
 import { isLoggedIn, logout } from './api.js'
 import Login from './pages/Login.jsx'
@@ -14,6 +14,7 @@ import SetupPage from './pages/SetupPage.jsx'
 import SessionsPage from './pages/SessionsPage.jsx'
 import SupportPage from './pages/SupportPage.jsx'
 import BillingPage from './pages/Billing/BillingPage.jsx'
+import PromoPage from './pages/PromoPage.jsx'
 
 export const ToastCtx = createContext(null)
 
@@ -29,6 +30,7 @@ function PrivateLayout() {
         { to: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
         { to: '/schools', icon: <School size={16} />, label: 'Schools' },
         { to: '/billing', icon: <Database size={16} />, label: 'Billing & Rev' },
+        { to: '/promos', icon: <Ticket size={16} />, label: 'Promo Codes' },
         { to: '/setup', icon: <Plus size={16} />, label: 'Add School' },
         { to: '/support', icon: <MessageSquare size={16} />, label: 'Support' },
         { to: '/backup', icon: <Database size={16} />, label: 'Backup' },
@@ -73,6 +75,7 @@ function PrivateLayout() {
                             <Route path="setup" element={<SetupPage />} />
                             <Route path="support" element={<SupportPage />} />
                             <Route path="billing" element={<BillingPage />} />
+                            <Route path="promos" element={<PromoPage />} />
                             <Route path="backup" element={<BackupPage />} />
                             <Route index element={<Navigate to="dashboard" replace />} />
                         </Routes>

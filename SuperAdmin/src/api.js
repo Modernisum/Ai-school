@@ -60,6 +60,12 @@ export const createPromo = (body) =>
         body: JSON.stringify(body),
     });
 export const listPromos = () => authFetch('/promos');
+export const getPromoUsage = (id) => authFetch(`/promos/${id}/usage`);
+export const applyPromo = (schoolId, code) =>
+    authFetch(`/schools/${schoolId}/apply-promo`, {
+        method: "POST",
+        body: JSON.stringify({ code }),
+    });
 
 export const sendNotification = (id, body) =>
     authFetch(`/schools/${id}/notify`, {

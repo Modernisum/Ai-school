@@ -21,14 +21,33 @@ impl AuthService for PostgresAuthService {
             let hashed = a["password"].as_str().unwrap_or("");
             if bcrypt::verify(password, hashed)? {
                 // Check if school is blocked due to billing (SaaS)
-                let school_row = sqlx::query("SELECT billing_status, trial_ends_at FROM schools WHERE school_id = $1")
+                let school_row = sqlx::query("SELECT billing_status, trial_ends_at, wallet_balance, per_student_rate FROM schools WHERE school_id = $1")
                     .bind(school_id)
                     .fetch_optional(&self.repos.db_client.pool)
                     .await?;
 
                 if let Some(row) = school_row {
+                    let wallet_balance: bigdecimal::BigDecimal = sqlx::Row::get(&row, "wallet_balance");
+                    let per_student_rate: bigdecimal::BigDecimal = sqlx::Row::get(&row, "per_student_rate");
                     let billing_status: String = sqlx::Row::get(&row, "billing_status");
-                    if billing_status == "suspended" {
+                    
+                    let count_row = sqlx::query("SELECT COUNT(*) as count FROM students WHERE school_id = $1 AND status = 'active'")
+                        .bind(school_id)
+                        .fetch_one(&self.repos.db_client.pool)
+                        .await?;
+                    let active_students: i64 = sqlx::Row::get(&count_row, "count");
+                    
+                    use bigdecimal::{BigDecimal, FromPrimitive};
+                    use std::str::FromStr;
+                    
+                    let students_bd = BigDecimal::from_i64(active_students).unwrap_or(BigDecimal::from_str("0").unwrap());
+                    let required_balance = per_student_rate * students_bd;
+                    
+                    if wallet_balance < required_balance {
+                        return Err(format!("Insufficient wallet balance to support {} active students. Please contact the Super Admin to recharge.", active_students).into());
+                    }
+                    
+                    if billing_status == "suspended" && wallet_balance < required_balance {
                         return Err("Your account is suspended due to insufficient balance. Please contact the Super Admin to recharge your wallet.".into());
                     }
                 }

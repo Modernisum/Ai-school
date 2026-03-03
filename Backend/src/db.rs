@@ -35,10 +35,11 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE,
              ADD COLUMN IF NOT EXISTS session_duration_hours INTEGER NOT NULL DEFAULT 24,
              ADD COLUMN IF NOT EXISTS notification JSONB DEFAULT NULL,
-             ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
-             ADD COLUMN IF NOT EXISTS per_student_rate NUMERIC(10, 2) NOT NULL DEFAULT 50.00,
+             ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC(10, 2) NOT NULL DEFAULT 1000.00,
+             ADD COLUMN IF NOT EXISTS per_student_rate NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
              ADD COLUMN IF NOT EXISTS billing_status VARCHAR(20) NOT NULL DEFAULT 'active',
-             ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ DEFAULT NULL",
+             ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ DEFAULT NULL,
+             ADD COLUMN IF NOT EXISTS last_billing_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP",
         )
         .execute(&pool)
         .await?;
@@ -65,10 +66,35 @@ impl DbClient {
                 code VARCHAR(50) UNIQUE NOT NULL,
                 credit_amount NUMERIC(10, 2) DEFAULT 0.00,
                 free_days INTEGER DEFAULT 0,
+                discount_percentage NUMERIC(5, 2) DEFAULT 0.00,
                 max_uses INTEGER DEFAULT 1,
                 current_uses INTEGER DEFAULT 0,
-                expires_at TIMESTAMPTZ DEFAULT NULL
+                expires_at TIMESTAMPTZ DEFAULT NULL,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )",
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("Creating school promo tracking table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS school_promo_codes (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                promo_code_id INTEGER NOT NULL REFERENCES promo_codes(id) ON DELETE CASCADE,
+                applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, promo_code_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("Adding base_rate and promo tracking to schools...");
+        sqlx::query(
+            "ALTER TABLE schools 
+             ADD COLUMN IF NOT EXISTS base_rate NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
+             ADD COLUMN IF NOT EXISTS active_promo_id INTEGER REFERENCES promo_codes(id),
+             ADD COLUMN IF NOT EXISTS promo_expires_at TIMESTAMPTZ"
         )
         .execute(&pool)
         .await?;

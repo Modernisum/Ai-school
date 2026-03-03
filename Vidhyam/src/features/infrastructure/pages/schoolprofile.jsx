@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Building2, MapPin, Shield, CheckCircle, AlertTriangle,
-    Loader, Save, Key, User, LogOut, Hash, Globe,
-    TrendingUp, Plus, X, Calendar, Pencil, Phone
+    TrendingUp, Plus, X, Calendar, Pencil, Phone, CreditCard,
+    User, LogOut, Loader2 as Loader, Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,6 +43,10 @@ export default function AccountPage() {
         alternatePhone: '',
         landline: '',
         email: '',
+        walletBalance: '0.00',
+        perStudentRate: '1.00',
+        billingStatus: 'active',
+        lastBillingDate: null,
     });
 
     // Local draft used only while editing
@@ -72,6 +76,11 @@ export default function AccountPage() {
                 alternatePhone: s.alternatePhone || '',
                 landline: s.landline || '',
                 email: s.email || '',
+                walletBalance: s.walletBalance || '0.00',
+                perStudentRate: s.perStudentRate || '1.00',
+                billingStatus: s.billingStatus || 'active',
+                lastBillingDate: s.lastBillingDate || null,
+                isBlocked: s.isBlocked || false,
             });
         } catch (e) {
             console.warn('Fetch error:', e);
@@ -143,7 +152,7 @@ export default function AccountPage() {
         setSaving(true);
         try {
             const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${API_BASE_URL}/school/${schoolId}`, {
+            const res = await fetch(`${API_BASE_URL}/school/${schoolId}/password`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ newPassword: passwordDraft.newPassword }),
@@ -172,7 +181,7 @@ export default function AccountPage() {
                     </div>
                     <div>
                         <h1 className="text-base font-bold text-white">Account</h1>
-                        <p className="text-xs text-slate-500">Manage institution details &amp; security</p>
+                        <p className="text-xs text-slate-500">Manage institution details & security</p>
                     </div>
                 </div>
                 <button
@@ -325,6 +334,38 @@ export default function AccountPage() {
                                 </div>
                             )}
                         </Section>
+
+                        {/* ─── Billing & Subscription Section ─── */}
+                        <div className="glass-card overflow-hidden">
+                            <div className="flex justify-between items-center px-5 py-3.5 border-b border-white/5">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                                    <span className="text-orange-400"><CreditCard size={15} /></span>
+                                    Billing & Subscription
+                                </div>
+                            </div>
+                            <div className="px-5 py-2 divide-y divide-white/[0.04]">
+                                {data.billingStatus === 'warning' && (
+                                    <div className="py-3 border-b-0 border-white/5">
+                                        <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm">
+                                            <AlertTriangle size={16} className="shrink-0" />
+                                            <div>Low Balance Warning: Your wallet balance is running low. Please recharge to avoid service interruption.</div>
+                                        </div>
+                                    </div>
+                                )}
+                                {data.billingStatus === 'suspended' && (
+                                    <div className="py-3 border-b-0 border-white/5">
+                                        <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+                                            <AlertTriangle size={16} className="shrink-0" />
+                                            <div>Account Suspended: Your wallet balance is depleted. Please contact Super Admin to recharge.</div>
+                                        </div>
+                                    </div>
+                                )}
+                                <Row label="Wallet Balance (₹)" value={<span className={`font-mono font-semibold ${Number(data.walletBalance) < 100 ? 'text-orange-400' : 'text-emerald-400'}`}>₹{data.walletBalance}</span>} />
+                                <Row label="Current Credit Rate" value={<span className="text-indigo-300 font-medium tracking-wide">₹{data.perStudentRate} / credit (1 student = 1 credit/mo)</span>} />
+                                <Row label="Next Billing Date" value={data.lastBillingDate ? new Date(new Date(data.lastBillingDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString() : '—'} />
+                                <Row label="Billing Status" value={<span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-1 rounded inline-block ${data.billingStatus === 'active' ? 'bg-emerald-500/10 text-emerald-400' : data.billingStatus === 'warning' ? 'bg-orange-500/10 text-orange-400' : 'bg-rose-500/10 text-rose-400'}`}>{data.billingStatus}</span>} />
+                            </div>
+                        </div>
 
                         {/* ─── Security Section ─── */}
                         <Section

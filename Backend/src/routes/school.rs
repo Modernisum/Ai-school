@@ -132,9 +132,9 @@ pub async fn change_password_self(
     };
 
     match sqlx::query(
-        "UPDATE auth SET data = COALESCE(data, '{}'::jsonb) || $1::jsonb WHERE school_id = $2"
+        "UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2"
     )
-    .bind(json!({"password": hashed}))
+    .bind(&hashed)
     .bind(&school_id)
     .execute(&state.db.pool)
     .await

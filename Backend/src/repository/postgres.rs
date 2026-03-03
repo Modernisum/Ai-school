@@ -1383,14 +1383,29 @@ impl SchoolRepository for PostgresSchoolRepository {
         &self,
         school_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
-        let row = sqlx::query("SELECT * FROM schools WHERE id = $1")
-            .bind(school_id)
-            .fetch_optional(&self.client.pool)
-            .await?;
+        let row = sqlx::query(
+            "SELECT school_id, school_name, data, wallet_balance, per_student_rate, billing_status, 
+             trial_ends_at, last_billing_date, status, is_blocked
+             FROM schools WHERE school_id = $1"
+        )
+        .bind(school_id)
+        .fetch_optional(&self.client.pool)
+        .await?;
         Ok(
-            row.map(
-                |r| json!({"id": r.get::<String, _>("id"), "name": r.get::<String, _>("name")}),
-            ),
+            row.map(|r| {
+                json!({
+                    "schoolId": r.get::<String, _>("school_id"), 
+                    "schoolName": r.get::<String, _>("school_name"),
+                    "data": r.get::<Value, _>("data"),
+                    "walletBalance": r.get::<bigdecimal::BigDecimal, _>("wallet_balance").to_string(),
+                    "perStudentRate": r.get::<bigdecimal::BigDecimal, _>("per_student_rate").to_string(),
+                    "billingStatus": r.get::<String, _>("billing_status"),
+                    "trialEndsAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("trial_ends_at").ok().map(|t| t.to_rfc3339()),
+                    "lastBillingDate": r.try_get::<chrono::DateTime<chrono::Utc>, _>("last_billing_date").ok().map(|t| t.to_rfc3339()),
+                    "status": r.get::<String, _>("status"),
+                    "isBlocked": r.get::<bool, _>("is_blocked")
+                })
+            })
         )
     }
 }

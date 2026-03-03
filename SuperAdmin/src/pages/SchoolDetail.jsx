@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Save, Ban, CheckCircle, Key, Clock, Loader } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
-import { getSchool, updateSchool, setStatus, setSessionDuration } from '../api.js'
+import { getSchool, updateSchool, setStatus, setSessionDuration, applyPromo } from '../api.js'
 
 export default function SchoolDetail() {
     const { schoolId } = useParams()
@@ -14,6 +14,8 @@ export default function SchoolDetail() {
     const [edits, setEdits] = useState({})
     const [saving, setSaving] = useState(false)
     const [sessionHours, setSessionHours] = useState(24)
+    const [promoCode, setPromoCode] = useState('')
+    const [applyingPromo, setApplyingPromo] = useState(false)
 
     const load = async () => {
         setLoading(true)
@@ -52,6 +54,20 @@ export default function SchoolDetail() {
         const r = await setSessionDuration(schoolId, Number(sessionHours))
         if (r.success) toast('success', `Session set to ${sessionHours}h`)
         else toast('error', r.message)
+    }
+
+    const handleApplyPromo = async () => {
+        if (!promoCode) return
+        setApplyingPromo(true)
+        const r = await applyPromo(schoolId, promoCode)
+        if (r.success) {
+            toast('success', r.message)
+            setPromoCode('')
+            load()
+        } else {
+            toast('error', r.message)
+        }
+        setApplyingPromo(false)
     }
 
     if (loading) return (
@@ -123,10 +139,36 @@ export default function SchoolDetail() {
                     </div>
 
                     <div className="card">
+                        <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}><Key size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Apply Promo Code</h3>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                            <div className="input-group" style={{ marginBottom: 0, flex: 1 }}>
+                                <label>Promo Code</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter code..."
+                                    value={promoCode}
+                                    onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                                />
+                            </div>
+                            <button
+                                className="btn btn-primary btn-sm"
+                                onClick={handleApplyPromo}
+                                disabled={applyingPromo || !promoCode}
+                                style={{ flexShrink: 0 }}
+                            >
+                                {applyingPromo ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : 'Apply'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="card">
                         <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Info</h3>
                         {[
                             ['School ID', school.schoolId],
                             ['Status', school.status],
+                            ['Wallet Balance', `₹${school.walletBalance || 0}`],
+                            ['Credit Rate', `₹${school.perStudentRate || 1} / credit (1 student = 1 credit/mo)`],
+                            ['Next Billing Date', school.lastBillingDate ? new Date(new Date(school.lastBillingDate).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString() : '—'],
                             ['Blocked', school.isBlocked ? 'Yes' : 'No'],
                             ['Registered', school.createdAt ? new Date(school.createdAt).toLocaleString() : '—'],
                             ['Last Updated', school.updatedAt ? new Date(school.updatedAt).toLocaleString() : '—'],

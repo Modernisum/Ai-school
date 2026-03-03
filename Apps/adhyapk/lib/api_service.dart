@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ApiService {
   // NOTE: Use your machine's local IP address instead of localhost if testing on a physical device.
   // 10.0.2.2 is used for Android Emulator to reach host machine's localhost.
-  static const String baseUrl = 'http://10.0.2.2:8080/622079/mobile'; 
+  static const String baseUrl = 'http://192.168.92.128:8080/268863/mobile'; 
   final storage = const FlutterSecureStorage();
 
   Future<bool> login(String ident, String role) async {
