@@ -1,7 +1,7 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -101,7 +101,72 @@ impl ResponsibilityService for PostgresAuxiliaryService {
             .get_responsibilities(school_id)
             .await
     }
+
+    async fn create_responsibility(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.responsibility.add_responsibility(school_id, data).await
+    }
+
+    async fn assign_responsibility(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        responsibility_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos
+            .responsibility
+            .assign_responsibility(school_id, employee_id, responsibility_id)
+            .await
+    }
+
+    async fn remove_responsibility(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        responsibility_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos
+            .responsibility
+            .remove_responsibility(school_id, employee_id, responsibility_id)
+            .await
+    }
+
+    async fn list_employee_responsibilities(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let responsibilities = self.repos
+            .responsibility
+            .get_employee_responsibilities(school_id, employee_id)
+            .await?;
+        
+        // Calculate total per day price
+        let total_per_day_price: f64 = responsibilities.iter()
+            .map(|r| r["perDayPrice"].as_f64().unwrap_or(0.0))
+            .sum();
+
+        // Fetch employee base salary
+        let employee = self.repos.employee.get_employee(school_id, employee_id).await?;
+        let base_salary = employee.as_ref()
+            .and_then(|e| e["baseSalary"].as_str())
+            .and_then(|s| s.parse::<f64>().ok())
+            .unwrap_or(0.0);
+
+        Ok(json!({
+            "employee": {
+                "employeeId": employee_id,
+                "responsibilities": responsibilities,
+                "totalPerDayPrice": total_per_day_price,
+                "baseSalary": base_salary
+            }
+        }))
+    }
 }
+
 
 #[async_trait]
 impl TaskService for PostgresAuxiliaryService {

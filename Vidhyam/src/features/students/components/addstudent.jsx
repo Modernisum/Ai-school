@@ -5,10 +5,11 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, BookOpen, Bus, Save, Loader,
   CheckCircle, AlertTriangle, Calendar, MapPin, Plus, X,
-  Hash, Shield, UserCheck, GraduationCap
+  Hash, Shield, UserCheck, GraduationCap, DollarSign, Star, Tag
 } from 'lucide-react';
+import { getClassesByLevel } from '../../../utils/academicUtils';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
 const getSchoolId = () => {
   for (const k of ['schoolId', 'school_id', 'currentSchoolId']) {
@@ -16,13 +17,6 @@ const getSchoolId = () => {
     if (v && v !== 'undefined') return v;
   }
   return '622079';
-};
-
-const genStudentId = () => {
-  const prefix = 'STU';
-  const year = new Date().getFullYear().toString().slice(-2);
-  const rand = Math.floor(10000 + Math.random() * 90000);
-  return `${prefix}${year}${rand}`;
 };
 
 const today = () => new Date().toISOString().split('T')[0];
@@ -51,10 +45,15 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Referral coupon state
+  const [referralCode, setReferralCode] = useState('');
+  const [couponData, setCouponData] = useState(null); // validated coupon
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   // Form state
   const [form, setForm] = useState({
-    // auto-generated
-    studentId: genStudentId(),
+    studentId: 'Auto-generated',
     rollNumber: '',
     admissionDate: today(),
     roomNumber: '',
@@ -78,8 +77,8 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     className: '',
     section: '',
     studentType: 'Regular',   // 'Regular' | 'Private'
-    selectedSubjects: [],
-    totalFee: 0,
+    enrolledSubjects: [],     // Array of {id, name, fee}
+    totalFees: 0,
     // transport
     transportEnabled: false,
     transportRadius: '',
@@ -89,13 +88,11 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   const [subjects, setSubjects] = useState([]);
   const [errors, setErrors] = useState({});
 
-  // Load classes
+  // Load classes from school level
   useEffect(() => {
-    fetch(`${API_BASE_URL}/class/${schoolId}/classes`)
-      .then(r => r.json())
-      .then(d => setClasses(d.data || d.classes || []))
-      .catch(() => { });
-  }, [schoolId]);
+    const schoolLevel = localStorage.getItem('schoolLevel') || 10;
+    setClasses(getClassesByLevel(schoolLevel));
+  }, []);
 
   // Load subjects when class changes
   useEffect(() => {
@@ -104,9 +101,22 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       .then(r => r.json())
       .then(d => {
         const all = d.data || d.subjects || [];
-        setSubjects(all.filter(s =>
-          !s.classNames || s.classNames.includes(form.className)
-        ));
+        const classSubjects = all.filter(s =>
+          !s.className || s.className === form.className || s.class_name === form.className
+        );
+        setSubjects(classSubjects);
+
+        // Auto-select compulsory subjects
+        const compulsory = classSubjects.filter(s => s.isCompulsory ?? true).map(s => ({
+          id: s.id || s.subjectId || s.subject_id,
+          name: s.subjectName || s.subject_name || s.name,
+          fee: parseFloat(s.subjectFees ?? s.subject_fees ?? s.fees) || 0
+        }));
+
+        setForm(f => {
+          const totalFees = compulsory.reduce((acc, s) => acc + s.fee, 0);
+          return { ...f, enrolledSubjects: compulsory, totalFees };
+        });
       })
       .catch(() => { });
   }, [form.className, schoolId]);
@@ -146,13 +156,21 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   };
 
   const toggleSubject = (sub) => {
+    const subId = sub.id || sub.subjectId || sub.subject_id;
+    const isComp = sub.isCompulsory ?? true;
+    if (isComp) return; // Cannot toggle compulsory
+
     setForm(f => {
-      const already = f.selectedSubjects.find(s => s.id === sub.id);
+      const already = f.enrolledSubjects.find(s => s.id === subId);
       const next = already
-        ? f.selectedSubjects.filter(s => s.id !== sub.id)
-        : [...f.selectedSubjects, sub];
-      const totalFee = next.reduce((acc, s) => acc + (Number(s.fee) || 0), 0);
-      return { ...f, selectedSubjects: next, totalFee };
+        ? f.enrolledSubjects.filter(s => s.id !== subId)
+        : [...f.enrolledSubjects, {
+          id: subId,
+          name: sub.subjectName || sub.subject_name || sub.name,
+          fee: parseFloat(sub.subjectFees ?? sub.subject_fees ?? sub.fees) || 0
+        }];
+      const totalFees = next.reduce((acc, s) => acc + s.fee, 0);
+      return { ...f, enrolledSubjects: next, totalFees };
     });
   };
 
@@ -168,6 +186,30 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     return Object.keys(e).length === 0;
   };
 
+  // Validate referral coupon
+  const validateCoupon = async (code) => {
+    if (!code.trim()) { setCouponData(null); setCouponError(''); return; }
+    setCouponLoading(true); setCouponError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/fees/${schoolId}/coupons/validate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponName: code.trim() })
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) { setCouponData(null); setCouponError('Coupon not found'); return; }
+      if (d.data?.valid === false) { setCouponData(null); setCouponError(d.data.reason || 'Invalid'); return; }
+      if (d.data?.valid) setCouponData(d.data);
+    } catch { setCouponError('Network error'); }
+    finally { setCouponLoading(false); }
+  };
+
+  const couponDiscount = couponData ? (
+    couponData.discountType === 'percentage'
+      ? (form.totalFees * parseFloat(couponData.discountValue)) / 100
+      : parseFloat(couponData.discountValue)
+  ) : 0;
+  const finalFees = Math.max(0, form.totalFees - couponDiscount);
+
   const handleSubmit = async () => {
     if (!validate()) {
       setToast({ type: 'error', msg: 'Please fix the highlighted errors' });
@@ -176,10 +218,15 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     setSaving(true);
     const payload = {
       ...form,
-      type: form.studentType,           // backend field
-      studentType: form.studentType,    // alternate field name
-      selectedSubjects: JSON.stringify(form.selectedSubjects.map(s => s.id || s.name)),
-      additionalSubjects: form.selectedSubjects.map(s => s.name || s.id).join(', '),
+      type: form.studentType,
+      studentType: form.studentType,
+      enrolledSubjects: JSON.stringify(form.enrolledSubjects),
+      totalFees: finalFees,
+      originalFees: form.totalFees,
+      couponDiscount,
+      referralCouponId: couponData?.couponId || null,
+      referralCouponName: couponData?.couponName || null,
+      additionalSubjects: form.enrolledSubjects.map(s => s.name).join(', '),
       transportEnabled: form.transportEnabled,
     };
     try {
@@ -190,6 +237,17 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       });
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.message || 'Failed to create student');
+
+      // Use coupon if one was applied
+      if (couponData?.couponId && data.data?.studentId) {
+        try {
+          await fetch(`${API_BASE_URL}/fees/${schoolId}/coupons/${couponData.couponId}/use`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId: data.data.studentId, discount: couponDiscount })
+          });
+        } catch { }
+      }
+
       setToast({ type: 'success', msg: `Student ${form.name} created successfully!` });
       setTimeout(() => {
         if (onSuccess) onSuccess(data);
@@ -321,10 +379,9 @@ export default function AddStudentPage({ onSuccess, onBack }) {
           <select className={inp(errors.className)} value={form.className}
             onChange={e => handleClassChange(e.target.value)}>
             <option value="">Select class</option>
-            {classes.map(c => {
-              const name = c.name || c.className;
-              return <option key={name} value={name}>{name}</option>;
-            })}
+            {classes.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
         </Field>
         <Field label="Section">
@@ -361,40 +418,115 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       {/* Subject selection */}
       {form.className && (
         <div>
-          <p className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
-            <GraduationCap size={14} className="text-purple-400" /> Additional Subjects
+          <p className="text-sm font-semibold text-slate-300 mb-4 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <GraduationCap size={14} className="text-purple-400" /> Subjects & Activities
+            </span>
+            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Class {form.className}</span>
           </p>
           {subjects.length === 0 ? (
-            <p className="text-xs text-slate-500 italic">No additional subjects available for this class</p>
+            <div className="py-8 text-center bg-white/5 rounded-2xl border border-white/5">
+              <BookOpen size={24} className="mx-auto mb-2 text-slate-600 opacity-50" />
+              <p className="text-xs text-slate-500 italic">No subjects available for this class</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {subjects.map(sub => {
-                const selected = form.selectedSubjects.some(s => s.id === sub.id);
+                const subId = sub.id || sub.subjectId || sub.subject_id;
+                const isSelected = form.enrolledSubjects.some(s => s.id === subId);
+                const isComp = sub.isCompulsory ?? true;
+                const fee = parseFloat(sub.subjectFees ?? sub.subject_fees ?? sub.fees) || 0;
+
                 return (
-                  <button key={sub.id || sub.name} type="button"
+                  <button key={subId} type="button"
                     onClick={() => toggleSubject(sub)}
-                    className={`text-left px-3 py-2.5 rounded-xl border text-sm transition-all ${selected
-                      ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                    className={`relative text-left px-4 py-3 rounded-2xl border transition-all duration-300 ${isSelected
+                      ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-100 ring-1 ring-indigo-500/20 shadow-lg shadow-indigo-500/10'
                       : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
-                      }`}>
-                    <p className="font-medium">{sub.name || sub.subjectName}</p>
-                    {(sub.fee || sub.subjectFee) && (
-                      <p className="text-xs mt-0.5 font-mono">₹{sub.fee || sub.subjectFee}</p>
+                      } ${isComp ? 'cursor-default' : 'hover:-translate-y-0.5'}`}>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-bold text-[13px]">{sub.subjectName || sub.subject_name || sub.name}</p>
+                          {isComp && <Star size={10} className="text-amber-400 fill-amber-400" />}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                          <DollarSign size={10} className="text-emerald-500" />
+                          <span>₹{fee.toLocaleString('en-IN')} / {sub.feeType || 'mo'}</span>
+                        </div>
+                      </div>
+
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isSelected
+                        ? 'bg-indigo-500 border-indigo-400 text-white'
+                        : 'border-white/20 text-transparent'
+                        }`}>
+                        <CheckCircle size={12} strokeWidth={3} />
+                      </div>
+                    </div>
+
+                    {isComp && (
+                      <div className="absolute -top-1.5 -right-1.5 px-2 py-0.5 bg-amber-500 text-[8px] font-black text-slate-900 rounded uppercase tracking-tighter shadow-lg">
+                        Compulsory
+                      </div>
                     )}
-                    {selected && <CheckCircle size={12} className="text-purple-400 mt-1" />}
                   </button>
                 );
               })}
             </div>
           )}
 
-          {form.selectedSubjects.length > 0 && (
-            <div className="mt-3 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
-              <p className="text-sm text-green-300">
-                {form.selectedSubjects.length} subject(s) selected
-              </p>
-              <p className="font-bold text-green-400 text-lg">₹{form.totalFee.toLocaleString('en-IN')}</p>
-            </div>
+          {form.enrolledSubjects.length > 0 && (
+            <>
+              <div className="mt-6 bg-gradient-to-r from-emerald-500/20 via-indigo-500/10 to-transparent border border-emerald-500/20 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <DollarSign size={20} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Subject Fees</p>
+                    <p className="text-sm text-emerald-300 font-medium">{form.enrolledSubjects.length} subjects & activities enrolled</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`text-2xl font-black tracking-tighter ${couponDiscount > 0 ? 'text-slate-500 line-through text-lg' : 'text-emerald-400'}`}>₹{form.totalFees.toLocaleString('en-IN')}</p>
+                  {couponDiscount > 0 && <p className="text-2xl font-black text-emerald-400 tracking-tighter">₹{finalFees.toLocaleString('en-IN')}</p>}
+                  <p className="text-[10px] text-slate-500 font-bold">{couponDiscount > 0 ? 'AFTER DISCOUNT' : 'ESTIMATED TOTAL'}</p>
+                </div>
+              </div>
+
+              {/* Referral Coupon */}
+              <div className="mt-4 p-4 bg-violet-500/5 border border-violet-500/15 rounded-2xl space-y-3">
+                <p className="text-xs font-semibold text-violet-400 flex items-center gap-2"><Tag size={14} /> Referral / Discount Coupon</p>
+                <div className="flex gap-2">
+                  <input
+                    className="input-dark flex-1 uppercase"
+                    placeholder="Enter coupon code..."
+                    value={referralCode}
+                    onChange={e => { setReferralCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError(''); }}
+                  />
+                  <button type="button" onClick={() => validateCoupon(referralCode)} disabled={couponLoading || !referralCode.trim()}
+                    className="btn-secondary px-4 flex items-center gap-1 disabled:opacity-50">
+                    {couponLoading ? <Loader size={14} className="animate-spin" /> : <CheckCircle size={14} />} Apply
+                  </button>
+                </div>
+                {couponError && <p className="text-xs text-rose-400 flex items-center gap-1"><AlertTriangle size={12} /> {couponError}</p>}
+                {couponData && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={14} className="text-emerald-400" />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-300">{couponData.couponName}</p>
+                        <p className="text-[10px] text-slate-500">
+                          {couponData.discountType === 'percentage' ? `${couponData.discountValue}% off` : `₹${parseFloat(couponData.discountValue).toLocaleString('en-IN')} off`}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-emerald-400">-₹{couponDiscount.toLocaleString('en-IN')}</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -487,7 +619,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               </div>
               New Student Admission
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">Fill all sections • Auto-generates ID &amp; Roll No</p>
+            <p className="text-xs text-slate-500 mt-0.5">Fill all sections • System generates ID &amp; Roll No</p>
           </div>
         </div>
         <button onClick={handleSubmit} disabled={saving}

@@ -55,7 +55,7 @@ impl StudentService for PostgresStudentService {
         };
 
         // 3. Generate Student ID (Parity Sequential S+6 digits)
-        let student_id = self.repos.student.generate_student_id().await?;
+        let student_id = self.repos.student.generate_student_id(school_id).await?;
 
         let mut student_data = data.clone();
         student_data["studentId"] = json!(student_id);
@@ -121,7 +121,7 @@ impl StudentService for PostgresStudentService {
 
             let section = if roll_number <= 60 { "A" } else if roll_number <= 120 { "B" } else { "C" };
 
-            let student_id = match self.repos.student.generate_student_id().await {
+            let student_id = match self.repos.student.generate_student_id(school_id).await {
                 Ok(id) => id,
                 Err(e) => {
                     failed += 1;

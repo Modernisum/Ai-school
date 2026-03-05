@@ -4,6 +4,7 @@ import {
   CalendarDays, Plus, Trash2, Loader, CheckCircle, AlertTriangle,
   ChevronLeft, ChevronRight, Users, GraduationCap, Shield, Info
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const API = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
@@ -29,6 +30,7 @@ function dateRange(from, to) {
 }
 
 export default function AnnouncementsPage() {
+  const location = useLocation();
   const schoolId = getSchoolId();
   const [holidays, setHolidays] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -36,7 +38,17 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(new URLSearchParams(location.search).get('mark') === '1' || new URLSearchParams(location.search).get('add') === '1');
+
+  // Sync showForm with URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('mark') === '1' || params.get('add') === '1') {
+      setShowForm(true);
+    } else if (params.get('mark') === null && params.get('add') === null && showForm && !params.toString().includes('mark=') && !params.toString().includes('add=')) {
+      setShowForm(false);
+    }
+  }, [location.search]);
 
   // Calendar state
   const now = new Date();
@@ -335,7 +347,7 @@ export default function AnnouncementsPage() {
                       const sel = form.exemptEmployees.includes(id);
                       return (
                         <button key={id} onClick={() => toggleEmployee(id)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left ${sel ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${sel ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
                           {sel ? <CheckCircle size={11} /> : <div className="w-[11px] h-[11px] rounded-full border border-slate-600" />}
                           {name}
                           {e.category && <span className="ml-auto text-slate-600">{e.category}</span>}

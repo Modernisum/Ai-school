@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Users, Plus, Edit3, Eye, Loader, AlertTriangle,
     X, CheckCircle, GraduationCap, RefreshCw, UploadCloud,
-    TrendingUp, UserCheck, UserX, CalendarCheck, Calendar, ClipboardList
+    TrendingUp, UserCheck, UserX, CalendarCheck, Calendar, ClipboardList,
+    DollarSign, Zap
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -16,6 +17,7 @@ import { useGetStudentsQuery } from '../api/studentApi';
 
 const API = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const fmtMoney = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
 const fmtDate = (date) => {
     if (!date) return 'N/A';
@@ -67,6 +69,86 @@ function MiniPieCard({ title, subtitle, data, loading, extra }) {
     );
 }
 
+// ─── Profile Fee Summary (used in profile drawer) ──────────────────────────
+function ProfileFeeSummary({ studentId, schoolId }) {
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!studentId || !schoolId) return;
+        setLoading(true);
+        fetch(`${API}/students/${schoolId}/students/${studentId}/profile`)
+            .then(r => r.json())
+            .then(d => { if (d.success) setProfile(d.data); })
+            .catch(() => { })
+            .finally(() => setLoading(false));
+    }, [studentId, schoolId]);
+
+    if (loading) return <div className="flex justify-center py-4"><Loader size={18} className="animate-spin text-indigo-400" /></div>;
+    if (!profile) return null;
+
+    return (
+        <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <DollarSign size={13} className="text-emerald-400" /> Fee Summary
+            </h4>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2">
+                {[
+                    ['Subjects', profile.totalSubjects, 'text-indigo-400', 'bg-indigo-500/10'],
+                    ['Subject Fees', fmtMoney(profile.subjectFees), 'text-violet-400', 'bg-violet-500/10'],
+                    ['Custom Fees', fmtMoney(profile.totalCustomFees), 'text-teal-400', 'bg-teal-500/10'],
+                    ['Penalty', fmtMoney(profile.totalPenalty), 'text-rose-400', 'bg-rose-500/10'],
+                    ['Discount', fmtMoney(profile.discount), 'text-amber-400', 'bg-amber-500/10'],
+                    ['Total Paid', fmtMoney(profile.totalPaid), 'text-emerald-400', 'bg-emerald-500/10'],
+                ].map(([label, val, color, bg]) => (
+                    <div key={label} className={`${bg} rounded-xl px-3 py-2.5 border border-white/5`}>
+                        <p className="text-[10px] text-slate-500">{label}</p>
+                        <p className={`text-sm font-bold ${color}`}>{val}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Grand Total */}
+            <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl p-3 flex justify-between items-center">
+                <div>
+                    <p className="text-[10px] text-slate-500">Grand Total</p>
+                    <p className="text-lg font-bold text-white">{fmtMoney(profile.totalAmount)}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-[10px] text-slate-500">Pending</p>
+                    <p className="text-lg font-bold text-rose-400">{fmtMoney(profile.totalPending)}</p>
+                </div>
+            </div>
+
+            {/* Custom Fees List */}
+            {profile.customFees && profile.customFees.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Applied Custom Fees</p>
+                    {profile.customFees.map((cf, i) => (
+                        <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-slate-800/40 rounded-lg border border-white/5">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Zap size={11} className="text-emerald-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[11px] text-white truncate">{cf.feeName}</p>
+                                    {cf.hasPenalty && cf.penalty > 0 && (
+                                        <p className="text-[9px] text-rose-400">+{fmtMoney(cf.penalty)} penalty</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="text-right flex-shrink-0 ml-2">
+                                <p className={`text-[11px] font-medium ${cf.status === 'paid' ? 'text-emerald-400' : 'text-amber-400'}`}>{fmtMoney(cf.amount)}</p>
+                                <span className={`text-[8px] px-1 py-0.5 rounded ${cf.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>{cf.status}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Student Management (main) ─────────────────────────────────────────────
 export default function StudentManagement() {
     const location = useLocation();
@@ -83,6 +165,20 @@ export default function StudentManagement() {
     const [toast, setToast] = useState(null);
     const [showAddForm, setShowAddForm] = useState(new URLSearchParams(location.search).get('add') === '1');
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
+
+    // Sync showAddForm with URL search params
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('add') === '1') {
+            setShowAddForm(true);
+        } else if (params.get('add') === null && showAddForm && !params.toString().includes('add=')) {
+            // Only hide if we specifically came from an 'add' state and now it's gone
+            // However, usually we want it to stay if manually toggled, but here 
+            // the user specifically complained about sidebar navigation.
+            // If they click "All Students" (no ?add=1), we should probably show the list.
+            setShowAddForm(false);
+        }
+    }, [location.search]);
     const [profileDrawer, setProfileDrawer] = useState(null);
 
     // Attendance state
@@ -289,25 +385,7 @@ export default function StudentManagement() {
                         </div>
                     </div>
 
-                    {/* Line graph: Enrollment */}
-                    <div className="glass-card p-5">
-                        <p className="text-sm font-semibold text-white mb-1">Student Enrollment</p>
-                        <p className="text-[10px] text-slate-500 mb-4">Total students per academic session</p>
-                        {sLoading ? <div className="h-[160px] flex items-center justify-center"><Loader size={22} className="animate-spin text-indigo-400" /></div>
-                            : enrollmentData.length === 0 ? <div className="h-[160px] flex items-center justify-center text-slate-600 text-sm">No enrollment data yet</div>
-                                : (
-                                    <ResponsiveContainer width="100%" height={160}>
-                                        <AreaChart data={enrollmentData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                                            <defs><linearGradient id="cEn" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
-                                            <CartesianGrid strokeDasharray="3 3" {...GRID} />
-                                            <XAxis dataKey="session" tick={AXIS} />
-                                            <YAxis tick={AXIS} allowDecimals={false} />
-                                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} />
-                                            <Area type="monotone" dataKey="students" stroke="#6366f1" strokeWidth={2} fill="url(#cEn)" dot={{ fill: '#6366f1', r: 3 }} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                )}
-                    </div>
+
 
                     {/* Student table */}
                     <div className="space-y-3">
@@ -472,6 +550,10 @@ export default function StudentManagement() {
                                         </div>
                                     ))}
                             </div>
+
+                            {/* Fee Breakdown Section */}
+                            <ProfileFeeSummary studentId={profileDrawer.student.studentId || profileDrawer.student.student_id} schoolId={schoolId} />
+
                             {profileDrawer.mode === 'edit' && (
                                 <button onClick={() => { setProfileDrawer(null); setShowAddForm(true); }} className="btn-primary w-full justify-center"><Edit3 size={14} /> Open Full Edit Form</button>
                             )}

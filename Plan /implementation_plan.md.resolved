@@ -1,0 +1,235 @@
+# Implementation Plan — Employee System Overhaul
+
+A complete redesign of the employee management system covering frontend form redesign, space management, responsibility-salary engine, and leave management.
+
+---
+
+## 1. Auto Employee ID Generation
+
+### Backend
+- Add [generate_employee_id](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs#804-811) in [repository/postgres.rs](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs) using sequence: `E` + zero-padded counter → `E0001`, `E0002`, etc.
+- `POST /api/employees/:schoolId/employees` returns `{ success, employee: { employeeId, ... } }` — already partially done; fix ID format.
+
+### Frontend ([employeeform.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Vidhyam/src/features/employees/components/employeeform.jsx))
+- On successful submit → show dialog/modal with generated Employee ID
+- Employee type dropdown: **Teacher, Peon, Principal, Admin, Other**
+
+---
+
+## 2. Separate Form Sections
+
+### 2a. Personal Info
+Fields: Name, Father Name, Mother Name, DOB, Age (auto-calc from DOB), Gender, Category (General/OBC/SC/ST), Blood Group, Employee Type (dropdown)
+
+### 2b. Experience Section (New — `EmployeeExperience` table)
+- **Is Fresher** checkbox
+- If not fresher, add entries (multiple):
+  - Organization Name, Location, Position/Profile Type, Post Type (dropdown: Permanent/Contractual/Part-Time/Guest)
+  - Join Month & Year, End Date (or "Current" checkbox)
+  - Achievement Description, Previous Employee ID, Experience Letter Image URL
+- Backend: `employee_experience` table (JSONB or relational)
+
+### 2c. Education Section (New — `EmployeeEducation` table)
+- Multiple entries:
+  - Education Level (High School / Intermediate / Graduate / Post Graduate / PhD)
+  - Institute Name, Location, Stream/Subject
+  - Pass Year, Marks Details (%), Medium (Hindi/English/Other)
+  - Document Image URL
+- Backend: `employee_education` table (JSONB or relational)
+
+### 2d. Contact Info Section
+- Primary Phone, Alternate Phone (optional), Email (optional)
+- Address (multiple: Permanent + Temporary)
+
+---
+
+## 3. Space Management System
+
+### 3a. Database Tables (New)
+```sql
+-- Space categories (classrooms, offices, store rooms are default, non-deletable)
+CREATE TABLE space_categories (
+  id SERIAL PRIMARY KEY,
+  school_id VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  is_default BOOLEAN DEFAULT FALSE,
+  UNIQUE(school_id, name)
+);
+
+-- Spaces (each physical area)
+CREATE TABLE spaces (
+  id SERIAL PRIMARY KEY,
+  space_id VARCHAR(255) UNIQUE NOT NULL,   -- auto: SP001
+  school_id VARCHAR(255) NOT NULL,
+  space_name VARCHAR(255) NOT NULL,
+  space_category VARCHAR(255) NOT NULL,    -- classroom, office, store room, etc.
+  space_number VARCHAR(50),                -- auto-assigned classroom number
+  capacity INTEGER DEFAULT 0,
+  data JSONB DEFAULT '{}'
+);
+
+-- Materials per space
+CREATE TABLE space_materials (
+  id SERIAL PRIMARY KEY,
+  school_id VARCHAR(255) NOT NULL,
+  space_id VARCHAR(255) NOT NULL,
+  material_name VARCHAR(255) NOT NULL,
+  quantity INTEGER DEFAULT 0,
+  unit VARCHAR(50)                         -- chairs, benches, tables, markers, etc.
+);
+
+-- Employees assigned to spaces
+CREATE TABLE space_employees (
+  id SERIAL PRIMARY KEY,
+  school_id VARCHAR(255) NOT NULL,
+  space_id VARCHAR(255) NOT NULL,
+  employee_id VARCHAR(255) NOT NULL,
+  UNIQUE(school_id, space_id, employee_id)
+);
+```
+
+### 3b. Backend Routes ([routes/spaces.rs](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/routes/spaces.rs) — extend)
+- `GET /api/spaces/:schoolId` — list all spaces
+- `POST /api/spaces/:schoolId` — create space (auto-assign space_id, space_number)
+- `GET /api/spaces/:schoolId/:spaceId` — space details + employees + materials + responsibilities
+- `POST /api/spaces/:schoolId/:spaceId/materials` — add/update materials
+- `POST /api/spaces/:schoolId/:spaceId/employees` — assign employee to space
+- `DELETE /api/spaces/:schoolId/:spaceId/employees/:empId` — remove from space
+- `GET /api/spaces/:schoolId/categories` — list categories
+- `POST /api/spaces/:schoolId/categories` — create new category (not allowed to delete defaults)
+
+### 3c. Frontend (New `SpaceManagement` component)
+- List all spaces with category, capacity, employee count
+- Create new space: select category → auto-fills space type restrictions (classroom only in classroom category)
+- Space detail view: shows employees, materials, responsibilities
+
+---
+
+## 4. Responsibility System (Enhanced)
+
+### 4a. Enhanced [responsibilities](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs#2035-2061) table
+Add columns:
+```sql
+ALTER TABLE responsibilities ADD COLUMN IF NOT EXISTS
+  work_level VARCHAR(50),         -- fresher, junior, experienced
+  work_amount DECIMAL(12,2),
+  work_period VARCHAR(50),        -- per_day, per_week, per_month, per_year, custom
+  custom_dates JSONB,             -- for custom period
+  total_price DECIMAL(12,2);
+
+-- Link responsibilities to multiple spaces
+CREATE TABLE responsibility_spaces (
+  responsibility_id VARCHAR(255) NOT NULL,
+  school_id VARCHAR(255) NOT NULL,
+  space_id VARCHAR(255) NOT NULL,
+  PRIMARY KEY (responsibility_id, space_id)
+);
+```
+
+### 4b. Create Responsibility flow
+- Name, description
+- Choose spaces: by space category OR specific space IDs (multiple)
+- Work level: Fresher / Junior / Experienced
+- Work amount + period (per day / per week / per month / per year / custom dates)
+- Set total price (rate for this responsibility)
+
+### 4c. Assign Responsibility to Employee
+- Select employee → select multiple spaces → select responsibilities per space
+- System validates: is employee already assigned to this space?
+
+---
+
+## 5. Salary Calculation Engine
+
+### Formula
+```
+Monthly Salary =
+  Σ (spaces × responsibility_rate)         [for each responsibility across all spaces]
+  + experience_years × experience_rate     [configurable per profile type]
+  + tenure_months × tenure_rate            [configurable]
+  + bonus                                  [ad-hoc, configurable per employee]
+  + AID (Additional Incentive)             [when education > experience or vice versa]
+  – deductions                             [unauthorized absent days]
+```
+
+### Deductions
+- `daily_rate = monthly_salary / 30`
+- `deduction = unauthorized_absent_days × daily_rate`
+- Customizable %: e.g., deduct only 10% of daily rate per absent day
+
+### Backend ([emppay.rs](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/routes/emppay.rs) — extend)
+- `GET /api/employees/:schoolId/:empId/salary-breakdown` — full breakdown
+- `POST /api/employees/:schoolId/:empId/bonus` — add one-time bonus
+- `POST /api/employees/:schoolId/:empId/aid` — add Additional Incentive/Deduction
+- `GET /api/employees/:schoolId/salary-params` — school-level rate config
+
+### Frontend (`SalaryBreakdown` component)
+- Card showing: base from responsibilities, experience component, tenure component, bonus, AID
+- Total monthly salary clearly shown
+
+---
+
+## 6. Leave Management System
+
+### 6a. Database Tables
+```sql
+CREATE TABLE leave_applications (
+  id SERIAL PRIMARY KEY,
+  leave_id VARCHAR(255) UNIQUE NOT NULL,
+  school_id VARCHAR(255) NOT NULL,
+  employee_id VARCHAR(255) NOT NULL,
+  employee_name VARCHAR(255),
+  reason TEXT NOT NULL,
+  leave_type VARCHAR(50) NOT NULL,   -- paid, unpaid, medical, casual
+  from_date DATE NOT NULL,
+  to_date DATE NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',  -- pending, approved, rejected
+  approved_by VARCHAR(255),
+  salary_impact VARCHAR(50),         -- full_deduct, partial, no_deduct
+  deduct_percent DECIMAL(5,2) DEFAULT 0,
+  pdf_url TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 6b. Backend Routes (`routes/leave.rs` — new file)
+- `POST /api/leave/:schoolId` — employee applies for leave
+- `GET /api/leave/:schoolId` — list all leave applications
+- `GET /api/leave/:schoolId/employee/:empId` — employee's leaves
+- `PUT /api/leave/:schoolId/:leaveId/approve` — approve leave (generate PDF letter)
+- `PUT /api/leave/:schoolId/:leaveId/reject` — reject
+- `PUT /api/leave/:schoolId/:leaveId/extend` — extend dates
+- `PUT /api/leave/:schoolId/:leaveId/reduce` — reduce dates
+- `GET /api/leave/:schoolId/:leaveId/letter` — download PDF leave letter
+
+### 6c. PDF Leave Letter (auto-generate)
+Contents: Employee ID, Name, Reason, Period (from→to), Approved By, Leave Type, Salary Impact
+
+### 6d. Frontend
+- Leave application form (employee self-service or admin-initiated)
+- Admin leave management table with approve/reject/extend/reduce actions
+- Download letter button
+
+---
+
+## Implementation Order
+
+| Phase | Scope | Priority |
+|-------|-------|----------|
+| 1 | DB migrations (all new tables) | 🔴 Must |
+| 2 | Auto Employee ID (E0001 format) | 🔴 Must |
+| 3 | Personal Info + Contact improvements | 🔴 Must |
+| 4 | Experience + Education sections (backend + frontend) | 🔴 Must |
+| 5 | Space management backend (categories + spaces + materials) | 🔴 Must |
+| 6 | Space management frontend | 🔴 Must |
+| 7 | Responsibility enhancements (multi-space, work period) | 🔴 Must |
+| 8 | Salary engine (formula + breakdown) | 🟡 High |
+| 9 | Leave management system (backend) | 🟡 High |
+| 10 | Leave management frontend | 🟡 High |
+
+## Verification Plan
+- `cargo check` after each backend phase
+- API test with curl for each major endpoint
+- Browser test of Vidhyam UI after each frontend phase

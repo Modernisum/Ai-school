@@ -1,6 +1,6 @@
 // MaterialManagementPage.jsx - Complete Material Management System
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus, Edit3, Trash2, Save, X, Loader, CheckCircle, AlertTriangle,
   Package, ShoppingCart, TrendingUp, TrendingDown, History, DollarSign,
@@ -381,6 +381,7 @@ const HistoryModal = ({ isOpen, onClose, materialId, materialName, schoolId }) =
 // Main Material Management Component
 export default function MaterialManagementPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State Management
   const [schoolId, setSchoolId] = useState("");
@@ -390,11 +391,21 @@ export default function MaterialManagementPage() {
   const [apiSuccess, setApiSuccess] = useState(null);
 
   // Modal States
-  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(new URLSearchParams(location.search).get('add') === '1');
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+
+  // Sync showAddMaterialModal with URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('add') === '1') {
+      setShowAddMaterialModal(true);
+    } else if (params.get('add') === null && showAddMaterialModal && !params.toString().includes('add=')) {
+      setShowAddMaterialModal(false);
+    }
+  }, [location.search]);
 
   // Form States
   const [newMaterial, setNewMaterial] = useState({

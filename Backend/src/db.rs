@@ -121,7 +121,276 @@ impl DbClient {
         .execute(&pool)
         .await?;
 
+        println!("Ensuring custom_fees tables exist...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS custom_fees (
+                id SERIAL PRIMARY KEY,
+                fee_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                fee_name TEXT NOT NULL,
+                fee_type VARCHAR(50) NOT NULL DEFAULT 'one_time',
+                amount DECIMAL(12,2) NOT NULL,
+                scope VARCHAR(50) NOT NULL DEFAULT 'school',
+                target_classes JSONB DEFAULT '[]',
+                target_students JSONB DEFAULT '[]',
+                due_date DATE,
+                has_penalty BOOLEAN DEFAULT false,
+                penalty_per_day DECIMAL(12,2) DEFAULT 0,
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'active',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS custom_fee_records (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                fee_id VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
+                amount DECIMAL(12,2) NOT NULL,
+                penalty_accrued DECIMAL(12,2) DEFAULT 0,
+                paid_amount DECIMAL(12,2) DEFAULT 0,
+                status VARCHAR(50) DEFAULT 'pending',
+                payments JSONB DEFAULT '[]',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, fee_id, student_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("Ensuring referral_coupons tables exist...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS referral_coupons (
+                id SERIAL PRIMARY KEY,
+                coupon_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                coupon_name VARCHAR(255) NOT NULL,
+                discount_type VARCHAR(50) NOT NULL DEFAULT 'percentage',
+                discount_value DECIMAL(12,2) NOT NULL,
+                max_uses INTEGER DEFAULT 0,
+                current_uses INTEGER DEFAULT 0,
+                assigned_employee_id VARCHAR(255),
+                employee_reward DECIMAL(12,2) DEFAULT 0,
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'active',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, coupon_name)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS coupon_usage_log (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                coupon_id VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
+                discount_applied DECIMAL(12,2) NOT NULL,
+                employee_id VARCHAR(255),
+                reward_paid DECIMAL(12,2) DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS responsibilities (
+                id SERIAL PRIMARY KEY,
+                responsibility_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                per_day_price DECIMAL(12,2) DEFAULT 0,
+                time_period INTEGER DEFAULT 0,
+                space_category VARCHAR(255),
+                responsibility_field VARCHAR(255),
+                space_id VARCHAR(255),
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Also ensure columns exist for existing table
+        sqlx::query(
+            "ALTER TABLE responsibilities 
+             ADD COLUMN IF NOT EXISTS per_day_price DECIMAL(12,2) DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS time_period INTEGER DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS space_category VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS responsibility_field VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS space_id VARCHAR(255)"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS employee_responsibilities (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                responsibility_id VARCHAR(255) NOT NULL,
+                assigned_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, employee_id, responsibility_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Employee Experience & Education
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS employee_experience (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                organization_name VARCHAR(255) NOT NULL,
+                location VARCHAR(255),
+                position_profile_type VARCHAR(255),
+                post_type VARCHAR(50),
+                join_month_year VARCHAR(50),
+                end_date VARCHAR(50),
+                is_current BOOLEAN DEFAULT FALSE,
+                achievement_description TEXT,
+                previous_employee_id VARCHAR(255),
+                experience_letter_url TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS employee_education (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                education_level VARCHAR(100) NOT NULL,
+                institute_name VARCHAR(255) NOT NULL,
+                location VARCHAR(255),
+                stream_subject VARCHAR(255),
+                pass_year VARCHAR(50),
+                marks_details VARCHAR(50),
+                medium VARCHAR(50),
+                document_url TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Spaces and space management
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS space_categories (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                UNIQUE(school_id, name)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS spaces (
+                id SERIAL PRIMARY KEY,
+                space_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                space_name VARCHAR(255) NOT NULL,
+                space_category VARCHAR(255) NOT NULL,
+                space_number VARCHAR(50),
+                capacity INTEGER DEFAULT 0,
+                data JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS space_materials (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                material_name VARCHAR(255) NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                unit VARCHAR(50),
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS space_employees (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                UNIQUE(school_id, space_id, employee_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Responsibility Spaces
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS responsibility_spaces (
+                responsibility_id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                PRIMARY KEY (responsibility_id, space_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Enhance Responsibilities table
+        sqlx::query(
+            "ALTER TABLE responsibilities 
+             ADD COLUMN IF NOT EXISTS work_level VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS work_amount DECIMAL(12,2) DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS work_period VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS custom_dates JSONB DEFAULT '[]',
+             ADD COLUMN IF NOT EXISTS total_price DECIMAL(12,2) DEFAULT 0"
+        )
+        .execute(&pool)
+        .await?;
+
+        // Leave Management
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS leave_applications (
+                id SERIAL PRIMARY KEY,
+                leave_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                employee_name VARCHAR(255),
+                reason TEXT NOT NULL,
+                leave_type VARCHAR(50) NOT NULL,
+                from_date DATE NOT NULL,
+                to_date DATE NOT NULL,
+                status VARCHAR(50) DEFAULT 'pending',
+                approved_by VARCHAR(255),
+                salary_impact VARCHAR(50),
+                deduct_percent DECIMAL(5,2) DEFAULT 0,
+                pdf_url TEXT,
+                notes TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         println!("Connecting to Redis...");
+
         let cfg = Config::from_url(redis_url);
         let redis = cfg.create_pool(Some(Runtime::Tokio1))?;
 

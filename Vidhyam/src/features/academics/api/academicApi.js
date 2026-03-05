@@ -43,10 +43,10 @@ export const academicApi = createApi({
             transformResponse: (response) => response.data || response.subjects || [],
         }),
         addSubject: builder.mutation({
-            query: ({ schoolId, subjectName, className, subjectFees }) => ({
+            query: ({ schoolId, ...subjectData }) => ({
                 url: `/subjects/${schoolId}`,
                 method: 'POST',
-                body: { subjectName, className, subjectFees },
+                body: subjectData,
             }),
             invalidatesTags: ['Subject'],
         }),
@@ -60,7 +60,7 @@ export const academicApi = createApi({
 
         // ---- Exam / Paper Generation ----
         getClassIds: builder.query({
-            query: (schoolId) => `/academic/${schoolId}/classIds`,
+            query: (schoolId) => `/class/${schoolId}/classIds`,
             providesTags: ['Class'],
             transformResponse: (response) => response.classIds || [],
         }),

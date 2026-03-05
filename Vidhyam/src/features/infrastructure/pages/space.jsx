@@ -4,6 +4,7 @@ import {
   Box, Plus, ChevronDown, ChevronRight, Loader, Search,
   CheckCircle, AlertTriangle, X, RefreshCw, Trash2, Package, Upload
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL + "/spaces";
@@ -14,13 +15,24 @@ const getSchoolId = () => {
 };
 
 export default function SpaceManagement() {
+  const location = useLocation();
   const schoolId = getSchoolId();
   const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [toast, setToast] = useState(null);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(new URLSearchParams(location.search).get('add') === '1');
+
+  // Sync showAdd with URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('add') === '1') {
+      setShowAdd(true);
+    } else if (params.get('add') === null && showAdd && !params.toString().includes('add=')) {
+      setShowAdd(false);
+    }
+  }, [location.search]);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 

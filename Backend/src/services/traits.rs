@@ -263,6 +263,40 @@ pub trait OperationsService: Send + Sync {
         employee_id: &str,
         data: Value,
     ) -> Result<Value, AppError>;
+
+    // Custom Fees
+    async fn create_custom_fee(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn list_custom_fees(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+    async fn remove_custom_fee(
+        &self,
+        school_id: &str,
+        fee_id: &str,
+    ) -> Result<(), AppError>;
+    async fn apply_custom_fee(
+        &self,
+        school_id: &str,
+        fee_id: &str,
+    ) -> Result<Value, AppError>;
+    async fn get_student_profile(
+        &self,
+        school_id: &str,
+        student_id: &str,
+    ) -> Result<Option<Value>, AppError>;
+
+    // Referral Coupons
+    async fn create_coupon(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
+    async fn list_coupons(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn remove_coupon(&self, school_id: &str, coupon_id: &str) -> Result<(), AppError>;
+    async fn toggle_block_coupon(&self, school_id: &str, coupon_id: &str, blocked: bool) -> Result<(), AppError>;
+    async fn validate_coupon(&self, school_id: &str, coupon_name: &str) -> Result<Option<Value>, AppError>;
+    async fn use_coupon(&self, school_id: &str, coupon_id: &str, student_id: &str, discount: f64) -> Result<Value, AppError>;
 }
 
 #[async_trait]
@@ -297,6 +331,50 @@ pub trait ResourceService: Send + Sync {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError>;
+
+    async fn create_space(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+
+    async fn get_space_details(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<Option<Value>, AppError>;
+
+    async fn get_space_categories(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn create_space_category(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+
+    async fn assign_space_materials(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        materials: Vec<Value>,
+    ) -> Result<(), AppError>;
+
+    async fn assign_space_employees(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_ids: Vec<String>,
+    ) -> Result<(), AppError>;
+
+    async fn remove_space_employee(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_id: &str,
+    ) -> Result<(), AppError>;
 
     async fn create_material(
         &self,
@@ -382,7 +460,34 @@ pub trait ResponsibilityService: Send + Sync {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError>;
+
+    async fn create_responsibility(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+
+    async fn assign_responsibility(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        responsibility_id: &str,
+    ) -> Result<(), AppError>;
+
+    async fn remove_responsibility(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        responsibility_id: &str,
+    ) -> Result<(), AppError>;
+
+    async fn list_employee_responsibilities(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+    ) -> Result<Value, AppError>;
 }
+
 
 #[async_trait]
 pub trait TaskService: Send + Sync {

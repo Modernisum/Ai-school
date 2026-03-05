@@ -60,6 +60,64 @@ impl ResourceService for PostgresResourceService {
         self.repos.resource.get_spaces(school_id).await
     }
 
+    async fn create_space(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.resource.create_space(school_id, data).await
+    }
+
+    async fn get_space_details(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.resource.get_space_details(school_id, space_id).await
+    }
+
+    async fn get_space_categories(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.resource.get_space_categories(school_id).await
+    }
+
+    async fn create_space_category(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.resource.create_space_category(school_id, data).await
+    }
+
+    async fn assign_space_materials(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        materials: Vec<Value>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.assign_space_materials(school_id, space_id, materials).await
+    }
+
+    async fn assign_space_employees(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_ids: Vec<String>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.assign_space_employees(school_id, space_id, employee_ids).await
+    }
+
+    async fn remove_space_employee(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.remove_space_employee(school_id, space_id, employee_id).await
+    }
+
     async fn create_material(
         &self,
         school_id: &str,

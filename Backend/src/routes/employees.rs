@@ -13,15 +13,29 @@ pub async fn create_employee(
     Json(payload): Json<CreateEmployeeRequest>,
 ) -> impl IntoResponse {
     let emp_data = json!({
+        "employeeId": payload.employee_id,
         "name": payload.name,
-        "type": payload.employee_type,
+        "fatherName": payload.father_name,
+        "motherName": payload.mother_name,
+        "dob": payload.dob,
+        "age": payload.age,
+        "gender": payload.gender,
+        "category": payload.category,
+        "bloodGroup": payload.blood_group,
+        "type": payload.employee_type.clone(),
+        "employeeType": payload.employee_type,
+        "baseSalary": payload.base_salary,
         "email": payload.email,
         "phone": payload.phone,
+        "emergencyContact": payload.emergency_contact,
         "subject": payload.subject,
         "department": payload.department,
-        "baseSalary": payload.base_salary,
         "address": payload.address,
+        "temporaryAddress": payload.temporary_address,
+        "experience": payload.experience,
+        "education": payload.education,
     });
+
 
     match state
         .services

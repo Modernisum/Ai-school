@@ -234,6 +234,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/spaces/:schoolId/spaces/bulk",
             axum::routing::post(routes::spaces::bulk_import_spaces),
         )
+        // Advanced Space Management Routes
+        .route(
+            "/api/spaces/:schoolId/categories",
+            get(routes::spaces::get_space_categories),
+        )
+        .route(
+            "/api/spaces/:schoolId/categories",
+            post(routes::spaces::create_space_category),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId",
+            get(routes::spaces::get_space_details),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId/materials",
+            post(routes::spaces::assign_space_materials),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId/employees",
+            post(routes::spaces::assign_space_employees),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId/employees/:employeeId",
+            delete(routes::spaces::remove_space_employee),
+        )
         // Bulk import for materials
         .route(
             "/api/materials/:schoolId/bulk",
@@ -335,7 +360,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .route(
                     "/:schoolId/student/:studentId/discount",
                     post(routes::fees::apply_discount),
+                )
+                // Custom Fees
+                .route(
+                    "/:schoolId/custom",
+                    get(routes::fees::list_custom_fees).post(routes::fees::create_custom_fee),
+                )
+                .route(
+                    "/:schoolId/custom/:feeId",
+                    delete(routes::fees::delete_custom_fee),
+                )
+                .route(
+                    "/:schoolId/custom/:feeId/apply",
+                    post(routes::fees::apply_custom_fee),
+                )
+                // Referral Coupons
+                .route(
+                    "/:schoolId/coupons",
+                    get(routes::fees::list_coupons).post(routes::fees::create_coupon),
+                )
+                .route(
+                    "/:schoolId/coupons/validate",
+                    post(routes::fees::validate_coupon),
+                )
+                .route(
+                    "/:schoolId/coupons/:couponId",
+                    delete(routes::fees::delete_coupon),
+                )
+                .route(
+                    "/:schoolId/coupons/:couponId/block",
+                    put(routes::fees::block_coupon),
+                )
+                .route(
+                    "/:schoolId/coupons/:couponId/use",
+                    post(routes::fees::use_coupon),
                 ),
+        )
+        // Student Profile (enriched with fee breakdown)
+        .route(
+            "/api/students/:schoolId/students/:studentId/profile",
+            get(routes::fees::get_student_profile),
         )
         .nest(
             "/api/payroll",
@@ -376,10 +440,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/reminder/:schoolId",
             get(routes::reminder::list_reminders),
         )
-        .route(
-            "/api/responsibility/:schoolId",
-            get(routes::responsibility::list_responsibilities),
+        .nest(
+            "/api/responsibility",
+            Router::new()
+                .route(
+                    "/:schoolId",
+                    get(routes::responsibility::list_responsibilities)
+                        .post(routes::responsibility::create_responsibility),
+                )
+                .route(
+                    "/:schoolId/employees/:employeeId/responsibilities",
+                    get(routes::responsibility::list_employee_responsibilities)
+                        .post(routes::responsibility::assign_responsibility),
+                )
+                .route(
+                    "/:schoolId/employees/:employeeId/responsibilities/:responsibilityId",
+                    delete(routes::responsibility::remove_responsibility),
+                ),
         )
+
         .route(
             "/api/school/:schoolId",
             get(routes::school::get_school_details)

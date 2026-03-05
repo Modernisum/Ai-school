@@ -39,14 +39,27 @@ pub struct StudentResponse {
 #[serde(rename_all = "camelCase")]
 pub struct CreateEmployeeRequest {
     pub name: String,
+    pub employee_id: Option<String>,
+    pub father_name: Option<String>,
+    pub mother_name: Option<String>,
+    pub dob: Option<String>,
+    pub age: Option<i32>,
+    pub gender: Option<String>,
+    pub category: Option<String>,
+    pub blood_group: Option<String>,
     pub employee_type: String,
     pub base_salary: Option<f64>,
     pub email: Option<String>,
     pub phone: Option<String>,
+    pub emergency_contact: Option<String>,
     pub subject: Option<String>,
     pub department: Option<String>,
     pub address: Option<String>,
+    pub temporary_address: Option<String>,
+    pub experience: Option<Vec<serde_json::Value>>,
+    pub education: Option<Vec<serde_json::Value>>,
 }
+
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

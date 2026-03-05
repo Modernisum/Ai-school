@@ -82,6 +82,9 @@ export default function AccountPage() {
                 lastBillingDate: s.lastBillingDate || null,
                 isBlocked: s.isBlocked || false,
             });
+            if (s.classLevel) {
+                localStorage.setItem('schoolLevel', String(s.classLevel));
+            }
         } catch (e) {
             console.warn('Fetch error:', e);
         } finally {
@@ -133,6 +136,9 @@ export default function AccountPage() {
                 throw new Error(err.message || `HTTP ${res.status}`);
             }
             setData({ ...draft });
+            if (draft.classLevel) {
+                localStorage.setItem('schoolLevel', String(draft.classLevel));
+            }
             setEditSection(null);
             showToast('success', 'Account updated successfully');
         } catch (e) {

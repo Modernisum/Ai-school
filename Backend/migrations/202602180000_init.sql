@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS tokens (
 -- Students
 CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
-    student_id VARCHAR(255) UNIQUE NOT NULL,
+    student_id VARCHAR(255) NOT NULL,
     school_id VARCHAR(255) NOT NULL,
     class_name VARCHAR(100) NOT NULL,
     name TEXT,
@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS students (
     section VARCHAR(50),
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(school_id, student_id)
 );
 
 -- Employees

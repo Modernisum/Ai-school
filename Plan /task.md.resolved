@@ -1,61 +1,77 @@
-# Project Tasks
+# Task: Employee System Overhaul
 
-## v0.0.3 - Dynamic Fees & Attendance Profile
-- [x] Update [addstudent.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/component/ui/addstudent.jsx) class selection to fetch from `/api/class/:schoolId/classes`
-- [x] Fetch class subjects and fees when a class is selected
-- [x] Add subject selection UI to [addstudent.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/component/ui/addstudent.jsx)
-- [x] Sum selected subject fees dynamically into read-only field
-- [x] Implement full attendance API in Rust backend ([attendance.rs](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/routes/attendance.rs))
-- [x]   POST `/:schoolId/:role/:userId/present` (mark present, with inTime/outTime/totalTime)
-- [x]   POST `/:schoolId/:role/:userId/holiday` (mark holiday with description)
-- [x]   PUT `/:schoolId/:role/:userId/:date` (update outTime, recalculate totalTime)
-- [x]   GET `/:schoolId/:role/:userId` (list attendance records)
-- [x]   DELETE `/:schoolId/:role/:userId/:date` (delete record + audit log)
-- [x] Add Attendance Calendar to Student Profile (react-calendar)
-- [x] Add Attendance Doughnut Chart to Student Profile (recharts)
-- [x] Add Attendance Detailed Log filter + PDF Export
+## Phase 1: Database Migrations
+- [ ] Auto Employee ID sequence (E0001 format)
+- [ ] `employee_experience` table (or JSONB in employees.data)
+- [ ] `employee_education` table (or JSONB in employees.data)
+- [ ] `space_categories` table (with 3 default non-deletable entries)
+- [ ] [spaces](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs#984-1032) table (enhanced — space_id auto, space_number auto)
+- [ ] `space_materials` table
+- [ ] `space_employees` table
+- [ ] `responsibility_spaces` table (multi-space link)
+- [ ] Enhanced [responsibilities](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs#2035-2061) table (work_level, work_amount, work_period, custom_dates, total_price)
+- [ ] `leave_applications` table
 
-## v0.0.2 - Bulk Import Feature
-- [x] Create `POST /api/school/:schoolId/students/bulk`
-- [x] Implement student auto-generation logic (rollNumber, section, studentId) for loops in bulk API.
-- [x] Create `POST /api/school/:schoolId/employees/bulk`
-- [x] Create `POST /api/school/:schoolId/spaces/bulk`
-- [x] Create `POST /api/school/:schoolId/materials/bulk`
-- [x] Ensure DB transactions are used so partial fail/success is tracked
+## Phase 2: Auto Employee ID + Employee Model
+- [ ] Fix [generate_employee_id](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/repository/postgres.rs#804-811) to produce E0001 format
+- [ ] Update [CreateEmployeeRequest](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/models/user.rs#40-54) model for all new fields
+- [ ] Update [create_employee](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Backend/src/services/employee_service.rs#15-31) handler and service
 
-## Frontend — Bulk Import Component (`Admin/src/component/ui`)
-- [x] Install `xlsx` or parsing library.
-- [x] Create `<BulkImportModal />` component.
-- [x] Implement File Upload (Drag & Drop) and reading logic.
-- [x] Implement Data Preview table (showing valid / invalid rows).
-- [x] Implement pre-validation schema matching (e.g. check for `name`)
-- [x] Create function to dispatch valid JSON payload to backend.
+## Phase 3: Experience & Education Backend
+- [ ] Add save/get experience entries API
+- [ ] Add save/get education entries API
 
-## Frontend — Integration (`Admin/src/pages`)
-- [x] Add "Bulk Import" button to [student.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/student.jsx) page.
-- [x] Add "Bulk Import" button to [employee.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/employee.jsx) page.
-- [x] Add "Bulk Import" button to `Space.jsx` page.
-- [x] Add "Bulk Import" button to [Materials.jsx](file:///home/shivnk/.gemini/antigravity/playground/deep-helix/Ai-school/Admin/src/pages/Materials.jsx) page.
-- [x] Wire buttons to open `<BulkImportModal />` with correct configuration.
-- [x] Add template download links (e.g., "Download Student Excel Template").
+## Phase 4: Space Management Backend
+- [ ] `GET /api/spaces/:schoolId/categories`
+- [ ] `POST /api/spaces/:schoolId/categories`
+- [ ] `POST /api/spaces/:schoolId` (create space, auto ID)
+- [ ] `GET /api/spaces/:schoolId/:spaceId` (details with employees + materials)
+- [ ] `POST /api/spaces/:schoolId/:spaceId/materials`
+- [ ] `POST /api/spaces/:schoolId/:spaceId/employees`
+- [ ] `DELETE /api/spaces/:schoolId/:spaceId/employees/:empId`
 
-## Phase 2 - Mobile Apps (Adhyapk & Chatra)
-- [x] Install Flutter SDK on the server environment.
-- [x] Initialize teacher app: `adhyapk`
-- [x] Initialize student app: `chatra`
-- [x] Configure `http` or `dio` and `flutter_secure_storage` packages.
-- [x] Implement HTTP client pointing to `http://localhost:8080` (Backend API).
-- [x] Implement Mobile Login Screen (Phone/Student ID -> OTP "1234").
-- [x] Verify WhatsApp-style token saves correctly to secure storage.
+## Phase 5: Responsibility System Enhancement
+- [ ] Multi-space support for responsibilities
+- [ ] Work level / work period / total price fields
+- [ ] `responsibility_spaces` assignment API
 
-## Environment Setup (Testing & Emulation)
-- [x] Install OpenJDK 17 and QEMU/KVM dependencies for Android Emulation.
-- [x] Download and configure Android Command Line Tools (`cmdline-tools`).
-- [x] Accept Android SDK licenses and install `platform-tools` (ADB) and `emulator`.
-- [x] Download Android 34 System Image (`x86_64`).
-- [x] Create Android Virtual Device (`avd`) named `test_device`.
-- [x] Start the Android Emulator for Flutter debugging.
+## Phase 6: Salary Engine
+- [ ] `GET /api/employees/:schoolId/:empId/salary-breakdown`
+- [ ] `POST /api/employees/:schoolId/:empId/bonus`
+- [ ] `POST /api/employees/:schoolId/:empId/aid`
+- [ ] Formula: spaces * rate + exp_years * exp_rate + tenure_months * tenure_rate + bonus - deductions
 
+## Phase 7: Leave Management Backend
+- [ ] `POST /api/leave/:schoolId`
+- [ ] `GET /api/leave/:schoolId`
+- [ ] `PUT /api/leave/:schoolId/:leaveId/approve`
+- [ ] `PUT /api/leave/:schoolId/:leaveId/reject`
+- [ ] `PUT /api/leave/:schoolId/:leaveId/extend`
+- [ ] `PUT /api/leave/:schoolId/:leaveId/reduce`
+- [ ] PDF leave letter generation
 
+## Phase 8: Frontend — Employee Form Redesign
+- [ ] Auto ID dialog after creation (E0001)
+- [ ] Employee type dropdown
+- [ ] Separate Personal Info section
+- [ ] Separate Experience section (multi-entry)
+- [ ] Separate Education section (multi-entry)
+- [ ] Separate Contact Info section
+- [ ] Separate Responsibility section (space-linked)
 
+## Phase 9: Frontend — Space Management
+- [ ] Space list page
+- [ ] Create/edit space form
+- [ ] Space detail view (employees, materials, responsibilities)
+- [ ] Space category management
 
+## Phase 10: Frontend — Salary & Leave
+- [ ] Salary breakdown component
+- [ ] Leave application form
+- [ ] Leave management table (admin)
+- [ ] Leave letter download
+
+## Verification
+- [ ] cargo check after each backend phase
+- [ ] API curl tests per endpoint
+- [ ] Browser test after each frontend phase

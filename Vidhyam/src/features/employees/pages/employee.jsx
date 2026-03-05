@@ -37,6 +37,16 @@ export default function EmployeeManagement() {
     const [showAddForm, setShowAddForm] = useState(new URLSearchParams(location.search).get('add') === '1');
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
+    // Sync showAddForm with URL search params
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('add') === '1') {
+            setShowAddForm(true);
+        } else if (params.get('add') === null && showAddForm && !params.toString().includes('add=')) {
+            setShowAddForm(false);
+        }
+    }, [location.search]);
+
     const showToast = (type, msg) => {
         setToast({ type, msg });
         setTimeout(() => setToast(null), 3000);

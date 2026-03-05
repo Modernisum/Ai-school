@@ -19,10 +19,6 @@ const SUB_LINKS = {
     { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
     { label: "Add Employee", path: "/dashboard/employee?add=1", icon: UserPlus },
   ],
-  Class: [
-    { label: "All Classes", path: "/dashboard/class", icon: School },
-    { label: "Add Class", path: "/dashboard/class?add=1", icon: Plus },
-  ],
   Subject: [
     { label: "All Subjects", path: "/dashboard/subject", icon: BookOpen },
     { label: "Add Subject", path: "/dashboard/subject?add=1", icon: BookPlus },
@@ -42,6 +38,7 @@ const SUB_LINKS = {
   Fees: [
     { label: "Fee Records", path: "/dashboard/fees", icon: CreditCard },
     { label: "Record Fee", path: "/dashboard/fees?add=1", icon: Plus },
+    { label: "Referral Coupons", path: "/dashboard/referral-coupons", icon: ClipboardList },
   ],
   Attendance: [
     { label: "View Attendance", path: "/dashboard/attendance", icon: CalendarCheck },
@@ -55,7 +52,6 @@ const menuItems = [
   { name: "Employee", icon: UserCheck, path: "/dashboard/employee" },
   { name: "Announcements", icon: Bell, path: "/dashboard/announcements" },
   { name: "Fees", icon: CreditCard, path: "/dashboard/fees" },
-  { name: "Class", icon: School, path: "/dashboard/class" },
   { name: "Subject", icon: BookOpen, path: "/dashboard/subject" },
   { name: "Space", icon: Box, path: "/dashboard/space" },
   { name: "Materials", icon: Layers, path: "/dashboard/materials" },
@@ -67,134 +63,198 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // A nav item is "active" if current path starts with item's path
-  const isSectionActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + "?") || location.pathname.startsWith(path + "/");
+  // Robust active state detection
+  const isPathActive = (path) => {
+    if (!path) return false;
+    const [pathname, search] = path.split('?');
+    const isMainPathMatch = location.pathname === pathname;
+
+    if (search) {
+      const currentParams = new URLSearchParams(location.search);
+      const targetParams = new URLSearchParams(search);
+      let paramsMatch = true;
+      targetParams.forEach((value, key) => {
+        if (currentParams.get(key) !== value) paramsMatch = false;
+      });
+      return isMainPathMatch && paramsMatch;
+    }
+
+    // For main links without search params, they are only active if the pathname matches EXACTLY
+    // AND there are no 'add' or 'mark' parameters in the current search.
+    const currentParams = new URLSearchParams(location.search);
+    const hasSpecialParam = currentParams.has('add') || currentParams.has('mark');
+    return isMainPathMatch && !hasSpecialParam;
+  };
+
+  const isSectionActive = (path) => {
+    if (!path) return false;
+    // Match exact path or sub-paths starting with the path followed by a slash (to avoid /employee matching /employeeform)
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   const isProfileActive = isSectionActive("/dashboard/school-profile");
 
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarOpen ? 240 : 72 }}
+      animate={{ width: sidebarOpen ? 260 : 76 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="relative z-50 h-screen bg-slate-950 border-r border-white/5 flex flex-col overflow-hidden flex-shrink-0"
+      className="relative z-50 h-screen bg-slate-950 border-r border-white/5 flex flex-col overflow-hidden flex-shrink-0 shadow-2xl"
     >
+      {/* Glow Effect */}
+      <div className="absolute top-0 -left-20 w-40 h-40 bg-indigo-500/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 -right-20 w-40 h-40 bg-violet-500/10 blur-[100px] pointer-events-none" />
+
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-white/5">
-        <AnimatePresence initial={false}>
-          {sidebarOpen && (
+      <div className="flex items-center justify-between px-5 h-20 border-b border-white/[0.03]">
+        <AnimatePresence initial={false} mode="wait">
+          {sidebarOpen ? (
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.18 }}
-              className="flex items-center gap-2.5 overflow-hidden"
+              key="expanded-logo"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 overflow-hidden"
+              onClick={() => navigate("/dashboard/home")}
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">V</span>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
+                <span className="text-white font-black text-lg tracking-tighter">V</span>
               </div>
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-bold text-white whitespace-nowrap tracking-wide leading-tight">Vidhyam</span>
-                <span className="text-[10px] text-indigo-400 whitespace-nowrap leading-tight font-medium tracking-wide">School Operations</span>
+              <div className="flex flex-col overflow-hidden cursor-pointer">
+                <span className="text-sm font-bold text-white whitespace-nowrap tracking-tight leading-tight">Vidhyam</span>
+                <span className="text-[10px] text-indigo-400 whitespace-nowrap leading-tight font-semibold tracking-wider uppercase opacity-80">Management</span>
               </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="collapsed-logo"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20"
+              onClick={() => navigate("/dashboard/home")}
+            >
+              <span className="text-white font-black text-lg">V</span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {!sidebarOpen && (
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center mx-auto">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
+        {sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all group"
+          >
+            <Menu size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+          </button>
         )}
-
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="ml-auto text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all"
-        >
-          <Menu size={16} />
-        </button>
       </div>
 
+      {!sidebarOpen && (
+        <div className="flex justify-center py-4 border-b border-white/[0.03]">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"
+          >
+            <Menu size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-0.5 pb-4">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 custom-scrollbar">
         {menuItems.map((item) => {
           const { name, icon: Icon, path } = item;
-          const active = isSectionActive(path);
+          const sectionActive = isSectionActive(path);
           const subs = SUB_LINKS[name];
-          // Sub-nav is expanded when: sidebar is open AND this section is active
-          const subsExpanded = sidebarOpen && active && !!subs;
+          const subsExpanded = sidebarOpen && sectionActive && !!subs;
 
           return (
-            <div key={name}>
-              {/* Main Nav Button — always navigates to the page */}
+            <div key={name} className="relative group">
+              {/* Main Nav Button */}
               <NavLink
                 to={path}
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group overflow-hidden w-full
-                  ${active
-                    ? "bg-indigo-500/20 text-indigo-300"
-                    : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
-                  }`}
+                className={({ isActive }) => `
+                  relative flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group overflow-hidden w-full
+                  ${sectionActive
+                    ? "bg-gradient-to-r from-indigo-500/15 to-transparent text-indigo-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
+                    : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]"
+                  }
+                `}
               >
-                {active && (
+                {sectionActive && (
                   <motion.div
-                    layoutId="active-bar"
-                    className="absolute left-0 top-2 bottom-2 w-0.5 bg-indigo-400 rounded-r-full"
+                    layoutId="active-indicator"
+                    className="absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"
                   />
                 )}
-                <Icon size={18} className={`flex-shrink-0 ${active ? "text-indigo-400" : ""}`} />
+
+                <Icon
+                  size={18}
+                  className={`flex-shrink-0 transition-transform duration-300 group-hover:scale-110 
+                    ${sectionActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}
+                />
+
                 <AnimatePresence>
                   {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -8 }}
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-sm font-medium whitespace-nowrap flex-1"
+                      exit={{ opacity: 0, x: -10 }}
+                      className="flex-1 flex items-center justify-between overflow-hidden"
                     >
-                      {name}
-                    </motion.span>
+                      <span className={`text-[13px] font-semibold whitespace-nowrap ${sectionActive ? "text-indigo-100" : "text-slate-300"}`}>
+                        {name}
+                      </span>
+                      {subs && (
+                        <ChevronRight
+                          size={13}
+                          className={`transition-transform duration-300 ${subsExpanded ? "rotate-90 text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`}
+                        />
+                      )}
+                    </motion.div>
                   )}
                 </AnimatePresence>
-                {/* Chevron shows when sidebar is open and item has sub-links */}
-                {sidebarOpen && subs && (
-                  <motion.div
-                    animate={{ rotate: subsExpanded ? 90 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex-shrink-0"
-                  >
-                    <ChevronRight size={13} className="text-slate-600" />
-                  </motion.div>
+
+                {/* Tooltip for collapsed state */}
+                {!sidebarOpen && (
+                  <div className="absolute left-16 px-2 py-1 bg-slate-800 text-white text-[11px] font-medium rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl border border-white/10">
+                    {name}
+                  </div>
                 )}
               </NavLink>
 
-              {/* Sub-links — auto expand when section is active, collapse when inactive */}
+              {/* Sub-links */}
               <AnimatePresence>
                 {subsExpanded && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                     className="overflow-hidden"
                   >
-                    <div className="ml-7 mt-0.5 mb-1 space-y-0.5 pl-3 border-l border-white/[0.06]">
-                      {subs.map((sub) => (
-                        <NavLink
-                          key={sub.label}
-                          to={sub.path}
-                          className={({ isActive: sa }) =>
-                            `flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all
-                            ${sa
-                              ? "bg-indigo-500/15 text-indigo-300"
-                              : "text-slate-500 hover:text-white hover:bg-white/5"
-                            }`
-                          }
-                        >
-                          <sub.icon size={13} className="flex-shrink-0 text-indigo-400" />
-                          <span className="whitespace-nowrap font-medium">{sub.label}</span>
-                        </NavLink>
-                      ))}
+                    <div className="ml-8 mt-1.5 mb-2 space-y-1 pl-3 border-l-2 border-white/[0.04]">
+                      {subs.map((sub) => {
+                        const subActive = isPathActive(sub.path);
+                        return (
+                          <NavLink
+                            key={sub.label}
+                            to={sub.path}
+                            className={`
+                              flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all duration-200
+                              ${subActive
+                                ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                                : "text-slate-500 hover:text-white hover:bg-white/[0.03]"
+                              }
+                            `}
+                          >
+                            <sub.icon size={12} className={`flex-shrink-0 ${subActive ? "text-indigo-400" : "text-slate-600"}`} />
+                            <span className="whitespace-nowrap font-medium tracking-tight">{sub.label}</span>
+                          </NavLink>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}
@@ -205,33 +265,32 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       </nav>
 
       {/* School Profile Button */}
-      <div className="p-3 border-t border-white/5">
+      <div className="p-4 border-t border-white/[0.03] bg-slate-950/50 backdrop-blur-md">
         <button
           onClick={() => navigate("/dashboard/school-profile")}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+          className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 group relative
             ${isProfileActive
-              ? "bg-orange-500/20 text-orange-300"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
+              ? "bg-gradient-to-r from-orange-500/20 to-transparent text-orange-200"
+              : "text-slate-400 hover:text-white hover:bg-white/[0.03]"
             } ${!sidebarOpen ? "justify-center" : ""}`}
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-2 transition-all
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300
             ${isProfileActive
-              ? "bg-orange-500/30 ring-orange-500/50"
-              : "bg-slate-800 ring-slate-700 group-hover:ring-indigo-500/50"
+              ? "bg-orange-500/30 shadow-lg shadow-orange-500/20 scale-105"
+              : "bg-slate-900 border border-white/[0.05] group-hover:scale-105 group-hover:bg-slate-800"
             }`}>
-            <School size={16} className={isProfileActive ? "text-orange-400" : "text-slate-400 group-hover:text-white"} />
+            <School size={18} className={isProfileActive ? "text-orange-400" : "text-slate-400 group-hover:text-white"} />
           </div>
           <AnimatePresence>
             {sidebarOpen && (
               <motion.div
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex flex-col items-start overflow-hidden"
+                exit={{ opacity: 0, x: -10 }}
+                className="flex flex-col items-start overflow-hidden ml-1"
               >
-                <span className="text-sm font-semibold whitespace-nowrap leading-tight">Account</span>
-                <span className="text-[10px] text-slate-500 whitespace-nowrap leading-tight">Settings & Sign Out</span>
+                <span className="text-sm font-bold whitespace-nowrap leading-tight">School Profile</span>
+                <span className="text-[10px] text-slate-500 whitespace-nowrap font-medium tracking-tight group-hover:text-slate-400 transition-colors">Settings & Logout</span>
               </motion.div>
             )}
           </AnimatePresence>

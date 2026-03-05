@@ -519,6 +519,68 @@ impl OperationsService for PostgresOperationsService {
 
         Ok(data)
     }
+
+    // ---- Custom Fees ----
+
+    async fn create_custom_fee(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.add_custom_fee(school_id, data).await
+    }
+
+    async fn list_custom_fees(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.get_custom_fees(school_id).await
+    }
+
+    async fn remove_custom_fee(
+        &self,
+        school_id: &str,
+        fee_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.operations.delete_custom_fee(school_id, fee_id).await
+    }
+
+    async fn apply_custom_fee(
+        &self,
+        school_id: &str,
+        fee_id: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.apply_custom_fee(school_id, fee_id).await
+    }
+
+    async fn get_student_profile(
+        &self,
+        school_id: &str,
+        student_id: &str,
+    ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.get_student_profile(school_id, student_id).await
+    }
+
+    // ---- Referral Coupons ----
+
+    async fn create_coupon(&self, school_id: &str, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.create_coupon(school_id, data).await
+    }
+    async fn list_coupons(&self, school_id: &str) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.get_coupons(school_id).await
+    }
+    async fn remove_coupon(&self, school_id: &str, coupon_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.operations.delete_coupon(school_id, coupon_id).await
+    }
+    async fn toggle_block_coupon(&self, school_id: &str, coupon_id: &str, blocked: bool) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.operations.block_coupon(school_id, coupon_id, blocked).await
+    }
+    async fn validate_coupon(&self, school_id: &str, coupon_name: &str) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.validate_coupon(school_id, coupon_name).await
+    }
+    async fn use_coupon(&self, school_id: &str, coupon_id: &str, student_id: &str, discount: f64) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos.operations.use_coupon(school_id, coupon_id, student_id, discount).await
+    }
 }
 
 impl PostgresOperationsService {
