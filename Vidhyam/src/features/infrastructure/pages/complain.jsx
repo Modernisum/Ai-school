@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Loader, RefreshCw, CheckCircle, AlertTriangle, X, Clock, User } from 'lucide-react';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';

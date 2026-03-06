@@ -227,6 +227,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .route(
                     "/:schoolId/employees/:employeeId",
                     delete(routes::employees::delete_employee),
+                )
+                .route(
+                    "/:schoolId/:employeeId/salary-breakdown",
+                    get(routes::emppay::get_salary_breakdown),
+                )
+                .route(
+                    "/:schoolId/:employeeId/bonus",
+                    post(routes::emppay::add_bonus),
+                )
+                .route(
+                    "/:schoolId/:employeeId/aid",
+                    post(routes::emppay::add_aid),
                 ),
         )
         // Bulk import for spaces
@@ -244,8 +256,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             post(routes::spaces::create_space_category),
         )
         .route(
+            "/api/spaces/:schoolId/categories/:categoryId",
+            delete(routes::spaces::delete_category),
+        )
+        .route(
             "/api/spaces/:schoolId/:spaceId",
             get(routes::spaces::get_space_details),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId",
+            put(routes::spaces::update_space),
+        )
+        .route(
+            "/api/spaces/:schoolId/:spaceId",
+            delete(routes::spaces::delete_space),
         )
         .route(
             "/api/spaces/:schoolId/:spaceId/materials",
@@ -458,6 +482,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     delete(routes::responsibility::remove_responsibility),
                 ),
         )
+        .nest(
+            "/api/leave",
+            Router::new()
+                .route("/:schoolId", post(routes::leave::create_leave).get(routes::leave::list_leaves))
+                .route("/:schoolId/:leaveId/approve", post(routes::leave::approve_leave))
+                .route("/:schoolId/:leaveId/reject", post(routes::leave::reject_leave))
+                .route("/:schoolId/:leaveId/extend", post(routes::leave::extend_leave))
+                .route("/:schoolId/:leaveId/reduce", post(routes::leave::reduce_leave)),
+        )
 
         .route(
             "/api/school/:schoolId",
@@ -485,7 +518,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .route(
             "/api/spaces/:schoolId/spaces",
-            get(routes::spaces::list_spaces),
+            get(routes::spaces::list_spaces).post(routes::spaces::create_space),
         )
         .route("/api/task/:schoolId", get(routes::task::list_tasks))
         // OCR Routes

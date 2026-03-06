@@ -21,6 +21,7 @@ pub struct Repositories {
     pub school: Arc<dyn SchoolRepository + Send + Sync>,
     pub responsibility: Arc<dyn ResponsibilityRepository + Send + Sync>,
     pub task: Arc<dyn TaskRepository + Send + Sync>,
+    pub leave: Arc<dyn LeaveRepository + Send + Sync>,
     pub db_client: Arc<crate::db::DbClient>,
 }
 
@@ -81,6 +82,9 @@ pub async fn initialize_repositories(
     let task_repo = Arc::new(crate::repository::postgres::PostgresTaskRepository {
         client: db_client.clone(),
     });
+    let leave_repo = Arc::new(crate::repository::postgres::PostgresLeaveRepository {
+        client: db_client.clone(),
+    });
 
     Repositories {
         auth: auth_repo,
@@ -97,6 +101,7 @@ pub async fn initialize_repositories(
         school: school_repo,
         responsibility: responsibility_repo,
         task: task_repo,
+        leave: leave_repo,
         db_client,
     }
 }

@@ -23,6 +23,7 @@ const Studentinfo = lazy(() => import("./features/students/components/studentpro
 const SchoolProfilePage = lazy(() => import("./features/infrastructure/pages/schoolprofile.jsx"));
 const EmployeeFormPage = lazy(() => import("./features/employees/components/employeeform.jsx"));
 const EmployeeProfilePage = lazy(() => import("./features/employees/components/employeeprofile.jsx"));
+const LeaveManagementPage = lazy(() => import("./features/employees/components/LeaveManagement.jsx"));
 const AttendanceManager = lazy(() => import("./features/academics/pages/attendance.jsx"));
 const ReferralCouponsPage = lazy(() => import("./features/billing/pages/referralCoupons.jsx"));
 
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="announcements" element={<Suspense fallback={<PageLoader />}><AttendanceManager /></Suspense>} />
           <Route path="employeeform" element={<Suspense fallback={<PageLoader />}><EmployeeFormPage /></Suspense>} />
           <Route path="employeeprofile" element={<Suspense fallback={<PageLoader />}><EmployeeProfilePage /></Suspense>} />
+          <Route path="leave-management" element={<Suspense fallback={<PageLoader />}><LeaveManagementPage /></Suspense>} />
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendanceManager /></Suspense>} />
           <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
           <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />

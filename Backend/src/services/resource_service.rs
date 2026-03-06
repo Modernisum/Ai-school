@@ -68,6 +68,23 @@ impl ResourceService for PostgresResourceService {
         self.repos.resource.create_space(school_id, data).await
     }
 
+    async fn update_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        data: Value,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.update_space(school_id, space_id, data).await
+    }
+
+    async fn delete_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.delete_space(school_id, space_id).await
+    }
+
     async fn get_space_details(
         &self,
         school_id: &str,
@@ -89,6 +106,14 @@ impl ResourceService for PostgresResourceService {
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         self.repos.resource.create_space_category(school_id, data).await
+    }
+
+    async fn delete_space_category(
+        &self,
+        school_id: &str,
+        category_id: i32,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos.resource.delete_space_category(school_id, category_id).await
     }
 
     async fn assign_space_materials(

@@ -35,6 +35,11 @@ export default function SpaceManagement() {
   }, [location.search]);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [editingSpace, setEditingSpace] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [showCategories, setShowCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [deletingSpace, setDeletingSpace] = useState(null);
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3000); };
 
@@ -48,32 +53,112 @@ export default function SpaceManagement() {
     finally { setLoading(false); }
   };
 
+  const loadCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/categories`);
+      const data = await res.json();
+      setCategories(data.data || []);
+    } catch { showToast('error', 'Failed to load categories'); }
+  };
+
   const createSpace = async () => {
     if (!newSpaceName.trim()) return;
     try {
-      await fetch(`${API_BASE_URL}/${schoolId}/spaces`, {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/spaces`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ spaceName: newSpaceName.trim() })
       });
-      showToast('success', 'Space created');
-      setNewSpaceName(''); setShowAdd(false);
-      loadSpaces();
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Space created');
+        setNewSpaceName(''); setShowAdd(false);
+        loadSpaces();
+      } else {
+        showToast('error', data.message || 'Failed to create space');
+      }
     } catch { showToast('error', 'Failed to create space'); }
   };
 
-  const handleBulkSpacesImport = async (rows) => {
-    const res = await fetch(`${API_BASE_URL}/${schoolId}/spaces/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ spaces: rows }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Bulk import failed');
-    loadSpaces();
+  const updateSpace = async () => {
+    if (!editingSpace || !editingSpace.spaceName.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${editingSpace.spaceId || editingSpace.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingSpace)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Space updated');
+        setEditingSpace(null);
+        loadSpaces();
+      } else {
+        showToast('error', data.message || 'Failed to update space');
+      }
+    } catch { showToast('error', 'Failed to update space'); }
   };
 
-  useEffect(() => { loadSpaces(); }, [schoolId]);
+  const deleteSpace = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Space deleted');
+        setDeletingSpace(null);
+        loadSpaces();
+      } else {
+        showToast('error', data.message || 'Failed to delete space');
+      }
+    } catch { showToast('error', 'Failed to delete space'); }
+  };
+
+  const createCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Category added');
+        setNewCategoryName('');
+        loadCategories();
+      }
+    } catch { showToast('error', 'Failed to add category'); }
+  };
+
+  const deleteCategory = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/categories/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Category removed');
+        loadCategories();
+      }
+    } catch { showToast('error', 'Failed to remove category'); }
+  };
+
+  const handleBulkSpacesImport = async (rows) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/spaces/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spaces: rows }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Bulk import failed');
+      showToast('success', 'Bulk import successful');
+      loadSpaces();
+    } catch (e) { showToast('error', e.message); }
+  };
+
+  useEffect(() => {
+    loadSpaces();
+    loadCategories();
+  }, [schoolId]);
 
   const filtered = spaces.filter(s =>
     (s.spaceName || s.space_name || s.name || '').toLowerCase().includes(search.toLowerCase())
@@ -93,6 +178,9 @@ export default function SpaceManagement() {
         </div>
         <div className="flex gap-2">
           <button onClick={loadSpaces} className="btn-secondary p-2"><RefreshCw size={15} /></button>
+          <button onClick={() => setShowCategories(true)} className="btn-secondary flex items-center gap-1.5">
+            <Package size={15} /> Categories
+          </button>
           <button onClick={() => setBulkModalOpen(true)} className="btn-secondary flex items-center gap-1.5">
             <Upload size={15} /> Bulk Import
           </button>
@@ -128,11 +216,8 @@ export default function SpaceManagement() {
                   transition={{ delay: i * 0.04 }}
                   className="glass-card overflow-hidden"
                 >
-                  <div
-                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.03] transition-colors"
-                    onClick={() => setExpanded(isOpen ? null : id)}
-                  >
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.03] transition-colors">
+                    <div className="flex items-center gap-3 flex-1" onClick={() => setExpanded(isOpen ? null : id)}>
                       {isOpen ? <ChevronDown size={16} className="text-violet-400" /> : <ChevronRight size={16} className="text-slate-500" />}
                       <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
                         <Box size={14} className="text-violet-400" />
@@ -142,9 +227,25 @@ export default function SpaceManagement() {
                         <p className="text-xs text-slate-600 font-mono">{id}</p>
                       </div>
                     </div>
-                    <span className="badge bg-violet-500/10 border-violet-500/20 text-violet-400">
-                      <Package size={10} className="inline mr-1" />{items.length} items
-                    </span>
+                    <div className="flex items-center gap-4">
+                      <span className="badge bg-violet-500/10 border-violet-500/20 text-violet-400">
+                        <Package size={10} className="inline mr-1" />{items.length} items
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingSpace(space); }}
+                          className="p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                        >
+                          <RefreshCw size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeletingSpace(space); }}
+                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <AnimatePresence>
@@ -154,20 +255,38 @@ export default function SpaceManagement() {
                         exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                         className="overflow-hidden border-t border-white/5"
                       >
-                        <div className="p-4">
+                        <div className="p-4 space-y-4">
+                          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Materials & Items</h4>
+                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => showToast('info', 'Material assignment coming soon')}>
+                              <Plus size={10} /> Add Item
+                            </button>
+                          </div>
                           {items.length === 0 ? (
-                            <p className="text-slate-600 text-sm text-center py-4">No items in this space</p>
+                            <p className="text-slate-600 text-sm text-center py-2">No items in this space</p>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {items.map((item, idx) => (
                                 <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-3">
-                                  <p className="font-medium text-white text-sm">{item.itemName || item.name || `Item ${idx + 1}`}</p>
-                                  <p className="text-slate-600 text-xs mt-0.5 font-mono">{item.id || item.itemId}</p>
-                                  {item.roomNumber && <span className="badge bg-blue-500/10 border-blue-500/20 text-blue-400 mt-1">Room {item.roomNumber}</span>}
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <p className="font-medium text-white text-sm">{item.itemName || item.name || `Item ${idx + 1}`}</p>
+                                      <p className="text-slate-600 text-xs mt-0.5 font-mono">{item.id || item.itemId}</p>
+                                    </div>
+                                    {item.roomNumber && <span className="badge bg-blue-500/10 border-blue-500/20 text-blue-400">Room {item.roomNumber}</span>}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           )}
+
+                          <div className="flex items-center justify-between border-b border-white/5 pb-2 pt-2">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assigned Employees</h4>
+                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => showToast('info', 'Employee assignment coming soon')}>
+                              <Plus size={10} /> Assign
+                            </button>
+                          </div>
+                          <p className="text-slate-600 text-sm text-center py-2">None assigned</p>
                         </div>
                       </motion.div>
                     )}
@@ -188,11 +307,103 @@ export default function SpaceManagement() {
                 <h3 className="font-bold text-white">Create New Space</h3>
                 <button onClick={() => setShowAdd(false)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
               </div>
-              <label className="section-label">Space Name</label>
-              <input className="input-dark mb-5" placeholder="e.g. Science Lab, Library..." value={newSpaceName} onChange={e => setNewSpaceName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createSpace()} />
-              <div className="flex gap-3 justify-end">
+              <div className="space-y-4">
+                <div>
+                  <label className="section-label">Space Name</label>
+                  <input className="input-dark mt-1" placeholder="e.g. Science Lab..." value={newSpaceName} onChange={e => setNewSpaceName(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
                 <button onClick={() => setShowAdd(false)} className="btn-secondary">Cancel</button>
                 <button onClick={createSpace} className="btn-primary">Create Space</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {editingSpace && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setEditingSpace(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white">Edit Space</h3>
+                <button onClick={() => setEditingSpace(null)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="section-label">Space Name</label>
+                  <input className="input-dark mt-1" value={editingSpace.spaceName} onChange={e => setEditingSpace({ ...editingSpace, spaceName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="section-label">Category</label>
+                  <select
+                    className="input-dark mt-1 w-full"
+                    value={editingSpace.spaceCategory || 'classroom'}
+                    onChange={e => setEditingSpace({ ...editingSpace, spaceCategory: e.target.value })}
+                  >
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="section-label">Capacity</label>
+                  <input type="number" className="input-dark mt-1" value={editingSpace.capacity || 0} onChange={e => setEditingSpace({ ...editingSpace, capacity: parseInt(e.target.value) })} />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
+                <button onClick={() => setEditingSpace(null)} className="btn-secondary">Cancel</button>
+                <button onClick={updateSpace} className="btn-primary">Save Changes</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Categories Modal */}
+      <AnimatePresence>
+        {showCategories && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setShowCategories(false)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white">Space Categories</h3>
+                <button onClick={() => setShowCategories(false)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
+              </div>
+              <div className="flex gap-2 mb-4">
+                <input className="input-dark" placeholder="New category..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} />
+                <button onClick={createCategory} className="btn-primary p-2"><Plus size={18} /></button>
+              </div>
+              <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                {categories.map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                    <span className="text-sm text-slate-300">{c.name} {c.isDefault && <span className="text-[10px] text-slate-500 ml-1">(Default)</span>}</span>
+                    {!c.isDefault && (
+                      <button onClick={() => deleteCategory(c.id)} className="text-slate-600 hover:text-rose-400 p-1"><X size={14} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-5">
+                <button onClick={() => setShowCategories(false)} className="btn-secondary">Close</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation */}
+      <AnimatePresence>
+        {deletingSpace && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setDeletingSpace(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="text-rose-500" size={24} />
+              </div>
+              <h3 className="font-bold text-white text-lg">Delete Space?</h3>
+              <p className="text-slate-400 text-sm mt-2 mb-6">Are you sure you want to delete "{deletingSpace.spaceName}"? This action cannot be undone.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setDeletingSpace(null)} className="btn-secondary">Cancel</button>
+                <button onClick={() => deleteSpace(deletingSpace.spaceId || deletingSpace.id)} className="btn-primary bg-rose-500 hover:bg-rose-600 border-rose-600">Delete</button>
               </div>
             </motion.div>
           </motion.div>

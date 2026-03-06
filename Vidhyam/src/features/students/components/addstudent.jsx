@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { getClassesByLevel } from '../../../utils/academicUtils';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 
 const getSchoolId = () => {
   for (const k of ['schoolId', 'school_id', 'currentSchoolId']) {

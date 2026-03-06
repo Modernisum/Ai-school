@@ -311,9 +311,20 @@ export default function EmployeeFormPage() {
   const [responsibilityData, setResponsibilityData] = useState(null);
   const [allResponsibilities, setAllResponsibilities] = useState([]);
   const [selectedResponsibility, setSelectedResponsibility] = useState("");
+  const [selectedSpace, setSelectedSpace] = useState("");
+  const [availableSpaces, setAvailableSpaces] = useState([]);
   const [isLoadingResponsibilities, setIsLoadingResponsibilities] = useState(false);
   const [isAddingResponsibility, setIsAddingResponsibility] = useState(false);
   const [isRemovingResponsibility, setIsRemovingResponsibility] = useState(false);
+
+  // --- AUTO ID DIALOG STATE ---
+  const [newEmployeeIdDialog, setNewEmployeeIdDialog] = useState(null); // null = hidden, else = the ID string
+
+  // --- EXPERIENCE & EDUCATION (multi-entry) ---
+  const [experiences, setExperiences] = useState([]);
+  const [educations, setEducations] = useState([]);
+  const [isSavingExp, setIsSavingExp] = useState(false);
+  const [isSavingEdu, setIsSavingEdu] = useState(false);
 
   // **AUTO School ID Initialization**
   useEffect(() => {
@@ -691,6 +702,15 @@ export default function EmployeeFormPage() {
     }
   };
 
+  // Load all available spaces
+  const loadAvailableSpaces = async () => {
+    if (!schoolId) return;
+    try {
+      const res = await callApiWithBackoff(`${API_BASE_URL}/spaces/${schoolId}`);
+      if (res.success && Array.isArray(res.spaces)) setAvailableSpaces(res.spaces);
+    } catch (e) { console.error('Failed to load spaces', e); }
+  };
+
   // Load all available responsibilities
   const loadAllResponsibilities = async () => {
     if (!schoolId) return;
@@ -714,17 +734,17 @@ export default function EmployeeFormPage() {
     setApiError(null);
 
     try {
-      // FIXED: Use the correct API endpoint from your working example
       const apiUrl = `${API_BASE_URL}/responsibility/${schoolId}/employees/${employeeData.employeeId}/responsibilities`;
       const result = await callApiWithBackoff(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responsibilityId: selectedResponsibility })
+        body: JSON.stringify({ responsibilityId: selectedResponsibility, spaceId: selectedSpace || undefined })
       });
 
       if (result.success) {
         setApiSuccess(result.message || "Responsibility added successfully");
         setSelectedResponsibility("");
+        setSelectedSpace("");
         loadEmployeeResponsibilities(employeeData.employeeId);
       } else {
         setApiError(result.message || "Failed to add responsibility");
@@ -768,11 +788,9 @@ export default function EmployeeFormPage() {
 
     setIsLoading(true); setApiError(null);
     const apiUrl = `${API_BASE_URL}/employees/${schoolId}/employees`;
-    // Backend expects `name` and `role` (CreateEmployeeRequest). Provide a sensible default name and the role.
-    const requestBody = { name: `${employeeType} - New`, role: employeeType };
+    const requestBody = { name: `${employeeType} - New`, employeeType: employeeType };
 
     try {
-      console.log(`📝 Creating employee with type: ${employeeType}, School ID: ${schoolId}`);
       const result = await callApiWithBackoff(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -782,10 +800,9 @@ export default function EmployeeFormPage() {
       if (result.success && result.employee) {
         setEmployeeData(result.employee);
         setShowDialog(false);
-        setApiSuccess(`New employee ID ${result.employee.employeeId} created. Please fill out the form and Save.`);
-
-        // Load responsibilities after creating employee
+        setNewEmployeeIdDialog(result.employee.employeeId); // Show Auto ID dialog
         loadAllResponsibilities();
+        loadAvailableSpaces();
         loadEmployeeResponsibilities(result.employee.employeeId);
       } else {
         throw new Error(result.message || 'Unknown application error occurred during POST operation.');
@@ -796,6 +813,44 @@ export default function EmployeeFormPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Load experience/education entries
+  const loadExperienceEducation = async (empId) => {
+    try {
+      const [expRes, eduRes] = await Promise.all([
+        callApiWithBackoff(`${API_BASE_URL}/employees/${schoolId}/${empId}/experience`),
+        callApiWithBackoff(`${API_BASE_URL}/employees/${schoolId}/${empId}/education`),
+      ]);
+      if (expRes.success) setExperiences(expRes.experience || []);
+      if (eduRes.success) setEducations(eduRes.education || []);
+    } catch (e) { console.error('Failed to load experience/education', e); }
+  };
+
+  const saveExperiences = async () => {
+    if (!employeeData?.employeeId || !schoolId) return;
+    setIsSavingExp(true);
+    try {
+      await callApiWithBackoff(`${API_BASE_URL}/employees/${schoolId}/${employeeData.employeeId}/experience`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ experience: experiences }),
+      });
+      setApiSuccess('Experience saved!');
+    } catch (e) { setApiError('Failed to save experience'); } finally { setIsSavingExp(false); }
+  };
+
+  const saveEducations = async () => {
+    if (!employeeData?.employeeId || !schoolId) return;
+    setIsSavingEdu(true);
+    try {
+      await callApiWithBackoff(`${API_BASE_URL}/employees/${schoolId}/${employeeData.employeeId}/education`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ education: educations }),
+      });
+      setApiSuccess('Education saved!');
+    } catch (e) { setApiError('Failed to save education'); } finally { setIsSavingEdu(false); }
   };
 
   const fetchEmployeeData = async (employeeIdValue) => {
@@ -854,12 +909,14 @@ export default function EmployeeFormPage() {
 
         await fetchAllDocumentsData(employeeIdValue);
 
-        // Load responsibilities
+        // Load responsibilities, spaces, experience/education
         loadAllResponsibilities();
+        loadAvailableSpaces();
         loadEmployeeResponsibilities(employeeIdValue);
+        loadExperienceEducation(employeeIdValue);
 
         setShowDialog(false);
-        setApiSuccess(`Employee ${employeeIdValue} data loaded successfully.`);
+        setApiSuccess(`Employee ${employeeIdValue} data loaded successfully.`,);
       } else {
         throw new Error(result.message || 'Employee not found in database.');
       }
@@ -1226,8 +1283,8 @@ export default function EmployeeFormPage() {
         {availableResponsibilities.length > 0 && (
           <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-4 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Add New Responsibility</h3>
-            <div className="flex items-end space-x-3">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Responsibility</label>
                 <select
                   className="w-full border-2 border-blue-200 px-3 py-2 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
@@ -1242,23 +1299,34 @@ export default function EmployeeFormPage() {
                   ))}
                 </select>
               </div>
-              <button
-                onClick={addResponsibilityToEmployee}
-                disabled={!selectedResponsibility || isAddingResponsibility}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
-              >
-                {isAddingResponsibility ? (
-                  <>
-                    <Loader size={16} className="animate-spin mr-2" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} className="mr-2" />
-                    Add
-                  </>
-                )}
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Link to Space (optional)</label>
+                <select
+                  className="w-full border-2 border-blue-200 px-3 py-2 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                  value={selectedSpace}
+                  onChange={(e) => setSelectedSpace(e.target.value)}
+                >
+                  <option value="">-- No Space --</option>
+                  {availableSpaces.map(sp => (
+                    <option key={sp.spaceId || sp.id} value={sp.spaceId || sp.id}>
+                      {sp.spaceName || sp.name} ({sp.spaceCategory || sp.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={addResponsibilityToEmployee}
+                  disabled={!selectedResponsibility || isAddingResponsibility}
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
+                >
+                  {isAddingResponsibility ? (
+                    <><Loader size={16} className="animate-spin mr-2" />Adding...</>
+                  ) : (
+                    <><Plus size={16} className="mr-2" />Add Responsibility</>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1388,6 +1456,27 @@ export default function EmployeeFormPage() {
           onClose={() => setIsAadhaarDialogOpen(false)}
           onUpload={uploadAadhaarSide}
         />
+      )}
+
+      {/* Auto ID Dialog */}
+      {newEmployeeIdDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center border-4 border-green-400">
+            <CheckCircle size={56} className="text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Employee Created!</h2>
+            <p className="text-gray-500 mb-4">Your new employee ID is:</p>
+            <div className="bg-green-50 border-2 border-green-300 rounded-xl py-4 px-6 mb-6">
+              <span className="text-4xl font-extrabold text-green-700 tracking-widest">{newEmployeeIdDialog}</span>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">Please note this ID for future reference.</p>
+            <button
+              onClick={() => setNewEmployeeIdDialog(null)}
+              className="w-full py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold rounded-xl hover:from-green-600 hover:to-blue-600 transition-all"
+            >
+              Continue to Form
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Header with automatic School ID display */}
@@ -1752,6 +1841,98 @@ export default function EmployeeFormPage() {
                     <div><span className="font-medium">Joining Date:</span> {formFields.joiningDate || 'Not set'}</div>
                     <div><span className="font-medium">Qualification:</span> {formFields.qualification || 'Not set'}</div>
                     <div><span className="font-medium">Experience:</span> {formFields.experience ? `${formFields.experience} years` : 'Not set'}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Experience (multi-entry) */}
+              <div className="bg-white border rounded-xl shadow-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-blue-600 flex items-center">
+                    <Briefcase className="mr-2" size={20} />
+                    Work Experience
+                  </h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExperiences(prev => [...prev, { company: '', designation: '', duration: '', salary: '' }])}
+                      className="flex items-center px-2 py-1.5 bg-blue-50 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-100 transition text-sm"
+                    >
+                      <Plus size={14} className="mr-1" /> Add
+                    </button>
+                    <button
+                      onClick={saveExperiences}
+                      disabled={isSavingExp}
+                      className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50"
+                    >
+                      {isSavingExp ? <Loader size={14} className="animate-spin mr-1" /> : <Save size={14} className="mr-1" />}
+                      Save
+                    </button>
+                  </div>
+                </div>
+                {experiences.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-3">No experience entries. Click + Add to insert one.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {experiences.map((exp, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg p-3 bg-gray-50 relative">
+                        <button
+                          onClick={() => setExperiences(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                        ><X size={14} /></button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input placeholder="Company" value={exp.company || ''} onChange={e => setExperiences(prev => prev.map((x, idx) => idx === i ? { ...x, company: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Designation" value={exp.designation || ''} onChange={e => setExperiences(prev => prev.map((x, idx) => idx === i ? { ...x, designation: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Duration (e.g. 2 years)" value={exp.duration || ''} onChange={e => setExperiences(prev => prev.map((x, idx) => idx === i ? { ...x, duration: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Salary" value={exp.salary || ''} onChange={e => setExperiences(prev => prev.map((x, idx) => idx === i ? { ...x, salary: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Education (multi-entry) */}
+              <div className="bg-white border rounded-xl shadow-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-blue-600 flex items-center">
+                    <GraduationCap className="mr-2" size={20} />
+                    Education
+                  </h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEducations(prev => [...prev, { degree: '', institution: '', passingYear: '', grade: '' }])}
+                      className="flex items-center px-2 py-1.5 bg-blue-50 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-100 transition text-sm"
+                    >
+                      <Plus size={14} className="mr-1" /> Add
+                    </button>
+                    <button
+                      onClick={saveEducations}
+                      disabled={isSavingEdu}
+                      className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50"
+                    >
+                      {isSavingEdu ? <Loader size={14} className="animate-spin mr-1" /> : <Save size={14} className="mr-1" />}
+                      Save
+                    </button>
+                  </div>
+                </div>
+                {educations.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-3">No education entries. Click + Add to insert one.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {educations.map((edu, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg p-3 bg-gray-50 relative">
+                        <button
+                          onClick={() => setEducations(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                        ><X size={14} /></button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input placeholder="Degree / Course" value={edu.degree || ''} onChange={e => setEducations(prev => prev.map((x, idx) => idx === i ? { ...x, degree: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Institution" value={edu.institution || ''} onChange={e => setEducations(prev => prev.map((x, idx) => idx === i ? { ...x, institution: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Passing Year" value={edu.passingYear || ''} onChange={e => setEducations(prev => prev.map((x, idx) => idx === i ? { ...x, passingYear: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                          <input placeholder="Grade / %" value={edu.grade || ''} onChange={e => setEducations(prev => prev.map((x, idx) => idx === i ? { ...x, grade: e.target.value } : x))} className="border rounded px-2 py-1 text-sm" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

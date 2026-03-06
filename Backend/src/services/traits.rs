@@ -264,6 +264,24 @@ pub trait OperationsService: Send + Sync {
         data: Value,
     ) -> Result<Value, AppError>;
 
+    async fn get_salary_breakdown(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+    ) -> Result<Value, AppError>;
+    async fn add_bonus(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn add_aid(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+
     // Custom Fees
     async fn create_custom_fee(
         &self,
@@ -337,6 +355,17 @@ pub trait ResourceService: Send + Sync {
         school_id: &str,
         data: Value,
     ) -> Result<Value, AppError>;
+    async fn update_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        data: Value,
+    ) -> Result<(), AppError>;
+    async fn delete_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<(), AppError>;
 
     async fn get_space_details(
         &self,
@@ -354,6 +383,11 @@ pub trait ResourceService: Send + Sync {
         school_id: &str,
         data: Value,
     ) -> Result<Value, AppError>;
+    async fn delete_space_category(
+        &self,
+        school_id: &str,
+        category_id: i32,
+    ) -> Result<(), AppError>;
 
     async fn assign_space_materials(
         &self,
@@ -493,5 +527,31 @@ pub trait ResponsibilityService: Send + Sync {
 pub trait TaskService: Send + Sync {
     async fn list_tasks(&self, school_id: &str)
         -> Result<Vec<Value>, AppError>;
+}
+
+#[async_trait]
+pub trait LeaveService: Send + Sync {
+    async fn create_leave(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn get_leaves(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+    async fn update_leave_status(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+        status: &str,
+    ) -> Result<(), AppError>;
+    async fn update_leave_duration(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+        action: &str,
+        days: i32,
+    ) -> Result<(), AppError>;
 }
 

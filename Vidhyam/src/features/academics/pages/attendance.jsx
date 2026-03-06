@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
-const API = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API = process.env.REACT_APP_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
 // Holidays live under attendance routes
 const HOLIDAYS_URL = (schoolId) => `${API}/operations/attendance/${schoolId}/holidays`;

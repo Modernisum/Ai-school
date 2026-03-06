@@ -12,6 +12,7 @@ pub mod emppay;
 pub mod events;
 pub mod exam;
 pub mod fees;
+pub mod leave;
 pub mod materials;
 pub mod mobile;
 pub mod ocr;

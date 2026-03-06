@@ -101,6 +101,20 @@ pub async fn create_space_category(
     }
 }
 
+pub async fn delete_category(
+    State(state): State<AppState>,
+    Path((school_id, category_id)): Path<(String, i32)>,
+) -> impl IntoResponse {
+    match state.services.resource.delete_space_category(&school_id, category_id).await {
+        Ok(_) => Json(json!({"success": true, "message": "Category deleted successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn create_space(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
@@ -108,6 +122,35 @@ pub async fn create_space(
 ) -> impl IntoResponse {
     match state.services.resource.create_space(&school_id, payload).await {
         Ok(data) => Json(json!({"success": true, "space": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn update_space(
+    State(state): State<AppState>,
+    Path((school_id, space_id)): Path<(String, String)>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state.services.resource.update_space(&school_id, &space_id, payload).await {
+        Ok(_) => Json(json!({"success": true, "message": "Space updated successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn delete_space(
+    State(state): State<AppState>,
+    Path((school_id, space_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state.services.resource.delete_space(&school_id, &space_id).await {
+        Ok(_) => Json(json!({"success": true, "message": "Space deleted successfully"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

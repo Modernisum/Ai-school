@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { Plus, Loader, CheckCircle } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 
-const API_BASE = 'http://localhost:8080/api'
+const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+const API_BASE = `http://${HOST}:8080/api`;
 
 export default function SetupPage() {
     const toast = useContext(ToastCtx)

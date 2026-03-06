@@ -1,4 +1,5 @@
-const API = "http://localhost:8080/api/admin";
+const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+const API = `http://${HOST}:8080/api/admin`;
 
 const getToken = () => localStorage.getItem("sa_token");
 

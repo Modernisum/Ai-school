@@ -346,6 +346,22 @@ pub trait ResourceRepository: Send + Sync {
         school_id: &str,
         data: Value,
     ) -> Result<(), AppError>;
+    async fn create_space(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn update_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        data: Value,
+    ) -> Result<(), AppError>;
+    async fn delete_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<(), AppError>;
     async fn add_item(
         &self,
         school_id: &str,
@@ -411,6 +427,49 @@ pub trait ResourceRepository: Send + Sync {
     ) -> Result<Vec<Value>, AppError>;
     async fn get_spaces(&self, school_id: &str)
         -> Result<Vec<Value>, AppError>;
+
+    async fn get_space_details(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<Option<Value>, AppError>;
+
+    async fn get_space_categories(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn create_space_category(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn delete_space_category(
+        &self,
+        school_id: &str,
+        category_id: i32,
+    ) -> Result<(), AppError>;
+
+    async fn assign_space_materials(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        materials: Vec<Value>,
+    ) -> Result<(), AppError>;
+
+    async fn assign_space_employees(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_ids: Vec<String>,
+    ) -> Result<(), AppError>;
+
+    async fn remove_space_employee(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        employee_id: &str,
+    ) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -524,5 +583,31 @@ pub trait ResponsibilityRepository: Send + Sync {
 #[async_trait]
 pub trait TaskRepository: Send + Sync {
     async fn get_tasks(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+}
+
+#[async_trait]
+pub trait LeaveRepository: Send + Sync {
+    async fn add_leave(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, AppError>;
+    async fn get_leaves(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+    async fn update_leave_status(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+        status: &str,
+    ) -> Result<(), AppError>;
+    async fn update_leave_duration(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+        action: &str,
+        days: i32,
+    ) -> Result<(), AppError>;
 }
 
