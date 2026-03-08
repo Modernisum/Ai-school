@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, LogIn } from "lucide-react";
 
-const API = process.env.REACT_APP_API_BASE_URL;
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export default function SessionHandler({ children }) {
   const [showDialog, setShowDialog] = useState(false);

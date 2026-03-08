@@ -2,7 +2,7 @@ import { useState, useContext } from 'react'
 import { motion } from 'framer-motion'
 import { Download, Upload, Database, AlertTriangle, CheckCircle, Loader, FileJson } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
-import { downloadExport, importSchoolData, listSchools } from '../api.js'
+import { downloadExport, importSchoolData, listSchools, manualBackup } from '../api.js'
 
 export default function BackupPage() {
     const toast = useContext(ToastCtx)
@@ -106,9 +106,30 @@ export default function BackupPage() {
                         )}
                     </div>
 
-                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: 'var(--text3)' }}>
+                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>
                         📦 Exports include: school info, students, employees, classes, subjects, fees, attendance, announcements, events, complaints, spaces
                     </div>
+
+                    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: 14 }}>
+                        <h4 style={{ fontSize: 13, marginBottom: 8, color: 'var(--text2)' }}>System Auto-Backup</h4>
+                        <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 12 }}>
+                            The system performs an incremental auto-backup every 15 minutes to the server's local storage.
+                        </p>
+                        <button 
+                            className="btn btn-ghost" 
+                            style={{ width: '100%', justifyContent: 'center' }}
+                            onClick={async () => {
+                                try {
+                                    const r = await manualBackup();
+                                    if(r.success) toast('success', 'Manual system backup triggered');
+                                    else toast('error', r.message || 'Backup failed');
+                                } catch(e) { toast('error', 'Failed to trigger backup'); }
+                            }}
+                        >
+                            <Database size={14} /> Trigger Manual System Backup
+                        </button>
+                    </div>
+
                     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
                 </div>
 

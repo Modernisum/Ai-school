@@ -1,5 +1,5 @@
 const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || `http://${HOST}:8080/api`;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${HOST}:8080/api`;
 export const MAX_RETRIES = 3;
 export const DEFAULT_SCHOOL_ID = "622079";
 

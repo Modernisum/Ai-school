@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Loader, RefreshCw, Calendar, User } from 'lucide-react';
 import { callApiWithBackoff } from '../../../utils/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const STATUS_COLORS = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',

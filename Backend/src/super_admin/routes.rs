@@ -528,3 +528,14 @@ pub async fn apply_promo_to_school(
         Err(e) => err_json!(e),
     }
 }
+
+pub async fn manual_backup(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let _ = require_admin!(headers, state);
+    match state.backup.perform_backup().await {
+        Ok(_) => ok_json!("Manual backup completed successfully"),
+        Err(e) => err_json!(e),
+    }
+}

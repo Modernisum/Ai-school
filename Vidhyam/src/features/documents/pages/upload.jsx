@@ -22,7 +22,7 @@ export default function DocumentUpload({ personId, onUploadComplete }) {
 
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/documentUpload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/documentUpload`, {
         method: "POST",
         body: formData,
       });

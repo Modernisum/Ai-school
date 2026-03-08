@@ -7,7 +7,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL + "/spaces";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL + "/spaces";
 const getSchoolId = () => {
   const keys = ['schoolId', 'school_id'];
   for (const k of keys) { const v = localStorage.getItem(k); if (v && v !== 'undefined') return v; }

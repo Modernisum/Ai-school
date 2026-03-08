@@ -10,7 +10,7 @@ import {
 import { callApiWithBackoff } from "../../../utils/api";
 
 // --- API Configuration ---
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const MAX_RETRIES = 3;
 
 // --- Document Schemas ---

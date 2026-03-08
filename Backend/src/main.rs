@@ -15,6 +15,8 @@ mod repository;
 mod routes;
 pub mod super_admin;
 mod services;
+mod backup;
+
 
 use repository::{initialize_repositories, Repositories};
 use services::{initialize_services, Services};
@@ -25,6 +27,7 @@ pub struct AppState {
     pub db: Arc<db::DbClient>,
     pub repos: Arc<Repositories>,
     pub services: Arc<Services>,
+    pub backup: Arc<backup::BackupService>,
 }
 
 #[tokio::main]
@@ -73,14 +76,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repos = Arc::new(initialize_repositories(ocr_pipeline.clone()).await);
     let services = Arc::new(initialize_services(repos.clone()));
 
+    println!("Initializing Backup Service...");
+    let backup_svc = Arc::new(backup::BackupService::new(db_client.pool.clone(), "Backup"));
+
     let state = AppState {
         db: db_client,
         repos,
         services,
+        backup: backup_svc.clone(),
     };
 
-    println!("Starting Nightly Cashier background task...");
+    // Trigger auto-restore if DB is empty
+    if let Err(e) = backup_svc.auto_restore().await {
+        eprintln!("[Restore Error] {}", e);
+    }
+
+    println!("Starting background tasks (Billing & Backup)...");
     crate::super_admin::billing_job::start_daily_billing_job(state.clone()).await;
+
+    // Start 15-min auto backup
+    let backup_clone = backup_svc.clone();
+    tokio::spawn(async move {
+        backup_clone.run_auto_backup().await;
+    });
 
     // CORS Layer
     let cors = CorsLayer::new()
@@ -121,7 +139,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .route("/schools/:schoolId/import", post(crate::super_admin::routes::import_school))
                 // Support
                 .route("/support", get(crate::super_admin::routes::list_support_requests))
-                .route("/support/:id/resolve", axum::routing::patch(crate::super_admin::routes::resolve_support_request)),
+                .route("/support/:id/resolve", axum::routing::patch(crate::super_admin::routes::resolve_support_request))
+                // Global Backup
+                .route("/backup", post(crate::super_admin::routes::manual_backup)),
         )
         // ── School notification polling (called by school frontend) ────────────
         .route(
