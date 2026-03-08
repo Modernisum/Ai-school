@@ -222,16 +222,13 @@ impl SetupService for PostgresSetupService {
         let hashed_password = bcrypt::hash(password, 10)?;
 
         // 2. Create School document
+        let mut school_payload = data.clone();
+        school_payload["id"] = json!(school_id);
+        school_payload["schoolCode"] = json!(school_code);
+        
         self.repos
             .auth
-            .create_school(json!({
-                "id": school_id,
-                "schoolCode": school_code,
-                "schoolName": school_name,
-                "schoolAddress": school_address,
-                "classLevel": class_level,
-                "affiliatedBoard": affiliated_board,
-            }))
+            .create_school(school_payload)
             .await?;
 
         // 3. Create Auth record

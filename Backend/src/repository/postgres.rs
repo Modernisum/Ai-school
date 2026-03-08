@@ -16,16 +16,13 @@ pub struct PostgresAuthRepository {
 #[async_trait]
 impl AuthRepository for PostgresAuthRepository {
     async fn create_school(&self, data: Value) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let school_data = json!({
-            "schoolCode": data["schoolCode"],
-            "schoolAddress": data["schoolAddress"],
-            "classLevel": data["classLevel"],
-            "affiliatedBoard": data["affiliatedBoard"]
-        });
+        let id_str = data["id"].as_str().unwrap_or("").to_string();
+        let name_str = data["schoolName"].as_str().unwrap_or("").to_string();
+        
         sqlx::query("INSERT INTO schools (school_id, school_name, data) VALUES ($1, $2, $3)")
-            .bind(data["id"].as_str())
-            .bind(data["schoolName"].as_str())
-            .bind(school_data)
+            .bind(id_str)
+            .bind(name_str)
+            .bind(data)
             .execute(&self.client.pool).await?;
         Ok(())
     }

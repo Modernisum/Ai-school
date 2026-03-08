@@ -1,9 +1,19 @@
 import { useEffect, useState, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Save, Ban, CheckCircle, Key, Clock, Loader } from 'lucide-react'
+import { ArrowLeft, Save, Ban, CheckCircle, Key, Clock, Loader, Edit3, X } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 import { getSchool, updateSchool, setStatus, setSessionDuration, applyPromo } from '../api.js'
+
+const profileFields = [
+    { label: 'School Name', field: 'schoolName' },
+    { label: 'Principal Name', field: 'principalName' },
+    { label: 'Address', field: 'address' },
+    { label: 'Phone', field: 'phone' },
+    { label: 'Email', field: 'email' },
+    { label: 'Affiliated Board', field: 'affiliatedBoard' },
+    { label: 'School Type', field: 'schoolType' },
+]
 
 export default function SchoolDetail() {
     const { schoolId } = useParams()
@@ -12,6 +22,7 @@ export default function SchoolDetail() {
     const [school, setSchool] = useState(null)
     const [loading, setLoading] = useState(true)
     const [edits, setEdits] = useState({})
+    const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [sessionHours, setSessionHours] = useState(24)
     const [promoCode, setPromoCode] = useState('')
@@ -23,9 +34,15 @@ export default function SchoolDetail() {
         if (r.data) {
             setSchool(r.data)
             setSessionHours(r.data.sessionDurationHours || 24)
+            const d = r.data.data || {}
             setEdits({
-                schoolName: r.data.schoolName,
-                ...(r.data.data || {}),
+                schoolName: r.data.schoolName || d.schoolName || '',
+                principalName: d.principalName || '',
+                address: d.schoolAddress || d.address || '',
+                phone: d.phone || '',
+                email: d.email || '',
+                affiliatedBoard: d.affiliatedBoard || '',
+                schoolType: d.schoolType || '',
             })
         }
         setLoading(false)
@@ -38,9 +55,28 @@ export default function SchoolDetail() {
     const save = async () => {
         setSaving(true)
         const r = await updateSchool(schoolId, edits)
-        if (r.success) toast('success', 'School updated')
-        else toast('error', r.message)
+        if (r.success) {
+            toast('success', 'School updated')
+            setEditing(false)
+            load()
+        } else {
+            toast('error', r.message)
+        }
         setSaving(false)
+    }
+
+    const cancelEdit = () => {
+        const d = school?.data || {}
+        setEdits({
+            schoolName: school?.schoolName || d.schoolName || '',
+            principalName: d.principalName || '',
+            address: d.schoolAddress || d.address || '',
+            phone: d.phone || '',
+            email: d.email || '',
+            affiliatedBoard: d.affiliatedBoard || '',
+            schoolType: d.schoolType || '',
+        })
+        setEditing(false)
     }
 
     const toggleBlock = async () => {
@@ -79,13 +115,6 @@ export default function SchoolDetail() {
 
     if (!school) return <div className="page" style={{ color: 'var(--text3)' }}>School not found.</div>
 
-    const Field = ({ label, field, type = 'text' }) => (
-        <div className="input-group">
-            <label>{label}</label>
-            <input type={type} value={edits[field] || ''} onChange={e => set(field, e.target.value)} />
-        </div>
-    )
-
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="page">
             <button className="btn btn-ghost btn-sm" onClick={() => nav('/schools')} style={{ marginBottom: 20 }}>
@@ -108,20 +137,55 @@ export default function SchoolDetail() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                {/* Edit form */}
-                <div className="card">
-                    <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 18 }}>School Details</h3>
-                    <Field label="School Name" field="schoolName" />
-                    <Field label="Principal Name" field="principalName" />
-                    <Field label="Address" field="address" />
-                    <Field label="Phone" field="phone" type="tel" />
-                    <Field label="Email" field="email" type="email" />
-                    <Field label="Affiliated Board" field="affiliatedBoard" />
-                    <Field label="School Type" field="schoolType" />
-                    <button className="btn btn-primary btn-sm" onClick={save} disabled={saving} style={{ marginTop: 4 }}>
-                        {saving ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />} Save Changes
-                    </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 20 }}>
+                {/* Profile / Edit Card */}
+                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>School Details</h3>
+                        {!editing ? (
+                            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
+                                <Edit3 size={13} /> Edit
+                            </button>
+                        ) : (
+                            <button className="btn btn-ghost btn-sm" onClick={cancelEdit} style={{ color: 'var(--red)' }}>
+                                <X size={13} /> Cancel
+                            </button>
+                        )}
+                    </div>
+
+                    {!editing ? (
+                        /* ── Read-only view ── */
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {profileFields.map(({ label, field }) => (
+                                <div key={field}>
+                                    <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
+                                    <div style={{ fontSize: 14, color: edits[field] ? 'var(--text)' : 'var(--text3)', fontWeight: 500 }}>
+                                        {edits[field] || '—'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* ── Edit mode ── */
+                        <>
+                            {profileFields.map(({ label, field }) => (
+                                <div className="input-group" key={field}>
+                                    <label>{label}</label>
+                                    <input
+                                        type="text"
+                                        value={edits[field] || ''}
+                                        onChange={e => set(field, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+                            <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex', gap: 10 }}>
+                                <button className="btn btn-ghost btn-sm" onClick={cancelEdit}>Cancel</button>
+                                <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
+                                    {saving ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />} Save Changes
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Session + Info */}
