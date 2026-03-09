@@ -37,6 +37,21 @@ const INDIAN_STATES = [
   'Delhi', 'Jammu & Kashmir', 'Ladakh',
 ];
 
+/* ───────────── Reusable helpers ───────────── */
+function inp(err) {
+  return `w-full bg-white/5 border ${err ? 'border-red-500/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.08] transition-all`;
+}
+
+function Field({ label, children, error }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-400 mb-1.5">{label}</label>
+      {children}
+      {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+    </div>
+  );
+}
+
 export default function AddStudentPage({ onSuccess, onBack }) {
   const navigate = useNavigate();
   const schoolId = getSchoolId();
@@ -264,7 +279,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
 
   /* ───────────── Section renderers ───────────── */
 
-  const PersonalSection = () => (
+  const renderPersonalSection = () => (
     <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Full Name *" error={errors.name}>
@@ -332,7 +347,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     </div>
   );
 
-  const ContactSection = () => (
+  const renderContactSection = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Field label="Mobile Number *" error={errors.contact}>
         <div className="flex">
@@ -357,7 +372,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     </div>
   );
 
-  const AcademicSection = () => (
+  const renderAcademicSection = () => (
     <div className="space-y-5">
       {/* Auto-generated info cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -533,7 +548,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     </div>
   );
 
-  const TransportSection = () => (
+  const renderTransportSection = () => (
     <div className="space-y-5">
       <div
         onClick={() => set('transportEnabled', !form.transportEnabled)}
@@ -580,26 +595,11 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     </div>
   );
 
-  /* ───────────── Reusable helpers ───────────── */
-  function inp(err) {
-    return `w-full bg-white/5 border ${err ? 'border-red-500/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.08] transition-all`;
-  }
-
-  function Field({ label, children, error }) {
-    return (
-      <div>
-        <label className="block text-xs font-medium text-slate-400 mb-1.5">{label}</label>
-        {children}
-        {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
-      </div>
-    );
-  }
-
   const sectionContent = {
-    personal: <PersonalSection />,
-    contact: <ContactSection />,
-    academic: <AcademicSection />,
-    transport: <TransportSection />,
+    personal: renderPersonalSection(),
+    contact: renderContactSection(),
+    academic: renderAcademicSection(),
+    transport: renderTransportSection(),
   };
 
   /* ───────────── Render ───────────── */

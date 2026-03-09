@@ -10,7 +10,6 @@ import BulkImportModal from '../../../components/ui/BulkImportModal';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL + "/spaces";
 const MATERIALS_API_URL = import.meta.env.VITE_API_BASE_URL + "/materials";
 const EMPLOYEES_API_URL = import.meta.env.VITE_API_BASE_URL + "/employees";
-
 const getSchoolId = () => {
   const keys = ['schoolId', 'school_id'];
   for (const k of keys) { const v = localStorage.getItem(k); if (v && v !== 'undefined') return v; }

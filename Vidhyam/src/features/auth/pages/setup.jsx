@@ -30,6 +30,26 @@ const CLASS_LEVELS = [
 const BOARDS = ["CBSE", "ICSE", "State Board (UP)", "State Board (MP)", "State Board (Rajasthan)", "State Board (Maharashtra)", "State Board (Bihar)", "NIOS", "IB", "Cambridge (IGCSE)"];
 const MEDIUMS = ["Hindi Medium", "English Medium", "Bilingual (Hindi + English)", "Urdu Medium", "Other"];
 
+const ErrorBox = ({ msg }) => msg ? (
+  <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 p-3 rounded-lg border border-rose-500/20">
+    <AlertCircle className="w-4 h-4 shrink-0" />
+    <p>{msg}</p>
+  </div>
+) : null;
+
+const fadeInVariants = {
+  hidden: { opacity: 0, x: 20 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  exit: { opacity: 0, x: -20, transition: { duration: 0.3 } }
+};
+
+const stepsConfig = [
+  { num: 1, label: "Institution Identity" },
+  { num: 2, label: "Academic Structure" },
+  { num: 3, label: "Campus Location" },
+  { num: 4, label: "Security Setup" },
+];
+
 export default function SchoolSetup() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -144,26 +164,6 @@ export default function SchoolSetup() {
       setLoading(false);
     }
   };
-
-  const fadeInVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } },
-    exit: { opacity: 0, x: -20, transition: { duration: 0.3 } }
-  };
-
-  const ErrorBox = ({ msg }) => msg ? (
-    <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 p-3 rounded-lg border border-rose-500/20">
-      <AlertCircle className="w-4 h-4 shrink-0" />
-      <p>{msg}</p>
-    </div>
-  ) : null;
-
-  const stepsConfig = [
-    { num: 1, label: "Institution Identity" },
-    { num: 2, label: "Academic Structure" },
-    { num: 3, label: "Campus Location" },
-    { num: 4, label: "Security Setup" },
-  ];
 
   return (
     <div className="page-bg flex justify-center items-center p-6 relative overflow-hidden">

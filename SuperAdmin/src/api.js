@@ -102,3 +102,6 @@ export const importSchoolData = async (id, jsonData) =>
 export const listSupportRequests = () => authFetch("/support");
 export const resolveSupportRequest = (id) =>
     authFetch(`/support/${id}/resolve`, { method: "PATCH" });
+
+export const manualBackup = () => authFetch("/backup", { method: "POST" });
+
