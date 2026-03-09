@@ -22,6 +22,7 @@ pub struct Repositories {
     pub responsibility: Arc<dyn ResponsibilityRepository + Send + Sync>,
     pub task: Arc<dyn TaskRepository + Send + Sync>,
     pub leave: Arc<dyn LeaveRepository + Send + Sync>,
+    pub analytics: Arc<dyn ComprehensiveAnalyticsRepository + Send + Sync>,
     pub db_client: Arc<crate::db::DbClient>,
 }
 
@@ -85,6 +86,9 @@ pub async fn initialize_repositories(
     let leave_repo = Arc::new(crate::repository::postgres::PostgresLeaveRepository {
         client: db_client.clone(),
     });
+    let analytics_repo = Arc::new(crate::repository::postgres::PostgresAnalyticsRepository {
+        client: db_client.clone(),
+    });
 
     Repositories {
         auth: auth_repo,
@@ -102,6 +106,7 @@ pub async fn initialize_repositories(
         responsibility: responsibility_repo,
         task: task_repo,
         leave: leave_repo,
+        analytics: analytics_repo,
         db_client,
     }
 }

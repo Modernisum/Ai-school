@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box, Plus, ChevronDown, ChevronRight, Loader, Search,
-  CheckCircle, AlertTriangle, X, RefreshCw, Trash2, Package, Upload
+  CheckCircle, AlertTriangle, X, RefreshCw, Trash2, Package, Upload, Users
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL + "/spaces";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL + "/spaces";
+const MATERIALS_API_URL = import.meta.env.VITE_API_BASE_URL + "/materials";
+const EMPLOYEES_API_URL = import.meta.env.VITE_API_BASE_URL + "/employees";
+
 const getSchoolId = () => {
   const keys = ['schoolId', 'school_id'];
   for (const k of keys) { const v = localStorage.getItem(k); if (v && v !== 'undefined') return v; }
@@ -21,6 +24,7 @@ export default function SpaceManagement() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [expandedSpaceDetails, setExpandedSpaceDetails] = useState({});
   const [toast, setToast] = useState(null);
   const [showAdd, setShowAdd] = useState(new URLSearchParams(location.search).get('add') === '1');
 
@@ -33,13 +37,30 @@ export default function SpaceManagement() {
       setShowAdd(false);
     }
   }, [location.search]);
+  
   const [newSpaceName, setNewSpaceName] = useState('');
+  const [newSpaceCategory, setNewSpaceCategory] = useState('classroom');
+  const [newSpaceCapacity, setNewSpaceCapacity] = useState('');
+  
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
   const [categories, setCategories] = useState([]);
   const [showCategories, setShowCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [deletingSpace, setDeletingSpace] = useState(null);
+
+  // Material & Employee Assignment States
+  const [showMaterialModal, setShowMaterialModal] = useState(null); // stores spaceId
+  const [showEmployeeModal, setShowEmployeeModal] = useState(null); // stores spaceId
+  const [availableMaterials, setAvailableMaterials] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  
+  // Assign Material Form State
+  const [selectedMaterial, setSelectedMaterial] = useState('');
+  const [materialQty, setMaterialQty] = useState(1);
+  
+  // Assign Employee Form State
+  const [selectedEmployee, setSelectedEmployee] = useState('');
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3000); };
 
@@ -61,18 +82,37 @@ export default function SpaceManagement() {
     } catch { showToast('error', 'Failed to load categories'); }
   };
 
+  const loadSpaceDetails = async (spaceId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${spaceId}`);
+      const data = await res.json();
+      if (data.success && data.space) {
+        setExpandedSpaceDetails(prev => ({ ...prev, [spaceId]: data.space }));
+      }
+    } catch {
+      console.error('Failed to fetch space details');
+    }
+  };
+
   const createSpace = async () => {
     if (!newSpaceName.trim()) return;
     try {
       const res = await fetch(`${API_BASE_URL}/${schoolId}/spaces`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spaceName: newSpaceName.trim() })
+        body: JSON.stringify({ 
+          spaceName: newSpaceName.trim(),
+          spaceCategory: newSpaceCategory,
+          capacity: parseInt(newSpaceCapacity) || 0
+        })
       });
       const data = await res.json();
       if (data.success) {
         showToast('success', 'Space created');
-        setNewSpaceName(''); setShowAdd(false);
+        setNewSpaceName('');
+        setNewSpaceCategory('classroom');
+        setNewSpaceCapacity('');
+        setShowAdd(false);
         loadSpaces();
       } else {
         showToast('error', data.message || 'Failed to create space');
@@ -83,7 +123,8 @@ export default function SpaceManagement() {
   const updateSpace = async () => {
     if (!editingSpace || !editingSpace.spaceName.trim()) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/${schoolId}/${editingSpace.spaceId || editingSpace.id}`, {
+      const spaceId = editingSpace.spaceId || editingSpace.id;
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${spaceId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingSpace)
@@ -93,6 +134,8 @@ export default function SpaceManagement() {
         showToast('success', 'Space updated');
         setEditingSpace(null);
         loadSpaces();
+        // Refresh details if expanded
+        if (expanded === spaceId) loadSpaceDetails(spaceId);
       } else {
         showToast('error', data.message || 'Failed to update space');
       }
@@ -106,6 +149,7 @@ export default function SpaceManagement() {
       if (data.success) {
         showToast('success', 'Space deleted');
         setDeletingSpace(null);
+        if (expanded === id) setExpanded(null);
         loadSpaces();
       } else {
         showToast('error', data.message || 'Failed to delete space');
@@ -155,9 +199,103 @@ export default function SpaceManagement() {
     } catch (e) { showToast('error', e.message); }
   };
 
+  // Resources for assignments
+  const loadAvailableMaterials = async () => {
+    try {
+      const res = await fetch(`${MATERIALS_API_URL}/${schoolId}`);
+      const data = await res.json();
+      if (data.success) setAvailableMaterials(data.data || []);
+    } catch (e) { console.error('Failed to load materials', e); }
+  };
+
+  const loadAvailableEmployees = async () => {
+    try {
+      const res = await fetch(`${EMPLOYEES_API_URL}/${schoolId}/employees`);
+      const data = await res.json();
+      if (data.success) setAvailableEmployees(data.data || []);
+    } catch (e) { console.error('Failed to load employees', e); }
+  };
+
+  const handleExpandToggle = (spaceId) => {
+    if (expanded === spaceId) {
+      setExpanded(null);
+    } else {
+      setExpanded(spaceId);
+      if (!expandedSpaceDetails[spaceId]) {
+        loadSpaceDetails(spaceId);
+      }
+    }
+  };
+
+  // Assignment Handlers
+  const assignMaterial = async () => {
+    if (!selectedMaterial || materialQty < 1) return;
+    try {
+      const mat = availableMaterials.find(m => m.id === selectedMaterial);
+      if (!mat) return;
+      
+      const payload = [{
+        materialName: mat.materialName || mat.name,
+        quantity: materialQty,
+        unit: 'pcs'
+      }];
+
+      const spaceId = showMaterialModal;
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${spaceId}/materials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Material assigned');
+        setShowMaterialModal(null);
+        setSelectedMaterial('');
+        setMaterialQty(1);
+        loadSpaceDetails(spaceId);
+      } else showToast('error', data.message || 'Failed to assign');
+    } catch { showToast('error', 'Failed to assign material'); }
+  };
+
+  const assignEmployee = async () => {
+    if (!selectedEmployee) return;
+    try {
+      const spaceId = showEmployeeModal;
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${spaceId}/employees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([selectedEmployee])
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Employee assigned');
+        setShowEmployeeModal(null);
+        setSelectedEmployee('');
+        loadSpaceDetails(spaceId);
+      } else showToast('error', data.message || 'Failed to assign');
+    } catch { showToast('error', 'Failed to assign employee'); }
+  };
+
+  const removeEmployee = async (spaceId, empId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${schoolId}/${spaceId}/employees/${empId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'Employee removed');
+        loadSpaceDetails(spaceId);
+      } else showToast('error', data.message || 'Failed to remove');
+    } catch { showToast('error', 'Failed to remove employee'); }
+  };
+
+
   useEffect(() => {
     loadSpaces();
     loadCategories();
+    // Preload for modals
+    loadAvailableMaterials();
+    loadAvailableEmployees();
   }, [schoolId]);
 
   const filtered = spaces.filter(s =>
@@ -206,8 +344,14 @@ export default function SpaceManagement() {
             {filtered.map((space, i) => {
               const id = space.id || space.spaceId || space.space_id;
               const name = space.spaceName || space.space_name || space.name;
-              const items = space.items || space.inventory || [];
+              const category = space.spaceCategory || space.space_category || 'classroom';
+              
               const isOpen = expanded === id;
+              
+              // We use details from the secondary pull if open, otherwise base
+              const details = expandedSpaceDetails[id] || {};
+              const items = details.materials || space.items || space.inventory || [];
+              const employees = details.employees || [];
 
               return (
                 <motion.div
@@ -216,18 +360,23 @@ export default function SpaceManagement() {
                   transition={{ delay: i * 0.04 }}
                   className="glass-card overflow-hidden"
                 >
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.03] transition-colors">
-                    <div className="flex items-center gap-3 flex-1" onClick={() => setExpanded(isOpen ? null : id)}>
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.03] transition-colors" onClick={() => handleExpandToggle(id)}>
+                    <div className="flex items-center gap-3 flex-1">
                       {isOpen ? <ChevronDown size={16} className="text-violet-400" /> : <ChevronRight size={16} className="text-slate-500" />}
                       <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
                         <Box size={14} className="text-violet-400" />
                       </div>
                       <div>
                         <p className="font-semibold text-white text-sm">{name}</p>
-                        <p className="text-xs text-slate-600 font-mono">{id}</p>
+                        <p className="text-xs text-slate-600 font-mono">{id} • {category}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      {space.capacity > 0 && (
+                        <span className="badge bg-blue-500/10 border-blue-500/20 text-blue-400">
+                          <Users size={10} className="inline mr-1" />{space.capacity} cap
+                        </span>
+                      )}
                       <span className="badge bg-violet-500/10 border-violet-500/20 text-violet-400">
                         <Package size={10} className="inline mr-1" />{items.length} items
                       </span>
@@ -253,12 +402,12 @@ export default function SpaceManagement() {
                       <motion.div
                         initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                        className="overflow-hidden border-t border-white/5"
+                        className="overflow-hidden border-t border-white/5 bg-black/10"
                       >
                         <div className="p-4 space-y-4">
                           <div className="flex items-center justify-between border-b border-white/5 pb-2">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Materials & Items</h4>
-                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => showToast('info', 'Material assignment coming soon')}>
+                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => setShowMaterialModal(id)}>
                               <Plus size={10} /> Add Item
                             </button>
                           </div>
@@ -267,14 +416,14 @@ export default function SpaceManagement() {
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {items.map((item, idx) => (
-                                <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-3">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <p className="font-medium text-white text-sm">{item.itemName || item.name || `Item ${idx + 1}`}</p>
-                                      <p className="text-slate-600 text-xs mt-0.5 font-mono">{item.id || item.itemId}</p>
-                                    </div>
-                                    {item.roomNumber && <span className="badge bg-blue-500/10 border-blue-500/20 text-blue-400">Room {item.roomNumber}</span>}
+                                <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-3 flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium text-white text-sm">{item.materialName || item.itemName || item.name || `Item ${idx + 1}`}</p>
+                                    <p className="text-slate-600 text-xs mt-0.5 font-mono">{item.id || item.itemId || 'Qty: ' + (item.quantity||1)}</p>
                                   </div>
+                                  <span className="badge bg-slate-500/10 border-slate-500/20 text-slate-400">
+                                    {(item.quantity || 1)} {item.unit || 'pcs'}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -282,11 +431,35 @@ export default function SpaceManagement() {
 
                           <div className="flex items-center justify-between border-b border-white/5 pb-2 pt-2">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assigned Employees</h4>
-                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => showToast('info', 'Employee assignment coming soon')}>
+                            <button className="text-[10px] btn-secondary py-1 px-2 flex items-center gap-1" onClick={() => setShowEmployeeModal(id)}>
                               <Plus size={10} /> Assign
                             </button>
                           </div>
-                          <p className="text-slate-600 text-sm text-center py-2">None assigned</p>
+                          {employees.length === 0 ? (
+                            <p className="text-slate-600 text-sm text-center py-2">None assigned</p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {employees.map((empId, idx) => {
+                                const emp = availableEmployees.find(e => e.employeeId === empId) || { name: empId };
+                                return (
+                                  <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-2 px-3 flex justify-between items-center group">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center">
+                                        <Users size={12} className="text-violet-400" />
+                                      </div>
+                                      <span className="text-sm font-medium text-white truncate max-w-[100px]">{emp.name}</span>
+                                    </div>
+                                    <button 
+                                      onClick={() => removeEmployee(id, empId)}
+                                      className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -302,7 +475,7 @@ export default function SpaceManagement() {
       <AnimatePresence>
         {showAdd && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setShowAdd(false)}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box" onClick={e => e.stopPropagation()}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box max-w-md w-full" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-white">Create New Space</h3>
                 <button onClick={() => setShowAdd(false)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
@@ -311,6 +484,23 @@ export default function SpaceManagement() {
                 <div>
                   <label className="section-label">Space Name</label>
                   <input className="input-dark mt-1" placeholder="e.g. Science Lab..." value={newSpaceName} onChange={e => setNewSpaceName(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="section-label">Category</label>
+                    <select
+                      className="input-dark mt-1 w-full"
+                      value={newSpaceCategory}
+                      onChange={e => setNewSpaceCategory(e.target.value)}
+                    >
+                      {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      {categories.length === 0 && <option value="classroom">Classroom</option>}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="section-label">Capacity (Optional)</label>
+                    <input type="number" className="input-dark mt-1" placeholder="0" value={newSpaceCapacity} onChange={e => setNewSpaceCapacity(e.target.value)} />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 justify-end mt-6">
@@ -344,6 +534,7 @@ export default function SpaceManagement() {
                     onChange={e => setEditingSpace({ ...editingSpace, spaceCategory: e.target.value })}
                   >
                     {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {categories.length === 0 && <option value="classroom">Classroom</option>}
                   </select>
                 </div>
                 <div>
@@ -385,6 +576,76 @@ export default function SpaceManagement() {
               </div>
               <div className="flex justify-end mt-5">
                 <button onClick={() => setShowCategories(false)} className="btn-secondary">Close</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Assign Material Modal */}
+      <AnimatePresence>
+        {showMaterialModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setShowMaterialModal(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white">Assign Material</h3>
+                <button onClick={() => setShowMaterialModal(null)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="section-label">Select Material</label>
+                  <select
+                    className="input-dark mt-1 w-full"
+                    value={selectedMaterial}
+                    onChange={e => setSelectedMaterial(e.target.value)}
+                  >
+                    <option value="">-- Choose Material --</option>
+                    {availableMaterials.map(m => (
+                      <option key={m.id} value={m.id}>{m.materialName || m.name} (Available: {m.quantity})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="section-label">Quantity</label>
+                  <input type="number" min="1" className="input-dark mt-1 w-full" value={materialQty} onChange={e => setMaterialQty(parseInt(e.target.value) || 1)} />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
+                <button onClick={() => setShowMaterialModal(null)} className="btn-secondary">Cancel</button>
+                <button onClick={assignMaterial} className="btn-primary">Assign Item</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Assign Employee Modal */}
+      <AnimatePresence>
+        {showEmployeeModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={() => setShowEmployeeModal(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="modal-box w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white">Assign Employee</h3>
+                <button onClick={() => setShowEmployeeModal(null)} className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="section-label">Select Employee</label>
+                  <select
+                    className="input-dark mt-1 w-full"
+                    value={selectedEmployee}
+                    onChange={e => setSelectedEmployee(e.target.value)}
+                  >
+                    <option value="">-- Choose Employee --</option>
+                    {availableEmployees.map(emp => (
+                      <option key={emp.employeeId} value={emp.employeeId}>{emp.name} ({emp.designation})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
+                <button onClick={() => setShowEmployeeModal(null)} className="btn-secondary">Cancel</button>
+                <button onClick={assignEmployee} className="btn-primary">Assign Employee</button>
               </div>
             </motion.div>
           </motion.div>

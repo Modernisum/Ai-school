@@ -611,3 +611,12 @@ pub trait LeaveRepository: Send + Sync {
     ) -> Result<(), AppError>;
 }
 
+#[async_trait]
+pub trait ComprehensiveAnalyticsRepository: Send + Sync {
+    async fn get_school_stats(&self, school_id: &str) -> Result<Value, AppError>;
+    async fn get_attendance_summary(&self, school_id: &str, date: &str) -> Result<Value, AppError>;
+    async fn get_pending_fees_by_period(&self, school_id: &str, months_overdue: i32) -> Result<Vec<Value>, AppError>;
+    async fn get_fee_summary(&self, school_id: &str) -> Result<Value, AppError>;
+    async fn query_staff_analytics(&self, school_id: &str) -> Result<Value, AppError>;
+}
+

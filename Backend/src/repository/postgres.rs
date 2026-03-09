@@ -986,12 +986,14 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let space_id = format!("{}-{}", school_id, data["id"].as_str().unwrap_or(""));
         sqlx::query(
-            "INSERT INTO spaces (id, school_id, name) VALUES ($1, $2, $3) ON CONFLICT (school_id, id) DO NOTHING",
+            "INSERT INTO spaces (space_id, school_id, space_name, space_category) VALUES ($1, $2, $3, $4) ON CONFLICT (space_id) DO NOTHING",
         )
-        .bind(data["id"].as_str())
+        .bind(&space_id)
         .bind(school_id)
         .bind(data["name"].as_str())
+        .bind(data["id"].as_str())
         .execute(&self.client.pool)
         .await?;
         Ok(())
@@ -1003,8 +1005,9 @@ impl ResourceRepository for PostgresResourceRepository {
         space_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        sqlx::query("INSERT INTO items (id, school_id, space_id, name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_id, id) DO NOTHING")
-            .bind(data["id"].as_str())
+        let item_id = format!("{}-{}-{}", school_id, space_id, data["id"].as_str().unwrap_or(""));
+        sqlx::query("INSERT INTO items (item_id, school_id, space_id, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_id, item_id) DO NOTHING")
+            .bind(&item_id)
             .bind(school_id)
             .bind(space_id)
             .bind(data["itemName"].as_str())
@@ -1163,13 +1166,15 @@ impl ResourceRepository for PostgresResourceRepository {
         let mut items_map: std::collections::HashMap<String, Vec<Value>> =
             std::collections::HashMap::new();
         for r in item_rows {
-            let space_id = r.get::<String, _>("space_id");
+            let space_id = r.try_get::<String, _>("space_id").unwrap_or_default();
+            let item_id = r.try_get::<String, _>("item_id").unwrap_or_default();
+            let item_name = r.try_get::<String, _>("item_name").unwrap_or_default();
             let item = json!({
-                "id": r.get::<String, _>("id"),
-                "name": r.get::<String, _>("name"),
-                "itemName": r.get::<String, _>("name"),
-                "roomNumber": r.get::<Option<String>, _>("room_number"),
-                "classId": r.get::<Option<String>, _>("class_id"),
+                "id": item_id,
+                "name": item_name,
+                "itemName": item_name,
+                "roomNumber": r.try_get::<Option<String>, _>("room_number").ok().flatten(),
+                "classId": r.try_get::<Option<String>, _>("class_id").ok().flatten(),
             });
             items_map.entry(space_id).or_default().push(item);
         }
@@ -1178,21 +1183,20 @@ impl ResourceRepository for PostgresResourceRepository {
         Ok(space_rows
             .into_iter()
             .map(|r| {
-                let id = r.get::<String, _>("id");
-                let name = r.get::<String, _>("name");
-                let space_id_real = r.try_get::<String, _>("space_id").ok();
+                let space_id = r.try_get::<String, _>("space_id").unwrap_or_default();
+                let name = r.try_get::<String, _>("space_name").unwrap_or_default();
                 let category = r.try_get::<String, _>("space_category").ok();
                 let capacity = r.try_get::<i32, _>("capacity").ok();
-                let items = items_map.get(&id).cloned().unwrap_or_default();
+                let items = items_map.get(&space_id).cloned().unwrap_or_default();
                 json!({
-                    "id": id,
-                    "spaceId": space_id_real.unwrap_or_else(|| id.clone()),
+                    "id": space_id,
+                    "spaceId": space_id,
                     "name": name,
                     "spaceName": name,
                     "spaceCategory": category,
                     "capacity": capacity,
                     "items": items,
-                    "inventory": items, // fallback for different frontend naming
+                    "inventory": items,
                 })
             })
             .collect())
@@ -2722,5 +2726,109 @@ impl LeaveRepository for PostgresLeaveRepository {
             .execute(&self.client.pool)
             .await?;
         Ok(())
+    }
+}
+
+// --- Analytics Repository ---
+
+pub struct PostgresAnalyticsRepository {
+    pub client: Arc<DbClient>,
+}
+
+#[async_trait]
+impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
+    async fn get_school_stats(&self, school_id: &str) -> Result<Value, AppError> {
+        let students_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students WHERE school_id = $1")
+            .bind(school_id).fetch_one(&self.client.pool).await?;
+        
+        let employees_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees WHERE school_id = $1")
+            .bind(school_id).fetch_one(&self.client.pool).await?;
+        
+        let classes_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM classes WHERE school_id = $1")
+            .bind(school_id).fetch_one(&self.client.pool).await?;
+
+        Ok(json!({
+            "totalStudents": students_count,
+            "totalEmployees": employees_count,
+            "totalClasses": classes_count
+        }))
+    }
+
+    async fn get_attendance_summary(&self, school_id: &str, date: &str) -> Result<Value, AppError> {
+        let target_date = date.parse::<chrono::NaiveDate>()?;
+        
+        let rows = sqlx::query(
+            "SELECT status, role, COUNT(*) as count FROM attendance WHERE school_id = $1 AND date = $2 GROUP BY status, role"
+        )
+        .bind(school_id).bind(target_date).fetch_all(&self.client.pool).await?;
+
+        let mut summary = json!({
+            "student": {"present": 0, "absent": 0, "leave": 0, "holiday": 0},
+            "employee": {"present": 0, "absent": 0, "leave": 0, "holiday": 0}
+        });
+
+        for row in rows {
+            let status = row.get::<String, _>("status").to_lowercase();
+            let role = row.get::<String, _>("role").to_lowercase();
+            let count = row.get::<i64, _>("count");
+            
+            if let Some(role_map) = summary.get_mut(&role) {
+                if let Some(target) = role_map.get_mut(&status) {
+                    *target = json!(count);
+                }
+            }
+        }
+
+        Ok(summary)
+    }
+
+    async fn get_pending_fees_by_period(&self, school_id: &str, _months_overdue: i32) -> Result<Vec<Value>, AppError> {
+        let rows = sqlx::query(
+            "SELECT s.name, s.student_id, s.class_name, s.section, sf.pending_amount::FLOAT as pending_amount \
+             FROM students s \
+             JOIN student_fees sf ON s.student_id = sf.student_id AND s.school_id = sf.school_id \
+             WHERE s.school_id = $1 AND sf.pending_amount > 0"
+        )
+        .bind(school_id).fetch_all(&self.client.pool).await?;
+
+        Ok(rows.into_iter().map(|r| json!({
+            "studentName": r.get::<String, _>("name"),
+            "studentId": r.get::<String, _>("student_id"),
+            "className": r.get::<String, _>("class_name"),
+            "section": r.get::<Option<String>, _>("section"),
+            "pendingAmount": r.get::<f64, _>("pending_amount")
+        })).collect())
+    }
+
+    async fn get_fee_summary(&self, school_id: &str) -> Result<Value, AppError> {
+        let row = sqlx::query(
+            "SELECT SUM(total_fees)::FLOAT as total, SUM(pending_amount)::FLOAT as pending, SUM(discount)::FLOAT as discount FROM student_fees WHERE school_id = $1"
+        )
+        .bind(school_id).fetch_one(&self.client.pool).await?;
+
+        let total = row.get::<Option<f64>, _>("total").unwrap_or(0.0);
+        let pending = row.get::<Option<f64>, _>("pending").unwrap_or(0.0);
+        let discount = row.get::<Option<f64>, _>("discount").unwrap_or(0.0);
+        let collected = total - pending - discount;
+
+        Ok(json!({
+            "totalRevenueExpected": total,
+            "totalCollected": collected,
+            "totalPending": pending,
+            "totalDiscount": discount
+        }))
+    }
+
+    async fn query_staff_analytics(&self, school_id: &str) -> Result<Value, AppError> {
+        let rows = sqlx::query(
+            "SELECT type as emp_type, status, COUNT(*) as count FROM employees WHERE school_id = $1 GROUP BY type, status"
+        )
+        .bind(school_id).fetch_all(&self.client.pool).await?;
+
+        Ok(json!(rows.into_iter().map(|r| json!({
+            "type": r.get::<String, _>("emp_type"),
+            "status": r.get::<String, _>("status"),
+            "count": r.get::<i64, _>("count")
+        })).collect::<Vec<Value>>()))
     }
 }

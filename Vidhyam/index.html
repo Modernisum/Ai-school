@@ -14,6 +14,14 @@
 
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script>
+      window.addEventListener('error', function(event) {
+        document.body.innerHTML += '<div style="color:red; z-index:9999; position:absolute; top:0; left:0; background:white; padding:20px; border:2px solid red;"><h1>Global Error:</h1><pre>' + event.message + '\\n' + event.filename + ':' + event.lineno + '</pre></div>';
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        document.body.innerHTML += '<div style="color:red; z-index:9999; position:absolute; top:0; left:0; background:white; padding:20px; border:2px solid red;"><h1>Unhandled Promise:</h1><pre>' + event.reason + '</pre></div>';
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/index.jsx"></script>
 </body>

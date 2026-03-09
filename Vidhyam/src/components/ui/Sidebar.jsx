@@ -18,6 +18,7 @@ const SUB_LINKS = {
   Employee: [
     { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
     { label: "Add Employee", path: "/dashboard/employee?add=1", icon: UserPlus },
+    { label: "Payroll & Salary", path: "/dashboard/payroll", icon: CreditCard },
     { label: "Leave Management", path: "/dashboard/leave-management", icon: CalendarCheck },
   ],
   Subject: [

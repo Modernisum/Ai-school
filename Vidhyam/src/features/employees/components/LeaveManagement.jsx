@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Loader, RefreshCw, Calendar, User } from 'lucide-react';
 import { callApiWithBackoff } from '../../../utils/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const STATUS_COLORS = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -144,6 +144,15 @@ export default function LeaveManagement({ schoolId: propSchoolId }) {
                                                     Reject
                                                 </button>
                                             </div>
+                                        ) : leave.status === 'approved' ? (
+                                            <a
+                                                href={`${API_BASE_URL}/leave/${schoolId}/${leave.leaveId}/pdf`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs"
+                                            >
+                                                Download PDF
+                                            </a>
                                         ) : (
                                             <span className="text-gray-400 text-xs italic">—</span>
                                         )}

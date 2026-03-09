@@ -489,7 +489,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .route("/:schoolId/:leaveId/approve", post(routes::leave::approve_leave))
                 .route("/:schoolId/:leaveId/reject", post(routes::leave::reject_leave))
                 .route("/:schoolId/:leaveId/extend", post(routes::leave::extend_leave))
-                .route("/:schoolId/:leaveId/reduce", post(routes::leave::reduce_leave)),
+                .route("/:schoolId/:leaveId/reduce", post(routes::leave::reduce_leave))
+                .route("/:schoolId/:leaveId/pdf", get(routes::leave::download_leave_pdf)),
         )
 
         .route(
@@ -521,6 +522,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(routes::spaces::list_spaces).post(routes::spaces::create_space),
         )
         .route("/api/task/:schoolId", get(routes::task::list_tasks))
+        .nest(
+            "/api/ai",
+            Router::new().route("/:schoolId/query", post(routes::ai::query_ai)),
+        )
         // OCR Routes
         .nest(
             "/api/ocr-routes",

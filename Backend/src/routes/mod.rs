@@ -1,4 +1,4 @@
-// Academic module logic is split into class, subjects, topic, exam routes
+pub mod ai;
 pub mod announcement;
 pub mod attendance;
 pub mod auth;

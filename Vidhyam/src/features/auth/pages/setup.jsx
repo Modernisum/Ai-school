@@ -18,7 +18,7 @@ import {
   X
 } from "lucide-react";
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL + "/setup/school";
+const API_BASE = import.meta.env.VITE_API_BASE_URL + "/setup/school";
 
 const CLASS_LEVELS = [
   { label: "Primary (Up to Class 5)", value: 5, description: "Pre-Nursery to Class 5" },

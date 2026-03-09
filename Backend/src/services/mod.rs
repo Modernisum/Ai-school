@@ -7,6 +7,7 @@ pub mod operations_service;
 pub mod resource_service;
 pub mod setup_service;
 pub mod student_service;
+pub mod ai_service;
 pub mod traits;
 
 use crate::repository::Repositories;
@@ -18,6 +19,7 @@ use crate::services::resource_service::{PostgresOCRService, PostgresResourceServ
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
 use crate::services::leave_service::PostgresLeaveService;
+use crate::services::ai_service::PostAiService;
 use crate::services::traits::*;
 use std::sync::Arc;
 
@@ -38,6 +40,7 @@ pub struct Services {
     pub responsibility: Arc<dyn ResponsibilityService>,
     pub task: Arc<dyn TaskService>,
     pub leave: Arc<dyn LeaveService>,
+    pub ai: Arc<dyn AiService>,
 }
 
 pub fn initialize_services(repos: Arc<Repositories>) -> Services {
@@ -46,6 +49,7 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
             repos: repos.clone(),
         },
     );
+    let ai_orchestrator = Arc::new(crate::logic::ai_orchestrator::AiOrchestrator::new(repos.clone()));
 
     Services {
         auth: Arc::new(PostgresAuthService {
@@ -82,5 +86,6 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         leave: Arc::new(PostgresLeaveService {
             repos: repos.clone(),
         }),
+        ai: Arc::new(PostAiService::new(ai_orchestrator)),
     }
 }

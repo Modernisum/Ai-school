@@ -40,6 +40,8 @@ serde_with = "3.0"
 hex = "0.4"
 bigdecimal = "0.3"
 jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
+genpdf = "0.2"
+printpdf = "0.7.0"
 
 [profile.dev]
 opt-level = 0

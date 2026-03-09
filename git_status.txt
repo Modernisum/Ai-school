@@ -1,0 +1,109 @@
+On branch main
+Your branch is behind 'origin/main' by 2 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    ## Plan: Add Promo Code Feature to Schoo.md
+	deleted:    API_TESTING_QUICK_START.md
+	modified:   Backend/.env
+	deleted:    Backend/API_QUICK_REFERENCE.md
+	deleted:    Backend/API_TESTING_GUIDE.md
+	deleted:    Backend/API_TESTING_README.md
+	modified:   Backend/Cargo.toml
+	deleted:    Backend/MODEL_ALIGNMENT_OPTIMIZATION.md
+	deleted:    Backend/OPTIMIZATION_SUMMARY.md
+	deleted:    Backend/Student_API_Tests.postman_collection.json
+	deleted:    Backend/TESTING_COMPLETE_REPORT.md
+	deleted:    Backend/TESTING_SUMMARY.md
+	deleted:    Backend/USER_API_QUICK_REFERENCE.md
+	deleted:    Backend/USER_API_VISUAL_FLOWS.md
+	deleted:    Backend/USER_API_WORKFLOW.md
+	deleted:    Backend/compile_errors.txt
+	deleted:    Backend/examples/gen_hash.rs
+	modified:   Backend/src/db.rs
+	modified:   Backend/src/logic/mod.rs
+	modified:   Backend/src/main.rs
+	modified:   Backend/src/repository/mod.rs
+	modified:   Backend/src/repository/postgres.rs
+	modified:   Backend/src/repository/traits.rs
+	modified:   Backend/src/routes/leave.rs
+	modified:   Backend/src/routes/mod.rs
+	modified:   Backend/src/services/mod.rs
+	modified:   Backend/src/services/traits.rs
+	deleted:    Backend/test_apis.ps1
+	deleted:    Backend/test_apis.sh
+	deleted:    Backend/verify_billing_v2.sh
+	deleted:    Backend/verify_promo.sh
+	deleted:    Plan /Billing_plan_superadmin.md
+	deleted:    Plan /implementation_plan.md.resolved
+	deleted:    Plan /implementation_plan_1.md
+	deleted:    Plan /task.md.resolved
+	modified:   Vidhyam/.env
+	modified:   Vidhyam/index.html
+	modified:   Vidhyam/package-lock.json
+	modified:   Vidhyam/src/App.jsx
+	modified:   Vidhyam/src/App.test.jsx
+	modified:   Vidhyam/src/app/store.js
+	modified:   Vidhyam/src/components/ui/BulkImportModal.jsx
+	modified:   Vidhyam/src/components/ui/SchoolNotifier.jsx
+	modified:   Vidhyam/src/components/ui/Sidebar.jsx
+	modified:   Vidhyam/src/features/academics/api/academicApi.js
+	modified:   Vidhyam/src/features/academics/pages/Materials.jsx
+	modified:   Vidhyam/src/features/academics/pages/attendance.jsx
+	modified:   Vidhyam/src/features/academics/pages/exam.jsx
+	modified:   Vidhyam/src/features/academics/pages/subject.jsx
+	modified:   Vidhyam/src/features/auth/components/SessionHandler.jsx
+	modified:   Vidhyam/src/features/auth/pages/login.jsx
+	modified:   Vidhyam/src/features/auth/pages/setup.jsx
+	modified:   Vidhyam/src/features/billing/components/ActiveFeesCard.jsx
+	modified:   Vidhyam/src/features/billing/components/FeesComponents1.jsx
+	modified:   Vidhyam/src/features/billing/components/FeesListAndPayment.jsx
+	modified:   Vidhyam/src/features/billing/components/FeesModals.jsx
+	modified:   Vidhyam/src/features/billing/components/PendingFeesCard.jsx
+	modified:   Vidhyam/src/features/billing/components/TotalFeesCard.jsx
+	modified:   Vidhyam/src/features/billing/pages/fees.jsx
+	modified:   Vidhyam/src/features/billing/pages/referralCoupons.jsx
+	modified:   Vidhyam/src/features/dashboard/pages/dashboard.jsx
+	modified:   Vidhyam/src/features/dashboard/pages/home.jsx
+	modified:   Vidhyam/src/features/documents/pages/upload.jsx
+	modified:   Vidhyam/src/features/employees/api/employeeApi.js
+	modified:   Vidhyam/src/features/employees/components/LeaveManagement.jsx
+	modified:   Vidhyam/src/features/employees/components/addemployee.jsx
+	modified:   Vidhyam/src/features/employees/components/employeeform.jsx
+	modified:   Vidhyam/src/features/employees/components/employeeprofile.jsx
+	modified:   Vidhyam/src/features/employees/pages/employee.jsx
+	modified:   Vidhyam/src/features/infrastructure/components/space/AddEditSpaceTab.jsx
+	modified:   Vidhyam/src/features/infrastructure/components/space/CategoriesTab.jsx
+	modified:   Vidhyam/src/features/infrastructure/components/space/SpacesListTab.jsx
+	modified:   Vidhyam/src/features/infrastructure/components/space/api.js
+	modified:   Vidhyam/src/features/infrastructure/pages/complain.jsx
+	modified:   Vidhyam/src/features/infrastructure/pages/school.jsx
+	modified:   Vidhyam/src/features/infrastructure/pages/schoolprofile.jsx
+	modified:   Vidhyam/src/features/infrastructure/pages/space.jsx
+	modified:   Vidhyam/src/features/students/api/studentApi.js
+	modified:   Vidhyam/src/features/students/components/addstudent.jsx
+	modified:   Vidhyam/src/features/students/components/editstudent.jsx
+	modified:   Vidhyam/src/features/students/components/studentprofile.jsx
+	modified:   Vidhyam/src/features/students/pages/student.jsx
+	modified:   Vidhyam/src/index.jsx
+	modified:   Vidhyam/src/reportWebVitals.js
+	modified:   Vidhyam/src/setupTests.js
+	modified:   Vidhyam/src/utils/academicUtils.js
+	modified:   Vidhyam/src/utils/api.js
+	modified:   Vidhyam/src/utils/helpers.js
+	modified:   Vidhyam/src/utils/theme.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	Backend/.cargo/
+	Backend/src/logic/ai_orchestrator.rs
+	Backend/src/logic/pdf_generator.rs
+	Backend/src/routes/ai.rs
+	Backend/src/services/ai_service.rs
+	Plan/
+	Vidhyam/src/features/employees/pages/payroll.jsx
+	git_status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

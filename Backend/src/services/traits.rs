@@ -555,3 +555,8 @@ pub trait LeaveService: Send + Sync {
     ) -> Result<(), AppError>;
 }
 
+#[async_trait]
+pub trait AiService: Send + Sync {
+    async fn post_query(&self, school_id: &str, query: &str) -> Result<Value, AppError>;
+}
+

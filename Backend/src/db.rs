@@ -28,6 +28,20 @@ impl DbClient {
             .execute(&pool)
             .await?;
 
+        println!("Creating schools table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS schools (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) UNIQUE NOT NULL,
+                school_name VARCHAR(255) NOT NULL,
+                data JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         println!("Migrating schools table...");
         sqlx::query(
             "ALTER TABLE schools
@@ -72,6 +86,25 @@ impl DbClient {
         .execute(&pool)
         .await?;
 
+        println!("Creating auth_logs table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS auth_logs (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                user_type VARCHAR(50),
+                action VARCHAR(100),
+                details TEXT,
+                ip_address TEXT,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query("ALTER TABLE auth_logs ADD COLUMN IF NOT EXISTS details TEXT")
+            .execute(&pool)
+            .await?;
+
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS students (
                 id SERIAL PRIMARY KEY,
@@ -108,16 +141,33 @@ impl DbClient {
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS classes (
-                id SERIAL PRIMARY KEY,
-                class_name VARCHAR(100) NOT NULL,
+                id VARCHAR(255) NOT NULL,
                 school_id VARCHAR(255) NOT NULL,
-                section VARCHAR(50),
-                class_teacher VARCHAR(255),
+                name VARCHAR(255) NOT NULL,
+                total_students INTEGER DEFAULT 0,
+                total_teachers INTEGER DEFAULT 0,
+                total_periods INTEGER DEFAULT 0,
                 room_number VARCHAR(50),
+                class_fees DOUBLE PRECISION DEFAULT 0.0,
+                sections JSONB DEFAULT '[]',
+                streams JSONB DEFAULT '[]',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, class_name)
+                PRIMARY KEY (school_id, id)
             )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "ALTER TABLE classes
+             ADD COLUMN IF NOT EXISTS name VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS total_students INTEGER DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS total_teachers INTEGER DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS total_periods INTEGER DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS class_fees DOUBLE PRECISION DEFAULT 0.0,
+             ADD COLUMN IF NOT EXISTS sections JSONB DEFAULT '[]',
+             ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]'"
         )
         .execute(&pool)
         .await?;
@@ -442,6 +492,23 @@ impl DbClient {
         .execute(&pool)
         .await?;
 
+        println!("Creating items table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS items (
+                id SERIAL PRIMARY KEY,
+                item_id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                item_name VARCHAR(255) NOT NULL,
+                room_number VARCHAR(50),
+                class_id VARCHAR(255),
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, space_id, item_id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         println!("Creating subjects table...");
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS subjects (
@@ -473,6 +540,37 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS fee_interval INTEGER DEFAULT 1,
              ADD COLUMN IF NOT EXISTS schedule_type VARCHAR(50) DEFAULT 'daily',
              ADD COLUMN IF NOT EXISTS schedule_data JSONB DEFAULT '[]'"
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("Creating materials table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS materials (
+                id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                quantity BIGINT DEFAULT 0,
+                unit_price DOUBLE PRECISION DEFAULT 0.0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, id)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("Creating material_locations table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS material_locations (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                material_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                item_id VARCHAR(255) NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, material_id, space_id, item_id)
+            )",
         )
         .execute(&pool)
         .await?;
