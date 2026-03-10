@@ -650,6 +650,40 @@ impl DbClient {
         .execute(&pool)
         .await?;
 
+        println!("Creating geo data tables...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS countries (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) UNIQUE NOT NULL,
+                code VARCHAR(10) NOT NULL,
+                phone_code VARCHAR(10) NOT NULL
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS states (
+                id SERIAL PRIMARY KEY,
+                country_id INTEGER REFERENCES countries(id) ON DELETE CASCADE,
+                name VARCHAR(255) NOT NULL,
+                UNIQUE(country_id, name)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS districts (
+                id SERIAL PRIMARY KEY,
+                state_id INTEGER REFERENCES states(id) ON DELETE CASCADE,
+                name VARCHAR(255) NOT NULL,
+                UNIQUE(state_id, name)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
         println!("Connecting to Redis...");
 
         let cfg = Config::from_url(redis_url);

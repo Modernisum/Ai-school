@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "active_promo_id": null,
+    "base_rate": "1",
+    "billing_status": "active",
+    "created_at": "2026-03-06T13:16:56.353281+00:00",
+    "data": {
+      "affiliatedBoard": "CBSE",
+      "classLevel": 12,
+      "schoolAddress": "123 Tech Lane",
+      "schoolCode": "S000001"
+    },
+    "id": 1,
+    "is_blocked": false,
+    "last_billing_date": "2026-03-06T13:16:56.353281+00:00",
+    "notification": null,
+    "per_student_rate": "1",
+    "promo_expires_at": null,
+    "school_id": "153490",
+    "school_name": "Modern AI School",
+    "session_duration_hours": 24,
+    "status": "active",
+    "trial_ends_at": null,
+    "updated_at": "2026-03-06T13:16:56.353281+00:00",
+    "wallet_balance": "1000"
+  }
+]

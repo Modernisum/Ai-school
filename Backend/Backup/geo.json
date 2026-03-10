@@ -1,0 +1,47 @@
+[
+  {
+    "name": "India",
+    "code": "IN",
+    "phone_code": "+91",
+    "states": [
+      {
+        "name": "Delhi",
+        "districts": ["New Delhi", "Central Delhi", "South Delhi"]
+      },
+      {
+        "name": "Maharashtra",
+        "districts": ["Mumbai", "Pune", "Nagpur"]
+      },
+      {
+        "name": "Karnataka",
+        "districts": ["Bengaluru", "Mysuru", "Mangaluru"]
+      }
+    ]
+  },
+  {
+    "name": "United States",
+    "code": "US",
+    "phone_code": "+1",
+    "states": [
+      {
+        "name": "California",
+        "districts": ["Los Angeles", "San Francisco"]
+      },
+      {
+        "name": "New York",
+        "districts": ["Manhattan", "Brooklyn", "Queens"]
+      }
+    ]
+  },
+  {
+    "name": "United Kingdom",
+    "code": "UK",
+    "phone_code": "+44",
+    "states": [
+      {
+        "name": "England",
+        "districts": ["London", "Manchester", "Birmingham"]
+      }
+    ]
+  }
+]

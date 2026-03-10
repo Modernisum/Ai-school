@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   School,
@@ -28,7 +28,7 @@ const CLASS_LEVELS = [
 ];
 
 const BOARDS = ["CBSE", "ICSE", "State Board (UP)", "State Board (MP)", "State Board (Rajasthan)", "State Board (Maharashtra)", "State Board (Bihar)", "NIOS", "IB", "Cambridge (IGCSE)"];
-const MEDIUMS = ["Hindi Medium", "English Medium", "Bilingual (Hindi + English)", "Urdu Medium", "Other"];
+const MEDIUMS = ['English', 'Hindi', 'Spanish', 'French', 'Standard Arabic', 'Bengali', 'Russian', 'Portuguese', 'Urdu', 'Indonesian', 'German', 'Japanese', 'Marathi', 'Telugu', 'Turkish', 'Tamil'];
 
 const ErrorBox = ({ msg }) => msg ? (
   <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 p-3 rounded-lg border border-rose-500/20">
@@ -62,11 +62,48 @@ export default function SchoolSetup() {
     medium: "",
     classLevel: "",
     sinceEstablished: "",
-    directors: [""],     // Array of director names
-    schoolAddress: "",
+    directors: [""],
+    addressLine: "",
+    countryId: "",
+    stateId: "",
+    districtId: "",
+    pincode: "",
     password: "",
     confirmPassword: "",
   });
+
+  const [countries, setCountries] = useState([]);
+  const [statesList, setStatesList] = useState([]);
+  const [districts, setDistricts] = useState([]);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_API_BASE_URL + "/geo/countries")
+      .then(res => res.json())
+      .then(setCountries)
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    setForm(f => ({ ...f, stateId: '', districtId: '' }));
+    setStatesList([]);
+    if (form.countryId) {
+      fetch(import.meta.env.VITE_API_BASE_URL + `/geo/states/${form.countryId}`)
+        .then(res => res.json())
+        .then(setStatesList)
+        .catch(console.error);
+    }
+  }, [form.countryId]);
+
+  useEffect(() => {
+    setForm(f => ({ ...f, districtId: '' }));
+    setDistricts([]);
+    if (form.stateId) {
+      fetch(import.meta.env.VITE_API_BASE_URL + `/geo/districts/${form.stateId}`)
+        .then(res => res.json())
+        .then(setDistricts)
+        .catch(console.error);
+    }
+  }, [form.stateId]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -99,8 +136,8 @@ export default function SchoolSetup() {
       setError("Please fill in all required fields (Board, Medium, and Class Level)");
       return false;
     }
-    if (currentStep === 3 && !form.schoolAddress.trim()) {
-      setError("Please enter the school address");
+    if (currentStep === 3 && (!form.addressLine || !form.countryId || !form.stateId || !form.districtId || !form.pincode)) {
+      setError("Please fill all campus location fields completely");
       return false;
     }
     return true;
@@ -123,12 +160,19 @@ export default function SchoolSetup() {
 
     try {
       const selectedLevel = CLASS_LEVELS.find(l => l.value === parseInt(form.classLevel));
+      
+      const countryName = countries.find(c => c.id == form.countryId)?.name || '';
+      const stateName = statesList.find(c => c.id == form.stateId)?.name || '';
+      const districtName = districts.find(c => c.id == form.districtId)?.name || '';
+      const fullAddress = `${form.addressLine}, ${districtName}, ${stateName}, ${countryName} - ${form.pincode}`;
+      
       const response = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           schoolName: form.schoolName,
-          schoolAddress: form.schoolAddress,
+          schoolAddress: fullAddress,
+          classLevelStart: -2, // Pre-Nursery by default for Vidhyam
           classLevel: parseInt(form.classLevel),
           classLevelLabel: selectedLevel?.label || "",
           affiliatedBoard: form.affiliatedBoard,
@@ -137,6 +181,7 @@ export default function SchoolSetup() {
           sinceEstablished: form.sinceEstablished,
           directors: form.directors.filter(d => d.trim()),
           password: form.password,
+          defaultStudents: 30, // Important for generating nice sample sections
         }),
       });
 
@@ -149,7 +194,7 @@ export default function SchoolSetup() {
       const schoolId = resData.schoolId || resData.data?.schoolId || resData.id;
 
       localStorage.setItem("schoolName", form.schoolName);
-      localStorage.setItem("schoolAddress", form.schoolAddress);
+      localStorage.setItem("schoolAddress", fullAddress);
       localStorage.setItem("boardName", form.affiliatedBoard);
       localStorage.setItem("medium", form.medium);
       localStorage.setItem("maxClassLevel", form.classLevel);
@@ -371,15 +416,47 @@ export default function SchoolSetup() {
                   <h3 className="text-2xl font-bold text-white mb-2">Campus Location</h3>
                   <p className="text-slate-400 text-sm">Where is this institution physically located?</p>
                 </div>
-                <div className="space-y-5">
-                  <div className="relative">
-                    <div className="absolute top-4 left-4 pointer-events-none"><MapPin className="h-5 w-5 text-slate-500" /></div>
-                    <textarea name="schoolAddress" value={form.schoolAddress} onChange={handleChange} className="input-dark pl-12 py-4 text-base resize-none" placeholder="Enter full campus address, including city and pin code" rows={5} />
+                <div className="space-y-4">
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Country *</label>
+                    <select name="countryId" value={form.countryId} onChange={handleChange} className="input-dark h-12 text-sm w-full outline-none">
+                      <option value="">Select Country</option>
+                      {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">State *</label>
+                    <select name="stateId" value={form.stateId} onChange={handleChange} className="input-dark h-12 text-sm w-full outline-none" disabled={!form.countryId}>
+                      <option value="">Select State</option>
+                      {statesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">District *</label>
+                    <select name="districtId" value={form.districtId} onChange={handleChange} className="input-dark h-12 text-sm w-full outline-none" disabled={!form.stateId}>
+                      <option value="">Select District</option>
+                      {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="space-y-1.5 flex-1">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Address Line *</label>
+                      <input type="text" name="addressLine" value={form.addressLine} onChange={handleChange} className="input-dark px-4 h-12 text-sm w-full" placeholder="Street/Locality" />
+                    </div>
+                    <div className="space-y-1.5 w-[35%]">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 ml-1">Pincode *</label>
+                      <input type="number" name="pincode" value={form.pincode} onChange={handleChange} className="input-dark px-4 h-12 text-sm w-full" placeholder="PIN" />
+                    </div>
+                  </div>
+
                   <ErrorBox msg={error} />
                   <div className="pt-4 flex items-center justify-between gap-4">
-                    <button onClick={handleBack} className="btn-secondary py-3 px-6 h-14">Back</button>
-                    <button onClick={handleNext} className="btn-primary py-3 px-6 h-14 flex-1 justify-center">Continue Setup <ArrowRight className="w-4 h-4 ml-1" /></button>
+                    <button onClick={handleBack} className="btn-secondary py-3 px-6 h-12">Back</button>
+                    <button onClick={handleNext} className="btn-primary py-3 px-6 h-12 flex-1 justify-center">Continue Setup <ArrowRight className="w-4 h-4 ml-1" /></button>
                   </div>
                 </div>
               </motion.div>

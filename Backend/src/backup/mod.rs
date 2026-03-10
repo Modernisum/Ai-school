@@ -4,7 +4,7 @@ use std::fs;
 use std::error::Error;
 use std::time::Duration;
 use tokio::time::sleep;
-use chrono::{Utc, DateTime, NaiveDate};
+use chrono::{Utc, Local, DateTime, NaiveDate};
 use bigdecimal::BigDecimal;
 
 pub struct BackupService {
@@ -28,7 +28,7 @@ impl BackupService {
             if let Err(e) = self.perform_backup().await {
                 eprintln!("[Backup Error] {}", e);
             } else {
-                println!("[Backup] Auto-backup completed successfully at {}", Utc::now());
+                println!("[Backup] Auto-backup completed successfully at {}", Local::now().format("%Y-%m-%d %H:%M:%S"));
             }
         }
     }
@@ -40,7 +40,7 @@ impl BackupService {
             "exams", "attendance", "awards", "tasks", "announcements", 
             "complaints", "responsibilities", "employee_responsibilities", 
             "spaces", "events", "materials", "reminders", "fees", "promo_codes",
-            "school_promo_codes", "billing_ledger"
+            "school_promo_codes", "billing_ledger", "countries", "states", "districts"
         ];
 
         for table in tables {
@@ -50,7 +50,7 @@ impl BackupService {
         }
 
         let metadata = json!({
-            "last_backup": Utc::now().to_rfc3339(),
+            "last_backup": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
             "status": "success"
         });
         fs::write(format!("{}/metadata.json", self.backup_dir), metadata.to_string())?;
@@ -120,6 +120,78 @@ impl BackupService {
     }
 
     pub async fn auto_restore(&self) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        // Restore essential geo data from single geo.json backup
+        let geo_file_path = format!("{}/geo.json", self.backup_dir);
+        if let Ok(content) = fs::read_to_string(&geo_file_path) {
+            if let Ok(countries) = serde_json::from_str::<Vec<Value>>(&content) {
+                println!("[Restore] Found geo.json with {} countries. Syncing to DB...", countries.len());
+                for country in countries {
+                    if let (Some(name), Some(code), Some(phone_code)) = (
+                        country.get("name").and_then(|v| v.as_str()),
+                        country.get("code").and_then(|v| v.as_str()),
+                        country.get("phone_code").and_then(|v| v.as_str()),
+                    ) {
+                        // 1. Insert/Update Country
+                        let country_row: (i32,) = sqlx::query_as(
+                            "INSERT INTO countries (name, code, phone_code) 
+                             VALUES ($1, $2, $3) 
+                             ON CONFLICT (name) DO UPDATE SET code = EXCLUDED.code, phone_code = EXCLUDED.phone_code 
+                             RETURNING id"
+                        )
+                        .bind(name)
+                        .bind(code)
+                        .bind(phone_code)
+                        .fetch_one(&self.pool)
+                        .await?;
+                        
+                        let country_id = country_row.0;
+
+                        // 2. Insert States
+                        if let Some(states) = country.get("states").and_then(|v| v.as_array()) {
+                            for state in states {
+                                if let Some(state_name) = state.get("name").and_then(|v| v.as_str()) {
+                                    let state_row: (i32,) = sqlx::query_as(
+                                        "INSERT INTO states (country_id, name) 
+                                         VALUES ($1, $2) 
+                                         ON CONFLICT (country_id, name) DO UPDATE SET name = EXCLUDED.name 
+                                         RETURNING id"
+                                    )
+                                    .bind(country_id)
+                                    .bind(state_name)
+                                    .fetch_one(&self.pool)
+                                    .await?;
+                                    
+                                    let state_id = state_row.0;
+
+                                    // 3. Insert Districts
+                                    if let Some(districts) = state.get("districts").and_then(|v| v.as_array()) {
+                                        for district in districts {
+                                            if let Some(district_name) = district.as_str() {
+                                                sqlx::query(
+                                                    "INSERT INTO districts (state_id, name) 
+                                                     VALUES ($1, $2) 
+                                                     ON CONFLICT (state_id, name) DO NOTHING"
+                                                )
+                                                .bind(state_id)
+                                                .bind(district_name)
+                                                .execute(&self.pool)
+                                                .await?;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Safety: update sequences to highest ID
+        let _ = sqlx::query("SELECT setval('countries_id_seq', COALESCE((SELECT MAX(id)+1 FROM countries), 1), false)").execute(&self.pool).await;
+        let _ = sqlx::query("SELECT setval('states_id_seq', COALESCE((SELECT MAX(id)+1 FROM states), 1), false)").execute(&self.pool).await;
+        let _ = sqlx::query("SELECT setval('districts_id_seq', COALESCE((SELECT MAX(id)+1 FROM districts), 1), false)").execute(&self.pool).await;
+
         Ok(true)
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Loader, CheckCircle, Copy, X } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
@@ -20,18 +20,61 @@ const Field = ({ label, field, type = 'text', required, placeholder, form, set }
 
 export default function SetupPage() {
     const toast = useContext(ToastCtx)
+    const [countries, setCountries] = useState([])
+    const [statesList, setStatesList] = useState([])
+    const [districts, setDistricts] = useState([])
     const [form, setForm] = useState({
         schoolName: '',
         password: '',
         principalName: '',
-        address: '',
+        addressLine: '',
+        countryId: '',
+        stateId: '',
+        districtId: '',
+        pincode: '',
         phone: '',
         email: '',
         affiliatedBoard: '',
+        medium: 'English',
         classLevelStart: 'Pre-Nursery',
         classLevelEnd: 'Class 12',
         schoolType: 'Co-Ed',
     })
+
+    useEffect(() => {
+        fetch(`${API_BASE}/geo/countries`).then(res => res.json()).then(setCountries).catch(console.error)
+    }, [])
+
+    useEffect(() => {
+        setForm(f => ({ ...f, stateId: '', districtId: '' }))
+        setStatesList([])
+        if (form.countryId) {
+            fetch(`${API_BASE}/geo/states/${form.countryId}`).then(res => res.json()).then(setStatesList).catch(console.error)
+            
+            // Auto-fill phone code
+            const country = countries.find(c => c.id == form.countryId)
+            if (country && !form.phone) {
+                setForm(f => ({ ...f, phone: country.phone_code + ' ' }))
+            }
+        }
+    }, [form.countryId, countries])
+
+    useEffect(() => {
+        setForm(f => ({ ...f, districtId: '' }))
+        setDistricts([])
+        if (form.stateId) {
+            fetch(`${API_BASE}/geo/districts/${form.stateId}`).then(res => res.json()).then(setDistricts).catch(console.error)
+        }
+    }, [form.stateId])
+
+    const classNameToLevel = (name) => {
+        if (name === 'Pre-Nursery') return -2;
+        if (name === 'Nursery') return -1;
+        if (name === 'Kindergarten') return 0;
+        const match = name.match(/Class (\d+)/);
+        if (match) return parseInt(match[1]);
+        return 1;
+    };
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(null)
 
@@ -43,11 +86,16 @@ export default function SetupPage() {
         setLoading(true)
         setSuccess(null)
         try {
+            const countryName = countries.find(c => c.id == form.countryId)?.name || '';
+            const stateName = statesList.find(c => c.id == form.stateId)?.name || '';
+            const districtName = districts.find(c => c.id == form.districtId)?.name || '';
+            
             const payload = {
                 ...form,
-                schoolAddress: form.address,
-                classLevel: parseInt(form.classLevelEnd.replace(/\D/g, '')) || 12,
-                defaultStudents: 0
+                schoolAddress: `${form.addressLine}, ${districtName}, ${stateName}, ${countryName} - ${form.pincode}`,
+                classLevelStart: classNameToLevel(form.classLevelStart),
+                classLevel: classNameToLevel(form.classLevelEnd),
+                defaultStudents: 30
             }
             const res = await fetch(`${API_BASE}/setup/school`, {
                 method: 'POST',
@@ -58,8 +106,8 @@ export default function SetupPage() {
             if (data.success || data.schoolId) {
                 setSuccess({ ...data, password: form.password, schoolName: form.schoolName })
                 setForm({
-                    schoolName: '', password: '', principalName: '', address: '',
-                    phone: '', email: '', affiliatedBoard: '',
+                    schoolName: '', password: '', principalName: '', addressLine: '', countryId: '', stateId: '', districtId: '', pincode: '',
+                    phone: '', email: '', affiliatedBoard: '', medium: 'English',
                     classLevelStart: 'Pre-Nursery', classLevelEnd: 'Class 12', schoolType: 'Co-Ed',
                 })
             } else {
@@ -137,7 +185,31 @@ export default function SetupPage() {
                         <Field form={form} set={set} label="Principal Name" field="principalName" placeholder="Full name" />
                         <Field form={form} set={set} label="Email" field="email" type="email" placeholder="school@example.com" />
                         <Field form={form} set={set} label="Phone" field="phone" type="tel" placeholder="+91 XXXXX XXXXX" />
-                        <Field form={form} set={set} label="Address" field="address" placeholder="Full address" />
+                        <div className="input-group">
+                            <label>Country *</label>
+                            <select value={form.countryId} onChange={e => set('countryId', e.target.value)} required>
+                                <option value="">Select country…</option>
+                                {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>State *</label>
+                            <select value={form.stateId} onChange={e => set('stateId', e.target.value)} required disabled={!form.countryId}>
+                                <option value="">Select state…</option>
+                                {statesList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>District *</label>
+                            <select value={form.districtId} onChange={e => set('districtId', e.target.value)} required disabled={!form.stateId}>
+                                <option value="">Select district…</option>
+                                {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                            </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+                            <Field form={form} set={set} label="Address Line" field="addressLine" required placeholder="Street, Locality" />
+                            <Field form={form} set={set} label="Pincode" field="pincode" required placeholder="PIN" />
+                        </div>
                     </div>
 
                     <div className="card">
@@ -147,6 +219,14 @@ export default function SetupPage() {
                             <select value={form.affiliatedBoard} onChange={e => set('affiliatedBoard', e.target.value)}>
                                 <option value="">Select board…</option>
                                 {['CBSE', 'ICSE', 'State Board', 'IB', 'IGCSE', 'Other'].map(b => (
+                                    <option key={b} value={b}>{b}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Medium of Instruction</label>
+                            <select value={form.medium} onChange={e => set('medium', e.target.value)}>
+                                {['English', 'Hindi', 'Spanish', 'French', 'Standard Arabic', 'Bengali', 'Russian', 'Portuguese', 'Urdu', 'Indonesian', 'German', 'Japanese', 'Marathi', 'Telugu', 'Turkish', 'Tamil'].map(b => (
                                     <option key={b} value={b}>{b}</option>
                                 ))}
                             </select>

@@ -13,6 +13,50 @@ export default function BackupPage() {
     const [selectedSchool, setSelectedSchool] = useState('')
     const [importFile, setImportFile] = useState(null)
     const [exportingId, setExportingId] = useState(null)
+    const [importingGeo, setImportingGeo] = useState(false)
+
+    const handleGeoExport = async () => {
+        try {
+            const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+            const res = await fetch(`http://${HOST}:8080/api/geo/export`);
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'geo.json';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            toast('success', 'Global Geo JSON Exported');
+        } catch (e) {
+            toast('error', 'Failed to export Geo JSON');
+        }
+    }
+
+    const handleGeoImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImportingGeo(true);
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+            const res = await fetch(`http://${HOST}:8080/api/geo/import`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast('success', 'Geo Data updated and synced successfully!');
+            } else {
+                toast('error', result.message || 'Geo Data update failed');
+            }
+        } catch (error) {
+            toast('error', 'Invalid JSON file');
+        }
+        setImportingGeo(false);
+        e.target.value = null;
+    }
 
     const loadSchools = async () => {
         const r = await listSchools()
@@ -206,6 +250,29 @@ export default function BackupPage() {
                             {importResult.data?.message || importResult.message}
                         </div>
                     )}
+                </div>
+            </div>
+
+            <h2 className="page-sub" style={{ marginTop: 30, color: 'var(--text)', fontWeight: 600 }}>System Configuration</h2>
+            <div className="card" style={{ marginTop: 10 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
+                    <Database size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--accent)' }} /> Geo Data Management
+                </h3>
+                <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>
+                    Download the global Geo Data JSON (Countries, States, Districts), add locations, and upload to sync the backend database.
+                </p>
+
+                <div style={{ display: 'flex', gap: 15 }}>
+                    <button className="btn btn-ghost" onClick={handleGeoExport}>
+                        <Download size={14} /> Download geo.json
+                    </button>
+                    <div>
+                        <input type="file" id="geo-upload" accept=".json" style={{ display: 'none' }} onChange={handleGeoImport} />
+                        <button className="btn btn-primary" onClick={() => document.getElementById('geo-upload').click()} disabled={importingGeo}>
+                            {importingGeo ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={14} />}
+                            Upload & Sync Geo Data
+                        </button>
+                    </div>
                 </div>
             </div>
         </motion.div>

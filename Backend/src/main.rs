@@ -143,6 +143,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Global Backup
                 .route("/backup", post(crate::super_admin::routes::manual_backup)),
         )
+        // ── Geo Data Routes ────────────────────────────────────────────────────
+        .nest(
+            "/api/geo",
+            Router::new()
+                .route("/countries", get(routes::geo::get_countries))
+                .route("/states/:countryId", get(routes::geo::get_states))
+                .route("/districts/:stateId", get(routes::geo::get_districts))
+                .route("/export", get(routes::geo::export_geo_json))
+                .route("/import", post(routes::geo::import_geo_json)),
+        )
         // ── School notification polling (called by school frontend) ────────────
         .route(
             "/api/school/:schoolId/notification",

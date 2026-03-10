@@ -211,10 +211,14 @@ impl SetupService for PostgresSetupService {
         let school_address = data["schoolAddress"]
             .as_str()
             .ok_or("Missing schoolAddress")?;
+        let class_level_start = data["classLevelStart"].as_i64().unwrap_or(0);
         let class_level = data["classLevel"].as_i64().unwrap_or(0);
         let password = data["password"].as_str().ok_or("Missing password")?;
         let affiliated_board = data["affiliatedBoard"].as_str().unwrap_or("");
-        let default_students = data["defaultStudents"].as_i64().unwrap_or(0);
+        let mut default_students = data["defaultStudents"].as_i64().unwrap_or(30);
+        if default_students <= 0 {
+            default_students = 30; // Enforce sections generation
+        }
 
         // 1. Generate School Attributes
         let school_id = format!("{:06}", rand::random::<u32>() % 900000 + 100000);
@@ -245,7 +249,7 @@ impl SetupService for PostgresSetupService {
 
         // 4. Initialize Infrastructure (Spaces & Items)
         let spaces = vec![
-            ("classroom", self.generate_classes(class_level as i32)),
+            ("classroom", self.generate_classes(class_level_start as i32, class_level as i32)),
             ("kitchen", vec!["Kitchen 1".to_string()]),
             ("storeroom", vec!["Storeroom 1".to_string()]),
             (
@@ -296,7 +300,7 @@ impl SetupService for PostgresSetupService {
         }
 
         // 5. Initialize Academic Structure
-        let class_names = self.generate_classes(class_level as i32);
+        let class_names = self.generate_classes(class_level_start as i32, class_level as i32);
         let subjects_map = get_subjects();
         for class_name in class_names {
             let class_id = class_name.to_lowercase().replace(' ', "-");
@@ -367,22 +371,29 @@ impl SetupService for PostgresSetupService {
 }
 
 impl PostgresSetupService {
-    fn generate_classes(&self, level: i32) -> Vec<String> {
-        let mut classes = vec![
-            "Pre-Nursery".to_string(),
-            "Nursery".to_string(),
-            "Kindergarten".to_string(),
-        ];
-        for i in 1..=level {
-            classes.push(format!("Class {}", i));
-        }
-        if level >= 10 {
-            classes.push("Class 11 Science".to_string());
-            classes.push("Class 11 Commerce".to_string());
-            classes.push("Class 11 Humanities".to_string());
-            classes.push("Class 12 Science".to_string());
-            classes.push("Class 12 Commerce".to_string());
-            classes.push("Class 12 Humanities".to_string());
+    fn generate_classes(&self, start_level: i32, end_level: i32) -> Vec<String> {
+        let mut classes = Vec::new();
+        if start_level <= -2 && end_level >= -2 { classes.push("Pre-Nursery".to_string()); }
+        if start_level <= -1 && end_level >= -1 { classes.push("Nursery".to_string()); }
+        if start_level <= 0 && end_level >= 0 { classes.push("Kindergarten".to_string()); }
+        
+        let from = std::cmp::max(1, start_level);
+        let to = std::cmp::min(12, end_level);
+        
+        if from <= to {
+            for i in from..=to {
+                if i <= 10 {
+                    classes.push(format!("Class {}", i));
+                } else if i == 11 {
+                    classes.push("Class 11 Science".to_string());
+                    classes.push("Class 11 Commerce".to_string());
+                    classes.push("Class 11 Humanities".to_string());
+                } else if i == 12 {
+                    classes.push("Class 12 Science".to_string());
+                    classes.push("Class 12 Commerce".to_string());
+                    classes.push("Class 12 Humanities".to_string());
+                }
+            }
         }
         classes
     }
