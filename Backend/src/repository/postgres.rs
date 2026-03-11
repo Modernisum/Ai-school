@@ -1,5 +1,6 @@
 use crate::db::DbClient;
 use crate::repository::traits::*;
+use uuid::Uuid;
 use async_trait::async_trait;
 use chrono::Datelike;
 use bigdecimal::{FromPrimitive, ToPrimitive};
@@ -31,21 +32,23 @@ impl AuthRepository for PostgresAuthRepository {
         &self,
         id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(id).await?;
         let row = sqlx::query("SELECT * FROM auth WHERE school_id = $1")
             .bind(id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
         Ok(row.map(|r| json!({"schoolId": r.get::<String, _>("school_id"), "password": r.get::<String, _>("password"), "securityAnswerHash": r.get::<Option<String>, _>("security_answer_hash")})))
     }
 
     async fn update_auth(&self, id: &str, data: Value) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(id).await?;
         if let Some(pass) = data["password"].as_str() {
             sqlx::query("INSERT INTO auth (school_id, password) VALUES ($1, $2) ON CONFLICT (school_id) DO UPDATE SET password = $2")
-                .bind(id).bind(pass).execute(&self.client.pool).await?;
+                .bind(id).bind(pass).execute(&mut *conn).await?;
         }
         if let Some(q) = data["securityQuestion"].as_str() {
             sqlx::query("UPDATE auth SET security_question = $1, security_answer_hash = $2 WHERE school_id = $3")
-                .bind(q).bind(data["securityAnswerHash"].as_str()).bind(id).execute(&self.client.pool).await?;
+                .bind(q).bind(data["securityAnswerHash"].as_str()).bind(id).execute(&mut *conn).await?;
         }
         Ok(())
     }
@@ -109,11 +112,12 @@ impl AuthRepository for PostgresAuthRepository {
         action: &str,
         details: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(id).await?;
         sqlx::query("INSERT INTO auth_logs (school_id, action, details) VALUES ($1, $2, $3)")
             .bind(id)
             .bind(action)
             .bind(details)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -153,6 +157,8 @@ impl StudentRepository for PostgresStudentRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
         sqlx::query(
             "INSERT INTO students (
                 student_id, school_id, class_name, name, roll_number, section, status,
@@ -199,7 +205,7 @@ impl StudentRepository for PostgresStudentRepository {
         .bind(data["roomNumber"].as_str())
         .bind(data["enrolledSubjects"].clone())
         .bind(data["totalFees"].as_f64().unwrap_or(0.0))
-        .execute(&self.client.pool).await?;
+        .execute(&mut *conn).await?;
         Ok(data)
     }
 
@@ -207,9 +213,10 @@ impl StudentRepository for PostgresStudentRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM students WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows.into_iter().map(|r| {
             json!({
@@ -230,10 +237,11 @@ impl StudentRepository for PostgresStudentRepository {
         school_id: &str,
         student_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT * FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id)
             .bind(student_id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
         Ok(row.map(|r| {
             json!({
@@ -273,6 +281,7 @@ impl StudentRepository for PostgresStudentRepository {
         student_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "UPDATE students SET 
                 name = COALESCE($1, name), 
@@ -327,7 +336,7 @@ impl StudentRepository for PostgresStudentRepository {
         .bind(data["totalFees"].as_f64())
         .bind(school_id)
         .bind(student_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -337,10 +346,11 @@ impl StudentRepository for PostgresStudentRepository {
         school_id: &str,
         student_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id)
             .bind(student_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -350,14 +360,16 @@ impl StudentRepository for PostgresStudentRepository {
         school_id: &str,
         class_name: &str,
     ) -> Result<i32, Box<dyn Error + Send + Sync>> {
-        let row = sqlx::query("SELECT COALESCE(MAX(roll_number), 0) + 1 FROM students WHERE school_id = $1 AND class_name = $2").bind(school_id).bind(class_name).fetch_one(&self.client.pool).await?;
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query("SELECT COALESCE(MAX(roll_number), 0) + 1 FROM students WHERE school_id = $1 AND class_name = $2").bind(school_id).bind(class_name).fetch_one(&mut *conn).await?;
         Ok(row.get(0))
     }
 
     async fn generate_student_id(&self, school_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT COALESCE(MAX(CAST(SUBSTRING(student_id FROM 2) AS INTEGER)), 0) + 1 FROM students WHERE school_id = $1 AND student_id ~ '^S[0-9]+$'")
             .bind(school_id)
-            .fetch_one(&self.client.pool)
+            .fetch_one(&mut *conn)
             .await?;
         let next_val: i32 = row.get(0);
         Ok(format!("S{:06}", next_val))
@@ -376,6 +388,7 @@ impl AcademicRepository for PostgresAcademicRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO classes (id, school_id, name, total_students, total_teachers, total_periods, room_number, class_fees, sections, streams) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (school_id, id) DO NOTHING"
@@ -390,7 +403,7 @@ impl AcademicRepository for PostgresAcademicRepository {
         .bind(data["classFees"].as_f64().unwrap_or(0.0))
         .bind(data["sections"].clone())
         .bind(data["streams"].clone())
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(data)
     }
@@ -399,9 +412,10 @@ impl AcademicRepository for PostgresAcademicRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM classes WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows
             .into_iter()
@@ -438,10 +452,11 @@ impl AcademicRepository for PostgresAcademicRepository {
         school_id: &str,
         class_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT * FROM classes WHERE school_id = $1 AND id = $2")
             .bind(school_id)
             .bind(class_id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
         Ok(
             row.map(
@@ -456,10 +471,11 @@ impl AcademicRepository for PostgresAcademicRepository {
         class_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("UPDATE classes SET name = COALESCE($1, name), room_number = COALESCE($2, room_number) WHERE school_id = $3 AND id = $4")
             .bind(data["className"].as_str())
             .bind(data["roomNumber"].as_str())
-            .bind(school_id).bind(class_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(class_id).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -469,12 +485,13 @@ impl AcademicRepository for PostgresAcademicRepository {
         class_id: &str,
         aggregates: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("UPDATE classes SET total_students = $1, total_teachers = $2, total_periods = $3, class_fees = $4 WHERE school_id = $5 AND id = $6")
             .bind(aggregates["totalStudents"].as_i64())
             .bind(aggregates["totalTeachers"].as_i64())
             .bind(aggregates["totalPeriods"].as_i64())
             .bind(aggregates["classFees"].as_f64())
-            .bind(school_id).bind(class_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(class_id).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -483,11 +500,12 @@ impl AcademicRepository for PostgresAcademicRepository {
         school_id: &str,
         class_name: &str,
     ) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row =
             sqlx::query("SELECT COUNT(*) FROM students WHERE school_id = $1 AND class_name = $2")
                 .bind(school_id)
                 .bind(class_name)
-                .fetch_one(&self.client.pool)
+                .fetch_one(&mut *conn)
                 .await?;
         Ok(row.get(0))
     }
@@ -498,6 +516,7 @@ impl AcademicRepository for PostgresAcademicRepository {
         class_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO class_periods (school_id, class_id, name, start_time, end_time, teacher_id, subject_id) VALUES ($1, $2, $3, $4, $5, $6, $7)")
             .bind(school_id)
             .bind(class_id)
@@ -506,7 +525,7 @@ impl AcademicRepository for PostgresAcademicRepository {
             .bind(data["endTime"].as_str().map(|s| s.parse::<chrono::NaiveTime>().unwrap_or_else(|_| chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap())))
             .bind(data["teacherId"].as_str())
             .bind(data["subjectId"].as_str())
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -515,12 +534,13 @@ impl AcademicRepository for PostgresAcademicRepository {
         school_id: &str,
         class_id: &str,
     ) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query(
             "SELECT COUNT(*) FROM class_periods WHERE school_id = $1 AND class_id = $2",
         )
         .bind(school_id)
         .bind(class_id)
-        .fetch_one(&self.client.pool)
+        .fetch_one(&mut *conn)
         .await?;
         Ok(row.get(0))
     }
@@ -538,6 +558,7 @@ impl AcademicRepository for PostgresAcademicRepository {
             id
         };
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO subjects (id, school_id, name, class_id, class_name, fees, is_compulsory, category, fee_type, fee_interval, schedule_type, schedule_data) 
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
                      ON CONFLICT (school_id, id) DO UPDATE SET 
@@ -563,7 +584,7 @@ impl AcademicRepository for PostgresAcademicRepository {
             .bind(data["feeInterval"].as_i64().unwrap_or(1) as i32)
             .bind(data["scheduleType"].as_str().unwrap_or("daily"))
             .bind(data["scheduleData"].clone())
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(data)
     }
 
@@ -581,9 +602,10 @@ impl AcademicRepository for PostgresAcademicRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM subjects WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows
             .into_iter()
@@ -630,18 +652,20 @@ impl AcademicRepository for PostgresAcademicRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO exams (school_id, name, start_date, end_date) VALUES ($1, $2, $3, $4) ON CONFLICT (school_id, name) DO UPDATE SET start_date = EXCLUDED.start_date")
             .bind(school_id)
             .bind(data["name"].as_str())
             .bind(data["startDate"].as_str().map(|d| d.parse::<chrono::NaiveDate>().unwrap_or_else(|_| chrono::Utc::now().date_naive())))
             .bind(data["endDate"].as_str().map(|d| d.parse::<chrono::NaiveDate>().unwrap_or_else(|_| chrono::Utc::now().date_naive())))
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(data)
     }
     async fn get_exams(&self, school_id: &str) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM exams WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows
             .into_iter()
@@ -654,8 +678,9 @@ impl AcademicRepository for PostgresAcademicRepository {
         student_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'exam', $2, 'submit_marks', $3)")
-            .bind(school_id).bind(student_id).bind(data).execute(&self.client.pool).await?;
+            .bind(school_id).bind(student_id).bind(data).execute(&mut *conn).await?;
         Ok(())
     }
     async fn add_topic(&self, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
@@ -683,6 +708,7 @@ impl AcademicRepository for PostgresAcademicRepository {
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let name = data["name"].as_str().unwrap_or("");
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO class_streams (school_id, class_id, name, data) VALUES ($1, $2, $3, $4)",
         )
@@ -690,7 +716,7 @@ impl AcademicRepository for PostgresAcademicRepository {
         .bind(class_id)
         .bind(name)
         .bind(&data)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -714,6 +740,8 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         
         let employee_id_str = data["employeeId"].as_str().unwrap_or("UNKNOWN");
         
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
         sqlx::query(
             "INSERT INTO employees (employee_id, school_id, employee_type, data)
              VALUES ($1, $2, $3, $4)"
@@ -722,7 +750,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         .bind(school_id)
         .bind(employee_type)
         .bind(&data)
-        .execute(&self.client.pool).await?;
+        .execute(&mut *conn).await?;
 
         // Save Experience
         if let Some(experience_arr) = data["experience"].as_array() {
@@ -746,7 +774,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
                 .bind(exp["achievementDescription"].as_str())
                 .bind(exp["previousEmployeeId"].as_str())
                 .bind(exp["experienceLetterUrl"].as_str())
-                .execute(&self.client.pool).await?;
+                .execute(&mut *conn).await?;
             }
         }
 
@@ -769,7 +797,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
                 .bind(edu["marksDetails"].as_str())
                 .bind(edu["medium"].as_str())
                 .bind(edu["documentUrl"].as_str())
-                .execute(&self.client.pool).await?;
+                .execute(&mut *conn).await?;
             }
         }
 
@@ -780,9 +808,10 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT employee_id, data FROM employees WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
             
         let mut employees = Vec::new();
@@ -795,7 +824,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             let exp_rows = sqlx::query("SELECT * FROM employee_experience WHERE school_id = $1 AND employee_id = $2")
                 .bind(school_id)
                 .bind(&employee_id)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
                 
             let experience: Vec<Value> = exp_rows.into_iter().map(|r| json!({
@@ -816,7 +845,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             let edu_rows = sqlx::query("SELECT * FROM employee_education WHERE school_id = $1 AND employee_id = $2")
                 .bind(school_id)
                 .bind(&employee_id)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
                 
             let education: Vec<Value> = edu_rows.into_iter().map(|r| json!({
@@ -851,10 +880,11 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         school_id: &str,
         employee_id: &str,
     ) -> Result<Option<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT data FROM employees WHERE school_id = $1 AND employee_id = $2")
             .bind(school_id)
             .bind(employee_id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
         
         if let Some(r) = row {
@@ -864,7 +894,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             let exp_rows = sqlx::query("SELECT * FROM employee_experience WHERE school_id = $1 AND employee_id = $2")
                 .bind(school_id)
                 .bind(employee_id)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
                 
             let experience: Vec<Value> = exp_rows.into_iter().map(|r| json!({
@@ -885,7 +915,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             let edu_rows = sqlx::query("SELECT * FROM employee_education WHERE school_id = $1 AND employee_id = $2")
                 .bind(school_id)
                 .bind(employee_id)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
                 
             let education: Vec<Value> = edu_rows.into_iter().map(|r| json!({
@@ -920,8 +950,11 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         employee_id: &str,
         data: Value,
     ) -> Result<(), AppError> {
-        let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
+        // Extract employee type if updating
+        let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
+
         if let Some(etype) = employee_type {
             sqlx::query(
                 "UPDATE employees SET employee_type = $1, data = $2 
@@ -931,7 +964,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             .bind(&data)
             .bind(school_id)
             .bind(employee_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         } else {
             sqlx::query(
@@ -941,7 +974,7 @@ impl EmployeeRepository for PostgresEmployeeRepository {
             .bind(&data)
             .bind(school_id)
             .bind(employee_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         }
         Ok(())
@@ -952,17 +985,19 @@ impl EmployeeRepository for PostgresEmployeeRepository {
         school_id: &str,
         employee_id: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM employees WHERE school_id = $1 AND employee_id = $2")
             .bind(school_id)
             .bind(employee_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
 
     async fn generate_employee_id(&self) -> Result<String, AppError> {
+        let mut conn = self.client.acquire_super_admin_connection().await?;
         let row = sqlx::query("SELECT nextval('employee_id_seq')")
-            .fetch_one(&self.client.pool)
+            .fetch_one(&mut *conn)
             .await?;
         let next_val: i64 = row.get(0);
         Ok(format!("E{:04}", next_val))
@@ -983,6 +1018,7 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let space_id = format!("{}-{}", school_id, data["id"].as_str().unwrap_or(""));
         sqlx::query(
             "INSERT INTO spaces (space_id, school_id, space_name, space_category) VALUES ($1, $2, $3, $4) ON CONFLICT (space_id) DO NOTHING",
@@ -991,7 +1027,7 @@ impl ResourceRepository for PostgresResourceRepository {
         .bind(school_id)
         .bind(data["name"].as_str())
         .bind(data["id"].as_str())
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -1002,6 +1038,7 @@ impl ResourceRepository for PostgresResourceRepository {
         space_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let item_id = format!("{}-{}-{}", school_id, space_id, data["id"].as_str().unwrap_or(""));
         sqlx::query("INSERT INTO items (item_id, school_id, space_id, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_id, item_id) DO NOTHING")
             .bind(&item_id)
@@ -1010,7 +1047,7 @@ impl ResourceRepository for PostgresResourceRepository {
             .bind(data["itemName"].as_str())
             .bind(data["roomNumber"].as_str())
             .bind(data["classId"].as_str())
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1019,13 +1056,15 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        sqlx::query("INSERT INTO materials (id, school_id, name, quantity, unit_price) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (school_id, id) DO UPDATE SET quantity = materials.quantity + EXCLUDED.quantity")
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query("INSERT INTO materials (id, school_id, name, quantity, unit_price, attachment_path) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, id) DO UPDATE SET quantity = materials.quantity + EXCLUDED.quantity, attachment_path = EXCLUDED.attachment_path")
             .bind(data["materialName"].as_str().map(|s| s.to_lowercase()))
             .bind(school_id)
             .bind(data["materialName"].as_str())
             .bind(data["quantity"].as_i64())
             .bind(data["unitPrice"].as_f64())
-            .execute(&self.client.pool).await?;
+            .bind(data["attachmentPath"].as_str())
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1034,10 +1073,11 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         material_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT * FROM materials WHERE school_id = $1 AND id = $2")
             .bind(school_id)
             .bind(material_id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
         Ok(
             row.map(
@@ -1052,9 +1092,10 @@ impl ResourceRepository for PostgresResourceRepository {
         material_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("UPDATE materials SET quantity = COALESCE($1, quantity) WHERE school_id = $2 AND id = $3")
             .bind(data["quantity"].as_i64())
-            .bind(school_id).bind(material_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(material_id).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1066,8 +1107,9 @@ impl ResourceRepository for PostgresResourceRepository {
         item_id: &str,
         quantity: i32,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO material_locations (school_id, material_id, space_id, item_id, quantity) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (school_id, material_id, space_id, item_id) DO UPDATE SET quantity = material_locations.quantity + EXCLUDED.quantity")
-            .bind(school_id).bind(material_id).bind(space_id).bind(item_id).bind(quantity).execute(&self.client.pool).await?;
+            .bind(school_id).bind(material_id).bind(space_id).bind(item_id).bind(quantity).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1078,8 +1120,9 @@ impl ResourceRepository for PostgresResourceRepository {
         action: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, $2, $3, $4, $5)")
-            .bind(school_id).bind("material").bind(material_id).bind(action).bind(data).execute(&self.client.pool).await?;
+            .bind(school_id).bind("material").bind(material_id).bind(action).bind(data).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1090,13 +1133,14 @@ impl ResourceRepository for PostgresResourceRepository {
         user_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO announcements (school_id, target_type, user_id, title, content) VALUES ($1, $2, $3, $4, $5)")
             .bind(school_id)
             .bind(target_type)
             .bind(user_id)
             .bind(data["title"].as_str())
             .bind(data["content"].as_str())
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(data)
     }
 
@@ -1106,11 +1150,12 @@ impl ResourceRepository for PostgresResourceRepository {
         target_type: &str,
         user_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM announcements WHERE school_id = $1 AND target_type = $2 AND (user_id = $3 OR user_id IS NULL)")
             .bind(school_id)
             .bind(target_type)
             .bind(user_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows.into_iter().map(|r| json!({"id": r.get::<i32, _>("id"), "title": r.get::<String, _>("title"), "content": r.get::<String, _>("content")})).collect())
     }
@@ -1125,9 +1170,10 @@ impl ResourceRepository for PostgresResourceRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT id, name, quantity, unit_price::FLOAT as unit_price, extra_unit, need_unit FROM materials WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
         Ok(rows
             .into_iter()
@@ -1147,16 +1193,17 @@ impl ResourceRepository for PostgresResourceRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // 1. Fetch all spaces
         let space_rows = sqlx::query("SELECT * FROM spaces WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
 
         // 2. Fetch all items for this school to nest them
         let item_rows = sqlx::query("SELECT * FROM items WHERE school_id = $1")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
 
         // 3. Group items by space_id
@@ -1210,6 +1257,7 @@ impl ResourceRepository for PostgresResourceRepository {
         let capacity = data["capacity"].as_i64().unwrap_or(0);
         let space_number = data["spaceNumber"].as_str();
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO spaces (space_id, school_id, space_name, space_category, space_number, capacity, data)
              VALUES ($1, $2, $3, $4, $5, $6, $7)"
@@ -1221,7 +1269,7 @@ impl ResourceRepository for PostgresResourceRepository {
         .bind(space_number)
         .bind(capacity as i32)
         .bind(&data)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         
         // Return constructed object
@@ -1243,6 +1291,7 @@ impl ResourceRepository for PostgresResourceRepository {
         let capacity = data["capacity"].as_i64();
         let space_number = data["spaceNumber"].as_str();
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "UPDATE spaces SET 
                 space_name = COALESCE($1, space_name),
@@ -1259,7 +1308,7 @@ impl ResourceRepository for PostgresResourceRepository {
         .bind(&data)
         .bind(school_id)
         .bind(space_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -1269,16 +1318,17 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         space_id: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // Delete dependencies first if any, though cascades are usually better
         sqlx::query("DELETE FROM space_employees WHERE school_id = $1 AND space_id = $2")
-            .bind(school_id).bind(space_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(space_id).execute(&mut *conn).await?;
         sqlx::query("DELETE FROM space_materials WHERE school_id = $1 AND space_id = $2")
-            .bind(school_id).bind(space_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(space_id).execute(&mut *conn).await?;
         
         sqlx::query("DELETE FROM spaces WHERE school_id = $1 AND space_id = $2")
             .bind(school_id)
             .bind(space_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -1288,10 +1338,11 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         space_id: &str,
     ) -> Result<Option<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT * FROM spaces WHERE school_id = $1 AND space_id = $2")
             .bind(school_id)
             .bind(space_id)
-            .fetch_optional(&self.client.pool)
+            .fetch_optional(&mut *conn)
             .await?;
 
         if let Some(r) = row {
@@ -1304,7 +1355,7 @@ impl ResourceRepository for PostgresResourceRepository {
             let emp_rows = sqlx::query("SELECT employee_id FROM space_employees WHERE school_id = $1 AND space_id = $2")
                 .bind(school_id)
                 .bind(&space_id_real)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
             let employees: Vec<String> = emp_rows.into_iter().map(|er| er.get("employee_id")).collect();
 
@@ -1312,7 +1363,7 @@ impl ResourceRepository for PostgresResourceRepository {
             let mat_rows = sqlx::query("SELECT material_name, quantity, unit FROM space_materials WHERE school_id = $1 AND space_id = $2")
                 .bind(school_id)
                 .bind(&space_id_real)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
             let materials: Vec<Value> = mat_rows.into_iter().map(|mr| json!({
                 "materialName": mr.get::<String, _>("material_name"),
@@ -1339,9 +1390,10 @@ impl ResourceRepository for PostgresResourceRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM space_categories WHERE school_id = $1 OR is_default = TRUE")
             .bind(school_id)
-            .fetch_all(&self.client.pool)
+            .fetch_all(&mut *conn)
             .await?;
             
         Ok(rows.into_iter().map(|r| json!({
@@ -1357,10 +1409,11 @@ impl ResourceRepository for PostgresResourceRepository {
         data: Value,
     ) -> Result<Value, AppError> {
         let name = data["name"].as_str().unwrap_or("");
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO space_categories (school_id, name, is_default) VALUES ($1, $2, FALSE) ON CONFLICT DO NOTHING")
             .bind(school_id)
             .bind(name)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(data)
     }
@@ -1370,10 +1423,11 @@ impl ResourceRepository for PostgresResourceRepository {
         school_id: &str,
         category_id: i32,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM space_categories WHERE school_id = $1 AND id = $2 AND is_default = FALSE")
             .bind(school_id)
             .bind(category_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -1384,6 +1438,7 @@ impl ResourceRepository for PostgresResourceRepository {
         space_id: &str,
         materials: Vec<Value>,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         for mat in materials {
             let name = mat["materialName"].as_str().unwrap_or("");
             let qty = mat["quantity"].as_i64().unwrap_or(0) as i32;
@@ -1398,7 +1453,7 @@ impl ResourceRepository for PostgresResourceRepository {
             .bind(name)
             .bind(qty)
             .bind(unit)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         }
         Ok(())
@@ -1410,6 +1465,7 @@ impl ResourceRepository for PostgresResourceRepository {
         space_id: &str,
         employee_ids: Vec<String>,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         for emp_id in employee_ids {
             sqlx::query(
                 "INSERT INTO space_employees (school_id, space_id, employee_id)
@@ -1418,7 +1474,7 @@ impl ResourceRepository for PostgresResourceRepository {
             .bind(school_id)
             .bind(space_id)
             .bind(emp_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         }
         Ok(())
@@ -1430,11 +1486,12 @@ impl ResourceRepository for PostgresResourceRepository {
         space_id: &str,
         employee_id: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM space_employees WHERE school_id = $1 AND space_id = $2 AND employee_id = $3")
             .bind(school_id)
             .bind(space_id)
             .bind(employee_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -1455,6 +1512,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         date: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO attendance (school_id, role, user_id, date, status, in_time, out_time, total_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (school_id, user_id, date) DO UPDATE SET status = EXCLUDED.status, in_time = EXCLUDED.in_time, out_time = EXCLUDED.out_time, total_time = EXCLUDED.total_time")
             .bind(school_id)
             .bind(role)
@@ -1464,7 +1522,7 @@ impl OperationsRepository for PostgresOperationsRepository {
             .bind(data["inTime"].as_str().map(|t| chrono::DateTime::parse_from_rfc3339(t).unwrap().with_timezone(&chrono::Utc)))
             .bind(data["outTime"].as_str().map(|t| chrono::DateTime::parse_from_rfc3339(t).unwrap().with_timezone(&chrono::Utc)))
             .bind(data["totalTime"].as_str())
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1474,13 +1532,14 @@ impl OperationsRepository for PostgresOperationsRepository {
         role: &str,
         user_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT * FROM attendance WHERE school_id = $1 AND role = $2 AND user_id = $3",
         )
         .bind(school_id)
         .bind(role)
         .bind(user_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
         Ok(rows
             .into_iter()
@@ -1501,17 +1560,18 @@ impl OperationsRepository for PostgresOperationsRepository {
     async fn add_attendance_history(
         &self,
         school_id: &str,
-        role: &str,
+        _role: &str,
         user_id: &str,
         action: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'attendance', $2, $3, $4)")
             .bind(school_id)
             .bind(user_id)
             .bind(action)
             .bind(data)
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1522,6 +1582,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         user_id: &str,
         date: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "DELETE FROM attendance WHERE school_id = $1 AND role = $2 AND user_id = $3 AND date = $4",
         )
@@ -1529,7 +1590,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         .bind(role)
         .bind(user_id)
         .bind(date.parse::<chrono::NaiveDate>()?)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -1539,6 +1600,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let fees_id = format!("F{}", chrono::Utc::now().timestamp_millis());
         sqlx::query("INSERT INTO fees (id, school_id, fees_name, fees_reason, fees_period, fees_amount) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(&fees_id)
@@ -1547,7 +1609,7 @@ impl OperationsRepository for PostgresOperationsRepository {
             .bind(data["feesReason"].as_str().unwrap_or(""))
             .bind(data["feesPeriod"].as_str().unwrap_or("One Time"))
             .bind(data["feesAmount"].as_f64().unwrap_or(0.0))
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
 
         let mut ret = data.clone();
@@ -1560,11 +1622,12 @@ impl OperationsRepository for PostgresOperationsRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT id, fees_name, fees_reason, fees_period, fees_amount::FLOAT as fees_amount, created_at FROM fees WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
         Ok(rows.into_iter().map(|r| json!({
@@ -1595,19 +1658,20 @@ impl OperationsRepository for PostgresOperationsRepository {
              WHERE sf.school_id = $1 AND (sf.pending_amount / NULLIF(sf.total_fees, 0) * 100) >= $2"
         };
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // Since we can't conditionally execute bindings cleanly in one expression, we do:
         let rows = if let Some(ref c) = class_name {
             sqlx::query(query_str)
                 .bind(school_id)
                 .bind(c)
                 .bind(min_percentage)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?
         } else {
             sqlx::query(query_str)
                 .bind(school_id)
                 .bind(min_percentage)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?
         };
 
@@ -1631,8 +1695,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         student_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO student_fees (student_id, school_id, total_fees, pending_amount) VALUES ($1, $2, $3, $3) ON CONFLICT (student_id) DO UPDATE SET total_fees = EXCLUDED.total_fees")
-            .bind(student_id).bind(school_id).bind(data["amount"].as_f64()).execute(&self.client.pool).await?;
+            .bind(student_id).bind(school_id).bind(data["amount"].as_f64()).execute(&mut *conn).await?;
         Ok(())
     }
     async fn get_student_fee(
@@ -1640,11 +1705,12 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         student_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row =
             sqlx::query("SELECT student_id, total_fees::FLOAT as total_fees, pending_amount::FLOAT as pending_amount FROM student_fees WHERE school_id = $1 AND student_id = $2")
                 .bind(school_id)
                 .bind(student_id)
-                .fetch_optional(&self.client.pool)
+                .fetch_optional(&mut *conn)
                 .await?;
         Ok(row.map(|r| json!({"studentId": r.get::<String, _>("student_id"), "totalFees": r.get::<f64, _>("total_fees"), "pendingAmount": r.get::<f64, _>("pending_amount")})))
     }
@@ -1654,6 +1720,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         student_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "UPDATE student_fees SET total_fees = COALESCE($1, total_fees), discount = COALESCE($2, discount), pending_amount = COALESCE($3, pending_amount) WHERE school_id = $4 AND student_id = $5",
         )
@@ -1662,7 +1729,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         .bind(data["pendingAmount"].as_f64())
         .bind(school_id)
         .bind(student_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -1673,8 +1740,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         action: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'fee', $2, $3, $4)")
-            .bind(school_id).bind(fee_id).bind(action).bind(data).execute(&self.client.pool).await?;
+            .bind(school_id).bind(fee_id).bind(action).bind(data).execute(&mut *conn).await?;
         Ok(())
     }
     async fn update_employee_salary_params(
@@ -1683,8 +1751,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         employee_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("UPDATE employees SET base_salary = COALESCE($1, base_salary), bonus = COALESCE($2, bonus) WHERE school_id = $3 AND employee_id = $4")
-            .bind(data["baseSalary"].as_f64()).bind(data["bonus"].as_f64()).bind(school_id).bind(employee_id).execute(&self.client.pool).await?;
+            .bind(data["baseSalary"].as_f64()).bind(data["bonus"].as_f64()).bind(school_id).bind(employee_id).execute(&mut *conn).await?;
         Ok(())
     }
     async fn add_employee_payment(
@@ -1693,8 +1762,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         employee_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'payment', $2, 'pay', $3)")
-            .bind(school_id).bind(employee_id).bind(data.clone()).execute(&self.client.pool).await?;
+            .bind(school_id).bind(employee_id).bind(data.clone()).execute(&mut *conn).await?;
         Ok(data)
     }
     async fn add_payroll_salary(
@@ -1703,13 +1773,14 @@ impl OperationsRepository for PostgresOperationsRepository {
         employee_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO employee_salaries (employee_id, school_id, month, year, base_salary, status) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(employee_id).bind(school_id)
             .bind(data["month"].as_i64())
             .bind(data["year"].as_i64())
             .bind(data["baseSalary"].as_f64())
             .bind("generated")
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
     async fn get_payroll_summary(
@@ -1719,12 +1790,13 @@ impl OperationsRepository for PostgresOperationsRepository {
         _page: u32,
         _limit: u32,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT id, month, year, base_salary::FLOAT as base_salary, total_salary::FLOAT as total_salary, status FROM employee_salaries WHERE school_id = $1 AND employee_id = $2",
         )
         .bind(school_id)
         .bind(employee_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
         Ok(json!(rows
             .into_iter()
@@ -1745,8 +1817,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         action: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'payroll_log', $2, $3, $4)")
-            .bind(school_id).bind(employee_id).bind(action).bind(data).execute(&self.client.pool).await?;
+            .bind(school_id).bind(employee_id).bind(action).bind(data).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1769,6 +1842,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         let penalty_per_day = data["penaltyPerDay"].as_f64().unwrap_or(0.0);
         let description = data["description"].as_str();
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO custom_fees (fee_id, school_id, fee_name, fee_type, amount, scope, target_classes, target_students, due_date, has_penalty, penalty_per_day, description)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::date,$10,$11,$12)"
@@ -1785,7 +1859,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         .bind(has_penalty)
         .bind(penalty_per_day)
         .bind(description)
-        .execute(&self.client.pool).await?;
+        .execute(&mut *conn).await?;
 
         Ok(json!({"feeId": fee_id, "feeName": fee_name, "amount": amount}))
     }
@@ -1794,9 +1868,10 @@ impl OperationsRepository for PostgresOperationsRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM custom_fees WHERE school_id = $1 ORDER BY created_at DESC")
             .bind(school_id)
-            .fetch_all(&self.client.pool).await?;
+            .fetch_all(&mut *conn).await?;
         Ok(rows.into_iter().map(|r| {
             json!({
                 "feeId": r.get::<String, _>("fee_id"),
@@ -1821,10 +1896,11 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         fee_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM custom_fee_records WHERE school_id = $1 AND fee_id = $2")
-            .bind(school_id).bind(fee_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(fee_id).execute(&mut *conn).await?;
         sqlx::query("DELETE FROM custom_fees WHERE school_id = $1 AND fee_id = $2")
-            .bind(school_id).bind(fee_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(fee_id).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -1833,10 +1909,11 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         fee_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // Fetch the custom fee definition
         let fee_row = sqlx::query("SELECT * FROM custom_fees WHERE school_id = $1 AND fee_id = $2")
             .bind(school_id).bind(fee_id)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
         let fee_row = fee_row.ok_or("Custom fee not found")?;
 
         let amount: bigdecimal::BigDecimal = fee_row.get("amount");
@@ -1865,14 +1942,14 @@ impl OperationsRepository for PostgresOperationsRepository {
                     for name in &class_names {
                         q = q.bind(name);
                     }
-                    let rows = q.fetch_all(&self.client.pool).await?;
+                    let rows = q.fetch_all(&mut *conn).await?;
                     rows.iter().map(|r| r.get::<String, _>("student_id")).collect()
                 }
             },
             _ => {
                 // school-wide
                 let rows = sqlx::query("SELECT student_id FROM students WHERE school_id = $1")
-                    .bind(school_id).fetch_all(&self.client.pool).await?;
+                    .bind(school_id).fetch_all(&mut *conn).await?;
                 rows.iter().map(|r| r.get::<String, _>("student_id")).collect()
             }
         };
@@ -1885,7 +1962,7 @@ impl OperationsRepository for PostgresOperationsRepository {
                  ON CONFLICT (school_id, fee_id, student_id) DO NOTHING"
             )
             .bind(school_id).bind(fee_id).bind(sid).bind(&amount)
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
             applied += res.rows_affected() as i64;
         }
 
@@ -1897,6 +1974,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         student_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT r.*, f.fee_name, f.fee_type, f.due_date, f.has_penalty, f.penalty_per_day, f.description
              FROM custom_fee_records r
@@ -1904,7 +1982,7 @@ impl OperationsRepository for PostgresOperationsRepository {
              WHERE r.school_id = $1 AND r.student_id = $2"
         )
         .bind(school_id).bind(student_id)
-        .fetch_all(&self.client.pool).await?;
+        .fetch_all(&mut *conn).await?;
 
         Ok(rows.into_iter().map(|r| {
             let has_penalty = r.get::<bool, _>("has_penalty");
@@ -1944,10 +2022,11 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         student_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // 1. Get base student data
         let student_row = sqlx::query("SELECT * FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id).bind(student_id)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
 
         let student = match student_row {
             Some(r) => r,
@@ -1964,7 +2043,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         // 2. Get student_fees (legacy fee system)
         let fee_row = sqlx::query("SELECT * FROM student_fees WHERE school_id = $1 AND student_id = $2")
             .bind(school_id).bind(student_id)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
 
         let (legacy_total, legacy_paid, legacy_discount) = if let Some(ref fr) = fee_row {
             let total: f64 = fr.get::<bigdecimal::BigDecimal, _>("total_fees").to_string().parse().unwrap_or(0.0);
@@ -2029,10 +2108,10 @@ impl OperationsRepository for PostgresOperationsRepository {
             return Err("Coupon name is required".into());
         }
 
-        // Check unique
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let existing = sqlx::query("SELECT id FROM referral_coupons WHERE school_id = $1 AND coupon_name = $2")
             .bind(school_id).bind(&coupon_name)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
         if existing.is_some() {
             return Err("Coupon with this name already exists".into());
         }
@@ -2052,7 +2131,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         .bind(&coupon_id).bind(school_id).bind(&coupon_name)
         .bind(discount_type).bind(discount_value).bind(max_uses)
         .bind(assigned_employee_id).bind(employee_reward).bind(description)
-        .execute(&self.client.pool).await?;
+        .execute(&mut *conn).await?;
 
         Ok(json!({"couponId": coupon_id, "couponName": coupon_name}))
     }
@@ -2061,8 +2140,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT * FROM referral_coupons WHERE school_id = $1 ORDER BY created_at DESC")
-            .bind(school_id).fetch_all(&self.client.pool).await?;
+            .bind(school_id).fetch_all(&mut *conn).await?;
         Ok(rows.into_iter().map(|r| {
             json!({
                 "couponId": r.get::<String, _>("coupon_id"),
@@ -2085,8 +2165,9 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         coupon_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM referral_coupons WHERE school_id = $1 AND coupon_id = $2")
-            .bind(school_id).bind(coupon_id).execute(&self.client.pool).await?;
+            .bind(school_id).bind(coupon_id).execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -2096,10 +2177,11 @@ impl OperationsRepository for PostgresOperationsRepository {
         coupon_id: &str,
         blocked: bool,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let new_status = if blocked { "blocked" } else { "active" };
         sqlx::query("UPDATE referral_coupons SET status = $3 WHERE school_id = $1 AND coupon_id = $2")
             .bind(school_id).bind(coupon_id).bind(new_status)
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
         Ok(())
     }
 
@@ -2108,9 +2190,10 @@ impl OperationsRepository for PostgresOperationsRepository {
         school_id: &str,
         coupon_name: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT * FROM referral_coupons WHERE school_id = $1 AND coupon_name = $2")
             .bind(school_id).bind(coupon_name)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
 
         match row {
             None => Ok(None),
@@ -2146,10 +2229,11 @@ impl OperationsRepository for PostgresOperationsRepository {
         student_id: &str,
         discount: f64,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         // 1. Fetch coupon
         let row = sqlx::query("SELECT * FROM referral_coupons WHERE school_id = $1 AND coupon_id = $2")
             .bind(school_id).bind(coupon_id)
-            .fetch_optional(&self.client.pool).await?;
+            .fetch_optional(&mut *conn).await?;
         let coupon = row.ok_or("Coupon not found")?;
 
         let assigned_emp: Option<String> = coupon.get("assigned_employee_id");
@@ -2158,7 +2242,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         // 2. Increment usage
         sqlx::query("UPDATE referral_coupons SET current_uses = current_uses + 1 WHERE school_id = $1 AND coupon_id = $2")
             .bind(school_id).bind(coupon_id)
-            .execute(&self.client.pool).await?;
+            .execute(&mut *conn).await?;
 
         // 3. Log usage
         sqlx::query(
@@ -2167,7 +2251,7 @@ impl OperationsRepository for PostgresOperationsRepository {
         )
         .bind(school_id).bind(coupon_id).bind(student_id)
         .bind(discount).bind(&assigned_emp).bind(reward)
-        .execute(&self.client.pool).await?;
+        .execute(&mut *conn).await?;
 
         // 4. Award employee commission (add to bonus via employee data JSONB)
         let mut reward_msg = String::from("No employee assigned");
@@ -2176,14 +2260,14 @@ impl OperationsRepository for PostgresOperationsRepository {
                 // Get employee data, add to bonus
                 let emp_row = sqlx::query("SELECT data FROM employees WHERE school_id = $1 AND employee_id = $2")
                     .bind(school_id).bind(emp_id)
-                    .fetch_optional(&self.client.pool).await?;
+                    .fetch_optional(&mut *conn).await?;
                 if let Some(er) = emp_row {
                     let mut emp_data: Value = er.get("data");
                     let current_bonus = emp_data["bonus"].as_f64().unwrap_or(0.0);
                     emp_data["bonus"] = json!(current_bonus + reward);
                     sqlx::query("UPDATE employees SET data = $3 WHERE school_id = $1 AND employee_id = $2")
                         .bind(school_id).bind(emp_id).bind(&emp_data)
-                        .execute(&self.client.pool).await?;
+                        .execute(&mut *conn).await?;
                     reward_msg = format!("₹{} added to {}'s bonus", reward, emp_id);
                 }
             }
@@ -2194,6 +2278,71 @@ impl OperationsRepository for PostgresOperationsRepository {
             "discount": discount,
             "rewardMessage": reward_msg
         }))
+    }
+
+    async fn create_online_transaction(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        fee_type: &str,
+        fee_id: &str,
+        amount: f64,
+        currency: &str,
+        gateway_order_id: &str,
+    ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "INSERT INTO online_transactions (school_id, student_id, fee_type, fee_id, amount, currency, gateway_order_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)"
+        )
+        .bind(school_id).bind(student_id).bind(fee_type).bind(fee_id).bind(bigdecimal::BigDecimal::from_f64(amount).unwrap_or_default())
+        .bind(currency).bind(gateway_order_id)
+        .execute(&mut *conn).await?;
+        Ok(())
+    }
+
+    async fn complete_online_transaction(
+        &self,
+        gateway_order_id: &str,
+        gateway_payment_id: &str,
+        gateway_signature: &str,
+    ) -> Result<Option<String>, AppError> {
+        // Webhooks use super admin connection because they are cross-tenant
+        let mut conn = self.client.acquire_super_admin_connection().await?;
+        
+        let row = sqlx::query("SELECT school_id, fee_type, fee_id, amount, status FROM online_transactions WHERE gateway_order_id = $1")
+            .bind(gateway_order_id).fetch_optional(&mut *conn).await?;
+            
+        if let Some(r) = row {
+            let status: String = r.get("status");
+            if status == "successful" { return Ok(None); } // already processed
+            
+            let school_id: String = r.get("school_id");
+            let fee_type: String = r.get("fee_type");
+            let fee_id: String = r.get("fee_id");
+            let amount: bigdecimal::BigDecimal = r.get("amount");
+            
+            use sqlx::Acquire;
+            let mut tx = conn.begin().await?;
+            
+            sqlx::query("UPDATE online_transactions SET status = 'successful', gateway_payment_id = $1, gateway_signature = $2, updated_at = NOW() WHERE gateway_order_id = $3")
+                .bind(gateway_payment_id).bind(gateway_signature).bind(gateway_order_id)
+                .execute(&mut *tx).await?;
+                
+            if fee_type == "regular" {
+                sqlx::query("UPDATE student_fees SET pending_amount = GREATEST(0, pending_amount - $1) WHERE school_id = $2 AND student_id = $3")
+                    .bind(&amount).bind(&school_id).bind(&fee_id)
+                    .execute(&mut *tx).await?;
+            } else if fee_type == "custom" {
+                sqlx::query("UPDATE custom_fee_records SET status = 'paid', paid_at = NOW() WHERE school_id = $1 AND id = $2")
+                    .bind(&school_id).bind(fee_id.parse::<i32>().unwrap_or(0))
+                    .execute(&mut *tx).await?;
+            }
+            
+            tx.commit().await?;
+            return Ok(Some(school_id));
+        }
+        Ok(None)
     }
 }
 
@@ -2228,6 +2377,7 @@ impl OCRRepository for PostgresOCRRepository {
 
 #[cfg(not(feature = "ocr"))]
 pub struct PostgresOCRRepository {
+    #[allow(dead_code)]
     pub client: Arc<DbClient>,
     pub pipeline: Arc<crate::logic::ocr_pipeline::OcrPipeline>,
 }
@@ -2298,11 +2448,13 @@ impl ComplainRepository for PostgresComplainRepository {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        sqlx::query("INSERT INTO complains (school_id, student_id, title, description) VALUES ($1, $2, $3, $4)")
+        sqlx::query("INSERT INTO complaints (complaint_id, school_id, student_id, title, description, attachment_path) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(Uuid::new_v4().to_string())
             .bind(school_id)
             .bind(data["studentId"].as_str())
             .bind(data["title"].as_str())
             .bind(data["description"].as_str())
+            .bind(data["attachmentPath"].as_str())
             .execute(&self.client.pool).await?;
         Ok(data)
     }
@@ -2311,7 +2463,7 @@ impl ComplainRepository for PostgresComplainRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
-        let rows = sqlx::query("SELECT * FROM complains WHERE school_id = $1")
+        let rows = sqlx::query("SELECT * FROM complaints WHERE school_id = $1")
             .bind(school_id)
             .fetch_all(&self.client.pool)
             .await?;
@@ -2407,13 +2559,14 @@ impl SchoolRepository for PostgresSchoolRepository {
         &self,
         school_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query(
             "SELECT school_id, school_name, data, wallet_balance, per_student_rate, billing_status, 
              trial_ends_at, last_billing_date, status, is_blocked
              FROM schools WHERE school_id = $1"
         )
         .bind(school_id)
-        .fetch_optional(&self.client.pool)
+        .fetch_optional(&mut *conn)
         .await?;
         Ok(
             row.map(|r| {
@@ -2445,11 +2598,12 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT * FROM responsibilities WHERE school_id = $1",
         )
         .bind(school_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
         Ok(rows
             .into_iter()
@@ -2494,6 +2648,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         let custom_dates = data["customDates"].clone();
         let total_price = data["totalPrice"].as_f64().unwrap_or(0.0);
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, space_category, responsibility_field, space_id, work_level, work_amount, work_period, custom_dates, total_price)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"
@@ -2512,14 +2667,14 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         .bind(work_period)
         .bind(if custom_dates.is_null() { json!([]) } else { custom_dates })
         .bind(bigdecimal::BigDecimal::from_f64(total_price).unwrap_or_default())
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
 
         if let Some(space_ids) = data["spaceIds"].as_array() {
             for space_id_val in space_ids {
                 if let Some(sid) = space_id_val.as_str() {
                     let _ = sqlx::query("INSERT INTO responsibility_spaces (responsibility_id, school_id, space_id) VALUES ($1, $2, $3)")
-                        .bind(&res_id).bind(school_id).bind(sid).execute(&self.client.pool).await;
+                        .bind(&res_id).bind(school_id).bind(sid).execute(&mut *conn).await;
                 }
             }
         }
@@ -2535,6 +2690,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         employee_id: &str,
         responsibility_id: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO employee_responsibilities (school_id, employee_id, responsibility_id)
              VALUES ($1, $2, $3) ON CONFLICT (school_id, employee_id, responsibility_id) DO NOTHING"
@@ -2542,7 +2698,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         .bind(school_id)
         .bind(employee_id)
         .bind(responsibility_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -2553,13 +2709,14 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         employee_id: &str,
         responsibility_id: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "DELETE FROM employee_responsibilities WHERE school_id = $1 AND employee_id = $2 AND responsibility_id = $3"
         )
         .bind(school_id)
         .bind(employee_id)
         .bind(responsibility_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -2569,6 +2726,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         school_id: &str,
         employee_id: &str,
     ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT r.* FROM responsibilities r
              JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
@@ -2576,7 +2734,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         )
         .bind(school_id)
         .bind(employee_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
         Ok(rows
             .into_iter()
@@ -2609,10 +2767,11 @@ pub struct PostgresTaskRepository {
 #[async_trait]
 impl TaskRepository for PostgresTaskRepository {
     async fn get_tasks(&self, school_id: &str) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows =
             sqlx::query("SELECT * FROM audit_logs WHERE school_id = $1 AND target_type = 'task'")
                 .bind(school_id)
-                .fetch_all(&self.client.pool)
+                .fetch_all(&mut *conn)
                 .await?;
         Ok(rows
             .into_iter()
@@ -2640,6 +2799,7 @@ impl LeaveRepository for PostgresLeaveRepository {
         let from_date = chrono::NaiveDate::parse_from_str(data["fromDate"].as_str().unwrap_or(""), "%Y-%m-%d").unwrap_or_default();
         let to_date = chrono::NaiveDate::parse_from_str(data["toDate"].as_str().unwrap_or(""), "%Y-%m-%d").unwrap_or_default();
 
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO leave_applications (
                 leave_id, school_id, employee_id, employee_name, reason, leave_type, from_date, to_date
@@ -2653,7 +2813,7 @@ impl LeaveRepository for PostgresLeaveRepository {
         .bind(leave_type)
         .bind(from_date)
         .bind(to_date)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
 
         let mut res = data.clone();
@@ -2665,12 +2825,13 @@ impl LeaveRepository for PostgresLeaveRepository {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT leave_id, employee_id, employee_name, reason, leave_type, from_date, to_date, status
              FROM leave_applications WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
-        .fetch_all(&self.client.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
         Ok(rows
@@ -2696,13 +2857,14 @@ impl LeaveRepository for PostgresLeaveRepository {
         leave_id: &str,
         status: &str,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "UPDATE leave_applications SET status = $1 WHERE school_id = $2 AND leave_id = $3",
         )
         .bind(status)
         .bind(school_id)
         .bind(leave_id)
-        .execute(&self.client.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -2714,13 +2876,14 @@ impl LeaveRepository for PostgresLeaveRepository {
         action: &str,
         days: i32,
     ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let op = if action == "extend" { "+" } else { "-" };
         let q = format!("UPDATE leave_applications SET to_date = to_date {} ($1 || ' days')::interval WHERE school_id = $2 AND leave_id = $3", op);
         sqlx::query(&q)
             .bind(days.to_string())
             .bind(school_id)
             .bind(leave_id)
-            .execute(&self.client.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -2735,14 +2898,15 @@ pub struct PostgresAnalyticsRepository {
 #[async_trait]
 impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
     async fn get_school_stats(&self, school_id: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let students_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students WHERE school_id = $1")
-            .bind(school_id).fetch_one(&self.client.pool).await?;
+            .bind(school_id).fetch_one(&mut *conn).await?;
         
         let employees_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees WHERE school_id = $1")
-            .bind(school_id).fetch_one(&self.client.pool).await?;
+            .bind(school_id).fetch_one(&mut *conn).await?;
         
         let classes_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM classes WHERE school_id = $1")
-            .bind(school_id).fetch_one(&self.client.pool).await?;
+            .bind(school_id).fetch_one(&mut *conn).await?;
 
         Ok(json!({
             "totalStudents": students_count,
@@ -2752,12 +2916,13 @@ impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
     }
 
     async fn get_attendance_summary(&self, school_id: &str, date: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let target_date = date.parse::<chrono::NaiveDate>()?;
         
         let rows = sqlx::query(
             "SELECT status, role, COUNT(*) as count FROM attendance WHERE school_id = $1 AND date = $2 GROUP BY status, role"
         )
-        .bind(school_id).bind(target_date).fetch_all(&self.client.pool).await?;
+        .bind(school_id).bind(target_date).fetch_all(&mut *conn).await?;
 
         let mut summary = json!({
             "student": {"present": 0, "absent": 0, "leave": 0, "holiday": 0},
@@ -2780,13 +2945,14 @@ impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
     }
 
     async fn get_pending_fees_by_period(&self, school_id: &str, _months_overdue: i32) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT s.name, s.student_id, s.class_name, s.section, sf.pending_amount::FLOAT as pending_amount \
              FROM students s \
              JOIN student_fees sf ON s.student_id = sf.student_id AND s.school_id = sf.school_id \
              WHERE s.school_id = $1 AND sf.pending_amount > 0"
         )
-        .bind(school_id).fetch_all(&self.client.pool).await?;
+        .bind(school_id).fetch_all(&mut *conn).await?;
 
         Ok(rows.into_iter().map(|r| json!({
             "studentName": r.get::<String, _>("name"),
@@ -2798,10 +2964,11 @@ impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
     }
 
     async fn get_fee_summary(&self, school_id: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query(
             "SELECT SUM(total_fees)::FLOAT as total, SUM(pending_amount)::FLOAT as pending, SUM(discount)::FLOAT as discount FROM student_fees WHERE school_id = $1"
         )
-        .bind(school_id).fetch_one(&self.client.pool).await?;
+        .bind(school_id).fetch_one(&mut *conn).await?;
 
         let total = row.get::<Option<f64>, _>("total").unwrap_or(0.0);
         let pending = row.get::<Option<f64>, _>("pending").unwrap_or(0.0);
@@ -2817,10 +2984,11 @@ impl ComprehensiveAnalyticsRepository for PostgresAnalyticsRepository {
     }
 
     async fn query_staff_analytics(&self, school_id: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
             "SELECT type as emp_type, status, COUNT(*) as count FROM employees WHERE school_id = $1 GROUP BY type, status"
         )
-        .bind(school_id).fetch_all(&self.client.pool).await?;
+        .bind(school_id).fetch_all(&mut *conn).await?;
 
         Ok(json!(rows.into_iter().map(|r| json!({
             "type": r.get::<String, _>("emp_type"),

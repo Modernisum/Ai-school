@@ -12,6 +12,7 @@ use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct MobileLoginRequest {
+    #[allow(dead_code)]
     pub ident: String, // Phone number for teachers, Student ID for students
     pub role: String,  // "teacher" or "student"
 }
@@ -23,6 +24,7 @@ pub struct MobileVerifyRequest {
     pub otp: String,
 }
 
+#[allow(dead_code)]
 #[derive(Serialize)]
 pub struct MobileAuthResponse {
     pub token: String,
@@ -54,8 +56,8 @@ fn create_long_lived_token(ident: &str, role: &str, school_id: &str) -> String {
 
 // ─── LOGIN (Request OTP) ────────────────────────────────────────────────
 pub async fn mobile_login(
-    Path(school_id): Path<String>,
-    State(state): State<AppState>,
+    Path(_school_id): Path<String>,
+    State(_state): State<AppState>,
     Json(payload): Json<MobileLoginRequest>,
 ) -> Result<Json<Value>, axum::http::StatusCode> {
     
@@ -76,7 +78,7 @@ pub async fn mobile_login(
 // ─── VERIFY OTP (Login Success) ─────────────────────────────────────────
 pub async fn mobile_verify(
     Path(school_id): Path<String>,
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     Json(payload): Json<MobileVerifyRequest>,
 ) -> Result<Json<Value>, axum::http::StatusCode> {
     

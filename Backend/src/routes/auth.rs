@@ -1,16 +1,18 @@
 use crate::models::auth::*;
 use crate::AppState;
 use axum::{extract::State, response::IntoResponse, Json};
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::verify;
 use rand::{distributions::Alphanumeric, Rng};
 use serde_json::json;
 
 /* ----------------------- Helpers ----------------------- */
 
+#[allow(dead_code)]
 fn normalize_id(id: &str) -> String {
     id.to_lowercase().replace(' ', "-")
 }
 
+#[allow(dead_code)]
 fn generate_random_password(length: usize) -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -19,11 +21,13 @@ fn generate_random_password(length: usize) -> String {
         .collect()
 }
 
+#[allow(dead_code)]
 fn generate_token_id() -> String {
     let bytes: [u8; 32] = rand::random();
     hex::encode(bytes)
 }
 
+#[allow(dead_code)]
 async fn verify_password(stored: &str, candidate: &str) -> bool {
     if stored.starts_with("$2") {
         verify(candidate, stored).unwrap_or(false)

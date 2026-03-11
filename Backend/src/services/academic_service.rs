@@ -1,4 +1,3 @@
-use crate::repository::traits::*;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
@@ -191,6 +190,7 @@ impl PostgresAcademicService {
         Ok(())
     }
 
+    #[allow(unused_variables)]
     async fn get_class_teachers_count(
         &self,
         school_id: &str,

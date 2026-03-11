@@ -1,4 +1,5 @@
-use anyhow::{Context, Result as AnyResult};
+#[allow(unused_imports)]
+use anyhow::Context;
 
 #[cfg(feature = "ocr")]
 use candle_core::{DType, Device, IndexOp, Tensor};
@@ -60,6 +61,7 @@ impl OcrPipeline {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_ready(&self) -> bool {
         #[cfg(feature = "ocr")]
         {
@@ -71,6 +73,7 @@ impl OcrPipeline {
         }
     }
 
+    #[allow(dead_code)]
     pub async fn init_models(&mut self) -> anyhow::Result<()> {
         #[cfg(feature = "ocr")]
         {
@@ -181,7 +184,7 @@ impl OcrPipeline {
         Ok(())
     }
 
-    pub async fn process_image(&self, image_path: &str) -> anyhow::Result<serde_json::Value> {
+    pub async fn process_image(&self, _image_path: &str) -> anyhow::Result<serde_json::Value> {
         #[cfg(not(feature = "ocr"))]
         {
             tracing::info!("OCR is disabled at compile-time. Returning mock response.");

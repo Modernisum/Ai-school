@@ -1,5 +1,5 @@
 use crate::AppState;
-use chrono::{Utc, Duration};
+use chrono::Utc;
 use serde_json::json;
 use sqlx::{PgPool, Row};
 use std::time::Duration as StdDuration;

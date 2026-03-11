@@ -9,9 +9,10 @@ ocr = ["image", "candle-core", "candle-nn", "candle-transformers", "tokenizers",
 
 [dependencies]
 tokio = { version = "1.32", features = ["full"] }
-axum = { version = "0.7", features = ["multipart"] }
+axum = { version = "0.7", features = ["multipart", "ws"] }
+http = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", features = ["preserve_order"] }
 dotenv = "0.15"
 anyhow = "1.0"
 tower = { version = "0.4", features = ["util"] }
@@ -34,14 +35,20 @@ safetensors = { version = "0.4", optional = true }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "=1.10.0", features = ["v4", "serde"] }
 sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "chrono", "uuid", "json", "bigdecimal"] }
-redis = { version = "0.24", features = ["tokio-comp", "json"] }
-deadpool-redis = "0.14"
+redis = { version = "0.25", features = ["tokio-comp", "json", "aio"] }
+deadpool-redis = "0.15"
 serde_with = "3.0"
 hex = "0.4"
 bigdecimal = "0.3"
 jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
 genpdf = "0.2"
 printpdf = "0.7.0"
+hmac = "0.12.1"
+sha2 = "0.10.9"
+tokio-stream = "0.1.18"
+futures-util = "0.3.32"
+google-cloud-storage = "0.22.0"
+google-cloud-auth = "0.16.0"
 
 [profile.dev]
 opt-level = 0

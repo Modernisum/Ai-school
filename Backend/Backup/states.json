@@ -1,32 +1,32 @@
 [
   {
-    "country_id": 1,
     "id": 1,
+    "country_id": 1,
     "name": "Delhi"
   },
   {
-    "country_id": 1,
     "id": 2,
+    "country_id": 1,
     "name": "Maharashtra"
   },
   {
-    "country_id": 1,
     "id": 3,
+    "country_id": 1,
     "name": "Karnataka"
   },
   {
-    "country_id": 2,
     "id": 4,
+    "country_id": 2,
     "name": "California"
   },
   {
-    "country_id": 2,
     "id": 5,
+    "country_id": 2,
     "name": "New York"
   },
   {
-    "country_id": 3,
     "id": 6,
+    "country_id": 3,
     "name": "England"
   }
 ]

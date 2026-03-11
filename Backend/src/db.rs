@@ -1,7 +1,7 @@
 use deadpool_redis::{Config, Pool, Runtime};
 use sqlx::postgres::PgPool;
 use std::error::Error;
-use std::sync::Arc;
+
 
 #[derive(Clone)]
 pub struct DbClient {
@@ -10,6 +10,29 @@ pub struct DbClient {
 }
 
 impl DbClient {
+    /// Acquires a new database connection from the pool and sets the current tenant context.
+    /// This ensures that PostgreSQL Row-Level Security (RLS) policies automatically apply.
+    pub async fn acquire_tenant_connection(&self, school_id: &str) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
+        let mut conn = self.pool.acquire().await?;
+        
+        // Set the Postgres configuration parameter for the current session/connection
+        let query = format!("SET LOCAL app.current_school_id = '{}'", school_id.replace('\'', "''"));
+        sqlx::query(&query).execute(&mut *conn).await?;
+        
+        Ok(conn)
+    }
+
+    /// Acquires a new database connection from the pool and bypasses RLS policies.
+    /// This should ONLY be used by super_admin services or global jobs (e.g. billing).
+    pub async fn acquire_super_admin_connection(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
+        let mut conn = self.pool.acquire().await?;
+        
+        // Set the is_super_admin flag so the RLS functions bypass security policies
+        sqlx::query("SET LOCAL app.is_super_admin = 'true'").execute(&mut *conn).await?;
+        
+        Ok(conn)
+    }
+
     pub async fn new() -> Result<Self, Box<dyn Error>> {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");

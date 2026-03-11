@@ -16,6 +16,7 @@ mod routes;
 pub mod super_admin;
 mod services;
 mod backup;
+mod background_jobs;
 
 
 use repository::{initialize_repositories, Repositories};
@@ -28,6 +29,7 @@ pub struct AppState {
     pub repos: Arc<Repositories>,
     pub services: Arc<Services>,
     pub backup: Arc<backup::BackupService>,
+    pub storage: Arc<crate::logic::storage_engine::StorageEngine>,
 }
 
 #[tokio::main]
@@ -50,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("=============");
     }));
 
+    #[allow(unused_mut)]
     let mut ocr_pipeline = logic::ocr_pipeline::OcrPipeline::new()?;
 
     #[cfg(feature = "ocr")]
@@ -79,11 +82,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Initializing Backup Service...");
     let backup_svc = Arc::new(backup::BackupService::new(db_client.pool.clone(), "Backup"));
 
+    let storage = Arc::new(crate::logic::storage_engine::StorageEngine::new().await);
+    
     let state = AppState {
         db: db_client,
         repos,
         services,
         backup: backup_svc.clone(),
+        storage,
     };
 
     // Trigger auto-restore if DB is empty
@@ -157,7 +163,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/school/:schoolId/notification",
             get(crate::super_admin::routes::get_school_notification).delete(crate::super_admin::routes::clear_school_notification),
-        )
+        );
+
+    // Start background workers
+    background_jobs::start_background_workers(state.clone()).await;
+
+    let app = app
         // Auth Routes
         .route("/api/auth/login", post(routes::auth::login_handler))
         // Mobile Auth Routes
@@ -176,6 +187,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .route("/:schoolId", post(routes::complains::create_complain))
                 .route("/:schoolId", get(routes::complains::list_complains)),
+        )
+        .nest("/api/payment", routes::payment::router())
+        .nest("/api/chat", routes::chat::router())
+        .nest("/api/transport", routes::transport::router())
+        .nest("/api/ws", routes::ws::router())
+        // ── Timetable Routes ───────────────────────────────────────────────────
+        .nest(
+            "/api/school/:schoolId/timetable",
+            Router::new()
+                .route("/generate", post(routes::timetable::generate_timetable))
+                .route("/", get(routes::timetable::list_timetables))
+                .route("/:configId", get(routes::timetable::get_timetable))
+                .route("/:configId", delete(routes::timetable::delete_timetable)),
+        )
+        // ── Webhook Engine Routes ─────────────────────────────────────────────
+        .nest(
+            "/api/school/:schoolId/webhooks",
+            Router::new()
+                .route("/", post(routes::webhook::register_webhook))
+                .route("/", get(routes::webhook::list_webhooks))
+                .route("/:webhookId", delete(routes::webhook::delete_webhook))
+                .route("/:webhookId/logs", get(routes::webhook::get_webhook_logs)),
+        )
+        // ── API Key Management Routes ─────────────────────────────────────────
+        .nest(
+            "/api/school/:schoolId/api-keys",
+            Router::new()
+                .route("/", post(routes::api_keys::generate_api_key))
+                .route("/", get(routes::api_keys::list_api_keys))
+                .route("/:keyId", delete(routes::api_keys::revoke_api_key)),
+        )
+        // ── Public Developer API (API Key Protected) ─────────────────────────
+        .nest(
+            "/api/v1/public",
+            Router::new()
+                .route("/students", get(routes::public_api::get_students_public))
+                .route("/attendance/:date", get(routes::public_api::get_attendance_public))
+                .layer(axum::middleware::from_fn_with_state(
+                    state.clone(),
+                    routes::api_keys::api_key_auth,
+                )),
         )
         .nest(
             "/api/auth",
@@ -200,6 +252,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "/school/change-password",
                     post(routes::auth::change_password_handler),
                 ),
+        )
+        // ── Storage Routes ────────────────────────────────────────────────────
+        .nest(
+            "/api/storage",
+            Router::new()
+                .route("/upload-url", get(routes::storage::get_upload_url))
+                .route("/download-url", get(routes::storage::get_download_url)),
         )
         // User Routes
         .nest(
@@ -480,11 +539,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/award/:schoolId", get(routes::award::list_awards))
         .route(
             "/api/document_upload/:schoolId",
-            post(routes::documentUpload::upload_document),
+            post(routes::document_upload::upload_document),
         )
         .route(
             "/api/document_upload/:schoolId/student/:studentId",
-            post(routes::documentUpload::upload_document),
+            post(routes::document_upload::upload_document),
         )
         .route(
             "/api/documentbox/:schoolId",

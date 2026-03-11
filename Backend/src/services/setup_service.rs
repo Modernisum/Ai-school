@@ -1,4 +1,3 @@
-use crate::repository::traits::*;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
@@ -207,14 +206,14 @@ fn get_subjects() -> &'static HashMap<&'static str, Vec<&'static str>> {
 #[async_trait]
 impl SetupService for PostgresSetupService {
     async fn setup_school(&self, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let school_name = data["schoolName"].as_str().ok_or("Missing schoolName")?;
-        let school_address = data["schoolAddress"]
+        let _school_name = data["schoolName"].as_str().ok_or("Missing schoolName")?;
+        let _school_address = data["schoolAddress"]
             .as_str()
             .ok_or("Missing schoolAddress")?;
         let class_level_start = data["classLevelStart"].as_i64().unwrap_or(0);
         let class_level = data["classLevel"].as_i64().unwrap_or(0);
         let password = data["password"].as_str().ok_or("Missing password")?;
-        let affiliated_board = data["affiliatedBoard"].as_str().unwrap_or("");
+        let _affiliated_board = data["affiliatedBoard"].as_str().unwrap_or("");
         let mut default_students = data["defaultStudents"].as_i64().unwrap_or(30);
         if default_students <= 0 {
             default_students = 30; // Enforce sections generation
@@ -436,6 +435,7 @@ impl PostgresSetupService {
         sections
     }
 
+    #[allow(dead_code)]
     async fn get_next_sequence_val(
         &self,
         seq_name: &str,

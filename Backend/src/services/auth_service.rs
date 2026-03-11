@@ -1,4 +1,3 @@
-use crate::repository::traits::*;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;

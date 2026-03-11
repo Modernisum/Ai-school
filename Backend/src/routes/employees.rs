@@ -1,4 +1,4 @@
-use crate::models::user::{CreateEmployeeRequest, EmployeeResponse};
+use crate::models::user::CreateEmployeeRequest;
 use crate::AppState;
 use axum::{
     extract::{Path, State},
@@ -52,6 +52,7 @@ pub async fn create_employee(
     }
 }
 
+#[allow(dead_code)]
 pub async fn bulk_create_employees(
     State(state): State<AppState>,
     Path(school_id): Path<String>,

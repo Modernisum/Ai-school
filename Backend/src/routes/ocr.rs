@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 use uuid::Uuid;
 
 #[derive(Serialize)]
@@ -31,13 +30,13 @@ pub async fn extract_text(
     Query(params): Query<OcrParams>,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
-    let ocr_repo = &state.repos.ocr;
+    let _ocr_repo = &state.repos.ocr;
 
     // Save temp file (same as before or moved to repo)
     // For now, keeping the multipart handling here but calling process_ocr
     // Ideally the repo should handle the logic or we just wrap it.
 
-    let engine = params.engine.unwrap_or("paddleocr".to_string());
+    let _engine = params.engine.unwrap_or("paddleocr".to_string());
     let mut file_path = String::new();
     let file_id = Uuid::new_v4().to_string();
 

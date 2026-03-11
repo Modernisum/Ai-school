@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     
     final apiService = Provider.of<ApiService>(context, listen: false);
-    final success = await apiService.login(_phoneController.text, 'teacher');
+    final success = await apiService.login(_phoneController.text, 'employee');
     
     setState(() {
       _isLoading = false;
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     final apiService = Provider.of<ApiService>(context, listen: false);
-    final success = await apiService.verifyOtp(_phoneController.text, 'teacher', _otpController.text);
+    final success = await apiService.verifyOtp(_phoneController.text, 'employee', _otpController.text);
 
     setState(() => _isLoading = false);
 
@@ -74,12 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
               Icon(Icons.school, size: 80, color: Colors.blue[800]),
               SizedBox(height: 16),
               Text(
-                "Adhyapk",
+                "Employee",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue[900]),
               ),
               Text(
-                "Teacher Portal",
+                "Employee Portal",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),

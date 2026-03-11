@@ -1,8 +1,8 @@
 [
   {
-    "created_at": "2026-03-06T13:02:04.402611+00:00",
     "id": 1,
+    "username": "superadmin",
     "password_hash": "$2a$12$NzZgHPrmPGYVedkBaunakeTV5217Dqux5q4kam.qt/vPhtPCQVrgC",
-    "username": "superadmin"
+    "created_at": "2026-03-06T13:02:04.402611+00:00"
   }
 ]

@@ -1,20 +1,20 @@
 [
   {
-    "code": "IN",
     "id": 1,
     "name": "India",
+    "code": "IN",
     "phone_code": "+91"
   },
   {
-    "code": "US",
     "id": 2,
     "name": "United States",
+    "code": "US",
     "phone_code": "+1"
   },
   {
-    "code": "UK",
     "id": 3,
     "name": "United Kingdom",
+    "code": "UK",
     "phone_code": "+44"
   }
 ]

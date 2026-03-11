@@ -26,7 +26,8 @@ impl AdminService {
                     .unwrap_or_else(|_| "superadminsecret2024".to_string());
                 let ts = chrono::Utc::now().timestamp();
                 let raw = format!("{}:{}:{}", username, ts, secret);
-                let token = base64::encode(&raw);
+                use base64::{Engine as _, engine::general_purpose};
+                let token = general_purpose::STANDARD.encode(raw.as_bytes());
                 return Ok(token);
             }
         }
@@ -36,7 +37,8 @@ impl AdminService {
     pub fn verify_admin_token(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let secret = std::env::var("SUPER_ADMIN_SECRET")
             .unwrap_or_else(|_| "superadminsecret2024".to_string());
-        let decoded = base64::decode(token).map_err(|_| "Invalid token")?;
+        use base64::{Engine as _, engine::general_purpose};
+        let decoded = general_purpose::STANDARD.decode(token).map_err(|_| "Invalid token")?;
         let s = String::from_utf8(decoded).map_err(|_| "Invalid token encoding")?;
         let parts: Vec<&str> = s.splitn(3, ':').collect();
         if parts.len() != 3 || parts[2] != secret {
@@ -632,7 +634,7 @@ impl AdminService {
             promo_expires_at = Some(chrono::Utc::now() + chrono::Duration::days(free_days as i64));
         }
 
-        use bigdecimal::{BigDecimal, FromPrimitive};
+        use bigdecimal::BigDecimal;
         use std::str::FromStr;
         
         let mut rate_updated = false;

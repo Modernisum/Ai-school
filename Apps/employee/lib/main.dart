@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Adhyapk / Chatra Portal',
+      title: 'Employee / Chatra Portal',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: AuthChecker(),
       debugShowCheckedModeBanner: false,

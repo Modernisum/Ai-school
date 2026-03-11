@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, State},
     Json,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::AppState;
@@ -19,14 +19,14 @@ pub struct Country {
 #[derive(Serialize)]
 pub struct StateModel {
     pub id: i32,
-    pub country_id: i32,
+    pub country_id: Option<i32>,
     pub name: String,
 }
 
 #[derive(Serialize)]
 pub struct District {
     pub id: i32,
-    pub state_id: i32,
+    pub state_id: Option<i32>,
     pub name: String,
 }
 
@@ -50,7 +50,7 @@ pub async fn get_states(
 ) -> Json<Vec<StateModel>> {
     let states = sqlx::query_as!(
         StateModel,
-        "SELECT id, country_id as \"country_id!\", name FROM states WHERE country_id = $1 ORDER BY name",
+        "SELECT id, country_id, name FROM states WHERE country_id = $1 ORDER BY name",
         country_id
     )
     .fetch_all(&state.db.pool)
@@ -67,7 +67,7 @@ pub async fn get_districts(
 ) -> Json<Vec<District>> {
     let districts = sqlx::query_as!(
         District,
-        "SELECT id, state_id as \"state_id!\", name FROM districts WHERE state_id = $1 ORDER BY name",
+        "SELECT id, state_id, name FROM districts WHERE state_id = $1 ORDER BY name",
         state_id
     )
     .fetch_all(&state.db.pool)

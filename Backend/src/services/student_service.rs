@@ -1,4 +1,3 @@
-use crate::repository::traits::*;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
@@ -7,6 +6,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 // Pagination struct
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PaginationParams {
     pub page: u32,

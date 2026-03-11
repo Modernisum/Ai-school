@@ -1,4 +1,4 @@
-use crate::models::user::{CreateStudentRequest, StudentResponse};
+use crate::models::user::CreateStudentRequest;
 use crate::AppState;
 use axum::{
     extract::{Path, State},
@@ -113,6 +113,13 @@ pub async fn create_student(
         .await
     {
         Ok(data) => {
+            let webhook_engine = crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
+            let _ = webhook_engine.trigger(&school_id, "student.enrolled", json!({
+                "student_id": data["studentId"],
+                "name": payload.name,
+                "class": payload.class_name
+            })).await;
+            
             Json(json!({"success": true, "message": "Student added successfully", "data": data}))
                 .into_response()
         }
@@ -124,6 +131,7 @@ pub async fn create_student(
     }
 }
 
+#[allow(dead_code)]
 pub async fn bulk_create_students(
     State(state): State<AppState>,
     Path(school_id): Path<String>,

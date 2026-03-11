@@ -1,4 +1,3 @@
-use crate::repository::traits::*;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
@@ -290,7 +289,7 @@ impl OperationsService for PostgresOperationsService {
         discount: f64,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut fee_record = self.get_student_fee(school_id, student_id).await?;
-        let total = fee_record["totalFees"].as_f64().unwrap_or(0.0);
+        let _total = fee_record["totalFees"].as_f64().unwrap_or(0.0);
         let pending = fee_record["pendingAmount"].as_f64().unwrap_or(0.0);
         let old_discount = fee_record["discount"].as_f64().unwrap_or(0.0);
 
@@ -580,7 +579,7 @@ impl OperationsService for PostgresOperationsService {
         let p_type = data["type"].as_str().ok_or("Missing payment type")?;
         let amount = data["amount"].as_f64().ok_or("Missing amount")?;
 
-        let mut emp = self
+        let emp = self
             .repos
             .employee
             .get_employee(school_id, employee_id)
@@ -608,7 +607,7 @@ impl OperationsService for PostgresOperationsService {
                 )
                 .await?;
         } else if p_type == "salary" {
-            let salary_id = data["salaryId"]
+            let _salary_id = data["salaryId"]
                 .as_str()
                 .ok_or("salaryId required for salary payment")?;
             // ... Logic for salary payment application matching Node.js ...
