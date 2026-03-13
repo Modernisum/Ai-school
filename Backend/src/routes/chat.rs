@@ -1,3 +1,4 @@
+use crate::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -5,9 +6,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
-use crate::AppState;
 use redis::AsyncCommands;
+use serde::{Deserialize, Serialize};
 use sqlx::Row;
 
 #[derive(Deserialize)]
@@ -73,7 +73,8 @@ pub async fn send_message(
             };
 
             // Publish to Redis Pub/Sub so clients get it instantly
-            let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
+            let redis_url =
+                std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
             if let Ok(redis_client) = redis::Client::open(redis_url) {
                 if let Ok(mut pubsub_conn) = redis_client.get_multiplexed_async_connection().await {
                     let channel_name = format!("school:{}:user:{}", school_id, payload.receiver_id);
@@ -100,7 +101,7 @@ pub async fn get_history(
     let rows = sqlx::query(
         "SELECT * FROM messages WHERE school_id = $1 
          AND ((sender_id = $2 AND receiver_id = $3) OR (sender_id = $3 AND receiver_id = $2))
-         ORDER BY created_at ASC LIMIT 50"
+         ORDER BY created_at ASC LIMIT 50",
     )
     .bind(&school_id)
     .bind(&user1)
@@ -123,7 +124,9 @@ pub async fn get_history(
                     attachment_url: r.get("attachment_url"),
                     // Using get_unchecked or map for timezone serialization depending on driver behavior:
                     // Here let's just use naive string cast from DB for simplicity or generic Value
-                    created_at: r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+                    created_at: r
+                        .get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                        .to_rfc3339(),
                 });
             }
             (StatusCode::OK, Json(history)).into_response()

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'api_service.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        Provider(create: (_) => ApiService()),
-      ],
+    RepositoryProvider(
+      create: (context) => ApiService(),
       child: MyApp(),
     ),
   );
@@ -20,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Adhyapk / Chatra Portal',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AppTheme.lightTheme,
       home: AuthChecker(),
       debugShowCheckedModeBanner: false,
     );
@@ -30,7 +29,7 @@ class MyApp extends StatelessWidget {
 class AuthChecker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final apiService = Provider.of<ApiService>(context, listen: false);
+    final apiService = context.read<ApiService>();
     
     return FutureBuilder<bool>(
       future: apiService.isLoggedIn(),

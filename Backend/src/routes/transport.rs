@@ -5,8 +5,8 @@ use axum::{
     routing::post,
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
 use redis::AsyncCommands;
+use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;

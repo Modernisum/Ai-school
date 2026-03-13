@@ -228,11 +228,8 @@ impl SetupService for PostgresSetupService {
         let mut school_payload = data.clone();
         school_payload["id"] = json!(school_id);
         school_payload["schoolCode"] = json!(school_code);
-        
-        self.repos
-            .auth
-            .create_school(school_payload)
-            .await?;
+
+        self.repos.auth.create_school(school_payload).await?;
 
         // 3. Create Auth record
         self.repos
@@ -248,7 +245,10 @@ impl SetupService for PostgresSetupService {
 
         // 4. Initialize Infrastructure (Spaces & Items)
         let spaces = vec![
-            ("classroom", self.generate_classes(class_level_start as i32, class_level as i32)),
+            (
+                "classroom",
+                self.generate_classes(class_level_start as i32, class_level as i32),
+            ),
             ("kitchen", vec!["Kitchen 1".to_string()]),
             ("storeroom", vec!["Storeroom 1".to_string()]),
             (
@@ -372,13 +372,19 @@ impl SetupService for PostgresSetupService {
 impl PostgresSetupService {
     fn generate_classes(&self, start_level: i32, end_level: i32) -> Vec<String> {
         let mut classes = Vec::new();
-        if start_level <= -2 && end_level >= -2 { classes.push("Pre-Nursery".to_string()); }
-        if start_level <= -1 && end_level >= -1 { classes.push("Nursery".to_string()); }
-        if start_level <= 0 && end_level >= 0 { classes.push("Kindergarten".to_string()); }
-        
+        if start_level <= -2 && end_level >= -2 {
+            classes.push("Pre-Nursery".to_string());
+        }
+        if start_level <= -1 && end_level >= -1 {
+            classes.push("Nursery".to_string());
+        }
+        if start_level <= 0 && end_level >= 0 {
+            classes.push("Kindergarten".to_string());
+        }
+
         let from = std::cmp::max(1, start_level);
         let to = std::cmp::min(12, end_level);
-        
+
         if from <= to {
             for i in from..=to {
                 if i <= 10 {

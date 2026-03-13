@@ -80,7 +80,14 @@ pub async fn extract_text(
 
     tracing::info!("OCR Route: Calling OCR pipeline for {}...", file_path);
 
-    match state.services.ocr.perform_ocr(&file_path).await {
+    let result = state.services.ocr.perform_ocr(&file_path).await;
+    
+    // Clean up temp file
+    if let Err(e) = fs::remove_file(&file_path) {
+        tracing::error!("Failed to remove OCR temp file {}: {}", file_path, e);
+    }
+
+    match result {
         Ok(json) => Json(OcrResponse {
             success: true,
             data: Some(json),

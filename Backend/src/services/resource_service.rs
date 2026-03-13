@@ -73,7 +73,10 @@ impl ResourceService for PostgresResourceService {
         space_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.resource.update_space(school_id, space_id, data).await
+        self.repos
+            .resource
+            .update_space(school_id, space_id, data)
+            .await
     }
 
     async fn delete_space(
@@ -89,7 +92,10 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         space_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.resource.get_space_details(school_id, space_id).await
+        self.repos
+            .resource
+            .get_space_details(school_id, space_id)
+            .await
     }
 
     async fn get_space_categories(
@@ -104,7 +110,10 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.resource.create_space_category(school_id, data).await
+        self.repos
+            .resource
+            .create_space_category(school_id, data)
+            .await
     }
 
     async fn delete_space_category(
@@ -112,7 +121,10 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         category_id: i32,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.resource.delete_space_category(school_id, category_id).await
+        self.repos
+            .resource
+            .delete_space_category(school_id, category_id)
+            .await
     }
 
     async fn assign_space_materials(
@@ -121,7 +133,10 @@ impl ResourceService for PostgresResourceService {
         space_id: &str,
         materials: Vec<Value>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.resource.assign_space_materials(school_id, space_id, materials).await
+        self.repos
+            .resource
+            .assign_space_materials(school_id, space_id, materials)
+            .await
     }
 
     async fn assign_space_employees(
@@ -130,7 +145,10 @@ impl ResourceService for PostgresResourceService {
         space_id: &str,
         employee_ids: Vec<String>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.resource.assign_space_employees(school_id, space_id, employee_ids).await
+        self.repos
+            .resource
+            .assign_space_employees(school_id, space_id, employee_ids)
+            .await
     }
 
     async fn remove_space_employee(
@@ -139,7 +157,10 @@ impl ResourceService for PostgresResourceService {
         space_id: &str,
         employee_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.resource.remove_space_employee(school_id, space_id, employee_id).await
+        self.repos
+            .resource
+            .remove_space_employee(school_id, space_id, employee_id)
+            .await
     }
 
     async fn create_material(
@@ -147,7 +168,10 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.resource.add_material(school_id, data.clone()).await?;
+        self.repos
+            .resource
+            .add_material(school_id, data.clone())
+            .await?;
         Ok(data)
     }
 }

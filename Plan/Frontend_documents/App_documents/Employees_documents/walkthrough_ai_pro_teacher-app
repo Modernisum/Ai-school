@@ -1,0 +1,26 @@
+# Walkthrough: Phase 11 - AI-Powered "Pro" Teacher Tools
+
+Vidhyam has reached a new pinnacle of "Applied AI" in education. Phase 11 injects deep intelligence and automation directly into the teacher's daily workflow.
+
+## 1. AI Studio Mobile (Floating Assistant) 🎙️📊
+- **Mission Control in Pocket**: A new floating **Glassmorphism AI button** added to the dashboard.
+- **Natural Language Power**: Teachers can now ask for attendance summaries, daily reports, or even generate exams simply by typing or speaking in the assistant modal.
+- **Deep Integration**: Connects directly to backend analytical tools for real-time document generation.
+
+## 2. Predictive "Risk Radar" (Failure Prevention) 🚨
+- **Proactive Pedagogy**: The Classroom Hub now features a **Live Risk Radar**.
+- **AI Analytics**: Pulled from `student_risk_profiles`, the radar highlights students at risk of failure (high absenteeism or low GPA).
+- **One-Tap Intervention**: Teachers see risk scores (>60) and can immediately notify parents from the same hub.
+
+## 3. Smart Camera OCR Auto-Grader 📸🤖
+- **Checked in Seconds**: Teachers can now use the **AI Smart Scanner** to photo handwritten student copies.
+- **Precision Extraction**: Uses the backend PaddleOCR engine to extract text and Gemini AI to analyze correctness.
+- **Automated Feedback**: The scanner automatically assigns marks and provides textual feedback for teacher review.
+
+## 4. Disaster Control & Discipline Vault 📂
+- **Instant Accountability**: A new "Discipline" action allows teachers to file student complaints to the Principal instantly.
+- **GCS Document Box**: Teachers can now snap photos of medical letters, certificates, or disciplinary evidence and upload them directly to **Google Cloud Storage** via the "Document Vault".
+
+---
+
+Phase 11 transforms the teacher from a manual grader into an **AI-Enabled Mentor**, prioritizing student outcomes over administrative paperwork.

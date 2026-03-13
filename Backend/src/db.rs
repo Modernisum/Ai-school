@@ -2,7 +2,6 @@ use deadpool_redis::{Config, Pool, Runtime};
 use sqlx::postgres::PgPool;
 use std::error::Error;
 
-
 #[derive(Clone)]
 pub struct DbClient {
     pub pool: PgPool,
@@ -12,25 +11,51 @@ pub struct DbClient {
 impl DbClient {
     /// Acquires a new database connection from the pool and sets the current tenant context.
     /// This ensures that PostgreSQL Row-Level Security (RLS) policies automatically apply.
-    pub async fn acquire_tenant_connection(&self, school_id: &str) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
+    pub async fn acquire_tenant_connection(
+        &self,
+        school_id: &str,
+    ) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
         let mut conn = self.pool.acquire().await?;
-        
+
         // Set the Postgres configuration parameter for the current session/connection
-        let query = format!("SET LOCAL app.current_school_id = '{}'", school_id.replace('\'', "''"));
+        let query = format!(
+            "SET LOCAL app.current_school_id = '{}'",
+            school_id.replace('\'', "''")
+        );
         sqlx::query(&query).execute(&mut *conn).await?;
-        
+
         Ok(conn)
     }
 
     /// Acquires a new database connection from the pool and bypasses RLS policies.
     /// This should ONLY be used by super_admin services or global jobs (e.g. billing).
-    pub async fn acquire_super_admin_connection(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
+    pub async fn acquire_super_admin_connection(
+        &self,
+    ) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
         let mut conn = self.pool.acquire().await?;
-        
+
         // Set the is_super_admin flag so the RLS functions bypass security policies
-        sqlx::query("SET LOCAL app.is_super_admin = 'true'").execute(&mut *conn).await?;
-        
+        sqlx::query("SET LOCAL app.is_super_admin = 'true'")
+            .execute(&mut *conn)
+            .await?;
+
         Ok(conn)
+    }
+
+    /// Optimized helper to acquire a connection based on context
+    pub async fn acquire_rls_connection(
+        &self,
+        school_id: Option<&str>,
+        is_super_admin: bool,
+    ) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
+        if is_super_admin {
+            self.acquire_super_admin_connection().await
+        } else if let Some(sid) = school_id {
+            self.acquire_tenant_connection(sid).await
+        } else {
+            // Default to strictly isolated empty context if neither provided
+            self.acquire_tenant_connection("none").await
+        }
     }
 
     pub async fn new() -> Result<Self, Box<dyn Error>> {
@@ -190,7 +215,7 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS total_periods INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS class_fees DOUBLE PRECISION DEFAULT 0.0,
              ADD COLUMN IF NOT EXISTS sections JSONB DEFAULT '[]',
-             ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]'"
+             ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]'",
         )
         .execute(&pool)
         .await?;
@@ -211,7 +236,7 @@ impl DbClient {
         .await?;
 
         sqlx::query(
-             "CREATE TABLE IF NOT EXISTS attendance (
+            "CREATE TABLE IF NOT EXISTS attendance (
                 id SERIAL PRIMARY KEY,
                 school_id VARCHAR(255) NOT NULL,
                 role VARCHAR(50) NOT NULL,
@@ -281,7 +306,7 @@ impl DbClient {
             "ALTER TABLE schools 
              ADD COLUMN IF NOT EXISTS base_rate NUMERIC(10, 2) NOT NULL DEFAULT 1.00,
              ADD COLUMN IF NOT EXISTS active_promo_id INTEGER REFERENCES promo_codes(id),
-             ADD COLUMN IF NOT EXISTS promo_expires_at TIMESTAMPTZ"
+             ADD COLUMN IF NOT EXISTS promo_expires_at TIMESTAMPTZ",
         )
         .execute(&pool)
         .await?;
@@ -413,7 +438,7 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS time_period INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS space_category VARCHAR(255),
              ADD COLUMN IF NOT EXISTS responsibility_field VARCHAR(255),
-             ADD COLUMN IF NOT EXISTS space_id VARCHAR(255)"
+             ADD COLUMN IF NOT EXISTS space_id VARCHAR(255)",
         )
         .execute(&pool)
         .await?;
@@ -562,7 +587,7 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS fee_type VARCHAR(50) DEFAULT 'monthly',
              ADD COLUMN IF NOT EXISTS fee_interval INTEGER DEFAULT 1,
              ADD COLUMN IF NOT EXISTS schedule_type VARCHAR(50) DEFAULT 'daily',
-             ADD COLUMN IF NOT EXISTS schedule_data JSONB DEFAULT '[]'"
+             ADD COLUMN IF NOT EXISTS schedule_data JSONB DEFAULT '[]'",
         )
         .execute(&pool)
         .await?;
@@ -643,7 +668,7 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS work_amount DECIMAL(12,2) DEFAULT 0,
              ADD COLUMN IF NOT EXISTS work_period VARCHAR(50),
              ADD COLUMN IF NOT EXISTS custom_dates JSONB DEFAULT '[]',
-             ADD COLUMN IF NOT EXISTS total_price DECIMAL(12,2) DEFAULT 0"
+             ADD COLUMN IF NOT EXISTS total_price DECIMAL(12,2) DEFAULT 0",
         )
         .execute(&pool)
         .await?;
@@ -715,7 +740,6 @@ impl DbClient {
         Ok(DbClient { pool, redis })
     }
 }
-
 
 pub async fn init() -> Result<DbClient, Box<dyn Error>> {
     DbClient::new().await

@@ -16,7 +16,8 @@ pub async fn query_ai(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": "Query cannot be empty"})),
-        ).into_response();
+        )
+            .into_response();
     }
 
     match state.services.ai.post_query(&school_id, query).await {

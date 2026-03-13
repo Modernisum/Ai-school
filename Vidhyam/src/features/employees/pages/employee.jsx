@@ -8,7 +8,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
 import AddEmployeePage from '../components/addemployee';
-import { useGetEmployeesQuery, useDeleteEmployeeMutation } from '../api/employeeApi';
+import { useGetEmployeesQuery, useDeleteEmployeeMutation, useBulkImportEmployeesMutation } from '../api/employeeApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
@@ -29,6 +29,7 @@ export default function EmployeeManagement() {
     const { data: empData, isLoading: empLoading, refetch: fetchEmployees } = useGetEmployeesQuery(schoolId);
     const employees = empData?.data || empData?.employees || [];
     const [deleteEmployeeMutation] = useDeleteEmployeeMutation();
+    const [bulkImportEmployees] = useBulkImportEmployeesMutation();
 
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState('All');
@@ -256,15 +257,8 @@ export default function EmployeeManagement() {
                 title="Bulk Import Employees"
                 expectedHeaders={['name', 'employeeType', 'email', 'phone', 'subject', 'department', 'baseSalary', 'address']}
                 onImport={async (payload) => {
-                    const res = await fetch(`${API_BASE_URL}/employees/${schoolId}/employees/bulk`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    if (!data.success) throw new Error(data.message || 'Import failed');
-                    fetchEmployees();
-                    showToast('success', `Successfully imported ${data.data?.successful || 0} employees!`);
+                    await bulkImportEmployees({ schoolId, payload }).unwrap();
+                    showToast('success', `Bulk import successful!`);
                     setBulkModalOpen(false);
                 }}
             />

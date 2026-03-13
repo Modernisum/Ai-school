@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiService {
-  // NOTE: Use your machine's local IP address instead of localhost if testing on a physical device.
-  // 10.0.2.2 is used for Android Emulator to reach host machine's localhost.
-  static const String baseUrl = 'http://192.168.92.128:8080/268863/mobile'; 
+  static final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:8080/268863/mobile'; 
   final storage = const FlutterSecureStorage();
 
   Future<bool> login(String ident, String role) async {
@@ -21,7 +22,7 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print("Login Error: $e");
+      debugPrint("Login Error: $e");
       return false;
     }
   }
@@ -44,7 +45,7 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print("Verify OTP Error: $e");
+      debugPrint("Verify OTP Error: $e");
       return false;
     }
   }

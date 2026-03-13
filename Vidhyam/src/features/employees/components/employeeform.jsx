@@ -1097,7 +1097,7 @@ export default function EmployeeFormPage() {
   };
 
   // Component for displaying existing documents
-  const DocumentDisplayContainer = ({ doc, index }) => {
+  const renderDocumentDisplayContainer = (doc, index) => {
     const docType = formatDocType(doc.type);
     const isEditing = editStates.documents[docType];
     const fields = MANUAL_SCHEMAS[docType] || [];
@@ -1216,7 +1216,7 @@ export default function EmployeeFormPage() {
   };
 
   // Responsibilities Section Component
-  const ResponsibilitiesSection = () => {
+  const renderResponsibilitiesSection = () => {
     if (isLoadingResponsibilities) {
       return (
         <div className="bg-gradient-to-br from-green-50 via-white to-emerald-50 border-2 border-green-200 rounded-xl shadow-xl p-6 mb-6">
@@ -1399,7 +1399,7 @@ export default function EmployeeFormPage() {
   };
 
   // Error and Success components
-  const ErrorDialog = () => (
+  const renderErrorDialog = () => (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[100] p-4">
       <div className="bg-white p-8 rounded-xl shadow-2xl w-[90%] max-w-md border-4 border-red-500">
         <div className="flex items-center mb-4">
@@ -1417,7 +1417,7 @@ export default function EmployeeFormPage() {
     </div>
   );
 
-  const SuccessNotification = () => (
+  const renderSuccessNotification = () => (
     <div className="fixed top-4 right-4 z-[100] p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-lg flex items-center max-w-sm">
       <CheckCircle size={24} className="mr-3" />
       <p className="font-medium text-sm">{apiSuccess}</p>
@@ -1448,8 +1448,8 @@ export default function EmployeeFormPage() {
 
   return (
     <div className="relative flex flex-col items-center p-4 bg-gradient-to-b from-blue-50 to-red-50 min-h-screen">
-      {apiError && <ErrorDialog />}
-      {apiSuccess && <SuccessNotification />}
+      {apiError && renderErrorDialog()}
+      {apiSuccess && renderSuccessNotification()}
       {isAadhaarDialogOpen && (
         <AadhaarUploadDialog
           aadharData={documents.find(doc => doc.type === 'Aadhaar Card')}
@@ -1591,7 +1591,7 @@ export default function EmployeeFormPage() {
           </div>
 
           {/* Responsibilities Section */}
-          <ResponsibilitiesSection />
+          {renderResponsibilitiesSection()}
 
           {/* Layout: 2 columns for better space utilization */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1689,7 +1689,9 @@ export default function EmployeeFormPage() {
                 <div className="space-y-4">
                   {documents.filter(doc => doc.extracted || doc.url).length > 0 ? (
                     documents.map((doc, index) => (
-                      <DocumentDisplayContainer key={index} doc={doc} index={index} />
+                      <React.Fragment key={index}>
+                        {renderDocumentDisplayContainer(doc, index)}
+                      </React.Fragment>
                     ))
                   ) : (
                     <p className="text-gray-500 text-center py-4">No documents found. Upload documents to see them here.</p>

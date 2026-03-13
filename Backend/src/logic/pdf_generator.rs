@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Result};
 use printpdf::*;
 use serde_json::Value;
 use std::io::BufWriter;
-use anyhow::{Result, anyhow};
 
 pub struct PdfGenerator;
 
@@ -34,12 +34,12 @@ impl PdfGenerator {
                 // Headers
                 let mut x_pos = 20.0;
                 let col_width = 170.0 / headers.len() as f32;
-                
+
                 for head in &headers {
                     current_layer.use_text(head, 12.0, Mm(x_pos), Mm(y_pos), &font_bold);
                     x_pos += col_width;
                 }
-                
+
                 y_pos -= 10.0;
 
                 // Rows
@@ -54,22 +54,50 @@ impl PdfGenerator {
                     for head in &headers {
                         let val = item.get(head).map(|v| v.to_string()).unwrap_or_default();
                         // Truncate if too long
-                        let display_val = if val.len() > 20 { format!("{}...", &val[..17]) } else { val };
-                        current_layer.use_text(display_val.replace('"', ""), 10.0, Mm(x_pos), Mm(y_pos), &font);
+                        let display_val = if val.len() > 20 {
+                            format!("{}...", &val[..17])
+                        } else {
+                            val
+                        };
+                        current_layer.use_text(
+                            display_val.replace('"', ""),
+                            10.0,
+                            Mm(x_pos),
+                            Mm(y_pos),
+                            &font,
+                        );
                         x_pos += col_width;
                     }
                     y_pos -= 8.0;
                 }
             } else {
-                current_layer.use_text("No data available for this report.", 12.0, Mm(20.0), Mm(y_pos), &font);
+                current_layer.use_text(
+                    "No data available for this report.",
+                    12.0,
+                    Mm(20.0),
+                    Mm(y_pos),
+                    &font,
+                );
             }
         } else {
             // Handle non-array data (summary etc)
-            current_layer.use_text(format!("Summary Data:"), 14.0, Mm(20.0), Mm(y_pos), &font_bold);
+            current_layer.use_text(
+                format!("Summary Data:"),
+                14.0,
+                Mm(20.0),
+                Mm(y_pos),
+                &font_bold,
+            );
             y_pos -= 10.0;
             if let Some(obj) = data.as_object() {
                 for (k, v) in obj {
-                    current_layer.use_text(format!("{}: {}", k, v), 12.0, Mm(20.0), Mm(y_pos), &font);
+                    current_layer.use_text(
+                        format!("{}: {}", k, v),
+                        12.0,
+                        Mm(20.0),
+                        Mm(y_pos),
+                        &font,
+                    );
                     y_pos -= 8.0;
                 }
             }
@@ -77,6 +105,8 @@ impl PdfGenerator {
 
         let mut writer = BufWriter::new(Vec::new());
         doc.save(&mut writer)?;
-        Ok(writer.into_inner().map_err(|_| anyhow!("Failed to get PDF buffer"))?)
+        Ok(writer
+            .into_inner()
+            .map_err(|_| anyhow!("Failed to get PDF buffer"))?)
     }
 }

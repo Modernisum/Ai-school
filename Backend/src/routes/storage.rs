@@ -24,16 +24,22 @@ pub async fn get_upload_url(
     let folder = payload.folder.unwrap_or_else(|| "uploads".to_string());
     let object_name = format!("{}/{}-{}", folder, Uuid::new_v4(), payload.file_name);
 
-    match state.storage.generate_upload_url(&object_name, &payload.content_type).await {
+    match state
+        .storage
+        .generate_upload_url(&object_name, &payload.content_type)
+        .await
+    {
         Ok(url) => Json(json!({
             "success": true,
             "uploadUrl": url,
             "objectPath": object_name
-        })).into_response(),
+        }))
+        .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -44,17 +50,25 @@ pub async fn get_download_url(
 ) -> impl IntoResponse {
     let path = match params["path"].as_str() {
         Some(p) => p,
-        None => return (axum::http::StatusCode::BAD_REQUEST, "Missing path parameter").into_response(),
+        None => {
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                "Missing path parameter",
+            )
+                .into_response()
+        }
     };
 
     match state.storage.generate_download_url(path).await {
         Ok(url) => Json(json!({
             "success": true,
             "downloadUrl": url
-        })).into_response(),
+        }))
+        .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

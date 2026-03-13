@@ -32,7 +32,12 @@ pub async fn get_salary_breakdown(
     State(state): State<AppState>,
     Path((school_id, employee_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    match state.services.operations.get_salary_breakdown(&school_id, &employee_id).await {
+    match state
+        .services
+        .operations
+        .get_salary_breakdown(&school_id, &employee_id)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -47,7 +52,12 @@ pub async fn add_bonus(
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.operations.add_bonus(&school_id, &employee_id, payload).await {
+    match state
+        .services
+        .operations
+        .add_bonus(&school_id, &employee_id, payload)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -62,8 +72,32 @@ pub async fn add_aid(
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.operations.add_aid(&school_id, &employee_id, payload).await {
+    match state
+        .services
+        .operations
+        .add_aid(&school_id, &employee_id, payload)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn auto_close_month(
+    State(state): State<AppState>,
+    Path((school_id, employee_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .operations
+        .auto_close_month(&school_id, &employee_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Month closed successfully"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

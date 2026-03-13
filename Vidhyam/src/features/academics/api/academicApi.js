@@ -11,7 +11,7 @@ export const academicApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ['Class', 'Subject', 'Exam', 'Materials'],
+    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays'],
     endpoints: (builder) => ({
         // ---- Classes ----
         getClasses: builder.query({
@@ -88,6 +88,86 @@ export const academicApi = createApi({
             }),
             invalidatesTags: ['Exam'],
         }),
+
+        // ---- Materials ----
+        getMaterials: builder.query({
+            query: (schoolId) => `/materials/${schoolId}`,
+            providesTags: ['Materials'],
+            transformResponse: (res) => res.data || [],
+        }),
+        addMaterial: builder.mutation({
+            query: ({ schoolId, body }) => ({
+                url: `/materials/${schoolId}`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        editMaterial: builder.mutation({
+            query: ({ schoolId, materialId, body }) => ({
+                url: `/materials/${schoolId}/${materialId}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        deleteMaterial: builder.mutation({
+            query: ({ schoolId, materialId }) => ({
+                url: `/materials/${schoolId}/${materialId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        buyMaterial: builder.mutation({
+            query: ({ schoolId, materialId, body }) => ({
+                url: `/materials/${schoolId}/${materialId}/buy`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        sellMaterial: builder.mutation({
+            query: ({ schoolId, materialId, body }) => ({
+                url: `/materials/${schoolId}/${materialId}/sell`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        bulkImportMaterials: builder.mutation({
+            query: ({ schoolId, materials }) => ({
+                url: `/materials/${schoolId}/bulk`,
+                method: 'POST',
+                body: { materials },
+            }),
+            invalidatesTags: ['Materials'],
+        }),
+        getMaterialHistory: builder.query({
+            query: ({ schoolId, materialId }) => `/materials/${schoolId}/${materialId}/history`,
+            transformResponse: (res) => res.data || [],
+        }),
+
+        // ---- Holidays ----
+        getHolidays: builder.query({
+            query: (schoolId) => `/operations/attendance/${schoolId}/holidays`,
+            providesTags: ['Holidays'],
+            transformResponse: (res) => res.data || [],
+        }),
+        createHoliday: builder.mutation({
+            query: ({ schoolId, body }) => ({
+                url: `/school-holidays/${schoolId}`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Holidays'],
+        }),
+        deleteHoliday: builder.mutation({
+            query: ({ schoolId, holidayId }) => ({
+                url: `/school-holidays/${schoolId}/${holidayId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Holidays'],
+        }),
     }),
 });
 
@@ -103,4 +183,16 @@ export const {
     useLazyGetChapterNamesQuery,
     useGeneratePaperMutation,
     useApproveExamMutation,
+    useGetMaterialsQuery,
+    useAddMaterialMutation,
+    useEditMaterialMutation,
+    useDeleteMaterialMutation,
+    useBuyMaterialMutation,
+    useSellMaterialMutation,
+    useBulkImportMaterialsMutation,
+    useGetMaterialHistoryQuery,
+    useLazyGetMaterialHistoryQuery,
+    useGetHolidaysQuery,
+    useCreateHolidayMutation,
+    useDeleteHolidayMutation,
 } = academicApi;

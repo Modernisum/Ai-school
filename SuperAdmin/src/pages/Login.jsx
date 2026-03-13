@@ -88,9 +88,6 @@ export default function Login() {
                     </button>
                 </form>
 
-                <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)', marginTop: 20 }}>
-                    Default: <code>superadmin</code> / <code>superadmin123</code>
-                </p>
                 <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </motion.div>
         </div>

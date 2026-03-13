@@ -22,11 +22,15 @@ pub async fn get_school_details(
 ) -> impl IntoResponse {
     match state.services.school.get_school_details(&school_id).await {
         Ok(details) => Json(serde_json::json!({"success": true, "data": details})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.contains("School not found") {
+                axum::http::StatusCode::NOT_FOUND
+            } else {
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(serde_json::json!({"success": false, "message": msg}))).into_response()
+        }
     }
 }
 
@@ -66,22 +70,23 @@ pub async fn update_school_self(
     .await;
 
     match result {
-        Err(e) => return (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        Err(e) => {
+            return (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"success": false, "message": e.to_string()})),
+            )
+                .into_response()
+        }
         Ok(_) => {}
     }
 
     // If schoolName is provided, update the dedicated column too
     if let Some(name) = school_name {
-        let _ = sqlx::query(
-            "UPDATE schools SET school_name = $1 WHERE school_id = $2"
-        )
-        .bind(name)
-        .bind(&school_id)
-        .execute(&state.db.pool)
-        .await;
+        let _ = sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
+            .bind(name)
+            .bind(&school_id)
+            .execute(&state.db.pool)
+            .await;
     }
 
     Json(json!({"success": true, "message": "School profile updated successfully"})).into_response()
@@ -105,19 +110,26 @@ pub async fn change_password_self(
         }
     };
 
-    let new_password = match payload["newPassword"].as_str().or(payload["password"].as_str()) {
+    let new_password = match payload["newPassword"]
+        .as_str()
+        .or(payload["password"].as_str())
+    {
         Some(p) if p.len() >= 6 => p.to_string(),
         Some(_) => {
             return (
                 axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "Password must be at least 6 characters"})),
-            ).into_response();
+                Json(
+                    json!({"success": false, "message": "Password must be at least 6 characters"}),
+                ),
+            )
+                .into_response();
         }
         None => {
             return (
                 axum::http::StatusCode::BAD_REQUEST,
                 Json(json!({"success": false, "message": "newPassword is required"})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
@@ -127,22 +139,23 @@ pub async fn change_password_self(
             return (
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"success": false, "message": e.to_string()})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
-    match sqlx::query(
-        "UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2"
-    )
-    .bind(&hashed)
-    .bind(&school_id)
-    .execute(&state.db.pool)
-    .await
+    match sqlx::query("UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2")
+        .bind(&hashed)
+        .bind(&school_id)
+        .execute(&state.db.pool)
+        .await
     {
-        Ok(_) => Json(json!({"success": true, "message": "Password updated successfully"})).into_response(),
+        Ok(_) => Json(json!({"success": true, "message": "Password updated successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

@@ -7,6 +7,7 @@ import {
     Save, Loader, CheckCircle, AlertTriangle, Calendar,
     Award, Building2, Hash, GraduationCap, Clock
 } from 'lucide-react';
+import { useAddEmployeeMutation } from '../api/employeeApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const getSchoolId = () => {
@@ -102,6 +103,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
     const [toast, setToast] = useState(null);
     const [createdId, setCreatedId] = useState(null);
     const [errors, setErrors] = useState({});
+    const [addEmployee] = useAddEmployeeMutation();
 
     const [form, setForm] = useState({
         // personal
@@ -190,18 +192,12 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             organizationName: form.organizationName,
         };
         try {
-            const res = await fetch(`${API_BASE_URL}/employees/${schoolId}/employees`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (!res.ok && data.success === false) throw new Error(data.message || 'Failed to create employee');
-            const empId = data.employeeId || form.employeeId;
+            const data = await addEmployee({ schoolId, employeeData: payload }).unwrap();
+            const empId = data.employeeId || data.data?.employeeId || form.employeeId;
             setCreatedId(empId);
             setToast({ type: 'success', msg: `Employee added! ID: ${empId}` });
         } catch (err) {
-            setToast({ type: 'error', msg: err.message });
+            setToast({ type: 'error', msg: err?.data?.message || err.message });
         } finally {
             setSaving(false);
         }

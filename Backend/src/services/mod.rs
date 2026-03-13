@@ -1,4 +1,5 @@
 pub mod academic_service;
+pub mod ai_service;
 pub mod auth_service;
 pub mod auxiliary_service;
 pub mod employee_service;
@@ -7,19 +8,18 @@ pub mod operations_service;
 pub mod resource_service;
 pub mod setup_service;
 pub mod student_service;
-pub mod ai_service;
 pub mod traits;
 
 use crate::repository::Repositories;
 use crate::services::academic_service::PostgresAcademicService;
+use crate::services::ai_service::PostAiService;
 use crate::services::auth_service::PostgresAuthService;
 use crate::services::employee_service::PostgresEmployeeService;
+use crate::services::leave_service::PostgresLeaveService;
 use crate::services::operations_service::PostgresOperationsService;
 use crate::services::resource_service::{PostgresOCRService, PostgresResourceService};
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
-use crate::services::leave_service::PostgresLeaveService;
-use crate::services::ai_service::PostAiService;
 use crate::services::traits::*;
 use std::sync::Arc;
 
@@ -44,12 +44,21 @@ pub struct Services {
 }
 
 pub fn initialize_services(repos: Arc<Repositories>) -> Services {
+    let ai_orchestrator = Arc::new(crate::logic::ai_orchestrator::AiOrchestrator::new(
+        repos.clone(),
+    ));
+    let ai_service = Arc::new(PostAiService::new(ai_orchestrator));
+    let ocr_service = Arc::new(PostgresOCRService {
+        repos: repos.clone(),
+    });
+
     let auxiliary_service = Arc::new(
         crate::services::auxiliary_service::PostgresAuxiliaryService {
             repos: repos.clone(),
+            ocr: ocr_service.clone(),
+            ai: ai_service.clone(),
         },
     );
-    let ai_orchestrator = Arc::new(crate::logic::ai_orchestrator::AiOrchestrator::new(repos.clone()));
 
     Services {
         auth: Arc::new(PostgresAuthService {
@@ -73,9 +82,7 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         resource: Arc::new(PostgresResourceService {
             repos: repos.clone(),
         }),
-        ocr: Arc::new(PostgresOCRService {
-            repos: repos.clone(),
-        }),
+        ocr: ocr_service,
         award: auxiliary_service.clone() as Arc<dyn AwardService>,
         complain: auxiliary_service.clone() as Arc<dyn ComplainService>,
         reminder: auxiliary_service.clone() as Arc<dyn ReminderService>,
@@ -85,7 +92,8 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         task: auxiliary_service as Arc<dyn TaskService>,
         leave: Arc::new(PostgresLeaveService {
             repos: repos.clone(),
+            timetable: Arc::new(crate::logic::timetable_engine::TimetableEngine::new(repos.db_client.pool.clone())),
         }),
-        ai: Arc::new(PostAiService::new(ai_orchestrator)),
+        ai: ai_service,
     }
 }

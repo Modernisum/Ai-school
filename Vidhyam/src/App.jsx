@@ -18,7 +18,7 @@ const SchoolPage = lazy(() => import("./features/infrastructure/pages/school.jsx
 const SpacePage = lazy(() => import("./features/infrastructure/pages/space.jsx"));
 const StudentManager = lazy(() => import("./features/students/pages/student.jsx"));
 const SubjectPage = lazy(() => import("./features/academics/pages/subject.jsx"));
-const DocumentUploadPage = lazy(() => import("./features/documents/pages/upload.jsx"));
+const DocumentUploadPage = lazy(() => import("./features/documents/pages/DocumentUploadPage.jsx"));
 const Studentinfo = lazy(() => import("./features/students/components/studentprofile.jsx"));
 const SchoolProfilePage = lazy(() => import("./features/infrastructure/pages/schoolprofile.jsx"));
 const EmployeeFormPage = lazy(() => import("./features/employees/components/employeeform.jsx"));
@@ -27,6 +27,8 @@ const PayrollPage = lazy(() => import("./features/employees/pages/payroll.jsx"))
 const LeaveManagementPage = lazy(() => import("./features/employees/components/LeaveManagement.jsx"));
 const AttendanceManager = lazy(() => import("./features/academics/pages/attendance.jsx"));
 const ReferralCouponsPage = lazy(() => import("./features/billing/pages/referralCoupons.jsx"));
+const AiStudioPage = lazy(() => import("./features/ai/pages/AiStudio.jsx"));
+const TimetableGeneratorPage = lazy(() => import("./features/academics/pages/timetable.jsx"));
 
 // Lazy Loader
 const PageLoader = () => (
@@ -59,7 +61,7 @@ export default function App() {
           <Route path="student" element={<Suspense fallback={<PageLoader />}><StudentManager /></Suspense>} />
           <Route path="subject" element={<Suspense fallback={<PageLoader />}><SubjectPage /></Suspense>} />
           <Route path="upload" element={<Suspense fallback={<PageLoader />}><DocumentUploadPage /></Suspense>} />
-          <Route path="announcements" element={<Suspense fallback={<PageLoader />}><AttendanceManager /></Suspense>} />
+          <Route path="announcements" element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
           <Route path="employeeform" element={<Suspense fallback={<PageLoader />}><EmployeeFormPage /></Suspense>} />
           <Route path="employeeprofile" element={<Suspense fallback={<PageLoader />}><EmployeeProfilePage /></Suspense>} />
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><PayrollPage /></Suspense>} />
@@ -67,6 +69,8 @@ export default function App() {
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendanceManager /></Suspense>} />
           <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
           <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
+          <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />
+          <Route path="timetable" element={<Suspense fallback={<PageLoader />}><TimetableGeneratorPage /></Suspense>} />
         </Route>
 
         {/* Fallback 404 */}

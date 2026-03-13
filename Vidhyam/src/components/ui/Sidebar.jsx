@@ -4,61 +4,106 @@ import {
   Users, UserCheck, CreditCard, School, Box, Layers,
   BookOpen, AlertCircle, FileText, CalendarCheck,
   Plus, ChevronRight, UserPlus, ClipboardList,
-  BookPlus, Bell
+  BookPlus, Bell, Sparkles, Search
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Sub-links for each nav section — these are always visible when the section is active
-const SUB_LINKS = {
-  Student: [
-    { label: "All Students", path: "/dashboard/student", icon: Users },
-    { label: "Add Student", path: "/dashboard/student?add=1", icon: UserPlus },
-  ],
-  Employee: [
-    { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
-    { label: "Add Employee", path: "/dashboard/employee?add=1", icon: UserPlus },
-    { label: "Payroll & Salary", path: "/dashboard/payroll", icon: CreditCard },
-    { label: "Leave Management", path: "/dashboard/leave-management", icon: CalendarCheck },
-  ],
-  Subject: [
-    { label: "All Subjects", path: "/dashboard/subject", icon: BookOpen },
-    { label: "Add Subject", path: "/dashboard/subject?add=1", icon: BookPlus },
-  ],
-  Space: [
-    { label: "All Spaces", path: "/dashboard/space", icon: Box },
-    { label: "Add Space", path: "/dashboard/space?add=1", icon: Plus },
-  ],
-  Materials: [
-    { label: "All Materials", path: "/dashboard/materials", icon: Layers },
-    { label: "Add Material", path: "/dashboard/materials?add=1", icon: Plus },
-  ],
-  Exam: [
-    { label: "All Exams", path: "/dashboard/exam", icon: FileText },
-    { label: "Add Exam", path: "/dashboard/exam?add=1", icon: Plus },
-  ],
-  Fees: [
-    { label: "Fee Records", path: "/dashboard/fees", icon: CreditCard },
-    { label: "Record Fee", path: "/dashboard/fees?add=1", icon: Plus },
-    { label: "Referral Coupons", path: "/dashboard/referral-coupons", icon: ClipboardList },
-  ],
-  Attendance: [
-    { label: "View Attendance", path: "/dashboard/attendance", icon: CalendarCheck },
-    { label: "Mark Attendance", path: "/dashboard/attendance?mark=1", icon: ClipboardList },
-  ],
-};
-
-const menuItems = [
-  { name: "Home", icon: Home, path: "/dashboard/home" },
-  { name: "Student", icon: Users, path: "/dashboard/student" },
-  { name: "Employee", icon: UserCheck, path: "/dashboard/employee" },
-  { name: "Announcements", icon: Bell, path: "/dashboard/announcements" },
-  { name: "Fees", icon: CreditCard, path: "/dashboard/fees" },
-  { name: "Subject", icon: BookOpen, path: "/dashboard/subject" },
-  { name: "Space", icon: Box, path: "/dashboard/space" },
-  { name: "Materials", icon: Layers, path: "/dashboard/materials" },
-  { name: "Exam", icon: FileText, path: "/dashboard/exam" },
-  { name: "Complaint", icon: AlertCircle, path: "/dashboard/complains" },
+// Navigation configuration object
+const NAV_CONFIG = [
+  { 
+    name: "Home", 
+    icon: Home, 
+    path: "/dashboard/home" 
+  },
+  { 
+    name: "Search", 
+    icon: Search, 
+    onClick: () => window.dispatchEvent(new CustomEvent('toggle-spotlight')),
+    isAction: true
+  },
+  { 
+    name: "Student", 
+    icon: Users, 
+    path: "/dashboard/student",
+    subLinks: [
+      { label: "All Students", path: "/dashboard/student", icon: Users },
+      { label: "Add Student", path: "/dashboard/student?add=1", icon: UserPlus },
+    ]
+  },
+  { 
+    name: "Employee", 
+    icon: UserCheck, 
+    path: "/dashboard/employee",
+    subLinks: [
+      { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
+      { label: "Add Employee", path: "/dashboard/employee?add=1", icon: UserPlus },
+      { label: "Payroll & Salary", path: "/dashboard/payroll", icon: CreditCard },
+      { label: "Leave Management", path: "/dashboard/leave-management", icon: CalendarCheck },
+    ]
+  },
+  { 
+    name: "Announcements", 
+    icon: Bell, 
+    path: "/dashboard/announcements" 
+  },
+  { 
+    name: "Fees", 
+    icon: CreditCard, 
+    path: "/dashboard/fees",
+    subLinks: [
+      { label: "Fee Records", path: "/dashboard/fees", icon: CreditCard },
+      { label: "Record Fee", path: "/dashboard/fees?add=1", icon: Plus },
+      { label: "Referral Coupons", path: "/dashboard/referral-coupons", icon: ClipboardList },
+    ]
+  },
+  { 
+    name: "Subject", 
+    icon: BookOpen, 
+    path: "/dashboard/subject",
+    subLinks: [
+      { label: "All Subjects", path: "/dashboard/subject", icon: BookOpen },
+      { label: "Add Subject", path: "/dashboard/subject?add=1", icon: BookPlus },
+      { label: "Timetable", path: "/dashboard/timetable", icon: CalendarCheck },
+    ]
+  },
+  { 
+    name: "Space", 
+    icon: Box, 
+    path: "/dashboard/space",
+    subLinks: [
+      { label: "All Spaces", path: "/dashboard/space", icon: Box },
+      { label: "Add Space", path: "/dashboard/space?add=1", icon: Plus },
+    ]
+  },
+  { 
+    name: "Materials", 
+    icon: Layers, 
+    path: "/dashboard/materials",
+    subLinks: [
+      { label: "All Materials", path: "/dashboard/materials", icon: Layers },
+      { label: "Add Material", path: "/dashboard/materials?add=1", icon: Plus },
+    ]
+  },
+  { 
+    name: "Exam", 
+    icon: FileText, 
+    path: "/dashboard/exam",
+    subLinks: [
+      { label: "All Exams", path: "/dashboard/exam", icon: FileText },
+      { label: "Add Exam", path: "/dashboard/exam?add=1", icon: Plus },
+    ]
+  },
+  { 
+    name: "Complaint", 
+    icon: AlertCircle, 
+    path: "/dashboard/complains" 
+  },
+  { 
+    name: "AI Studio", 
+    icon: Sparkles, 
+    path: "/dashboard/ai-studio" 
+  },
 ];
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
@@ -166,66 +211,95 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 custom-scrollbar">
-        {menuItems.map((item) => {
-          const { name, icon: Icon, path } = item;
+        {NAV_CONFIG.map((item) => {
+          const { name, icon: Icon, path, subLinks } = item;
           const sectionActive = isSectionActive(path);
-          const subs = SUB_LINKS[name];
-          const subsExpanded = sidebarOpen && sectionActive && !!subs;
+          const subsExpanded = sidebarOpen && sectionActive && !!subLinks;
 
           return (
             <div key={name} className="relative group">
               {/* Main Nav Button */}
-              <NavLink
-                to={path}
-                className={({ isActive }) => `
-                  relative flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group overflow-hidden w-full
-                  ${sectionActive
-                    ? "bg-gradient-to-r from-indigo-500/15 to-transparent text-indigo-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
-                    : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]"
-                  }
-                `}
-              >
-                {sectionActive && (
-                  <motion.div
-                    layoutId="active-indicator"
-                    className="absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+              {item.isAction ? (
+                <div
+                  onClick={item.onClick}
+                  className={`
+                    relative flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group overflow-hidden w-full cursor-pointer
+                    text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]
+                  `}
+                >
+                  <Icon
+                    size={18}
+                    className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110 text-slate-500 group-hover:text-slate-300"
                   />
-                )}
-
-                <Icon
-                  size={18}
-                  className={`flex-shrink-0 transition-transform duration-300 group-hover:scale-110 
-                    ${sectionActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}
-                />
-
-                <AnimatePresence>
-                  {sidebarOpen && (
+                  <AnimatePresence>
+                    {sidebarOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="flex-1 flex items-center justify-between overflow-hidden"
+                      >
+                        <span className="text-[13px] font-semibold whitespace-nowrap text-slate-300">
+                          {name}
+                        </span>
+                        <div className="text-[10px] text-slate-600 font-mono">⌘K</div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <NavLink
+                  to={path}
+                  className={({ isActive }) => `
+                    relative flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group overflow-hidden w-full
+                    ${sectionActive
+                      ? "bg-gradient-to-r from-indigo-500/15 to-transparent text-indigo-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]"
+                    }
+                  `}
+                >
+                  {sectionActive && (
                     <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      className="flex-1 flex items-center justify-between overflow-hidden"
-                    >
-                      <span className={`text-[13px] font-semibold whitespace-nowrap ${sectionActive ? "text-indigo-100" : "text-slate-300"}`}>
-                        {name}
-                      </span>
-                      {subs && (
-                        <ChevronRight
-                          size={13}
-                          className={`transition-transform duration-300 ${subsExpanded ? "rotate-90 text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`}
-                        />
-                      )}
-                    </motion.div>
+                      layoutId="active-indicator"
+                      className="absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                    />
                   )}
-                </AnimatePresence>
 
-                {/* Tooltip for collapsed state */}
-                {!sidebarOpen && (
-                  <div className="absolute left-16 px-2 py-1 bg-slate-800 text-white text-[11px] font-medium rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl border border-white/10">
-                    {name}
-                  </div>
-                )}
-              </NavLink>
+                  <Icon
+                    size={18}
+                    className={`flex-shrink-0 transition-transform duration-300 group-hover:scale-110 
+                      ${sectionActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}
+                  />
+
+                  <AnimatePresence>
+                    {sidebarOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="flex-1 flex items-center justify-between overflow-hidden"
+                      >
+                        <span className={`text-[13px] font-semibold whitespace-nowrap ${sectionActive ? "text-indigo-100" : "text-slate-300"}`}>
+                          {name}
+                        </span>
+                        {subLinks && (
+                          <ChevronRight
+                            size={13}
+                            className={`transition-transform duration-300 ${subsExpanded ? "rotate-90 text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`}
+                          />
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Tooltip for collapsed state */}
+                  {!sidebarOpen && (
+                    <div className="absolute left-16 px-2 py-1 bg-slate-800 text-white text-[11px] font-medium rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl border border-white/10">
+                      {name}
+                    </div>
+                  )}
+                </NavLink>
+              )}
 
               {/* Sub-links */}
               <AnimatePresence>
@@ -238,7 +312,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                     className="overflow-hidden"
                   >
                     <div className="ml-8 mt-1.5 mb-2 space-y-1 pl-3 border-l-2 border-white/[0.04]">
-                      {subs.map((sub) => {
+                      {subLinks.map((sub) => {
                         const subActive = isPathActive(sub.path);
                         return (
                           <NavLink

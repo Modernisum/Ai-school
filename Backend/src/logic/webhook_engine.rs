@@ -1,11 +1,11 @@
-use serde_json::{json, Value};
-use sqlx::{Pool, Postgres, Row};
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
-use hex;
-use reqwest::Client;
-use std::time::Duration;
 use chrono::Utc;
+use hex;
+use hmac::{Hmac, Mac};
+use reqwest::Client;
+use serde_json::{json, Value};
+use sha2::Sha256;
+use sqlx::{Pool, Postgres, Row};
+use std::time::Duration;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -20,7 +20,7 @@ impl WebhookEngine {
             .timeout(Duration::from_secs(10))
             .build()
             .unwrap_or_default();
-            
+
         Self { pool, client }
     }
 
@@ -34,7 +34,7 @@ impl WebhookEngine {
     ) -> Result<(), sqlx::Error> {
         let endpoints = sqlx::query(
             "SELECT id, url, secret, event_types FROM webhook_endpoints 
-             WHERE school_id = $1 AND status = 'active' AND $2 = ANY(event_types)"
+             WHERE school_id = $1 AND status = 'active' AND $2 = ANY(event_types)",
         )
         .bind(school_id)
         .bind(event)
@@ -50,7 +50,7 @@ impl WebhookEngine {
 
         for row in endpoints {
             let endpoint_id: i32 = row.get("id");
-            
+
             sqlx::query(
                 "INSERT INTO webhook_delivery_logs (school_id, endpoint_id, event_type, payload, status)
                  VALUES ($1, $2, $3, $4, 'pending')"
@@ -61,7 +61,7 @@ impl WebhookEngine {
             .bind(&payload)
             .execute(&self.pool)
             .await?;
-            
+
             // Proactive delivery attempt can be spawned here
             // but usually we let the background job pick up 'pending' logs to ensure retry logic consistency
         }
@@ -76,7 +76,7 @@ impl WebhookEngine {
              FROM webhook_delivery_logs l
              JOIN webhook_endpoints e ON l.endpoint_id = e.id
              WHERE l.status = 'pending' AND (l.next_retry_at IS NULL OR l.next_retry_at <= NOW())
-             LIMIT 50"
+             LIMIT 50",
         )
         .fetch_all(&self.pool)
         .await?;
@@ -89,7 +89,7 @@ impl WebhookEngine {
             let secret: String = row.get("secret");
 
             let result = self.send_webhook(&url, &secret, &payload).await;
-            
+
             self.handle_delivery_result(log_id, attempt, result).await?;
         }
 
@@ -98,13 +98,14 @@ impl WebhookEngine {
 
     async fn send_webhook(&self, url: &str, secret: &str, payload: &Value) -> Result<u16, String> {
         let payload_str = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-        
-        let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
-            .map_err(|e| e.to_string())?;
+
+        let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).map_err(|e| e.to_string())?;
         mac.update(payload_str.as_bytes());
         let signature = hex::encode(mac.finalize().into_bytes());
 
-        let response = self.client.post(url)
+        let response = self
+            .client
+            .post(url)
             .header("Content-Type", "application/json")
             .header("X-Vidhyam-Signature", format!("sha256={}", signature))
             .body(payload_str)
@@ -119,14 +120,14 @@ impl WebhookEngine {
         &self,
         log_id: i32,
         current_attempt: i32,
-        result: Result<u16, String>
+        result: Result<u16, String>,
     ) -> Result<(), sqlx::Error> {
         match result {
             Ok(status) if status >= 200 && status < 300 => {
                 sqlx::query(
                     "UPDATE webhook_delivery_logs 
                      SET status = 'sent', status_code = $1, last_attempt_at = NOW()
-                     WHERE id = $2"
+                     WHERE id = $2",
                 )
                 .bind(status as i32)
                 .bind(log_id)
@@ -142,7 +143,7 @@ impl WebhookEngine {
                     Ok(_) => None,
                     Err(e) => Some(e),
                 };
-                
+
                 let next_attempt = current_attempt + 1;
                 if next_attempt > 5 {
                     // Final failure
@@ -165,7 +166,7 @@ impl WebhookEngine {
                         5 => 60,
                         _ => 240,
                     };
-                    
+
                     sqlx::query(
                         "UPDATE webhook_delivery_logs 
                          SET attempt_count = $1, status_code = $2, response_body = $3, 

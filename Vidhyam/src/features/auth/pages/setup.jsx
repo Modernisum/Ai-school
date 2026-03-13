@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   School,
@@ -17,8 +18,9 @@ import {
   Plus,
   X
 } from "lucide-react";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL + "/setup/school";
+import { useSetupMutation } from "../api/authApi";
+import { useGetCountriesQuery, useLazyGetStatesQuery, useLazyGetDistrictsQuery } from "../api/geoApi";
+import { setCredentials } from "../authSlice";
 
 const CLASS_LEVELS = [
   { label: "Primary (Up to Class 5)", value: 5, description: "Pre-Nursery to Class 5" },
@@ -52,8 +54,8 @@ const stepsConfig = [
 
 export default function SchoolSetup() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const dispatch = useDispatch();
 
   const [form, setForm] = useState({
     schoolName: "",
@@ -72,38 +74,25 @@ export default function SchoolSetup() {
     confirmPassword: "",
   });
 
-  const [countries, setCountries] = useState([]);
-  const [statesList, setStatesList] = useState([]);
-  const [districts, setDistricts] = useState([]);
+  // RTK Query & Mutations
+  const { data: countries = [] } = useGetCountriesQuery();
+  const [triggerStates, { data: statesList = [] }] = useLazyGetStatesQuery();
+  const [triggerDistricts, { data: districts = [] }] = useLazyGetDistrictsQuery();
+  const [setup, { isLoading: loading }] = useSetupMutation();
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_BASE_URL + "/geo/countries")
-      .then(res => res.json())
-      .then(setCountries)
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    setForm(f => ({ ...f, stateId: '', districtId: '' }));
-    setStatesList([]);
     if (form.countryId) {
-      fetch(import.meta.env.VITE_API_BASE_URL + `/geo/states/${form.countryId}`)
-        .then(res => res.json())
-        .then(setStatesList)
-        .catch(console.error);
+      setForm(f => ({ ...f, stateId: '', districtId: '' }));
+      triggerStates(form.countryId);
     }
-  }, [form.countryId]);
+  }, [form.countryId, triggerStates]);
 
   useEffect(() => {
-    setForm(f => ({ ...f, districtId: '' }));
-    setDistricts([]);
     if (form.stateId) {
-      fetch(import.meta.env.VITE_API_BASE_URL + `/geo/districts/${form.stateId}`)
-        .then(res => res.json())
-        .then(setDistricts)
-        .catch(console.error);
+      setForm(f => ({ ...f, districtId: '' }));
+      triggerDistricts(form.stateId);
     }
-  }, [form.stateId]);
+  }, [form.stateId, triggerDistricts]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -155,7 +144,6 @@ export default function SchoolSetup() {
     if (form.password !== form.confirmPassword) { setError("Passwords do not match"); return; }
     if (form.password.length < 6) { setError("Password must be at least 6 characters long"); return; }
 
-    setLoading(true);
     setError("");
 
     try {
@@ -166,47 +154,39 @@ export default function SchoolSetup() {
       const districtName = districts.find(c => c.id == form.districtId)?.name || '';
       const fullAddress = `${form.addressLine}, ${districtName}, ${stateName}, ${countryName} - ${form.pincode}`;
       
-      const response = await fetch(API_BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          schoolName: form.schoolName,
-          schoolAddress: fullAddress,
-          classLevelStart: -2, // Pre-Nursery by default for Vidhyam
-          classLevel: parseInt(form.classLevel),
-          classLevelLabel: selectedLevel?.label || "",
-          affiliatedBoard: form.affiliatedBoard,
-          affiliationNumber: form.affiliationNumber,
-          medium: form.medium,
-          sinceEstablished: form.sinceEstablished,
-          directors: form.directors.filter(d => d.trim()),
-          password: form.password,
-          defaultStudents: 30, // Important for generating nice sample sections
-        }),
-      });
+      const resData = await setup({
+        schoolName: form.schoolName,
+        schoolAddress: fullAddress,
+        classLevelStart: -2,
+        classLevel: parseInt(form.classLevel),
+        classLevelLabel: selectedLevel?.label || "",
+        affiliatedBoard: form.affiliatedBoard,
+        affiliationNumber: form.affiliationNumber,
+        medium: form.medium,
+        sinceEstablished: form.sinceEstablished,
+        directors: form.directors.filter(d => d.trim()),
+        password: form.password,
+        defaultStudents: 30,
+      }).unwrap();
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || "Failed to complete setup");
-      }
-
-      const resData = await response.json();
       const schoolId = resData.schoolId || resData.data?.schoolId || resData.id;
 
-      localStorage.setItem("schoolName", form.schoolName);
-      localStorage.setItem("schoolAddress", fullAddress);
-      localStorage.setItem("boardName", form.affiliatedBoard);
-      localStorage.setItem("medium", form.medium);
-      localStorage.setItem("maxClassLevel", form.classLevel);
-
-      if (schoolId) localStorage.setItem("schoolId", schoolId);
-      if (resData.accessToken) localStorage.setItem("accessToken", resData.accessToken);
+      dispatch(setCredentials({
+        accessToken: resData.accessToken,
+        schoolId: schoolId,
+        schoolProfile: {
+          name: form.schoolName,
+          address: fullAddress,
+          board: form.affiliatedBoard,
+          medium: form.medium,
+          maxClassLevel: form.classLevel,
+        }
+      }));
 
       setTimeout(() => { window.location.href = "/dashboard/home"; }, 800);
     } catch (err) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred");
-      setLoading(false);
+      setError(err.data?.message || "An unexpected error occurred");
     }
   };
 

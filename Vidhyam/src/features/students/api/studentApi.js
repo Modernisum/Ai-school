@@ -37,7 +37,43 @@ export const studentApi = createApi({
                 body: studentData,
             }),
             invalidatesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }, 'Student'],
-        })
+        }),
+        getStudentProfile: builder.query({
+            query: ({ schoolId, studentId }) => `/students/${schoolId}/students/${studentId}/profile`,
+            providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
+        }),
+        getStudentAttendance: builder.query({
+            query: ({ schoolId, role, userId }) => `/operations/attendance/${schoolId}/${role}/${userId}`,
+            providesTags: (result, error, arg) => [{ type: 'Student', id: arg.userId }],
+        }),
+        getStudentFees: builder.query({
+            query: ({ schoolId, studentId }) => `/fees/${schoolId}/student/${studentId}`,
+            providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
+        }),
+        getStudentComplains: builder.query({
+            query: ({ schoolId, studentId }) => `/complains/${schoolId}/student/${studentId}`,
+            providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
+        }),
+        getStudentAwards: builder.query({
+            query: (schoolId) => `/award/${schoolId}`,
+            providesTags: ['Student'],
+        }),
+        getStudentExams: builder.query({
+            query: (schoolId) => `/exams/${schoolId}/list`, // Assuming /list or just /exams
+            providesTags: ['Student'],
+        }),
+        getStudentDocuments: builder.query({
+            query: (schoolId) => `/documentbox/${schoolId}`,
+            providesTags: ['Student'],
+        }),
+        bulkImportStudents: builder.mutation({
+            query: ({ schoolId, payload }) => ({
+                url: `/students/${schoolId}/students/bulk`,
+                method: 'POST',
+                body: payload,
+            }),
+            invalidatesTags: ['Student'],
+        }),
     }),
 });
 
@@ -46,4 +82,12 @@ export const {
     useGetStudentByIdQuery,
     useAddStudentMutation,
     useUpdateStudentMutation,
+    useGetStudentProfileQuery,
+    useGetStudentAttendanceQuery,
+    useGetStudentFeesQuery,
+    useGetStudentComplainsQuery,
+    useGetStudentAwardsQuery,
+    useGetStudentExamsQuery,
+    useGetStudentDocumentsQuery,
+    useBulkImportStudentsMutation,
 } = studentApi;

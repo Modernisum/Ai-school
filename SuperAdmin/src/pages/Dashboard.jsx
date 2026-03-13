@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { School, Ban, CheckCircle, TrendingUp, CalendarDays, Loader } from 'lucide-react'
 import { listSchools } from '../api.js'
+import ChurnRadar from '../components/ChurnRadar.jsx'
 
 export default function Dashboard() {
     const [schools, setSchools] = useState([])
@@ -47,6 +48,8 @@ export default function Dashboard() {
         >
             <h1 className="page-title">Dashboard</h1>
             <p className="page-sub">Overview of all registered schools</p>
+
+            <ChurnRadar />
 
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>

@@ -1,0 +1,75 @@
+﻿cargo : warning: unused import: `std::str::FromStr`
+At line:1 char:1
++ cargo check 2>&1 | out-file -encoding utf8 
+errors.txt; get-content er ...
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning:  
+   unused...::str::FromStr`:String) [], RemoteExcepti  
+  on
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ --> src\super_admin\service.rs:5:5
+  |
+5 | use std::str::FromStr;
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of 
+`#[warn(unused)]`) on by default
+
+warning: unused variable: `state`
+  --> src\middleware\rls.rs:10:11
+   |
+10 |     State(state): State<AppState>,
+   |           ^^^^^ help: if this is intentional, 
+prefix it with an underscore: `_state`
+   |
+   = note: `#[warn(unused_variables)]` (part of 
+`#[warn(unused)]`) on by default
+
+warning: struct `PdfGenerator` is never constructed
+ --> src\logic\pdf_generator.rs:6:12
+  |
+6 | pub struct PdfGenerator;
+  |            ^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of 
+`#[warn(unused)]`) on by default
+
+warning: associated function `generate_report` is 
+never used
+ --> src\logic\pdf_generator.rs:9:12
+  |
+8 | impl PdfGenerator {
+  | ----------------- associated function in this 
+implementation
+9 |     pub fn generate_report(title: &str, data: 
+&Value) -> Result<Vec<u8>> {
+  |            ^^^^^^^^^^^^^^^
+
+warning: fields `school_id` and `is_super_admin` are 
+never read
+  --> src\middleware\rls.rs:42:9
+   |
+41 | pub struct TenantContext {
+   |            ------------- fields in this struct
+42 |     pub school_id: String,
+   |         ^^^^^^^^^
+43 |     pub is_super_admin: bool,
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `TenantContext` has derived impls for the 
+traits `Debug` and `Clone`, but these are 
+intentionally ignored during dead code analysis
+
+warning: `modern_school_backend` (bin 
+"modern_school_backend") generated 5 warnings (run 
+`cargo fix --bin "modern_school_backend" -p 
+modern_school_backend` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] 
+target(s) in 1.82s
+warning: the following packages contain code that will 
+be rejected by a future version of Rust: redis 
+v0.25.4, sqlx-postgres v0.7.4
+note: to see what the problems were, use the option 
+`--future-incompat-report`, or run `cargo report 
+future-incompatibilities --id 3`

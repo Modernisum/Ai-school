@@ -32,7 +32,8 @@ pub async fn bulk_import_spaces(
             return (
                 axum::http::StatusCode::BAD_REQUEST,
                 Json(json!({"success": false, "message": "Expected a 'spaces' array"})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
@@ -41,17 +42,21 @@ pub async fn bulk_import_spaces(
     let mut results = Vec::new();
 
     for (i, row) in rows.iter().enumerate() {
-        let space_name = row.get("Space Name")
+        let space_name = row
+            .get("Space Name")
             .or(row.get("spaceName"))
             .or(row.get("name"))
             .and_then(|v| v.as_str())
             .unwrap_or("Unnamed Space")
             .to_string();
 
-        let space_data = json!({ "spaceName": space_name });
-        match state.services.resource.create_announcement(
-            &school_id, "spaces", "", space_data
-        ).await {
+        let space_data = json!({ "name": space_name });
+        match state
+            .services
+            .resource
+            .create_space(&school_id, space_data)
+            .await
+        {
             Ok(_) => {
                 success_count += 1;
                 results.push(json!({"row": i + 1, "status": "success", "spaceName": space_name}));
@@ -69,14 +74,20 @@ pub async fn bulk_import_spaces(
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    })).into_response()
+    }))
+    .into_response()
 }
 
 pub async fn get_space_categories(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
 ) -> impl IntoResponse {
-    match state.services.resource.get_space_categories(&school_id).await {
+    match state
+        .services
+        .resource
+        .get_space_categories(&school_id)
+        .await
+    {
         Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -91,7 +102,12 @@ pub async fn create_space_category(
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.resource.create_space_category(&school_id, payload).await {
+    match state
+        .services
+        .resource
+        .create_space_category(&school_id, payload)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -105,8 +121,14 @@ pub async fn delete_category(
     State(state): State<AppState>,
     Path((school_id, category_id)): Path<(String, i32)>,
 ) -> impl IntoResponse {
-    match state.services.resource.delete_space_category(&school_id, category_id).await {
-        Ok(_) => Json(json!({"success": true, "message": "Category deleted successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .delete_space_category(&school_id, category_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Category deleted successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -120,7 +142,12 @@ pub async fn create_space(
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.resource.create_space(&school_id, payload).await {
+    match state
+        .services
+        .resource
+        .create_space(&school_id, payload)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "space": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -135,8 +162,15 @@ pub async fn update_space(
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.resource.update_space(&school_id, &space_id, payload).await {
-        Ok(_) => Json(json!({"success": true, "message": "Space updated successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .update_space(&school_id, &space_id, payload)
+        .await
+    {
+        Ok(_) => {
+            Json(json!({"success": true, "message": "Space updated successfully"})).into_response()
+        }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -149,8 +183,15 @@ pub async fn delete_space(
     State(state): State<AppState>,
     Path((school_id, space_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    match state.services.resource.delete_space(&school_id, &space_id).await {
-        Ok(_) => Json(json!({"success": true, "message": "Space deleted successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .delete_space(&school_id, &space_id)
+        .await
+    {
+        Ok(_) => {
+            Json(json!({"success": true, "message": "Space deleted successfully"})).into_response()
+        }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -163,7 +204,12 @@ pub async fn get_space_details(
     State(state): State<AppState>,
     Path((school_id, space_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    match state.services.resource.get_space_details(&school_id, &space_id).await {
+    match state
+        .services
+        .resource
+        .get_space_details(&school_id, &space_id)
+        .await
+    {
         Ok(Some(data)) => Json(json!({"success": true, "space": data})).into_response(),
         Ok(None) => (
             axum::http::StatusCode::NOT_FOUND,
@@ -183,8 +229,14 @@ pub async fn assign_space_materials(
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<serde_json::Value>>,
 ) -> impl IntoResponse {
-    match state.services.resource.assign_space_materials(&school_id, &space_id, payload).await {
-        Ok(_) => Json(json!({"success": true, "message": "Materials assigned successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .assign_space_materials(&school_id, &space_id, payload)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Materials assigned successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -198,8 +250,14 @@ pub async fn assign_space_employees(
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<String>>,
 ) -> impl IntoResponse {
-    match state.services.resource.assign_space_employees(&school_id, &space_id, payload).await {
-        Ok(_) => Json(json!({"success": true, "message": "Employees assigned successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .assign_space_employees(&school_id, &space_id, payload)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Employees assigned successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -212,8 +270,14 @@ pub async fn remove_space_employee(
     State(state): State<AppState>,
     Path((school_id, space_id, employee_id)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
-    match state.services.resource.remove_space_employee(&school_id, &space_id, &employee_id).await {
-        Ok(_) => Json(json!({"success": true, "message": "Employee removed successfully"})).into_response(),
+    match state
+        .services
+        .resource
+        .remove_space_employee(&school_id, &space_id, &employee_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Employee removed successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

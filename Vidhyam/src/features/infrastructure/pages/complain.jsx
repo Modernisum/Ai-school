@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, Loader, RefreshCw, CheckCircle, AlertTriangle, X, Clock, User } from 'lucide-react';
+import { 
+  AlertCircle, Loader, RefreshCw, CheckCircle, AlertTriangle, 
+  X, Clock, User, Eye, Download, FileText 
+} from 'lucide-react';
+import { useGetComplaintsQuery } from '../infrastructureApi';
+import { useWebSockets } from '../../../hooks/useWebSockets';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
 export default function ComplainManagement() {
   const schoolId = getSchoolId();
-  const [complains, setComplains] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: complainsData, isLoading, isFetching, refetch } = useGetComplaintsQuery(schoolId);
+  const { messages } = useWebSockets(schoolId);
+  
   const [toast, setToast] = useState(null);
   const [viewComplain, setViewComplain] = useState(null);
 
+  const complains = complainsData?.data || [];
+
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3000); };
 
-  const loadComplains = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/complains/${schoolId}`);
-      const data = await res.json();
-      setComplains(data.data || data.complains || []);
-    } catch { showToast('error', 'Failed to load complaints'); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { loadComplains(); }, [schoolId]);
+  // Refetch when a new message arrives via WebSockets
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.type === 'complaint' || lastMsg.category === 'complaint') {
+        refetch();
+        showToast('success', 'New complaint received!');
+      }
+    }
+  }, [messages, refetch]);
 
   const statusBg = (s) => ({
     'pending': 'bg-amber-500/15 border-amber-500/25 text-amber-400',
@@ -46,11 +52,17 @@ export default function ComplainManagement() {
             <p className="text-xs text-slate-500">{complains.length} records</p>
           </div>
         </div>
-        <button onClick={loadComplains} className="btn-secondary p-2"><RefreshCw size={15} /></button>
+        <button 
+          onClick={() => refetch()} 
+          disabled={isFetching}
+          className={`btn-secondary p-2 ${isFetching ? 'animate-spin opacity-50' : ''}`}
+        >
+          <RefreshCw size={15} />
+        </button>
       </div>
 
       <div className="p-6 space-y-3">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20"><Loader size={28} className="animate-spin text-indigo-400" /></div>
         ) : complains.length === 0 ? (
           <div className="text-center py-14">
@@ -64,13 +76,18 @@ export default function ComplainManagement() {
                 key={c.id || i}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                 onClick={() => setViewComplain(c)}
-                className="glass-card p-4 hover-card cursor-pointer"
+                className="glass-card p-4 hover-card cursor-pointer group"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-white text-sm truncate">{c.title || 'Untitled Complaint'}</h3>
                       <span className={`badge flex-shrink-0 ${statusBg(c.status)}`}>{c.status || 'Pending'}</span>
+                      {c.attachmentUrl && (
+                        <div className="p-1 rounded bg-indigo-500/20 text-indigo-400">
+                          <Download size={10} />
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500 truncate">{c.description || 'No description'}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-slate-600">
@@ -78,6 +95,7 @@ export default function ComplainManagement() {
                       <span><Clock size={10} className="inline mr-1" />{fmtDate(c.createdAt || c.created_at)}</span>
                     </div>
                   </div>
+                  <ChevronRight size={14} className="text-slate-600 group-hover:text-white transition-colors mt-1" />
                 </div>
               </motion.div>
             ))}
@@ -95,17 +113,48 @@ export default function ComplainManagement() {
                 <h2 className="font-bold text-white">Complaint Details</h2>
                 <button onClick={() => setViewComplain(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg"><X size={18} /></button>
               </div>
-              <h3 className="font-bold text-white text-lg">{viewComplain.title}</h3>
-              <span className={`badge ${statusBg(viewComplain.status)}`}>{viewComplain.status || 'Pending'}</span>
-              <div className="space-y-2 mt-3">
+              
+              <div className="space-y-1">
+                <h3 className="font-bold text-white text-lg">{viewComplain.title}</h3>
+                <span className={`badge ${statusBg(viewComplain.status)}`}>{viewComplain.status || 'Pending'}</span>
+              </div>
+
+              {/* GCS Attachment Action */}
+              {viewComplain.attachmentUrl && (
+                <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">Attachment</p>
+                      <p className="text-[10px] text-slate-500 uppercase font-black">Image/PDF Document</p>
+                    </div>
+                  </div>
+                  <a 
+                    href={viewComplain.attachmentUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="p-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                  >
+                    <Eye size={18} />
+                  </a>
+                </div>
+              )}
+
+              <div className="space-y-4 pt-2">
                 {[
                   ['Student ID', viewComplain.studentId || viewComplain.student_id],
-                  ['Filed On', fmtDate(viewComplain.createdAt)],
+                  ['Filed On', fmtDate(viewComplain.createdAt || viewComplain.created_at)],
+                  ['Priority', viewComplain.priority || 'Normal'],
+                  ['Category', viewComplain.category || 'General'],
                   ['Description', viewComplain.description],
                 ].map(([k, v]) => v ? (
-                  <div key={k} className="py-2 border-b border-white/5">
-                    <p className="text-slate-500 text-xs mb-1">{k}</p>
-                    <p className="text-white text-sm">{v}</p>
+                  <div key={k} className="space-y-1.5">
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-wider">{k}</p>
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-sm text-slate-200">
+                      {v}
+                    </div>
                   </div>
                 ) : null)}
               </div>
@@ -127,3 +176,10 @@ export default function ComplainManagement() {
     </div>
   );
 }
+
+const ChevronRight = ({ size, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="m9 18 6-6-6-6"/>
+  </svg>
+);
+

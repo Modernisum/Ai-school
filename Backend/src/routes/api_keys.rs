@@ -4,13 +4,13 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use hex;
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 use serde::Deserialize;
 use serde_json::json;
-use sha2::{Sha256, Digest};
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
+use sha2::{Digest, Sha256};
 use sqlx::Row;
-use hex;
 
 #[derive(Deserialize)]
 pub struct CreateApiKeyRequest {
@@ -31,15 +31,15 @@ pub async fn generate_api_key(
         .take(12)
         .map(char::from)
         .collect();
-    
+
     let key_secret: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(32)
         .map(char::from)
         .collect();
-        
+
     let full_key = format!("vk_{}_{}", key_id, key_secret); // vk = vidhyam key
-    
+
     // 2. Hash the full key for storage
     let mut hasher = Sha256::new();
     hasher.update(full_key.as_bytes());
@@ -48,7 +48,7 @@ pub async fn generate_api_key(
     // 3. Save metadata to DB
     match sqlx::query(
         "INSERT INTO api_keys (school_id, key_id, key_hash, name, scopes, status)
-         VALUES ($1, $2, $3, $4, $5, 'active')"
+         VALUES ($1, $2, $3, $4, $5, 'active')",
     )
     .bind(&school_id)
     .bind(&key_id)
@@ -56,17 +56,20 @@ pub async fn generate_api_key(
     .bind(&payload.name)
     .bind(&payload.scopes)
     .execute(&state.db.pool)
-    .await {
+    .await
+    {
         Ok(_) => Json(json!({
-            "success": true, 
+            "success": true,
             "key_id": key_id,
             "api_key": full_key, // Standard practice: return plaintext only once at creation
             "message": "Store this key safely! It will not be shown again."
-        })).into_response(),
+        }))
+        .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -77,11 +80,12 @@ pub async fn list_api_keys(
 ) -> impl IntoResponse {
     match sqlx::query(
         "SELECT id, key_id, name, scopes, status, last_used_at, created_at 
-         FROM api_keys WHERE school_id = $1"
+         FROM api_keys WHERE school_id = $1",
     )
     .bind(&school_id)
     .fetch_all(&state.db.pool)
-    .await {
+    .await
+    {
         Ok(rows) => {
             let keys: Vec<_> = rows.iter().map(|r| {
                 json!({
@@ -95,11 +99,12 @@ pub async fn list_api_keys(
                 })
             }).collect();
             Json(json!({"success": true, "api_keys": keys})).into_response()
-        },
+        }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -110,25 +115,27 @@ pub async fn revoke_api_key(
 ) -> impl IntoResponse {
     match sqlx::query(
         "UPDATE api_keys SET status = 'revoked', updated_at = NOW() 
-         WHERE school_id = $1 AND key_id = $2"
+         WHERE school_id = $1 AND key_id = $2",
     )
     .bind(&school_id)
     .bind(&key_id)
     .execute(&state.db.pool)
-    .await {
+    .await
+    {
         Ok(_) => Json(json!({"success": true, "message": "API key revoked"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
 // --- Middleware Implementation ---
 
-use axum::middleware::Next;
-use axum::http::{Request, StatusCode};
 use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::middleware::Next;
 
 #[derive(Debug, Clone)]
 pub struct ApiKeyContext {
@@ -141,7 +148,8 @@ pub async fn api_key_auth(
     mut req: Request<Body>,
     next: Next,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let auth_header = req.headers()
+    let auth_header = req
+        .headers()
         .get("X-API-Key")
         .and_then(|h| h.to_str().ok())
         .ok_or(StatusCode::UNAUTHORIZED)?;
@@ -153,7 +161,7 @@ pub async fn api_key_auth(
 
     // 2. Look up key in DB
     let row = sqlx::query(
-        "SELECT school_id, scopes, status FROM api_keys WHERE key_hash = $1 AND status = 'active'"
+        "SELECT school_id, scopes, status FROM api_keys WHERE key_hash = $1 AND status = 'active'",
     )
     .bind(&key_hash)
     .fetch_optional(&state.db.pool)
@@ -175,10 +183,8 @@ pub async fn api_key_auth(
     });
 
     // 4. Inject context into request extensions
-    req.extensions_mut().insert(ApiKeyContext {
-        school_id,
-        scopes,
-    });
+    req.extensions_mut()
+        .insert(ApiKeyContext { school_id, scopes });
 
     Ok(next.run(req).await)
 }

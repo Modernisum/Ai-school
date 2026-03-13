@@ -1,48 +1,57 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'api_service.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider(create: (_) => ApiService()),
-      ],
-      child: MyApp(),
-    ),
-  );
+import 'api_service.dart';
+import 'blocs/auth/auth_bloc.dart';
+import 'blocs/auth/auth_event.dart';
+import 'blocs/notifications/notifications_bloc.dart';
+import 'blocs/notifications/notifications_event.dart';
+import 'core/theme/app_theme.dart';
+import 'routes/app_router.dart';
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Employee / Chatra Portal',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: AuthChecker(),
-      debugShowCheckedModeBanner: false,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ApiService>(
+          create: (context) => ApiService(),
+        ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>(
+            create: (context) => AuthBloc(
+              apiService: context.read<ApiService>(),
+            )..add(AppStarted()),
+          ),
+          BlocProvider<NotificationsBloc>(
+            create: (context) => NotificationsBloc()..add(ConnectWebSocket()),
+          ),
+        ],
+        child: Builder(
+          builder: (context) {
+            return MaterialApp.router(
+              title: 'Vidhyam Employee App',
+              theme: AppTheme.theme,
+              debugShowCheckedModeBanner: false,
+              routerConfig: createRouter(context.read<AuthBloc>()),
+            );
+          }
+        ),
+      ),
     );
   }
 }
 
-class AuthChecker extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    
-    return FutureBuilder<bool>(
-      future: apiService.isLoggedIn(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        if (snapshot.data == true) {
-          return HomeScreen();
-        }
-        return LoginScreen();
-      },
-    );
-  }
-}

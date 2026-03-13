@@ -1,587 +1,350 @@
 // FeesListAndPayment.jsx
-import React, { useState, memo } from 'react';
-import { formatCurrency } from '../../utils/helpers';
+import React, { useState, memo, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { selectSchoolId } from '../../auth/authSlice';
+import { 
+    CreditCard, User, CheckCircle, AlertTriangle, 
+    ArrowRight, DollarSign, Zap, X, Calendar, MessageSquare,
+    Loader
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCreateRazorpayOrderMutation, useSendAIReminderMutation } from '../api/billingApi';
+import { ReceiptService } from '../utils/ReceiptService';
 
 const FeesListBox = memo(({ feesList, onPaymentClick }) => {
+    const [sendAIReminder] = useSendAIReminderMutation();
 
-  const getStatusBadge = (student) => {
-    if (!student.totalAmount) return { text: 'No Fees', color: '#999' };
+    if (feesList.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                    <CreditCard size={32} className="text-slate-600" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Students Found</h3>
+                <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or create some fees records</p>
+            </div>
+        );
+    }
 
-    const pending = student.pendingAmount || 0;
-    const total = student.totalAmount || 0;
+    const handleAIReminder = async (student) => {
+        try {
+            const schoolId = localStorage.getItem('schoolId') || "622079";
+            const data = await sendAIReminder({ schoolId, studentId: student.studentId }).unwrap();
+            if (data.success) {
+                alert(data.data?.message || data.message); // For demo, using alert to show the AI text
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
-    if (pending === 0) return { text: 'Paid', color: '#4CAF50' };
-    if (pending === total) return { text: 'Pending', color: '#f44336' };
-    return { text: 'Partial', color: '#ff9800' };
-  };
+    const handleDownloadPastReceipt = (student) => {
+        ReceiptService.generateReceipt({
+            school: { name: "VIDHYAM ERP", address: "Enterprise School Management" },
+            student: { id: student.studentId, name: student.name, className: student.class },
+            payment: { id: `RCPT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`, date: new Date().toISOString(), method: "History", total: student.paid },
+            fees: [{ name: "Consolidated Fees", amount: student.paid, penalty: 0 }]
+        });
+    };
 
-  if (feesList.length === 0) {
+    const getStatusStyles = (status) => ({
+        Paid: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400',
+        Partial: 'bg-amber-500/15 border-amber-500/25 text-amber-400',
+        Pending: 'bg-rose-500/15 border-rose-500/25 text-rose-400',
+    }[status] || 'bg-slate-500/15 border-slate-500/25 text-slate-400');
+
     return (
-      <div className="empty-state">
-        <style jsx>{`
-          .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-          }
-          .empty-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-          }
-        `}</style>
-        <div className="empty-icon">📭</div>
-        <h3>No Students Found</h3>
-        <p>Try adjusting your filters or create some fees records</p>
-      </div>
+        <div className="glass-card overflow-hidden border-none bg-white/[0.02]">
+            <div className="overflow-x-auto overflow-y-hidden">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-white/5 bg-white/[0.02]">
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Student</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Total Fees</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Pending</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Collection status</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {feesList.map((student) => {
+                            const progress = student.amount > 0 ? (student.paid / student.amount) * 100 : 0;
+                            return (
+                                <tr key={student.studentId} className="group hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center border border-violet-500/10">
+                                                <User size={16} className="text-violet-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{student.name}</p>
+                                                <p className="text-[10px] text-slate-500 font-mono mt-0.5">{student.studentId} • {student.class}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <p className="text-sm font-black text-slate-300">₹{student.amount.toLocaleString()}</p>
+                                        <div className="w-24 h-1 bg-white/5 rounded-full mt-2 ml-auto overflow-hidden">
+                                            <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-emerald-500/50" />
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <p className="text-sm font-black text-rose-400">₹{student.pending.toLocaleString()}</p>
+                                        <p className="text-[10px] text-slate-600 font-bold mt-0.5 uppercase tracking-tighter">Amount Overdue</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black border uppercase tracking-widest ${getStatusStyles(student.status)}`}>
+                                                {student.status}
+                                            </span>
+                                            {student.paid > 0 && (
+                                                <button 
+                                                    onClick={() => handleDownloadPastReceipt(student)}
+                                                    className="flex items-center gap-1 text-[9px] font-bold text-slate-500 hover:text-cyan-400 transition-colors"
+                                                >
+                                                    <CreditCard size={10} /> Receipt
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex flex-col gap-2">
+                                            <button 
+                                                onClick={() => onPaymentClick(student)}
+                                                disabled={student.pending === 0}
+                                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all
+                                                    ${student.pending === 0 
+                                                        ? 'bg-emerald-500/10 text-emerald-500 opacity-50 cursor-not-allowed' 
+                                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 ml-auto'}`}
+                                            >
+                                                <DollarSign size={14} /> {student.pending === 0 ? 'Settled' : 'Collect'}
+                                            </button>
+                                            {student.pending > 0 && (
+                                                <button 
+                                                    onClick={() => handleAIReminder(student)}
+                                                    className="flex items-center gap-1.5 text-[9px] font-black text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest ml-auto"
+                                                >
+                                                    <Zap size={12} className="animate-pulse" /> Send AI Reminder
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
-  }
-
-  return (
-    <div className="fees-list-box">
-      <style jsx>{`
-        .fees-table-container {
-          overflow-x: auto;
-        }
-
-        .fees-table {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
-        }
-
-        .fees-table thead {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-        }
-
-        .fees-table th {
-          padding: 15px 20px;
-          text-align: left;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-size: 13px;
-        }
-
-        .fees-table td {
-          padding: 15px 20px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-
-        .fees-table tbody tr {
-          transition: all 0.3s ease;
-          background: white;
-        }
-
-        .fees-table tbody tr:hover {
-          background: rgba(102, 126, 234, 0.05);
-          transform: scale(1.01);
-        }
-
-        .student-info {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .student-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 16px;
-        }
-
-        .student-details {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .student-name {
-          font-weight: 600;
-          color: #333;
-        }
-
-        .student-id {
-          font-size: 12px;
-          color: #666;
-        }
-
-        .status-badge {
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          color: white;
-          display: inline-block;
-        }
-
-        .progress-cell {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .progress-bar-container {
-          background: #f0f0f0;
-          border-radius: 10px;
-          height: 8px;
-          overflow: hidden;
-        }
-
-        .progress-bar {
-          background: linear-gradient(90deg, #4CAF50, #45a049);
-          height: 100%;
-          border-radius: 10px;
-          transition: width 0.5s ease;
-        }
-
-        .progress-text {
-          font-size: 12px;
-          color: #666;
-        }
-
-        .btn-pay {
-          padding: 8px 16px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          font-size: 13px;
-        }
-
-        .btn-pay:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-pay:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        @media (max-width: 768px) {
-          .fees-table {
-            font-size: 12px;
-          }
-
-          .fees-table th,
-          .fees-table td {
-            padding: 10px;
-          }
-        }
-      `}</style>
-
-      <div className="fees-table-container">
-        <table className="fees-table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Class/Section</th>
-              <th>Total Fees</th>
-              <th>Paid</th>
-              <th>Pending</th>
-              <th>Progress</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {feesList.map((student) => {
-              const status = getStatusBadge(student);
-              const progress = student.totalAmount > 0
-                ? ((student.paidAmount / student.totalAmount) * 100).toFixed(0)
-                : 0;
-
-              return (
-                <tr key={student.studentId}>
-                  <td>
-                    <div className="student-info">
-                      <div className="student-avatar">
-                        {student.name ? student.name.charAt(0).toUpperCase() : 'S'}
-                      </div>
-                      <div className="student-details">
-                        <span className="student-name">{student.name || 'Unknown'}</span>
-                        <span className="student-id">{student.studentId || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    {student.className ? student.className.replace('class-', 'Class ').toUpperCase() : 'N/A'}
-                    {student.section && ` - ${student.section}`}
-                  </td>
-                  <td>{formatCurrency(student.totalAmount)}</td>
-                  <td style={{ color: '#4CAF50', fontWeight: '600' }}>
-                    {formatCurrency(student.paidAmount)}
-                  </td>
-                  <td style={{ color: '#f44336', fontWeight: '600' }}>
-                    {formatCurrency(student.pendingAmount)}
-                  </td>
-                  <td>
-                    <div className="progress-cell">
-                      <div className="progress-bar-container">
-                        <div className="progress-bar" style={{ width: `${progress}%` }}></div>
-                      </div>
-                      <span className="progress-text">{progress}% Paid</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className="status-badge"
-                      style={{ backgroundColor: status.color }}
-                    >
-                      {status.text}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="btn-pay"
-                      onClick={() => onPaymentClick(student)}
-                      disabled={student.pendingAmount === 0}
-                    >
-                      💳 {student.pendingAmount === 0 ? 'Paid' : 'Pay'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
 });
 FeesListBox.displayName = 'FeesListBox';
 
-const StudentPaymentModal = memo(({ student, onClose, onSubmit }) => {
-  const [paymentData, setPaymentData] = useState({
-    amount: 0,
-    paymentMethod: 'Cash',
-    transactionId: '',
-    remarks: '',
-    paymentDate: new Date().toISOString().split('T')[0]
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (paymentData.amount <= 0) {
-      alert('Please enter a valid amount');
-      return;
-    }
-    if (paymentData.amount > student.pendingAmount) {
-      alert('Payment amount cannot exceed pending amount');
-      return;
-    }
-    onSubmit({
-      studentId: student.studentId,
-      ...paymentData
+const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty }) => {
+    const penalty = calculatePenalty ? calculatePenalty(student.dueDate, student.penaltyPerDay, student.status === 'Paid') : 0;
+    
+    const [paymentData, setPaymentData] = useState({
+        amount: student.pending + penalty,
+        paymentMethod: 'Cash',
+        transactionId: '',
+        remarks: '',
+        paymentDate: new Date().toISOString().split('T')[0]
     });
-  };
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [createOrder] = useCreateRazorpayOrderMutation();
 
-  const handleQuickAmount = (percentage) => {
-    const amount = (student.pendingAmount * percentage) / 100;
-    setPaymentData({ ...paymentData, amount: Math.round(amount) });
-  };
+    const triggerReceipt = (transactionId, method) => {
+        ReceiptService.generateReceipt({
+            school: { name: "VIDHYAM ERP", address: "School Management System" },
+            student: { id: student.studentId, name: student.name, className: student.class },
+            payment: { id: transactionId, date: paymentData.paymentDate, method: method, total: paymentData.amount },
+            fees: [{ name: "Outstanding Fees", amount: student.pending, penalty: penalty }]
+        });
+    };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <style jsx>{`
-          .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-          }
+    const handleSumbit = (e) => {
+        e?.preventDefault();
+        const finalId = paymentData.transactionId || `TXN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        onSubmit({ schoolId: student.schoolId, studentId: student.studentId, paymentData: { ...paymentData, transactionId: finalId } });
+        triggerReceipt(finalId, paymentData.paymentMethod);
+    };
 
-          .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 35px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          }
+    const handleOnlinePayment = async () => {
+        if (paymentData.amount <= 0 || paymentData.amount > student.pending) return;
+        setIsProcessing(true);
+        try {
+            const orderRes = await createOrder({ 
+                schoolId: student.schoolId, 
+                amount: paymentData.amount, 
+                studentId: student.studentId 
+            }).unwrap();
 
-          .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-          }
+            const options = {
+                key: orderRes.key_id,
+                amount: orderRes.amount,
+                currency: "INR",
+                name: "Vidhyam School Management",
+                description: `Fees payment for ${student.name}`,
+                order_id: orderRes.order_id,
+                handler: function (response) {
+                    onSubmit({ 
+                        schoolId: student.schoolId, 
+                        studentId: student.studentId, 
+                        paymentData: { 
+                            ...paymentData, 
+                            paymentMethod: 'Razorpay', 
+                            transactionId: response.razorpay_payment_id,
+                            remarks: `Order ID: ${response.razorpay_order_id} | Sig: ${response.razorpay_signature}`
+                        } 
+                    });
+                    triggerReceipt(response.razorpay_payment_id, 'Razorpay');
+                },
+                prefill: {
+                    name: student.name,
+                    email: student.email || "",
+                    contact: student.phone || ""
+                },
+                theme: {
+                    color: "#4f46e5"
+                }
+            };
 
-          .modal-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-          }
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                console.error("Payment Failed:", response.error);
+                setIsProcessing(false);
+            });
+            rzp.open();
+        } catch (err) {
+            console.error("Order Creation Failed:", err);
+            setIsProcessing(false);
+        }
+    };
 
-          .close-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: #999;
-            transition: all 0.3s ease;
-          }
+    const quickAmounts = [
+        { label: 'MIN', value: 0.25 },
+        { label: 'HALF', value: 0.5 },
+        { label: 'FULL', value: 1.0 },
+    ];
 
-          .close-btn:hover {
-            color: #f44336;
-            transform: rotate(90deg);
-          }
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative w-full max-w-xl glass-card p-0 overflow-hidden shadow-2xl shadow-indigo-500/10 border-indigo-500/20">
+                
+                {/* Modal Header */}
+                <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                            <CreditCard size={24} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-black text-white uppercase tracking-tight">Record Collection</h2>
+                            <p className="text-xs text-slate-500 font-medium">Session ID: {new Date().getTime().toString().slice(-8)}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all outline-none">
+                        <X size={20} />
+                    </button>
+                </div>
 
-          .student-summary {
-            background: linear-gradient(135deg, #f8f9ff, #ffffff);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            border-left: 5px solid #667eea;
-          }
+                {/* Main Content */}
+                <div className="p-8 space-y-8">
+                    {/* Student Snapshot */}
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                        <div>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Student</p>
+                            <p className="text-sm font-bold text-white uppercase">{student.name}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Due Amount + Penalty</p>
+                            <p className="text-base font-black text-rose-400">₹{student.pending?.toLocaleString()} <span className="text-xs text-rose-500 font-bold">+ ₹{penalty.toLocaleString()}</span></p>
+                            <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">Total: ₹{(student.pending + penalty).toLocaleString()}</p>
+                        </div>
+                    </div>
 
-          .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-          }
+                    <form onSubmit={handleSumbit} className="space-y-6">
+                        {/* Amount Entry */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Collection Amount (₹)</label>
+                                <div className="flex gap-1">
+                                    {quickAmounts.map(q => (
+                                        <button key={q.label} type="button" onClick={() => setPaymentData(d => ({ ...d, amount: Math.round((student.pending + penalty) * q.value) }))}
+                                            className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all uppercase">
+                                            {q.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <input type="number" value={paymentData.amount} onChange={e => setPaymentData(d => ({ ...d, amount: Number(e.target.value) }))}
+                                className="w-full text-2xl font-black bg-white/[0.04] border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-800"
+                                placeholder="0.00" />
+                        </div>
 
-          .summary-label {
-            color: #666;
-            font-weight: 600;
-          }
+                        <div className="grid grid-cols-2 gap-4">
+                             {/* Method */}
+                             <div>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Method</label>
+                                <select value={paymentData.paymentMethod} onChange={e => setPaymentData(d => ({ ...d, paymentMethod: e.target.value }))}
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-indigo-500/50 outline-none uppercase tracking-widest appearance-none cursor-pointer">
+                                    <option className="bg-slate-900" value="Cash">Cash</option>
+                                    <option className="bg-slate-900" value="UPI">UPI / Digital</option>
+                                    <option className="bg-slate-900" value="Card">Bank Card</option>
+                                    <option className="bg-slate-900" value="Cheque">Bank Cheque</option>
+                                </select>
+                             </div>
+                             {/* Date */}
+                             <div>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Value Date</label>
+                                <input type="date" value={paymentData.paymentDate} onChange={e => setPaymentData(d => ({ ...d, paymentDate: e.target.value }))}
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-indigo-500/50 outline-none uppercase tracking-widest" />
+                             </div>
+                        </div>
 
-          .summary-value {
-            font-weight: bold;
-            color: #333;
-          }
+                        {/* Transaction Detail */}
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Internal Reference / TXN ID</label>
+                            <div className="relative">
+                                <MessageSquare size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                                <input type="text" value={paymentData.transactionId} onChange={e => setPaymentData(d => ({ ...d, transactionId: e.target.value }))}
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs font-bold text-white focus:border-indigo-500/50 outline-none" placeholder="REF-XXXX..." />
+                            </div>
+                        </div>
+                    </form>
+                </div>
 
-          .quick-amounts {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 15px 0 25px 0;
-          }
-
-          .quick-btn {
-            padding: 12px;
-            background: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            color: #667eea;
-          }
-
-          .quick-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            transform: scale(1.05);
-          }
-
-          .form-group {
-            margin-bottom: 20px;
-          }
-
-          .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-          }
-
-          .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-          }
-
-          .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-          }
-
-          .form-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-            margin-top: 30px;
-          }
-
-          .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-          }
-
-          .btn-success {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-          }
-
-          .btn-secondary {
-            background: #f5f5f5;
-            color: #666;
-          }
-
-          .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-          }
-        `}</style>
-
-        <div className="modal-header">
-          <h2 className="modal-title">💳 Record Payment</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+                {/* Action Footer */}
+                <div className="p-6 bg-indigo-600/5 border-t border-white/10 flex flex-col gap-3">
+                    <div className="flex gap-4">
+                        <button onClick={onClose} className="flex-1 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-all bg-white/[0.03] rounded-2xl border border-white/5">
+                            Discard
+                        </button>
+                        <button onClick={handleSumbit} disabled={paymentData.amount <= 0 || paymentData.amount > student.pending || isProcessing}
+                            className={`flex-[2] py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98]
+                                ${paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing
+                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}>
+                            {isProcessing ? 'Processing...' : 'Commit & Receipt'}
+                        </button>
+                    </div>
+                    
+                    {/* Razorpay Integration */}
+                    <button 
+                        onClick={handleOnlinePayment}
+                        disabled={paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing}
+                        className={`w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center gap-3 group relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-blue-600/20
+                            ${paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}>
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                        {isProcessing ? <Loader size={18} className="animate-spin" /> : <Zap size={18} className="text-white animate-pulse" />}
+                        <span className="text-xs font-black uppercase tracking-[0.25em]">Online Payment Gateway (Razorpay)</span>
+                        <ArrowRight size={16} className="text-white/50 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            </motion.div>
         </div>
-
-        <div className="student-summary">
-          <div className="summary-row">
-            <span className="summary-label">Student Name:</span>
-            <span className="summary-value">{student.name}</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">Class/Section:</span>
-            <span className="summary-value">
-              {student.className?.replace('class-', 'Class ').toUpperCase()} - {student.section}
-            </span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">Total Fees:</span>
-            <span className="summary-value">{formatCurrency(student.totalAmount)}</span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">Already Paid:</span>
-            <span className="summary-value" style={{ color: '#4CAF50' }}>
-              {formatCurrency(student.paidAmount)}
-            </span>
-          </div>
-          <div className="summary-row">
-            <span className="summary-label">Pending Amount:</span>
-            <span className="summary-value" style={{ color: '#f44336' }}>
-              {formatCurrency(student.pendingAmount)}
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <label style={{ fontWeight: '600', marginBottom: '10px', display: 'block' }}>
-            Quick Amount Selection:
-          </label>
-          <div className="quick-amounts">
-            <button className="quick-btn" onClick={() => handleQuickAmount(25)}>25%</button>
-            <button className="quick-btn" onClick={() => handleQuickAmount(50)}>50%</button>
-            <button className="quick-btn" onClick={() => handleQuickAmount(75)}>75%</button>
-            <button className="quick-btn" onClick={() => handleQuickAmount(100)}>Full</button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Payment Amount (₹) *</label>
-            <input
-              type="number"
-              className="form-control"
-              value={paymentData.amount}
-              onChange={(e) => setPaymentData({ ...paymentData, amount: parseFloat(e.target.value) || 0 })}
-              min="0"
-              max={student.pendingAmount}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Payment Method *</label>
-            <select
-              className="form-control"
-              value={paymentData.paymentMethod}
-              onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-            >
-              <option value="Cash">Cash</option>
-              <option value="Card">Debit/Credit Card</option>
-              <option value="UPI">UPI</option>
-              <option value="Net Banking">Net Banking</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Transaction ID / Reference Number</label>
-            <input
-              type="text"
-              className="form-control"
-              value={paymentData.transactionId}
-              onChange={(e) => setPaymentData({ ...paymentData, transactionId: e.target.value })}
-              placeholder="Optional"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Payment Date *</label>
-            <input
-              type="date"
-              className="form-control"
-              value={paymentData.paymentDate}
-              onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Remarks</label>
-            <textarea
-              className="form-control"
-              rows="3"
-              value={paymentData.remarks}
-              onChange={(e) => setPaymentData({ ...paymentData, remarks: e.target.value })}
-              placeholder="Add any additional notes..."
-            />
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-success">
-              Record Payment
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+    );
 });
 StudentPaymentModal.displayName = 'StudentPaymentModal';
 

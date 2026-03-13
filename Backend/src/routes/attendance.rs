@@ -16,7 +16,10 @@ fn validate_role(role: &str) -> Result<(), String> {
     if VALID_ROLES.contains(&role) {
         Ok(())
     } else {
-        Err(format!("Invalid role '{}'. Must be 'student' or 'employee'.", role))
+        Err(format!(
+            "Invalid role '{}'. Must be 'student' or 'employee'.",
+            role
+        ))
     }
 }
 
@@ -30,7 +33,8 @@ pub async fn mark_present(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": e})),
-        ).into_response();
+        )
+            .into_response();
     }
 
     let date = payload["date"]
@@ -51,11 +55,15 @@ pub async fn mark_present(
         .mark_attendance(&school_id, &role, &user_id, payload)
         .await
     {
-        Ok(data) => Json(json!({"success": true, "message": "Attendance marked present", "data": data})).into_response(),
+        Ok(data) => {
+            Json(json!({"success": true, "message": "Attendance marked present", "data": data}))
+                .into_response()
+        }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -69,7 +77,8 @@ pub async fn mark_holiday(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": e})),
-        ).into_response();
+        )
+            .into_response();
     }
 
     let date = payload["date"].as_str().filter(|s| !s.is_empty());
@@ -88,11 +97,13 @@ pub async fn mark_holiday(
         .mark_holiday(&school_id, &role, &user_id, payload)
         .await
     {
-        Ok(data) => Json(json!({"success": true, "message": "Holiday posted", "data": data})).into_response(),
+        Ok(data) => Json(json!({"success": true, "message": "Holiday posted", "data": data}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -106,7 +117,8 @@ pub async fn update_attendance(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": e})),
-        ).into_response();
+        )
+            .into_response();
     }
 
     if let Ok(Some(reason)) = is_holiday_check(&state, &school_id, &date, &user_id, &role).await {
@@ -122,11 +134,13 @@ pub async fn update_attendance(
         .update_attendance(&school_id, &role, &user_id, &date, payload)
         .await
     {
-        Ok(data) => Json(json!({"success": true, "message": "Attendance updated", "data": data})).into_response(),
+        Ok(data) => Json(json!({"success": true, "message": "Attendance updated", "data": data}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -139,7 +153,8 @@ pub async fn list_attendance(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": e})),
-        ).into_response();
+        )
+            .into_response();
     }
     match state
         .services
@@ -151,7 +166,8 @@ pub async fn list_attendance(
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -164,7 +180,8 @@ pub async fn delete_attendance(
         return (
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": e})),
-        ).into_response();
+        )
+            .into_response();
     }
     match state
         .services
@@ -172,11 +189,13 @@ pub async fn delete_attendance(
         .delete_attendance(&school_id, &role, &user_id, &date)
         .await
     {
-        Ok(()) => Json(json!({"success": true, "message": "Attendance deleted successfully"})).into_response(),
+        Ok(()) => Json(json!({"success": true, "message": "Attendance deleted successfully"}))
+            .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -187,7 +206,7 @@ pub async fn list_attendance_by_date(
 ) -> impl IntoResponse {
     use sqlx::Row;
     match sqlx::query(
-        "SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2"
+        "SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2",
     )
     .bind(&school_id)
     .bind(&date)
@@ -204,7 +223,8 @@ pub async fn list_attendance_by_date(
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -251,7 +271,13 @@ pub async fn create_school_holiday(
     let _ = ensure_holidays_table(&state).await;
     let from_date = match payload["fromDate"].as_str().filter(|s| !s.is_empty()) {
         Some(d) => d.to_string(),
-        None => return (axum::http::StatusCode::BAD_REQUEST, Json(json!({"success":false,"message":"fromDate required"}))).into_response(),
+        None => {
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(json!({"success":false,"message":"fromDate required"})),
+            )
+                .into_response()
+        }
     };
     let id = Uuid::new_v4().to_string();
     let title = payload["title"].as_str().unwrap_or("Holiday").to_string();
@@ -281,17 +307,25 @@ pub async fn delete_school_holiday(
     Path((school_id, holiday_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match sqlx::query("DELETE FROM school_holidays WHERE id=$1 AND school_id=$2")
-        .bind(&holiday_id).bind(&school_id)
-        .execute(&state.db.pool).await
+        .bind(&holiday_id)
+        .bind(&school_id)
+        .execute(&state.db.pool)
+        .await
     {
         Ok(_) => Json(json!({"success":true})).into_response(),
-        Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"success":false,"message":e.to_string()}))).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success":false,"message":e.to_string()})),
+        )
+            .into_response(),
     }
 }
 
 // GET /api/operations/attendance/:schoolId/holidays/check?date=YYYY-MM-DD
 #[derive(Deserialize)]
-pub struct DateQuery { pub date: String }
+pub struct DateQuery {
+    pub date: String,
+}
 
 pub async fn check_school_holiday(
     State(state): State<AppState>,
@@ -301,7 +335,10 @@ pub async fn check_school_holiday(
     // Sunday is always a holiday
     if let Ok(d) = chrono::NaiveDate::parse_from_str(&q.date, "%Y-%m-%d") {
         if d.weekday() == chrono::Weekday::Sun {
-            return Json(json!({"success":true,"isHoliday":true,"isSunday":true,"reason":"Sunday"})).into_response();
+            return Json(
+                json!({"success":true,"isHoliday":true,"isSunday":true,"reason":"Sunday"}),
+            )
+            .into_response();
         }
     }
     let _ = ensure_holidays_table(&state).await;
@@ -329,8 +366,10 @@ async fn ensure_holidays_table(state: &AppState) -> Result<(), sqlx::Error> {
             exempt_employees JSONB DEFAULT '[]',
             exempt_students JSONB DEFAULT '[]',
             created_at TEXT NOT NULL
-        )"
-    ).execute(&state.db.pool).await?;
+        )",
+    )
+    .execute(&state.db.pool)
+    .await?;
     Ok(())
 }
 
@@ -352,7 +391,7 @@ async fn is_holiday_check(
     let _ = ensure_holidays_table(state).await;
     let row = sqlx::query(
         "SELECT title, exempt_employees, exempt_students FROM school_holidays \
-         WHERE school_id = $1 AND from_date <= $2 AND to_date >= $2 LIMIT 1"
+         WHERE school_id = $1 AND from_date <= $2 AND to_date >= $2 LIMIT 1",
     )
     .bind(school_id)
     .bind(date)
@@ -368,11 +407,15 @@ async fn is_holiday_check(
         let is_exempt = if role == "employee" {
             if let Some(arr) = exempt_employees.as_array() {
                 arr.iter().any(|v| v.as_str() == Some(user_id))
-            } else { false }
+            } else {
+                false
+            }
         } else if role == "student" {
             if let Some(arr) = exempt_students.as_array() {
                 arr.iter().any(|v| v.as_str() == Some(user_id))
-            } else { false }
+            } else {
+                false
+            }
         } else {
             false
         };

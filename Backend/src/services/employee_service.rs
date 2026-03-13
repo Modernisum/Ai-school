@@ -70,7 +70,12 @@ impl EmployeeService for PostgresEmployeeService {
             }
         }
 
-        tracing::info!("Bulk employee import for school {}: {} successful, {} failed", school_id, successful, failed);
+        tracing::info!(
+            "Bulk employee import for school {}: {} successful, {} failed",
+            school_id,
+            successful,
+            failed
+        );
 
         Ok(json!({
             "total": successful + failed,

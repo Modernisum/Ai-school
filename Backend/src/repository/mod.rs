@@ -1,7 +1,6 @@
 pub mod postgres;
 pub mod traits;
 
-
 use std::sync::Arc;
 use traits::*;
 

@@ -1,26 +1,26 @@
 // src/components/auth/SessionHandler.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, LogIn } from "lucide-react";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { useVerifyTokenMutation } from "../api/authApi";
+import { logout, selectCurrentToken } from "../authSlice";
 
 export default function SessionHandler({ children }) {
   const [showDialog, setShowDialog] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const token = useSelector(selectCurrentToken);
+  const [verifyToken] = useVerifyTokenMutation();
+  
   // Use a ref to ensure we don't show the dialog on the very first render
-  // when navigating here fresh from a setup/login flow.
   const isFirstCheck = useRef(true);
 
   useEffect(() => {
-    async function verifyToken() {
-      const token = localStorage.getItem("accessToken");
-
+    async function checkSession() {
       if (!token) {
-        // On the first check after page-load, if there's no token, show session expired.
-        // But we delay to allow a setup redirect to set the token first.
         if (!isFirstCheck.current) {
           setShowDialog(true);
         }
@@ -30,37 +30,29 @@ export default function SessionHandler({ children }) {
       isFirstCheck.current = false;
 
       try {
-        const res = await fetch(`${API}/auth/school/verify-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-
-        const data = await res.json();
+        const data = await verifyToken(token).unwrap();
         if (!data.success) {
-          localStorage.removeItem("accessToken");
+          dispatch(logout());
           setShowDialog(true);
         }
       } catch (err) {
         console.error("Verify token failed:", err);
-        // Network errors should NOT log the user out - only invalid responses should.
+        // Network errors don't trigger logout to avoid UX disruption during outages
       }
     }
 
-    // A tiny delay on mount allows setup.jsx's token storage to complete before
-    // the session handler runs its first check.
-    const initialDelay = setTimeout(verifyToken, 500);
-    const interval = setInterval(verifyToken, 5 * 60 * 1000);
+    const initialDelay = setTimeout(checkSession, 500);
+    const interval = setInterval(checkSession, 5 * 60 * 1000);
 
     return () => {
       clearTimeout(initialDelay);
       clearInterval(interval);
     };
-  }, [location?.pathname]);
+  }, [location?.pathname, token, verifyToken, dispatch]);
 
   const handleOk = () => {
     setShowDialog(false);
-    localStorage.removeItem("accessToken");
+    dispatch(logout());
     navigate("/");
   };
 

@@ -52,10 +52,13 @@ pub async fn assign_responsibility(
 ) -> impl IntoResponse {
     let responsibility_id = match payload["responsibilityId"].as_str() {
         Some(id) => id,
-        None => return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "responsibilityId is required"})),
-        ).into_response(),
+        None => {
+            return (
+                axum::http::StatusCode::BAD_REQUEST,
+                Json(json!({"success": false, "message": "responsibilityId is required"})),
+            )
+                .into_response()
+        }
     };
 
     match state
@@ -107,7 +110,7 @@ pub async fn list_employee_responsibilities(
                 obj.insert("success".to_string(), json!(true));
             }
             Json(enriched).into_response()
-        },
+        }
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

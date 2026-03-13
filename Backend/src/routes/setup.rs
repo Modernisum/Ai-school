@@ -11,11 +11,15 @@ pub async fn get_setup(
 ) -> impl IntoResponse {
     match state.services.setup.get_setup(&school_id).await {
         Ok(setup) => Json(serde_json::json!({"success": true, "data": setup})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            let status = if msg.contains("School not found") {
+                axum::http::StatusCode::NOT_FOUND
+            } else {
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (status, Json(serde_json::json!({"success": false, "message": msg}))).into_response()
+        }
     }
 }
 

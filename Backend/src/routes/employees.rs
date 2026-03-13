@@ -36,7 +36,6 @@ pub async fn create_employee(
         "education": payload.education,
     });
 
-
     match state
         .services
         .employee
@@ -167,7 +166,8 @@ pub async fn bulk_import_employees(
             return (
                 axum::http::StatusCode::BAD_REQUEST,
                 Json(json!({"success": false, "message": "Expected an 'employees' array"})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
@@ -186,10 +186,17 @@ pub async fn bulk_import_employees(
             "baseSalary": row.get("Base Salary").or(row.get("baseSalary")).unwrap_or(&serde_json::Value::Null),
         });
 
-        match state.services.employee.create_employee(&school_id, emp_data).await {
+        match state
+            .services
+            .employee
+            .create_employee(&school_id, emp_data)
+            .await
+        {
             Ok(created) => {
                 success_count += 1;
-                results.push(json!({"row": i + 1, "status": "success", "employeeId": created["employeeId"]}));
+                results.push(
+                    json!({"row": i + 1, "status": "success", "employeeId": created["employeeId"]}),
+                );
             }
             Err(e) => {
                 fail_count += 1;
@@ -204,5 +211,6 @@ pub async fn bulk_import_employees(
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    })).into_response()
+    }))
+    .into_response()
 }

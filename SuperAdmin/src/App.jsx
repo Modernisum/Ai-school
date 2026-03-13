@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket
+    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket, Search
 } from 'lucide-react'
 import { isLoggedIn, logout } from './api.js'
 import Login from './pages/Login.jsx'
@@ -16,6 +16,8 @@ import SupportPage from './pages/SupportPage.jsx'
 import BillingPage from './pages/Billing/BillingPage.jsx'
 import PromoPage from './pages/PromoPage.jsx'
 
+import SpotlightSearch from './components/SpotlightSearch.jsx'
+
 export const ToastCtx = createContext(null)
 
 function PrivateLayout() {
@@ -28,6 +30,7 @@ function PrivateLayout() {
 
     const nav = [
         { to: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
+        { onClick: () => window.dispatchEvent(new CustomEvent('toggle-spotlight')), icon: <Search size={16} />, label: 'Search (⌘K)' },
         { to: '/schools', icon: <School size={16} />, label: 'Schools' },
         { to: '/billing', icon: <Database size={16} />, label: 'Billing & Rev' },
         { to: '/promos', icon: <Ticket size={16} />, label: 'Promo Codes' },
@@ -38,6 +41,7 @@ function PrivateLayout() {
 
     return (
         <ToastCtx.Provider value={showToast}>
+            <SpotlightSearch />
             <div className="layout">
                 {/* Sidebar */}
                 <aside className="sidebar">
@@ -48,10 +52,14 @@ function PrivateLayout() {
                             <p>Control Panel</p>
                         </div>
                     </div>
-                    {nav.map(n => (
+                    {nav.map(n => n.to ? (
                         <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
                             {n.icon} {n.label}
                         </NavLink>
+                    ) : (
+                        <div key={n.label} className="nav-item" onClick={n.onClick} style={{ cursor: 'pointer' }}>
+                            {n.icon} {n.label}
+                        </div>
                     ))}
                     <div className="nav-bottom">
                         <button

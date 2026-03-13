@@ -7,6 +7,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use sqlx::Row;
 use serde_json::{json, Value};
 use std::str::FromStr;
 
@@ -22,7 +23,7 @@ fn extract_admin_token(headers: &HeaderMap) -> Option<String> {
 
 fn make_admin_service(state: &AppState) -> AdminService {
     AdminService {
-        pool: state.db.pool.clone(),
+        db: state.db.clone(),
     }
 }
 
@@ -335,10 +336,9 @@ pub async fn export_school(
     Path(school_id): Path<String>,
 ) -> impl IntoResponse {
     let svc = require_admin!(headers, state);
-    match svc.export_school_data(&school_id).await {
-        Ok(data) => {
+    match svc.export_school_data_stream(&school_id).await {
+        Ok(body) => {
             let filename = format!("school_{}_backup.json", school_id);
-            let body = serde_json::to_string_pretty(&data).unwrap_or_default();
             axum::response::Response::builder()
                 .status(200)
                 .header("Content-Type", "application/json")
@@ -346,7 +346,7 @@ pub async fn export_school(
                     "Content-Disposition",
                     format!("attachment; filename=\"{}\"", filename),
                 )
-                .body(Body::from(body))
+                .body(body)
                 .unwrap()
         }
         Err(e) => err_json!(e),
@@ -407,10 +407,14 @@ pub async fn create_support_request(
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"success":false,"message":"schoolName and message are required"})),
-        ).into_response();
+        )
+            .into_response();
     }
 
-    match svc.create_support_request(school_name, contact_info, message).await {
+    match svc
+        .create_support_request(school_name, contact_info, message)
+        .await
+    {
         Ok(_) => ok_json!("Support request submitted"),
         Err(e) => err_json!(e),
     }
@@ -447,7 +451,7 @@ pub async fn create_promo_code(
     Json(payload): Json<Value>,
 ) -> impl IntoResponse {
     let svc = require_admin!(headers, state);
-    
+
     let code = payload["code"].as_str().unwrap_or("");
     let credit_amount_str = payload["creditAmount"].as_str().unwrap_or("0");
     let free_days = payload["freeDays"].as_i64().unwrap_or(0) as i32;
@@ -459,7 +463,8 @@ pub async fn create_promo_code(
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"success":false,"message":"Promo code must not be empty"})),
-        ).into_response();
+        )
+            .into_response();
     }
 
     let credit_amount = match credit_amount_str.parse::<bigdecimal::BigDecimal>() {
@@ -468,18 +473,29 @@ pub async fn create_promo_code(
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({"success":false,"message":"Invalid credit amount format"})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
-    
+
     let discount_percentage = match discount_percentage_str.parse::<bigdecimal::BigDecimal>() {
         Ok(amt) => amt,
         Err(_) => bigdecimal::BigDecimal::from_str("0.00").unwrap(),
     };
-    
+
     let expires_at = expires_at_str.and_then(|s| s.parse::<chrono::DateTime<chrono::Utc>>().ok());
 
-    match svc.create_promo_code(code, credit_amount, free_days, discount_percentage, expires_at, max_uses).await {
+    match svc
+        .create_promo_code(
+            code,
+            credit_amount,
+            free_days,
+            discount_percentage,
+            expires_at,
+            max_uses,
+        )
+        .await
+    {
         Ok(result) => ok_json!(result),
         Err(e) => err_json!(e),
     }
@@ -508,7 +524,6 @@ pub async fn get_promo_usage(
     }
 }
 
-
 pub async fn apply_promo_to_school(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -521,7 +536,8 @@ pub async fn apply_promo_to_school(
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"success":false,"message":"Promo code required"})),
-        ).into_response();
+        )
+            .into_response();
     }
     match svc.apply_promo_code(&school_id, code).await {
         Ok(result) => ok_json!(result),
@@ -529,10 +545,119 @@ pub async fn apply_promo_to_school(
     }
 }
 
-pub async fn manual_backup(
+pub async fn process_refund(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<Value>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    let amount_str = payload["amount"].as_str().unwrap_or("0");
+    let description = payload["description"].as_str().unwrap_or("Manual adjustment");
+
+    let amount = match amount_str.parse::<bigdecimal::BigDecimal>() {
+        Ok(amt) => amt,
+        Err(_) => return err_json!("Invalid amount format"),
+    };
+
+    match svc.process_refund(&school_id, amount, description).await {
+        Ok(result) => ok_json!(result),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn get_wallet_ledger(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    match svc.get_wallet_ledger(&school_id).await {
+        Ok(data) => ok_json!(data),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn get_admin_dashboard_stats(
     headers: HeaderMap,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
+    let _ = require_admin!(headers, state);
+
+    // Optimized SQL to get global stats
+    let stats_query = r#"
+        SELECT 
+            (SELECT COUNT(*) FROM schools) as school_count,
+            (SELECT COUNT(*) FROM students) as student_count,
+            (SELECT COUNT(*) FROM employees) as teacher_count,
+            (SELECT SUM(wallet_balance) FROM schools) as total_wallet_balance
+    "#;
+
+    let stats: (i64, i64, i64, Option<bigdecimal::BigDecimal>) = 
+        match sqlx::query_as(stats_query).fetch_one(&state.db.pool).await {
+            Ok(s) => s,
+            Err(e) => return err_json!(e),
+        };
+
+    // Monthly Registration Data (Optimized)
+    let registration_data = sqlx::query(
+        r#"
+        SELECT 
+            TO_CHAR(created_at, 'YYYY-MM') as month,
+            COUNT(*) as count
+        FROM schools
+        WHERE created_at > CURRENT_DATE - INTERVAL '1 year'
+        GROUP BY month
+        ORDER BY month ASC
+        "#
+    )
+    .fetch_all(&state.db.pool)
+    .await;
+
+    let chart_data: Vec<Value> = match registration_data {
+        Ok(rows) => rows.into_iter().map(|r| {
+            json!({
+                "month": Row::get::<String, _>(&r, "month"),
+                "count": Row::get::<i64, _>(&r, "count")
+            })
+        }).collect(),
+        Err(_) => vec![]
+    };
+
+    ok_json!(json!({
+        "totals": {
+            "schools": stats.0,
+            "students": stats.1,
+            "teachers": stats.2,
+            "wallet": stats.3.unwrap_or_else(|| bigdecimal::BigDecimal::from(0)).to_string()
+        },
+        "registrations": chart_data
+    }))
+}
+
+pub async fn get_churn_radar(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    match svc.get_churn_radar().await {
+        Ok(data) => ok_json!(data),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn get_admin_stats_advanced(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    match svc.get_admin_stats().await {
+        Ok(stats) => ok_json!(stats),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn manual_backup(headers: HeaderMap, State(state): State<AppState>) -> impl IntoResponse {
     let _ = require_admin!(headers, state);
     match state.backup.perform_backup().await {
         Ok(_) => ok_json!("Manual backup completed successfully"),

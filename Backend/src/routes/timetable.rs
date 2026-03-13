@@ -1,3 +1,4 @@
+use crate::logic::timetable_engine::{SubjectRequirement, TimetableEngine};
 use crate::AppState;
 use axum::{
     extract::{Path, State},
@@ -6,7 +7,6 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use crate::logic::timetable_engine::{SubjectRequirement, TimetableEngine};
 
 /// Request body for generating a timetable
 #[derive(Debug, Deserialize)]
@@ -35,14 +35,17 @@ pub async fn generate_timetable(
     let periods = payload.periods_per_day.unwrap_or(8);
     let days = payload.working_days.unwrap_or_else(|| vec![1, 2, 3, 4, 5]);
 
-    match engine.generate_timetable(
-        &school_id,
-        &payload.class_id,
-        &payload.class_name,
-        periods,
-        days,
-        payload.requirements,
-    ).await {
+    match engine
+        .generate_timetable(
+            &school_id,
+            &payload.class_id,
+            &payload.class_name,
+            periods,
+            days,
+            payload.requirements,
+        )
+        .await
+    {
         Ok(result) => Json(json!({
             "success": true,
             "config_id": result.config_id,
@@ -52,11 +55,13 @@ pub async fn generate_timetable(
             "slots": result.slots,
             "conflicts": result.conflicts,
             "has_conflicts": !result.conflicts.is_empty(),
-        })).into_response(),
+        }))
+        .into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -72,7 +77,8 @@ pub async fn get_timetable(
         Err(e) => (
             axum::http::StatusCode::NOT_FOUND,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -88,7 +94,8 @@ pub async fn list_timetables(
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -98,17 +105,17 @@ pub async fn delete_timetable(
     State(state): State<AppState>,
     Path((school_id, config_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    match sqlx::query(
-        "DELETE FROM timetable_slots WHERE school_id = $1 AND config_id = $2"
-    )
-    .bind(&school_id)
-    .bind(&config_id)
-    .execute(&state.db.pool)
-    .await {
+    match sqlx::query("DELETE FROM timetable_slots WHERE school_id = $1 AND config_id = $2")
+        .bind(&school_id)
+        .bind(&config_id)
+        .execute(&state.db.pool)
+        .await
+    {
         Ok(_) => Json(json!({"success": true, "message": "Timetable deleted"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }

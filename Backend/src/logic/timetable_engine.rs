@@ -19,8 +19,8 @@ pub struct SubjectRequirement {
 /// A single timetable slot that has been assigned
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimetableSlot {
-    pub day: usize,         // 1 = Monday
-    pub period: usize,      // 1-based period number
+    pub day: usize,    // 1 = Monday
+    pub period: usize, // 1-based period number
     pub subject_id: String,
     pub subject_name: String,
     pub teacher_id: String,
@@ -66,7 +66,7 @@ impl TimetableEngine {
         // --- Step 1: Load teacher availability from DB ---
         let avail_rows = sqlx::query(
             "SELECT teacher_id, day_of_week, period_number, is_available 
-             FROM teacher_availability WHERE school_id = $1"
+             FROM teacher_availability WHERE school_id = $1",
         )
         .bind(school_id)
         .fetch_all(&self.pool)
@@ -89,7 +89,7 @@ impl TimetableEngine {
 
         // --- Step 2: Load available rooms ---
         let room_rows = sqlx::query(
-            "SELECT room_id, room_name, room_type FROM timetable_rooms WHERE school_id = $1"
+            "SELECT room_id, room_name, room_type FROM timetable_rooms WHERE school_id = $1",
         )
         .bind(school_id)
         .fetch_all(&self.pool)
@@ -132,10 +132,13 @@ impl TimetableEngine {
                         .unwrap_or(false);
 
                     // Check teacher not double booked in this run
-                    let teacher_used = teacher_used_this_run.contains(&(req.teacher_id.clone(), day, period));
+                    let teacher_used =
+                        teacher_used_this_run.contains(&(req.teacher_id.clone(), day, period));
 
                     // Check this slot not already assigned for this class
-                    let slot_taken = assigned_slots.iter().any(|s| s.day == day && s.period == period);
+                    let slot_taken = assigned_slots
+                        .iter()
+                        .any(|s| s.day == day && s.period == period);
 
                     if teacher_blocked || teacher_used || slot_taken {
                         continue;
@@ -166,7 +169,10 @@ impl TimetableEngine {
 
                     // Mark teacher and room as used
                     teacher_used_this_run.insert((req.teacher_id.clone(), day, period));
-                    room_busy.entry(room_id.clone()).or_default().insert((day, period));
+                    room_busy
+                        .entry(room_id.clone())
+                        .or_default()
+                        .insert((day, period));
 
                     assigned_slots.push(TimetableSlot {
                         day,
@@ -194,7 +200,9 @@ impl TimetableEngine {
         // --- Step 4: Fill remaining slots as free periods ---
         for &day in &working_days {
             for period in 1..=periods_per_day {
-                let slot_filled = assigned_slots.iter().any(|s| s.day == day && s.period == period);
+                let slot_filled = assigned_slots
+                    .iter()
+                    .any(|s| s.day == day && s.period == period);
                 if !slot_filled {
                     assigned_slots.push(TimetableSlot {
                         day,
@@ -214,7 +222,15 @@ impl TimetableEngine {
         assigned_slots.sort_by(|a, b| a.day.cmp(&b.day).then(a.period.cmp(&b.period)));
 
         // --- Step 5: Persist to database ---
-        self.save_timetable(school_id, &config_id, class_id, class_name, &assigned_slots, &conflicts).await?;
+        self.save_timetable(
+            school_id,
+            &config_id,
+            class_id,
+            class_name,
+            &assigned_slots,
+            &conflicts,
+        )
+        .await?;
 
         Ok(GeneratedTimetable {
             config_id,
@@ -262,7 +278,7 @@ impl TimetableEngine {
         for conflict in conflicts {
             sqlx::query(
                 "INSERT INTO timetable_conflicts (school_id, config_id, conflict_type, description)
-                 VALUES ($1, $2, 'scheduling_conflict', $3)"
+                 VALUES ($1, $2, 'scheduling_conflict', $3)",
             )
             .bind(school_id)
             .bind(config_id)
@@ -284,34 +300,41 @@ impl TimetableEngine {
         let slot_rows = sqlx::query(
             "SELECT day_of_week, period_number, subject_name, teacher_id, room_id, is_free_period
              FROM timetable_slots WHERE school_id = $1 AND config_id = $2
-             ORDER BY day_of_week, period_number"
+             ORDER BY day_of_week, period_number",
         )
         .bind(school_id)
         .bind(config_id)
         .fetch_all(&self.pool)
         .await?;
 
-        let slots: Vec<Value> = slot_rows.iter().map(|row| {
-            json!({
-                "day": row.get::<i32, _>("day_of_week"),
-                "period": row.get::<i32, _>("period_number"),
-                "subject": row.get::<Option<String>, _>("subject_name"),
-                "teacher_id": row.get::<Option<String>, _>("teacher_id"),
-                "room_id": row.get::<Option<String>, _>("room_id"),
-                "is_free": row.get::<bool, _>("is_free_period"),
+        let slots: Vec<Value> = slot_rows
+            .iter()
+            .map(|row| {
+                json!({
+                    "day": row.get::<i32, _>("day_of_week"),
+                    "period": row.get::<i32, _>("period_number"),
+                    "subject": row.get::<Option<String>, _>("subject_name"),
+                    "teacher_id": row.get::<Option<String>, _>("teacher_id"),
+                    "room_id": row.get::<Option<String>, _>("room_id"),
+                    "is_free": row.get::<bool, _>("is_free_period"),
+                })
             })
-        }).collect();
+            .collect();
 
         let conflict_rows = sqlx::query(
-            "SELECT description FROM timetable_conflicts WHERE school_id = $1 AND config_id = $2"
+            "SELECT description FROM timetable_conflicts WHERE school_id = $1 AND config_id = $2",
         )
         .bind(school_id)
         .bind(config_id)
         .fetch_all(&self.pool)
         .await?;
 
-        let conflicts: Vec<String> = conflict_rows.iter()
-            .map(|r| r.get::<Option<String>, _>("description").unwrap_or_default())
+        let conflicts: Vec<String> = conflict_rows
+            .iter()
+            .map(|r| {
+                r.get::<Option<String>, _>("description")
+                    .unwrap_or_default()
+            })
             .collect();
 
         Ok(json!({
@@ -327,7 +350,7 @@ impl TimetableEngine {
     pub async fn list_timetable_configs(&self, school_id: &str) -> Result<Value, sqlx::Error> {
         let rows = sqlx::query(
             "SELECT config_id, class_id, class_name, periods_per_day, created_at
-             FROM timetable_configs WHERE school_id = $1 ORDER BY created_at DESC"
+             FROM timetable_configs WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
         .fetch_all(&self.pool)
@@ -342,5 +365,69 @@ impl TimetableEngine {
         })).collect();
 
         Ok(json!({ "configs": configs }))
+    }
+
+    /// Finds available teachers for a specific period to act as substitutes (proxies).
+    /// Rank them by subject relevance if possible.
+    pub async fn find_available_substitutes(
+        &self,
+        school_id: &str,
+        day: usize,
+        period: usize,
+        subject_id: Option<&str>,
+    ) -> Result<Vec<Value>, sqlx::Error> {
+        // 1. Get all teachers who ARE NOT assigned to any class in this (day, period)
+        // This is done by looking at timetable_slots for the current school's LATEST config
+        let busy_teachers = sqlx::query(
+            "SELECT DISTINCT teacher_id FROM timetable_slots 
+             WHERE school_id = $1 AND day_of_week = $2 AND period_number = $3 AND is_free_period = false"
+        )
+        .bind(school_id)
+        .bind(day as i32)
+        .bind(period as i32)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let busy_ids: HashSet<String> = busy_teachers.iter().map(|r| r.get::<String, _>("teacher_id")).collect();
+
+        // 2. Get all employees of type 'teacher' or 'staff'
+        let all_teachers = sqlx::query(
+            "SELECT employee_id, data->>'name' as name, data->>'subject' as subject FROM employees 
+             WHERE school_id = $1 AND (employee_type = 'teacher' OR employee_type = 'staff')"
+        )
+        .bind(school_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        // 3. Filter out busy ones and rank
+        let mut candidates = Vec::new();
+        for row in all_teachers {
+            let eid: String = row.get("employee_id");
+            if busy_ids.contains(&eid) {
+                continue;
+            }
+
+            let name: String = row.get::<Option<String>, _>("name").unwrap_or_else(|| eid.clone());
+            let teacher_subject: String = row.get::<Option<String>, _>("subject").unwrap_or_default().to_lowercase();
+            
+            let mut score = 0;
+            if let Some(target_sub) = subject_id {
+                if teacher_subject.contains(&target_sub.to_lowercase()) {
+                    score = 100;
+                }
+            }
+
+            candidates.push(json!({
+                "employee_id": eid,
+                "name": name,
+                "subject": teacher_subject,
+                "score": score
+            }));
+        }
+
+        // Sort by score descending
+        candidates.sort_by(|a, b| b["score"].as_i64().unwrap_or(0).cmp(&a["score"].as_i64().unwrap_or(0)));
+
+        Ok(candidates)
     }
 }

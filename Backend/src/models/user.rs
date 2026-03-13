@@ -61,7 +61,6 @@ pub struct CreateEmployeeRequest {
     pub education: Option<Vec<serde_json::Value>>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmployeeResponse {

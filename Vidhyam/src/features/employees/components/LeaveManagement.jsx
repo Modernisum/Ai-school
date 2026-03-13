@@ -19,6 +19,55 @@ const getSchoolId = () => {
     return '622079';
 };
 
+const ProxySuggestions = ({ schoolId, leave }) => {
+    const [suggestions, setSuggestions] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+
+    const fetchSuggestions = async () => {
+        setLoading(true);
+        try {
+            // Day of week (1=Mon) - for demo using Mon=1
+            const res = await callApiWithBackoff(`${API_BASE_URL}/dashboard/${schoolId}/leaves/proxy-suggestions?day=1&period=1&subject=Math`, { method: 'GET' });
+            if (res.success) setSuggestions(res.data.suggestions || []);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="mt-1">
+            <button 
+                onClick={() => { setOpen(!open); if (!open) fetchSuggestions(); }}
+                className="text-[10px] text-blue-600 hover:underline flex items-center"
+            >
+                {open ? 'Hide AI Proxies' : 'View AI Proxies'}
+            </button>
+            {open && (
+                <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-[10px]">
+                    <p className="font-bold mb-1 text-blue-800">Top Recommended Substitutes:</p>
+                    {loading ? (
+                        <Loader size={12} className="animate-spin text-blue-600" />
+                    ) : suggestions.length > 0 ? (
+                        <ul className="space-y-1">
+                            {suggestions.slice(0, 3).map(s => (
+                                <li key={s.employee_id} className="flex justify-between items-center">
+                                    <span className="text-gray-700 font-medium">{s.name} ({s.subject})</span>
+                                    <span className="bg-blue-200 text-blue-800 px-1 rounded font-bold">Score: {s.score}%</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-500 italic">No free teachers found.</p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function LeaveManagement({ schoolId: propSchoolId }) {
     const schoolId = propSchoolId || getSchoolId();
     const [leaves, setLeaves] = useState([]);
@@ -122,27 +171,33 @@ export default function LeaveManagement({ schoolId: propSchoolId }) {
                                     </td>
                                     <td className="px-4 py-3">
                                         {leave.status === 'pending' ? (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => updateStatus(leave.leaveId, 'approve')}
-                                                    disabled={!!actionLoading[leave.leaveId]}
-                                                    className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs disabled:opacity-50"
-                                                >
-                                                    {actionLoading[leave.leaveId] === 'approve'
-                                                        ? <Loader size={12} className="animate-spin mr-1" />
-                                                        : <CheckCircle size={12} className="mr-1" />}
-                                                    Approve
-                                                </button>
-                                                <button
-                                                    onClick={() => updateStatus(leave.leaveId, 'reject')}
-                                                    disabled={!!actionLoading[leave.leaveId]}
-                                                    className="flex items-center px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs disabled:opacity-50"
-                                                >
-                                                    {actionLoading[leave.leaveId] === 'reject'
-                                                        ? <Loader size={12} className="animate-spin mr-1" />
-                                                        : <XCircle size={12} className="mr-1" />}
-                                                    Reject
-                                                </button>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => updateStatus(leave.leaveId, 'approve')}
+                                                        disabled={!!actionLoading[leave.leaveId]}
+                                                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs disabled:opacity-50"
+                                                    >
+                                                        {actionLoading[leave.leaveId] === 'approve'
+                                                            ? <Loader size={12} className="animate-spin mr-1" />
+                                                            : <CheckCircle size={12} className="mr-1" />}
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => updateStatus(leave.leaveId, 'reject')}
+                                                        disabled={!!actionLoading[leave.leaveId]}
+                                                        className="flex items-center px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs disabled:opacity-50"
+                                                    >
+                                                        {actionLoading[leave.leaveId] === 'reject'
+                                                            ? <Loader size={12} className="animate-spin mr-1" />
+                                                            : <XCircle size={12} className="mr-1" />}
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                                <ProxySuggestions 
+                                                    schoolId={schoolId} 
+                                                    leave={leave} 
+                                                />
                                             </div>
                                         ) : leave.status === 'approved' ? (
                                             <a

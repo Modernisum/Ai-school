@@ -1,5 +1,6 @@
 use google_cloud_storage::client::{Client, ClientConfig};
 use google_cloud_storage::http::objects::delete::DeleteObjectRequest;
+use google_cloud_storage::http::objects::upload::{Media, UploadObjectRequest, UploadType};
 use google_cloud_storage::sign::{SignedURLMethod, SignedURLOptions};
 // Note: SignBy variants in 0.22.0 are: PrivateKey, SignByGrantAccount, or None (via Option)
 // Do NOT use SignBy::DUMMY as it does not exist.
@@ -119,5 +120,59 @@ impl StorageEngine {
 
         info!("Successfully deleted GCS object: {}", object_name);
         Ok(())
+    }
+
+    /// Uploads raw bytes to GCS.
+    pub async fn upload_bytes(
+        &self,
+        object_name: &str,
+        content_type: &str,
+        data: Vec<u8>,
+    ) -> Result<()> {
+        let client = self.check_client()?;
+        let upload_type = UploadType::Simple(Media {
+            name: object_name.to_string().into(),
+            content_type: content_type.to_string().into(),
+            content_length: Some(data.len() as u64),
+        });
+
+        client
+            .upload_object(
+                &UploadObjectRequest {
+                    bucket: self.bucket_name.clone(),
+                    ..Default::default()
+                },
+                data,
+                &upload_type,
+            )
+            .await
+            .map_err(|e| {
+                error!("Failed to upload bytes to GCS {}: {}", object_name, e);
+                anyhow!("Failed to upload bytes to GCS: {}", e)
+            })?;
+
+        info!("Successfully uploaded bytes to GCS: {}", object_name);
+        Ok(())
+    }
+
+    /// Downloads raw bytes from GCS using a temporary signed URL.
+    pub async fn download_bytes(&self, object_name: &str) -> Result<Vec<u8>> {
+        let url = self.generate_download_url(object_name).await?;
+        
+        let response = reqwest::get(url).await.map_err(|e| {
+            error!("Failed to fetch GCS object via signed URL: {}", e);
+            anyhow!("Failed to fetch GCS object: {}", e)
+        })?;
+
+        if !response.status().is_success() {
+            return Err(anyhow!("GCS download failed with status: {}", response.status()));
+        }
+
+        let bytes = response.bytes().await.map_err(|e| {
+            error!("Failed to read GCS response bytes: {}", e);
+            anyhow!("Failed to read GCS bytes: {}", e)
+        })?;
+
+        Ok(bytes.to_vec())
     }
 }

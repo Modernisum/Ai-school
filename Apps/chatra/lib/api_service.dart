@@ -57,4 +57,45 @@ class ApiService {
   Future<void> logout() async {
     await storage.deleteAll();
   }
+
+  Future<Map<String, dynamic>?> getStudentFees(String studentId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/fees/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Get Fees Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> createRazorpayOrder(Map<String, dynamic> payload) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.post(
+        Uri.parse('$baseUrl/order'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print("Create Order Error: $e");
+      return null;
+    }
+  }
 }

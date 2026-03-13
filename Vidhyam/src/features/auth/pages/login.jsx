@@ -1,56 +1,46 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import { useLoginMutation, useSubmitSupportMutation } from "../api/authApi";
+import { setCredentials } from "../authSlice";
 
 export default function AuthPage() {
   const [form, setForm] = useState({ schoolId: "", password: "" });
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Mutations
+  const [login, { isLoading }] = useLoginMutation();
+  const [submitSupport, { isLoading: isSupportLoading }] = useSubmitSupportMutation();
 
   // Support Modal State
   const [showSupport, setShowSupport] = useState(false);
   const [supportForm, setSupportForm] = useState({ schoolName: "", contactInfo: "", message: "" });
-  const [isSupportLoading, setIsSupportLoading] = useState(false);
   const [supportMessage, setSupportMessage] = useState("");
   const [supportStatus, setSupportStatus] = useState(""); // 'success' | 'error'
 
-  const navigate = useNavigate();
-
   const handleSupportSubmit = async (e) => {
     e.preventDefault();
-    setIsSupportLoading(true);
     setSupportMessage("");
     setSupportStatus("");
 
     try {
-      const res = await fetch(`${API_BASE}/auth/school/support`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(supportForm),
-      });
-      const data = await res.json();
+      const data = await submitSupport(supportForm).unwrap();
       if (data.success) {
         setSupportStatus("success");
         setSupportMessage("Request sent successfully! Super Admin will contact you shortly.");
-        // Reset form
         setSupportForm({ schoolName: "", contactInfo: "", message: "" });
-        // Close modal after delay
         setTimeout(() => {
           setShowSupport(false);
           setSupportStatus("");
           setSupportMessage("");
         }, 3000);
-      } else {
-        setSupportStatus("error");
-        setSupportMessage(data.message || "Failed to submit request.");
       }
     } catch (err) {
       setSupportStatus("error");
-      setSupportMessage("Connection error while submitting request.");
-    } finally {
-      setIsSupportLoading(false);
+      setSupportMessage(err.data?.message || "Failed to submit request.");
     }
   };
 
@@ -61,28 +51,23 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-    setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/auth/school/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
+      const data = await login(form).unwrap();
       if (data.success) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("schoolId", data.schoolId);
+        // Dispatch credentials to Redux Store
+        dispatch(setCredentials({
+          accessToken: data.accessToken,
+          schoolId: data.schoolId,
+          schoolProfile: {
+             name: data.schoolName, // Backend might need to return this, else it uses localStorage default in Slice
+          }
+        }));
         navigate("/dashboard/home");
-      } else {
-        setMessage(data.message || "Invalid credentials");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setMessage("Connection error. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setMessage(err.data?.message || "Invalid credentials or connection error.");
     }
   };
 

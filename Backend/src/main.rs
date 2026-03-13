@@ -4,20 +4,21 @@ use axum::{
     Router,
 };
 use dotenv::dotenv;
+// use serde_json::json;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+mod background_jobs;
+mod backup;
 mod db;
 mod logic;
+mod middleware;
 mod models;
 mod repository;
 mod routes;
-pub mod super_admin;
 mod services;
-mod backup;
-mod background_jobs;
-
+pub mod super_admin;
 
 use repository::{initialize_repositories, Repositories};
 use services::{initialize_services, Services};
@@ -79,11 +80,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repos = Arc::new(initialize_repositories(ocr_pipeline.clone()).await);
     let services = Arc::new(initialize_services(repos.clone()));
 
-    println!("Initializing Backup Service...");
-    let backup_svc = Arc::new(backup::BackupService::new(db_client.pool.clone(), "Backup"));
-
     let storage = Arc::new(crate::logic::storage_engine::StorageEngine::new().await);
     
+    println!("Initializing Backup Service...");
+    let backup_svc = Arc::new(backup::BackupService::new(db_client.pool.clone(), "Backup", Some(storage.clone())));
+
     let state = AppState {
         db: db_client,
         repos,
@@ -117,35 +118,108 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/",
             get(|| async { "High-Accuracy OCR Backend (Rust/Axum) is running!" }),
         )
+        // ── Dashboard Stats ────────────────────────────────────────────────────
+        .route(
+            "/api/dashboard/:schoolId/stats",
+            get(routes::dashboard::get_stats),
+        )
+        .route(
+            "/api/dashboard/:schoolId/leaves/proxy-suggestions",
+            get(routes::leave::get_proxy_suggestions),
+        )
         // ── Super Admin API ────────────────────────────────────────────────────
         .nest(
             "/api/admin",
             Router::new()
                 // Auth
                 .route("/login", post(crate::super_admin::routes::admin_login))
+                // Dashboard Stats (New Phase 14)
+                .route("/stats", get(crate::super_admin::routes::get_admin_dashboard_stats))
+                .route("/stats/advanced", get(crate::super_admin::routes::get_admin_stats_advanced))
+                // Churn Radar
+                .route("/churn-radar", get(crate::super_admin::routes::get_churn_radar))
                 // Promos
-                .route("/promos", get(crate::super_admin::routes::list_promo_codes).post(crate::super_admin::routes::create_promo_code))
-                .route("/promos/:promoId/usage", get(crate::super_admin::routes::get_promo_usage))
+                .route(
+                    "/promos",
+                    get(crate::super_admin::routes::list_promo_codes)
+                        .post(crate::super_admin::routes::create_promo_code),
+                )
+                .route(
+                    "/promos/:promoId/usage",
+                    get(crate::super_admin::routes::get_promo_usage),
+                )
                 // Schools CRUD
-                .route("/schools", get(crate::super_admin::routes::list_all_schools))
-                .route("/schools/export/all", get(crate::super_admin::routes::export_all_schools))
-                .route("/schools/:schoolId", get(crate::super_admin::routes::get_school))
-                .route("/schools/:schoolId", put(crate::super_admin::routes::update_school))
-                .route("/schools/:schoolId", delete(crate::super_admin::routes::delete_school))
+                .route(
+                    "/schools",
+                    get(crate::super_admin::routes::list_all_schools),
+                )
+                .route(
+                    "/schools/export/all",
+                    get(crate::super_admin::routes::export_all_schools),
+                )
+                .route(
+                    "/schools/:schoolId",
+                    get(crate::super_admin::routes::get_school),
+                )
+                .route(
+                    "/schools/:schoolId",
+                    put(crate::super_admin::routes::update_school),
+                )
+                .route(
+                    "/schools/:schoolId",
+                    delete(crate::super_admin::routes::delete_school),
+                )
                 // Operations per school
-                .route("/schools/:schoolId/status", axum::routing::patch(crate::super_admin::routes::set_school_status))
-                .route("/schools/:schoolId/password", axum::routing::patch(crate::super_admin::routes::change_school_password))
-                .route("/schools/:schoolId/session", axum::routing::patch(crate::super_admin::routes::set_session_duration))
-                .route("/schools/:schoolId/sessions", delete(crate::super_admin::routes::expire_school_sessions))
-                .route("/schools/:schoolId/notify", post(crate::super_admin::routes::send_notification))
-                .route("/schools/:schoolId/notify", delete(crate::super_admin::routes::clear_notification))
-                .route("/schools/:schoolId/apply-promo", post(crate::super_admin::routes::apply_promo_to_school))
+                .route(
+                    "/schools/:schoolId/status",
+                    axum::routing::patch(crate::super_admin::routes::set_school_status),
+                )
+                .route(
+                    "/schools/:schoolId/password",
+                    axum::routing::patch(crate::super_admin::routes::change_school_password),
+                )
+                .route(
+                    "/schools/:schoolId/session",
+                    axum::routing::patch(crate::super_admin::routes::set_session_duration),
+                )
+                .route(
+                    "/schools/:schoolId/sessions",
+                    delete(crate::super_admin::routes::expire_school_sessions),
+                )
+                .route(
+                    "/schools/:schoolId/notify",
+                    post(crate::super_admin::routes::send_notification),
+                )
+                .route(
+                    "/schools/:schoolId/notify",
+                    delete(crate::super_admin::routes::clear_notification),
+                )
+                .route(
+                    "/schools/:schoolId/apply-promo",
+                    post(crate::super_admin::routes::apply_promo_to_school),
+                )
+                .route(
+                    "/schools/:schoolId/ledger",
+                    get(crate::super_admin::routes::get_wallet_ledger),
+                )
                 // Backup / Restore
-                .route("/schools/:schoolId/export", get(crate::super_admin::routes::export_school))
-                .route("/schools/:schoolId/import", post(crate::super_admin::routes::import_school))
+                .route(
+                    "/schools/:schoolId/export",
+                    get(crate::super_admin::routes::export_school),
+                )
+                .route(
+                    "/schools/:schoolId/import",
+                    post(crate::super_admin::routes::import_school),
+                )
                 // Support
-                .route("/support", get(crate::super_admin::routes::list_support_requests))
-                .route("/support/:id/resolve", axum::routing::patch(crate::super_admin::routes::resolve_support_request))
+                .route(
+                    "/support",
+                    get(crate::super_admin::routes::list_support_requests),
+                )
+                .route(
+                    "/support/:id/resolve",
+                    axum::routing::patch(crate::super_admin::routes::resolve_support_request),
+                )
                 // Global Backup
                 .route("/backup", post(crate::super_admin::routes::manual_backup)),
         )
@@ -162,7 +236,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // ── School notification polling (called by school frontend) ────────────
         .route(
             "/api/school/:schoolId/notification",
-            get(crate::super_admin::routes::get_school_notification).delete(crate::super_admin::routes::clear_school_notification),
+            get(crate::super_admin::routes::get_school_notification)
+                .delete(crate::super_admin::routes::clear_school_notification),
         );
 
     // Start background workers
@@ -171,9 +246,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = app
         // Auth Routes
         .route("/api/auth/login", post(routes::auth::login_handler))
+        .route("/api/search/global", get(routes::search::global_search))
         // Mobile Auth Routes
         .merge(routes::mobile::router())
-
         .nest(
             "/api/complains",
             Router::new()
@@ -223,7 +298,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/v1/public",
             Router::new()
                 .route("/students", get(routes::public_api::get_students_public))
-                .route("/attendance/:date", get(routes::public_api::get_attendance_public))
+                .route(
+                    "/attendance/:date",
+                    get(routes::public_api::get_attendance_public),
+                )
                 .layer(axum::middleware::from_fn_with_state(
                     state.clone(),
                     routes::api_keys::api_key_auth,
@@ -232,7 +310,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest(
             "/api/auth",
             Router::new()
-                .route("/school/support", post(crate::super_admin::routes::create_support_request))
+                .route(
+                    "/school/support",
+                    post(crate::super_admin::routes::create_support_request),
+                )
                 .route("/school/login", post(routes::auth::login_handler))
                 .route(
                     "/school/verify-token",
@@ -325,10 +406,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "/:schoolId/:employeeId/bonus",
                     post(routes::emppay::add_bonus),
                 )
-                .route(
-                    "/:schoolId/:employeeId/aid",
-                    post(routes::emppay::add_aid),
-                ),
+                .route("/:schoolId/:employeeId/aid", post(routes::emppay::add_aid))
+                .route("/:schoolId/:employeeId/close-month", post(routes::emppay::auto_close_month))
+                .route("/:schoolId/employees/:employeeId/salary", post(routes::emppay::set_base_salary)),
         )
         // Bulk import for spaces
         .route(
@@ -398,7 +478,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/subjects/:schoolId",
             get(routes::subjects::list_subjects),
         )
-        .route("/api/exams/:schoolId", post(routes::exam::create_exam))
+        .route(
+            "/api/exams/:schoolId",
+            post(routes::exam::create_exam).get(routes::exam::list_exams),
+        )
         .route("/api/topics", post(routes::topic::create_topic))
         // Operations Routes
         // Operations Routes
@@ -463,6 +546,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     get(routes::fees::get_student_fee),
                 )
                 .route(
+                    "/:schoolId/student/:studentId/ai-reminder",
+                    get(routes::fees::generate_fee_reminder),
+                )
+                .route(
                     "/:schoolId/student/:studentId/add",
                     post(routes::fees::add_fee_to_student_route),
                 )
@@ -513,13 +600,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/students/:schoolId/students/:studentId/profile",
             get(routes::fees::get_student_profile),
-        )
-        .nest(
-            "/api/payroll",
-            Router::new().route(
-                "/:schoolId/employees/:employeeId",
-                post(routes::emppay::set_base_salary),
-            ),
         )
         // Communication & Resource Routes (Flattened)
         .route(
@@ -574,14 +654,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest(
             "/api/leave",
             Router::new()
-                .route("/:schoolId", post(routes::leave::create_leave).get(routes::leave::list_leaves))
-                .route("/:schoolId/:leaveId/approve", post(routes::leave::approve_leave))
-                .route("/:schoolId/:leaveId/reject", post(routes::leave::reject_leave))
-                .route("/:schoolId/:leaveId/extend", post(routes::leave::extend_leave))
-                .route("/:schoolId/:leaveId/reduce", post(routes::leave::reduce_leave))
-                .route("/:schoolId/:leaveId/pdf", get(routes::leave::download_leave_pdf)),
+                .route(
+                    "/:schoolId",
+                    post(routes::leave::create_leave).get(routes::leave::list_leaves),
+                )
+                .route(
+                    "/:schoolId/:leaveId/approve",
+                    post(routes::leave::approve_leave),
+                )
+                .route(
+                    "/:schoolId/:leaveId/reject",
+                    post(routes::leave::reject_leave),
+                )
+                .route(
+                    "/:schoolId/:leaveId/extend",
+                    post(routes::leave::extend_leave),
+                )
+                .route(
+                    "/:schoolId/:leaveId/reduce",
+                    post(routes::leave::reduce_leave),
+                )
+                .route(
+                    "/:schoolId/:leaveId/pdf",
+                    get(routes::leave::download_leave_pdf),
+                ),
         )
-
         .route(
             "/api/school/:schoolId",
             get(routes::school::get_school_details)
@@ -620,6 +717,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/ocr-routes",
             Router::new().route("/extract", post(routes::ocr::extract_text)),
         )
+        .layer(axum::middleware::from_fn_with_state(state.clone(), middleware::rls::rls_middleware))
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024)) // 50MB limit for uploads
         .layer(TraceLayer::new_for_http())
         .layer(cors)

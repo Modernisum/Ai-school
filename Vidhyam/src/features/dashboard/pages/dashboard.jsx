@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../../../components/ui/Sidebar";
 import SessionHandler from "../../auth/components/SessionHandler";
 import SchoolNotifier from "../../../components/ui/SchoolNotifier";
+import SpotlightSearch from "../../../components/ui/SpotlightSearch";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -10,6 +11,7 @@ export default function DashboardLayout() {
   return (
     <SessionHandler>
       <SchoolNotifier />
+      <SpotlightSearch />
       <div className="flex h-screen bg-slate-900 font-sans overflow-hidden selection:bg-indigo-500/30">
         <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1 flex flex-col h-full relative overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">

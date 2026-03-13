@@ -8,6 +8,16 @@ import {
   Layers, Box, BarChart3, PieChart, Activity, RefreshCw, Download, Upload
 } from 'lucide-react';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
+import {
+  useGetMaterialsQuery,
+  useAddMaterialMutation,
+  useEditMaterialMutation,
+  useDeleteMaterialMutation,
+  useBuyMaterialMutation,
+  useSellMaterialMutation,
+  useBulkImportMaterialsMutation,
+  useGetMaterialHistoryQuery,
+} from '../api/academicApi';
 
 // --- API Configuration ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -253,30 +263,10 @@ const MaterialCard = ({ material, onEdit, onDelete, onBuy, onSell, onViewHistory
 
 // History Modal Component
 const HistoryModal = ({ isOpen, onClose, materialId, materialName, schoolId }) => {
-  const [history, setHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (isOpen && materialId) {
-      loadHistory();
-    }
-  }, [isOpen, materialId]);
-
-  const loadHistory = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}/${materialId}/history`);
-      if (result.success) {
-        setHistory(result.data || []);
-      }
-    } catch (error) {
-      setError(`Failed to load history: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: history = [], isLoading, error } = useGetMaterialHistoryQuery(
+    { schoolId, materialId },
+    { skip: !isOpen || !materialId || !schoolId }
+  );
 
   const getActionColor = (action) => {
     switch (action) {
@@ -385,10 +375,19 @@ export default function MaterialManagementPage() {
 
   // State Management
   const [schoolId, setSchoolId] = useState("");
-  const [materials, setMaterials] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [apiSuccess, setApiSuccess] = useState(null);
+
+  // RTK Query Hooks
+  const { data: materials = [], isLoading, refetch: loadAllMaterials } = useGetMaterialsQuery(schoolId, {
+    skip: !schoolId,
+  });
+  const [addMaterialApi] = useAddMaterialMutation();
+  const [editMaterialApi] = useEditMaterialMutation();
+  const [deleteMaterialApi] = useDeleteMaterialMutation();
+  const [buyMaterialApi] = useBuyMaterialMutation();
+  const [sellMaterialApi] = useSellMaterialMutation();
+  const [bulkImportMaterialsApi] = useBulkImportMaterialsMutation();
 
   // Modal States
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(new URLSearchParams(location.search).get('add') === '1');
@@ -444,13 +443,6 @@ export default function MaterialManagementPage() {
     initializeSchoolId();
   }, []);
 
-  // Load materials when school ID is available
-  useEffect(() => {
-    if (schoolId) {
-      loadAllMaterials();
-    }
-  }, [schoolId]);
-
   // Auto dismiss messages
   useEffect(() => {
     if (apiSuccess) {
@@ -489,26 +481,6 @@ export default function MaterialManagementPage() {
   const outOfStockCount = materials.filter(m => m.extraUnit <= 0).length;
 
   // API Functions
-  const loadAllMaterials = async () => {
-    if (!schoolId) return;
-
-    setIsLoading(true);
-    setApiError(null);
-
-    try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}`);
-      if (result.success) {
-        setMaterials(result.data || []);
-        setApiSuccess(`Loaded ${result.data?.length || 0} materials successfully`);
-      }
-    } catch (error) {
-      setApiError(`Failed to load materials: ${error.message}`);
-      setMaterials([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const addMaterial = async () => {
     if (!newMaterial.materialName.trim() || !newMaterial.quantity || !newMaterial.unitPrice) {
       setApiError('All fields are required');
@@ -517,24 +489,20 @@ export default function MaterialManagementPage() {
 
     setIsAddingMaterial(true);
     try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await addMaterialApi({
+        schoolId, 
+        body: {
           materialName: newMaterial.materialName.trim(),
           quantity: parseInt(newMaterial.quantity),
           unitPrice: parseFloat(newMaterial.unitPrice)
-        })
-      });
+        }
+      }).unwrap();
 
-      if (result.success) {
-        setApiSuccess(`Material "${newMaterial.materialName}" added successfully`);
-        setNewMaterial({ materialName: '', quantity: '', unitPrice: '' });
-        setShowAddMaterialModal(false);
-        loadAllMaterials();
-      }
+      setApiSuccess(`Material "${newMaterial.materialName}" added successfully`);
+      setNewMaterial({ materialName: '', quantity: '', unitPrice: '' });
+      setShowAddMaterialModal(false);
     } catch (error) {
-      setApiError(`Failed to add material: ${error.message}`);
+      setApiError(`Failed to add material: ${error.data?.message || error.message}`);
     } finally {
       setIsAddingMaterial(false);
     }
@@ -548,22 +516,19 @@ export default function MaterialManagementPage() {
 
     setIsBuying(true);
     try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}/${transactionData.materialId}/buy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await buyMaterialApi({
+        schoolId, 
+        materialId: transactionData.materialId, 
+        body: {
           quantity: parseInt(transactionData.quantity),
           unitPrice: parseFloat(transactionData.unitPrice)
-        })
-      });
+        }
+      }).unwrap();
 
-      if (result.success) {
-        setApiSuccess(`Successfully purchased ${transactionData.quantity} units of ${transactionData.materialName}`);
-        setShowBuyModal(false);
-        loadAllMaterials();
-      }
+      setApiSuccess(`Successfully purchased ${transactionData.quantity} units of ${transactionData.materialName}`);
+      setShowBuyModal(false);
     } catch (error) {
-      setApiError(`Failed to purchase material: ${error.message}`);
+      setApiError(`Failed to purchase material: ${error.data?.message || error.message}`);
     } finally {
       setIsBuying(false);
     }
@@ -577,21 +542,18 @@ export default function MaterialManagementPage() {
 
     setIsSelling(true);
     try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}/${transactionData.materialId}/sell`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await sellMaterialApi({
+        schoolId, 
+        materialId: transactionData.materialId, 
+        body: {
           quantity: parseInt(transactionData.quantity)
-        })
-      });
+        }
+      }).unwrap();
 
-      if (result.success) {
-        setApiSuccess(`Successfully sold ${transactionData.quantity} units of ${transactionData.materialName}`);
-        setShowSellModal(false);
-        loadAllMaterials();
-      }
+      setApiSuccess(`Successfully sold ${transactionData.quantity} units of ${transactionData.materialName}`);
+      setShowSellModal(false);
     } catch (error) {
-      setApiError(`Failed to sell material: ${error.message}`);
+      setApiError(`Failed to sell material: ${error.data?.message || error.message}`);
     } finally {
       setIsSelling(false);
     }
@@ -599,18 +561,10 @@ export default function MaterialManagementPage() {
 
   const editMaterial = async (materialId, updates) => {
     try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}/${materialId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-
-      if (result.success) {
-        setApiSuccess('Material updated successfully');
-        loadAllMaterials();
-      }
+      await editMaterialApi({ schoolId, materialId, body: updates }).unwrap();
+      setApiSuccess('Material updated successfully');
     } catch (error) {
-      setApiError(`Failed to update material: ${error.message}`);
+      setApiError(`Failed to update material: ${error.data?.message || error.message}`);
     }
   };
 
@@ -620,16 +574,10 @@ export default function MaterialManagementPage() {
     }
 
     try {
-      const result = await callApiWithBackoff(`${API_BASE_URL}/materials/${schoolId}/${materialId}`, {
-        method: 'DELETE'
-      });
-
-      if (result.success) {
-        setApiSuccess('Material deleted successfully');
-        loadAllMaterials();
-      }
+      await deleteMaterialApi({ schoolId, materialId }).unwrap();
+      setApiSuccess('Material deleted successfully');
     } catch (error) {
-      setApiError(`Failed to delete material: ${error.message}`);
+      setApiError(`Failed to delete material: ${error.data?.message || error.message}`);
     }
   };
 
@@ -660,14 +608,12 @@ export default function MaterialManagementPage() {
   };
 
   const handleBulkMaterialsImport = async (rows) => {
-    const res = await fetch(`${API_BASE_URL}/materials/${schoolId}/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ materials: rows }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message || 'Bulk import failed');
-    loadAllMaterials();
+    try {
+      await bulkImportMaterialsApi({ schoolId, materials: rows }).unwrap();
+      setApiSuccess('Bulk materials imported successfully');
+    } catch (error) {
+      throw new Error(error.data?.message || error.message || 'Bulk import failed');
+    }
   };
 
   // Navigation

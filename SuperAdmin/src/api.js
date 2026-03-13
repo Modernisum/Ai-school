@@ -103,5 +103,15 @@ export const listSupportRequests = () => authFetch("/support");
 export const resolveSupportRequest = (id) =>
     authFetch(`/support/${id}/resolve`, { method: "PATCH" });
 
+export const processRefund = (schoolId, body) =>
+    authFetch(`/schools/${schoolId}/refund`, {
+        method: "POST",
+        body: JSON.stringify(body),
+    });
+
+export const getWalletLedger = (schoolId) =>
+    authFetch(`/schools/${schoolId}/ledger`);
+
+export const getChurnRadar = () => authFetch("/churn-radar");
 export const manualBackup = () => authFetch("/backup", { method: "POST" });
 

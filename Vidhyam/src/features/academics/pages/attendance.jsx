@@ -6,10 +6,14 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
+import {
+  useGetHolidaysQuery,
+  useCreateHolidayMutation,
+  useDeleteHolidayMutation,
+} from '../api/academicApi';
+
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
-// Holidays live under attendance routes
-const HOLIDAYS_URL = (schoolId) => `${API}/operations/attendance/${schoolId}/holidays`;
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -32,7 +36,14 @@ function dateRange(from, to) {
 export default function AnnouncementsPage() {
   const location = useLocation();
   const schoolId = getSchoolId();
-  const [holidays, setHolidays] = useState([]);
+
+  // RTK Query Hooks for Holidays
+  const { data: holidays = [], isLoading: isHolidaysLoading, refetch: refetchHolidays } = useGetHolidaysQuery(schoolId, {
+    skip: !schoolId,
+  });
+  const [createHolidayApi] = useCreateHolidayMutation();
+  const [deleteHolidayApi] = useDeleteHolidayMutation();
+
   const [classes, setClasses] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,14 +85,10 @@ export default function AnnouncementsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [hRes, cRes, eRes] = await Promise.allSettled([
-        fetch(HOLIDAYS_URL(schoolId)),
+      const [cRes, eRes] = await Promise.allSettled([
         fetch(`${API}/class/${schoolId}/classes`),
         fetch(`${API}/employees/${schoolId}/employees`),
       ]);
-      if (hRes.status === 'fulfilled' && hRes.value.ok) {
-        const d = await hRes.value.json(); setHolidays(d.data || []);
-      }
       if (cRes.status === 'fulfilled' && cRes.value.ok) {
         const d = await cRes.value.json(); setClasses((d.data || d.classes || []).map(c => c.name || c.className || c));
       }
@@ -97,7 +104,6 @@ export default function AnnouncementsPage() {
     if (!form.title.trim()) return showToast('error', 'Title is required');
     setSaving(true);
     try {
-      const token = localStorage.getItem('accessToken');
       const payload = {
         title: form.title,
         description: form.description,
@@ -107,27 +113,26 @@ export default function AnnouncementsPage() {
         exemptEmployees: form.exemptEmployees,
         exemptStudents: form.exemptStudents,
       };
-      const res = await fetch(`${API}/school-holidays/${schoolId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to create');
+      
+      const res = await createHolidayApi({ schoolId, body: payload }).unwrap();
+      
       showToast('success', 'Holiday created!');
       setForm(defaultForm);
       setShowForm(false);
-      fetchData();
-    } catch (e) { showToast('error', e.message); } finally { setSaving(false); }
+    } catch (e) { 
+      showToast('error', e.data?.message || e.message || 'Failed to create holiday'); 
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const deleteHoliday = async (id) => {
-    const token = localStorage.getItem('accessToken');
-    await fetch(`${API}/school-holidays/${schoolId}/${id}`, {
-      method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    setHolidays(h => h.filter(x => x.id !== id));
-    showToast('success', 'Holiday removed');
+    try {
+      await deleteHolidayApi({ schoolId, holidayId: id }).unwrap();
+      showToast('success', 'Holiday removed');
+    } catch(e) {
+      showToast('error', e.data?.message || e.message || 'Failed to remove holiday');
+    }
   };
 
   // ── Calendar: compute holiday dates ──────────────────────────────────────
@@ -191,7 +196,7 @@ export default function AnnouncementsPage() {
             <span><strong>Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
           </div>
 
-          {loading ? (
+          {loading || isHolidaysLoading ? (
             <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-amber-400" /></div>
           ) : holidays.length === 0 ? (
             <div className="glass-card p-8 text-center">

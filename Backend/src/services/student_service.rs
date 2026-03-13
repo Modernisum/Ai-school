@@ -32,8 +32,8 @@ impl StudentService for PostgresStudentService {
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         // Validate required fields
         let class_name = data["className"].as_str().ok_or("Missing className")?;
-        
-        // Name is explicitly optional because the Admin frontend creates a "shell" 
+
+        // Name is explicitly optional because the Admin frontend creates a "shell"
         // student immediately after class selection to generate an ID ahead of time.
         // It patches the name later via update_student.
         let _name = data["name"].as_str().unwrap_or("");
@@ -71,8 +71,11 @@ impl StudentService for PostgresStudentService {
 
         // 4. Invalidate cache (student list changed)
         // Cache removed since generic Redis methods exist in Repositories
-        
-        tracing::info!("Cache invalidated: students:list:{} (new student created)", school_id);
+
+        tracing::info!(
+            "Cache invalidated: students:list:{} (new student created)",
+            school_id
+        );
 
         Ok(result)
     }
@@ -88,7 +91,9 @@ impl StudentService for PostgresStudentService {
 
         for (index, mut student_data) in data.into_iter().enumerate() {
             // Assume frontend sends "rowNumber" but fallback to index + 2 (Excel header offset)
-            let row_number = student_data["rowNumber"].as_u64().unwrap_or((index + 2) as u64);
+            let row_number = student_data["rowNumber"]
+                .as_u64()
+                .unwrap_or((index + 2) as u64);
 
             // Validate required fields
             let class_name = match student_data["className"].as_str() {
@@ -108,9 +113,14 @@ impl StudentService for PostgresStudentService {
                     continue;
                 }
             };
-            
+
             // Generate sequence IDs
-            let roll_number = match self.repos.student.get_next_roll_number(school_id, &class_name).await {
+            let roll_number = match self
+                .repos
+                .student
+                .get_next_roll_number(school_id, &class_name)
+                .await
+            {
                 Ok(r) => r,
                 Err(e) => {
                     failed += 1;
@@ -119,7 +129,13 @@ impl StudentService for PostgresStudentService {
                 }
             };
 
-            let section = if roll_number <= 60 { "A" } else if roll_number <= 120 { "B" } else { "C" };
+            let section = if roll_number <= 60 {
+                "A"
+            } else if roll_number <= 120 {
+                "B"
+            } else {
+                "C"
+            };
 
             let student_id = match self.repos.student.generate_student_id(school_id).await {
                 Ok(id) => id,
@@ -136,7 +152,12 @@ impl StudentService for PostgresStudentService {
             student_data["status"] = json!("active");
 
             // Attempt Database Insert
-            match self.repos.student.add_student(school_id, student_data).await {
+            match self
+                .repos
+                .student
+                .add_student(school_id, student_data)
+                .await
+            {
                 Ok(_) => successful += 1,
                 Err(e) => {
                     failed += 1;
@@ -145,7 +166,12 @@ impl StudentService for PostgresStudentService {
             }
         }
 
-        tracing::info!("Bulk student import for school {}: {} successful, {} failed", school_id, successful, failed);
+        tracing::info!(
+            "Bulk student import for school {}: {} successful, {} failed",
+            school_id,
+            successful,
+            failed
+        );
 
         Ok(json!({
             "total": successful + failed,
@@ -161,12 +187,12 @@ impl StudentService for PostgresStudentService {
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
         // Cache key for this school's students list
         let cache_key = format!("students:list:{}", school_id);
-        
+
         tracing::debug!("Cache MISS for {}", cache_key);
-        
+
         // Cache miss - fetch from database
         let students = self.repos.student.get_students(school_id).await?;
-        
+
         Ok(students)
     }
 
@@ -223,7 +249,10 @@ impl StudentService for PostgresStudentService {
 
         // 3. Invalidate cache
         // Cache removed since generic Redis methods aren't in Repositories
-        tracing::info!("Cache invalidated: students:list:{} (student updated)", school_id);
+        tracing::info!(
+            "Cache invalidated: students:list:{} (student updated)",
+            school_id
+        );
 
         Ok(())
     }
@@ -250,11 +279,14 @@ impl StudentService for PostgresStudentService {
                 self.resequence_roll_numbers(school_id, class_name).await?;
             }
         }
-        
+
         // Invalidate cache
         // Cache removed since generic Redis methods aren't in Repositories
-        tracing::info!("Cache invalidated: students:list:{} (student deleted)", school_id);
-        
+        tracing::info!(
+            "Cache invalidated: students:list:{} (student deleted)",
+            school_id
+        );
+
         Ok(())
     }
 

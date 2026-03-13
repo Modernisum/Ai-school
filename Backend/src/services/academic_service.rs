@@ -112,8 +112,9 @@ impl AcademicService for PostgresAcademicService {
     async fn list_exams(
         &self,
         school_id: &str,
+        student_id: Option<&str>,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.academic.get_exams(school_id).await
+        self.repos.academic.get_exams(school_id, student_id).await
     }
 
     async fn create_topic(&self, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {

@@ -1,9 +1,11 @@
-use serde_json::{json, Value};
-use sqlx::{PgPool, Row};
+use sqlx::{Row, Connection};
 use std::error::Error;
+use futures_util::TryStreamExt;
+use serde_json::{json, Value};
+// use std::str::FromStr;
 
 pub struct AdminService {
-    pub pool: PgPool,
+    pub db: std::sync::Arc<crate::db::DbClient>,
 }
 
 impl AdminService {
@@ -14,9 +16,10 @@ impl AdminService {
         username: &str,
         password: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
             .bind(username)
-            .fetch_optional(&self.pool)
+            .fetch_optional(&mut *conn)
             .await?;
 
         if let Some(r) = row {
@@ -26,7 +29,7 @@ impl AdminService {
                     .unwrap_or_else(|_| "superadminsecret2024".to_string());
                 let ts = chrono::Utc::now().timestamp();
                 let raw = format!("{}:{}:{}", username, ts, secret);
-                use base64::{Engine as _, engine::general_purpose};
+                use base64::{engine::general_purpose, Engine as _};
                 let token = general_purpose::STANDARD.encode(raw.as_bytes());
                 return Ok(token);
             }
@@ -37,8 +40,10 @@ impl AdminService {
     pub fn verify_admin_token(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let secret = std::env::var("SUPER_ADMIN_SECRET")
             .unwrap_or_else(|_| "superadminsecret2024".to_string());
-        use base64::{Engine as _, engine::general_purpose};
-        let decoded = general_purpose::STANDARD.decode(token).map_err(|_| "Invalid token")?;
+        use base64::{engine::general_purpose, Engine as _};
+        let decoded = general_purpose::STANDARD
+            .decode(token)
+            .map_err(|_| "Invalid token")?;
         let s = String::from_utf8(decoded).map_err(|_| "Invalid token encoding")?;
         let parts: Vec<&str> = s.splitn(3, ':').collect();
         if parts.len() != 3 || parts[2] != secret {
@@ -55,18 +60,20 @@ impl AdminService {
     // ───── School List ─────
 
     pub async fn list_all_schools(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let rows = sqlx::query(
             r#"
             SELECT
                 s.school_id, s.school_name, s.status, s.is_blocked,
                 s.session_duration_hours, s.notification, s.created_at,
                 s.updated_at, s.data, s.per_student_rate, s.wallet_balance,
-                s.billing_status, s.last_billing_date
+                s.billing_status, s.last_billing_date,
+                (SELECT COUNT(*) FROM students st WHERE st.school_id = s.school_id AND st.status = 'active') as active_student_count
             FROM schools s
             ORDER BY s.created_at DESC
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
         let schools: Vec<Value> = rows
@@ -87,6 +94,7 @@ impl AdminService {
                     "walletBalance":        r.try_get::<bigdecimal::BigDecimal, _>("wallet_balance").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
                     "billingStatus":        r.try_get::<String, _>("billing_status").unwrap_or_else(|_| "active".to_string()),
                     "lastBillingDate":      r.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("last_billing_date").ok().flatten().map(|t| t.to_rfc3339()),
+                    "activeStudentCount":   r.try_get::<i64, _>("active_student_count").unwrap_or(0),
                     "data":                 r.try_get::<Value, _>("data").unwrap_or(json!({})),
                 })
             })
@@ -99,12 +107,18 @@ impl AdminService {
         &self,
         school_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let row = sqlx::query(
-            "SELECT * FROM schools WHERE school_id = $1"
+            r#"
+            SELECT s.*, 
+                (SELECT COUNT(*) FROM students st WHERE st.school_id = s.school_id AND st.status = 'active') as active_student_count
+            FROM schools s 
+            WHERE s.school_id = $1
+            "#
         )
-        .bind(school_id)
-        .fetch_optional(&self.pool)
-        .await?;
+            .bind(school_id)
+            .fetch_optional(&mut *conn)
+            .await?;
 
         match row {
             None => Err(format!("School {} not found", school_id).into()),
@@ -123,6 +137,7 @@ impl AdminService {
                 "walletBalance":        r.try_get::<bigdecimal::BigDecimal, _>("wallet_balance").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
                 "billingStatus":        r.try_get::<String, _>("billing_status").unwrap_or_else(|_| "active".to_string()),
                 "lastBillingDate":      r.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("last_billing_date").ok().flatten().map(|t| t.to_rfc3339()),
+                "activeStudentCount":   r.try_get::<i64, _>("active_student_count").unwrap_or(0),
                 "activePromoId":        r.try_get::<Option<i32>, _>("active_promo_id").ok().flatten(),
                 "promoExpiresAt":       r.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("promo_expires_at").ok().flatten().map(|t| t.to_rfc3339()),
                 "data":                 r.try_get::<Value, _>("data").unwrap_or(json!({})),
@@ -135,70 +150,201 @@ impl AdminService {
     pub async fn update_school(
         &self,
         school_id: &str,
-        updates: Value,
+        data: serde_json::Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        sqlx::query(
-            "UPDATE schools SET data = data || $1, updated_at = NOW() WHERE school_id = $2",
-        )
-        .bind(&updates)
-        .bind(school_id)
-        .execute(&self.pool)
-        .await?;
-
-        if let Some(name) = updates["schoolName"].as_str() {
-            sqlx::query(
-                "UPDATE schools SET school_name = $1 WHERE school_id = $2",
-            )
-            .bind(name)
-            .bind(school_id)
-            .execute(&self.pool)
-            .await?;
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        
+        if let Some(name) = data["schoolName"].as_str() {
+            sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
+                .bind(name)
+                .bind(school_id)
+                .execute(&mut *conn)
+                .await?;
         }
 
-        if let Some(rate) = updates["perStudentRate"].as_i64() {
-            let apply_to_all = updates["applyToAll"].as_bool().unwrap_or(false);
-            if apply_to_all {
-                sqlx::query(
-                    "UPDATE schools SET per_student_rate = $1"
-                )
-                .bind(rate as i32)
-                .execute(&self.pool)
-                .await?;
-            } else {
-                sqlx::query(
-                    "UPDATE schools SET per_student_rate = $1 WHERE school_id = $2",
-                )
-                .bind(rate as i32)
-                .bind(school_id)
-                .execute(&self.pool)
-                .await?;
+        if let Some(rate_val) = data["perStudentRate"].as_str() {
+            if let Ok(rate) = rate_val.parse::<bigdecimal::BigDecimal>() {
+                let apply_to_all = data["applyToAll"].as_bool().unwrap_or(false);
+                if apply_to_all {
+                    sqlx::query("UPDATE schools SET per_student_rate = $1")
+                        .bind(rate)
+                        .execute(&mut *conn)
+                        .await?;
+                } else {
+                    sqlx::query("UPDATE schools SET per_student_rate = $1 WHERE school_id = $2")
+                        .bind(rate)
+                        .bind(school_id)
+                        .execute(&mut *conn)
+                        .await?;
+                }
             }
         }
+        
+        if !data["data"].is_null() {
+            sqlx::query("UPDATE schools SET data = data || $1 WHERE school_id = $2")
+                .bind(&data["data"])
+                .bind(school_id)
+                .execute(&mut *conn)
+                .await?;
+        }
+
         Ok(())
     }
 
-    pub async fn delete_school(
+    pub async fn get_churn_radar(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let rows = sqlx::query(
+            r#"
+            SELECT 
+                s.school_id, 
+                s.school_name, 
+                cp.churn_probability, 
+                cp.risk_factors,
+                cp.last_calculated
+            FROM school_churn_predictions cp
+            JOIN schools s ON s.school_id = cp.school_id
+            WHERE s.status = 'active'
+            ORDER BY cp.churn_probability DESC
+            LIMIT 20
+            "#,
+        )
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let radar: Vec<Value> = rows
+            .iter()
+            .map(|r| {
+                json!({
+                    "schoolId": r.try_get::<String, _>("school_id").unwrap_or_default(),
+                    "schoolName": r.try_get::<String, _>("school_name").unwrap_or_default(),
+                    "probability": r.try_get::<i32, _>("churn_probability").unwrap_or(0),
+                    "factors": r.try_get::<Value, _>("risk_factors").unwrap_or(json!([])),
+                    "lastCalculated": r.try_get::<chrono::DateTime<chrono::Utc>, _>("last_calculated")
+                                       .ok().map(|t| t.to_rfc3339()),
+                })
+            })
+            .collect();
+
+        Ok(json!(radar))
+    }
+
+    pub async fn process_refund(
         &self,
         school_id: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        amount: bigdecimal::BigDecimal,
+        description: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let mut tx = conn.begin().await?;
+
+        // Update wallet balance
+        let row = sqlx::query(
+            "UPDATE schools SET wallet_balance = wallet_balance + $1 WHERE school_id = $2 RETURNING wallet_balance"
+        )
+        .bind(&amount)
+        .bind(school_id)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        let new_balance: bigdecimal::BigDecimal = row.get("wallet_balance");
+
+        // Record in ledger
+        sqlx::query(
+            "INSERT INTO billing_ledger (school_id, amount, transaction_type, description, balance_after)
+             VALUES ($1, $2, 'refund', $3, $4)"
+        )
+        .bind(school_id)
+        .bind(&amount)
+        .bind(description)
+        .bind(&new_balance)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(json!({
+            "success": true,
+            "newBalance": new_balance.to_string(),
+            "message": format!("Refund of ₹{} processed for school {}", amount, school_id)
+        }))
+    }
+
+    pub async fn get_wallet_ledger(
+        &self,
+        school_id: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let rows = sqlx::query(
+            "SELECT id, amount, transaction_type, description, balance_after, created_at
+             FROM billing_ledger WHERE school_id = $1 ORDER BY created_at DESC"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let ledger: Vec<Value> = rows.iter().map(|r| {
+            let amount: bigdecimal::BigDecimal = r.try_get("amount").unwrap_or_default();
+            let balance: bigdecimal::BigDecimal = r.try_get("balance_after").unwrap_or_default();
+            json!({
+                "id": r.try_get::<i32, _>("id").unwrap_or(0),
+                "amount": amount.to_string(),
+                "type": r.try_get::<String, _>("transaction_type").unwrap_or_default(),
+                "description": r.try_get::<String, _>("description").unwrap_or_default(),
+                "balanceAfter": balance.to_string(),
+                "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                               .ok().map(|t| t.to_rfc3339()),
+            })
+        }).collect();
+
+        Ok(json!(ledger))
+    }
+
+    pub async fn delete_school(&self, school_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let tables = [
-            "students", "employees", "classes", "subjects", "fees",
-            "student_fees", "fee_templates", "attendance", "spaces", "items",
-            "materials", "material_locations", "tokens", "auth_logs", "audit_logs",
-            "announcements", "events", "complains", "reminders", "document_box",
-            "tasks", "awards", "responsibilities", "salaries", "employee_salaries",
-            "employee_payments", "employee_responsibilities", "exams", "topics",
-            "chapters", "class_streams", "class_periods", "auth",
+            "students",
+            "employees",
+            "classes",
+            "subjects",
+            "fees",
+            "student_fees",
+            "fee_templates",
+            "attendance",
+            "spaces",
+            "items",
+            "materials",
+            "material_locations",
+            "tokens",
+            "auth_logs",
+            "audit_logs",
+            "announcements",
+            "events",
+            "complains",
+            "reminders",
+            "document_box",
+            "tasks",
+            "awards",
+            "responsibilities",
+            "salaries",
+            "employee_salaries",
+            "employee_payments",
+            "employee_responsibilities",
+            "exams",
+            "topics",
+            "chapters",
+            "class_streams",
+            "class_periods",
+            "auth",
         ];
         for table in &tables {
             let _ = sqlx::query(&format!("DELETE FROM {} WHERE school_id = $1", table))
                 .bind(school_id)
-                .execute(&self.pool)
+                .execute(&mut *conn)
                 .await;
         }
         sqlx::query("DELETE FROM schools WHERE school_id = $1")
             .bind(school_id)
-            .execute(&self.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
@@ -210,6 +356,7 @@ impl AdminService {
         school_id: &str,
         status: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let is_blocked = status == "blocked";
         sqlx::query(
             "UPDATE schools SET status=$1, is_blocked=$2, updated_at=NOW() WHERE school_id=$3",
@@ -217,7 +364,7 @@ impl AdminService {
         .bind(status)
         .bind(is_blocked)
         .bind(school_id)
-        .execute(&self.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -229,14 +376,13 @@ impl AdminService {
         school_id: &str,
         new_password: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let hashed = bcrypt::hash(new_password, 10)?;
-        sqlx::query(
-        "UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2",
-    )
-    .bind(&hashed)
-    .bind(school_id)
-    .execute(&self.pool)
-    .await?;
+        sqlx::query("UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2")
+            .bind(&hashed)
+            .bind(school_id)
+            .execute(&mut *conn)
+            .await?;
         Ok(())
     }
 
@@ -247,12 +393,13 @@ impl AdminService {
         school_id: &str,
         hours: i32,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         sqlx::query(
             "UPDATE schools SET session_duration_hours=$1, updated_at=NOW() WHERE school_id=$2",
         )
         .bind(hours)
         .bind(school_id)
-        .execute(&self.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
@@ -261,9 +408,10 @@ impl AdminService {
         &self,
         school_id: &str,
     ) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let result = sqlx::query("DELETE FROM tokens WHERE school_id = $1")
             .bind(school_id)
-            .execute(&self.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(result.rows_affected())
     }
@@ -272,12 +420,13 @@ impl AdminService {
         &self,
         school_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let rows = sqlx::query(
             "SELECT token_id, school_id, user_type, status, created_at, expires_at
              FROM tokens WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
         let now = chrono::Utc::now();
@@ -310,13 +459,12 @@ impl AdminService {
         school_id: &str,
         notification: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        sqlx::query(
-            "UPDATE schools SET notification=$1, updated_at=NOW() WHERE school_id=$2",
-        )
-        .bind(notification)
-        .bind(school_id)
-        .execute(&self.pool)
-        .await?;
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        sqlx::query("UPDATE schools SET notification=$1, updated_at=NOW() WHERE school_id=$2")
+            .bind(notification)
+            .bind(school_id)
+            .execute(&mut *conn)
+            .await?;
         Ok(())
     }
 
@@ -324,12 +472,11 @@ impl AdminService {
         &self,
         school_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        sqlx::query(
-            "UPDATE schools SET notification=NULL, updated_at=NOW() WHERE school_id=$1",
-        )
-        .bind(school_id)
-        .execute(&self.pool)
-        .await?;
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        sqlx::query("UPDATE schools SET notification=NULL, updated_at=NOW() WHERE school_id=$1")
+            .bind(school_id)
+            .execute(&mut *conn)
+            .await?;
         Ok(())
     }
 
@@ -337,12 +484,11 @@ impl AdminService {
         &self,
         school_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let row = sqlx::query(
-            "SELECT notification FROM schools WHERE school_id = $1",
-        )
-        .bind(school_id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let row = sqlx::query("SELECT notification FROM schools WHERE school_id = $1")
+            .bind(school_id)
+            .fetch_optional(&mut *conn)
+            .await?;
 
         match row {
             Some(r) => Ok(r
@@ -362,67 +508,140 @@ impl AdminService {
         contact_info: &str,
         message: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         sqlx::query(
-            "INSERT INTO support_requests (school_name, contact_info, message) VALUES ($1, $2, $3)"
+            "INSERT INTO support_requests (school_name, contact_info, message) VALUES ($1, $2, $3)",
         )
         .bind(school_name)
         .bind(contact_info)
         .bind(message)
-        .execute(&self.pool)
+        .execute(&mut *conn)
         .await?;
         Ok(())
     }
 
     pub async fn list_support_requests(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let rows = sqlx::query(
             "SELECT id, school_name, contact_info, message, status, created_at 
-             FROM support_requests ORDER BY created_at DESC"
+             FROM support_requests ORDER BY created_at DESC",
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
-        let requests: Vec<Value> = rows.iter().map(|r| {
-            json!({
-                "id": r.try_get::<i32, _>("id").unwrap_or(0),
-                "schoolName": r.try_get::<String, _>("school_name").unwrap_or_default(),
-                "contactInfo": r.try_get::<String, _>("contact_info").unwrap_or_default(),
-                "message": r.try_get::<String, _>("message").unwrap_or_default(),
-                "status": r.try_get::<String, _>("status").unwrap_or_default(),
-                "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-                               .ok().map(|t| t.to_rfc3339()),
+        let requests: Vec<Value> = rows
+            .iter()
+            .map(|r| {
+                json!({
+                    "id": r.try_get::<i32, _>("id").unwrap_or(0),
+                    "schoolName": r.try_get::<String, _>("school_name").unwrap_or_default(),
+                    "contactInfo": r.try_get::<String, _>("contact_info").unwrap_or_default(),
+                    "message": r.try_get::<String, _>("message").unwrap_or_default(),
+                    "status": r.try_get::<String, _>("status").unwrap_or_default(),
+                    "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                                   .ok().map(|t| t.to_rfc3339()),
+                })
             })
-        }).collect();
+            .collect();
 
         Ok(json!(requests))
     }
 
-    pub async fn resolve_support_request(&self, id: i32) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn resolve_support_request(
+        &self,
+        id: i32,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         sqlx::query("UPDATE support_requests SET status = 'resolved' WHERE id = $1")
             .bind(id)
-            .execute(&self.pool)
+            .execute(&mut *conn)
             .await?;
         Ok(())
     }
 
-    // ───── Export / Import ─────
+    // ───── Export / Import (Internal) ─────
 
-    async fn fetch_table_for_school(
+    async fn fetch_table_for_school(&self, table: &str, school_id: &str) -> Vec<Value> {
+        let mut conn = match self.db.acquire_super_admin_connection().await {
+            Ok(c) => c,
+            Err(_) => return Vec::new(),
+        };
+        let q = format!("SELECT row_to_json(t) as j FROM {} t WHERE school_id = $1", table);
+        let mut rows = sqlx::query(&q).bind(school_id).fetch(&mut *conn);
+        let mut results = Vec::new();
+        while let Ok(Some(row)) = TryStreamExt::try_next(&mut rows).await {
+            if let Ok(val) = row.try_get::<Value, _>(0) {
+               results.push(val);
+            }
+        }
+        results
+    }
+
+    pub async fn export_school_data_stream(
         &self,
-        table: &str,
         school_id: &str,
-    ) -> Vec<Value> {
-        let q = format!(
-            "SELECT row_to_json(t) as j FROM {} t WHERE school_id = $1",
-            table
-        );
-        sqlx::query(&q)
-            .bind(school_id)
-            .fetch_all(&self.pool)
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|r| r.try_get::<Value, _>("j").ok())
-            .collect()
+    ) -> Result<axum::body::Body, Box<dyn Error + Send + Sync>> {
+        use futures_util::StreamExt;
+        
+        let school = self.get_school_full(school_id).await?;
+        let school_id_owned = school_id.to_string();
+        let db = self.db.clone();
+
+        let stream = async_stream::stream! {
+            // yield prefix
+            yield Ok::<_, sqlx::Error>(format!(
+                "{{\"exportedAt\":\"{}\",\"exportVersion\":\"1.1\",\"school\":{},",
+                chrono::Utc::now().to_rfc3339(),
+                serde_json::to_string(&school).unwrap_or_else(|_| "null".to_string())
+            ));
+
+            let tables = [
+                "students", "employees", "classes", "subjects", "fees", 
+                "attendance", "announcements", "events", "complains", "spaces"
+            ];
+
+            for (i, table) in tables.iter().enumerate() {
+                yield Ok(format!("\"{}\":[", table));
+                
+                let mut conn = match db.acquire_super_admin_connection().await {
+                    Ok(c) => c,
+                    Err(e) => {
+                        yield Err(e);
+                        return;
+                    }
+                };
+
+                let q = format!("SELECT row_to_json(t) as j FROM {} t WHERE school_id = $1", table);
+                let mut rows = sqlx::query(&q).bind(&school_id_owned).fetch(&mut *conn);
+                
+                let mut first = true;
+                while let Some(row_result) = rows.next().await {
+                    match row_result {
+                        Ok(row) => {
+                            if let Ok(val) = row.try_get::<Value, _>(0) {
+                                if !first { yield Ok(",".to_string()); }
+                                yield Ok(serde_json::to_string(&val).unwrap_or_default());
+                                first = false;
+                            }
+                        },
+                        Err(e) => {
+                            yield Err(e);
+                            return;
+                        }
+                    }
+                }
+                
+                if i < tables.len() - 1 {
+                    yield Ok("],".to_string());
+                } else {
+                    yield Ok("]".to_string());
+                }
+            }
+            
+            yield Ok("}".to_string());
+        };
+
+        Ok(axum::body::Body::from_stream(stream))
     }
 
     pub async fn export_school_data(
@@ -448,11 +667,10 @@ impl AdminService {
         }))
     }
 
-    pub async fn export_all_schools(
-        &self,
-    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    pub async fn export_all_schools(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let ids: Vec<String> = sqlx::query("SELECT school_id FROM schools")
-            .fetch_all(&self.pool)
+            .fetch_all(&mut *conn)
             .await?
             .into_iter()
             .filter_map(|r| r.try_get::<String, _>("school_id").ok())
@@ -483,6 +701,7 @@ impl AdminService {
         }
         let mut imported = 0u64;
         if let Some(students) = data["students"].as_array() {
+            let mut conn = self.db.acquire_super_admin_connection().await?;
             for s in students {
                 let _ = sqlx::query(
                     "INSERT INTO students (student_id, school_id, data, created_at, updated_at)
@@ -492,7 +711,7 @@ impl AdminService {
                 .bind(s["student_id"].as_str().unwrap_or(""))
                 .bind(school_id)
                 .bind(s)
-                .execute(&self.pool)
+                .execute(&mut *conn)
                 .await;
                 imported += 1;
             }
@@ -515,6 +734,7 @@ impl AdminService {
         expires_at: Option<chrono::DateTime<chrono::Utc>>,
         max_uses: i32,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         sqlx::query(
             "INSERT INTO promo_codes (code, credit_amount, free_days, discount_percentage, expires_at, max_uses, current_uses, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, 0, NOW())"
@@ -525,7 +745,7 @@ impl AdminService {
         .bind(discount_percentage)
         .bind(expires_at)
         .bind(max_uses)
-        .execute(&self.pool)
+        .execute(&mut *conn)
         .await?;
 
         Ok(json!({
@@ -535,30 +755,35 @@ impl AdminService {
     }
 
     pub async fn list_promo_codes(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let rows = sqlx::query(
             "SELECT id, code, credit_amount, free_days, discount_percentage, max_uses, current_uses, expires_at, created_at 
              FROM promo_codes ORDER BY created_at DESC"
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *conn)
         .await?;
 
-        let promos: Vec<Value> = rows.iter().map(|r| {
-            let credit: bigdecimal::BigDecimal = r.try_get("credit_amount").unwrap_or_default();
-            let discount: bigdecimal::BigDecimal = r.try_get("discount_percentage").unwrap_or_default();
-            json!({
-                "id": r.try_get::<i32, _>("id").unwrap_or(0),
-                "code": r.try_get::<String, _>("code").unwrap_or_default(),
-                "creditAmount": credit.to_string(),
-                "discountPercentage": discount.to_string(),
-                "freeDays": r.try_get::<i32, _>("free_days").unwrap_or(0),
-                "maxUses": r.try_get::<i32, _>("max_uses").unwrap_or(1),
-                "currentUses": r.try_get::<i32, _>("current_uses").unwrap_or(0),
-                "expiresAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("expires_at")
-                               .ok().map(|t| t.to_rfc3339()),
-                "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-                               .ok().map(|t| t.to_rfc3339()),
+        let promos: Vec<Value> = rows
+            .iter()
+            .map(|r| {
+                let credit: bigdecimal::BigDecimal = r.try_get("credit_amount").unwrap_or_default();
+                let discount: bigdecimal::BigDecimal =
+                    r.try_get("discount_percentage").unwrap_or_default();
+                json!({
+                    "id": r.try_get::<i32, _>("id").unwrap_or(0),
+                    "code": r.try_get::<String, _>("code").unwrap_or_default(),
+                    "creditAmount": credit.to_string(),
+                    "discountPercentage": discount.to_string(),
+                    "freeDays": r.try_get::<i32, _>("free_days").unwrap_or(0),
+                    "maxUses": r.try_get::<i32, _>("max_uses").unwrap_or(1),
+                    "currentUses": r.try_get::<i32, _>("current_uses").unwrap_or(0),
+                    "expiresAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("expires_at")
+                                   .ok().map(|t| t.to_rfc3339()),
+                    "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                                   .ok().map(|t| t.to_rfc3339()),
+                })
             })
-        }).collect();
+            .collect();
 
         Ok(json!(promos))
     }
@@ -568,12 +793,11 @@ impl AdminService {
         school_id: &str,
         code: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let promo = sqlx::query(
-            "SELECT * FROM promo_codes WHERE code = $1"
-        )
-        .bind(code)
-        .fetch_optional(&self.pool)
-        .await?;
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let promo = sqlx::query("SELECT * FROM promo_codes WHERE code = $1")
+            .bind(code)
+            .fetch_optional(&mut *conn)
+            .await?;
 
         let p = match promo {
             Some(p) => p,
@@ -583,7 +807,8 @@ impl AdminService {
         let promo_id: i32 = p.get("id");
         let credit: bigdecimal::BigDecimal = p.get("credit_amount");
         let free_days: i32 = p.get("free_days");
-        let discount_percentage: bigdecimal::BigDecimal = p.try_get("discount_percentage").unwrap_or_default();
+        let discount_percentage: bigdecimal::BigDecimal =
+            p.try_get("discount_percentage").unwrap_or_default();
         let max_uses: i32 = p.get("max_uses");
         let current_uses: i32 = p.get("current_uses");
         let expires_at: Option<chrono::DateTime<chrono::Utc>> = p.get("expires_at");
@@ -600,30 +825,30 @@ impl AdminService {
 
         // Check if school already used it
         let already_used = sqlx::query(
-            "SELECT 1 FROM school_promo_codes WHERE school_id = $1 AND promo_code_id = $2"
+            "SELECT 1 FROM school_promo_codes WHERE school_id = $1 AND promo_code_id = $2",
         )
         .bind(school_id)
         .bind(promo_id)
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *conn)
         .await?;
 
         if already_used.is_some() {
             return Err("Promo code already applied to this school".into());
         }
 
-        let mut tx = self.pool.begin().await?;
-        
+        let mut tx = conn.begin().await?;
+
         // Fetch current school billing data
         let school_data = sqlx::query("SELECT per_student_rate, wallet_balance, base_rate, active_promo_id FROM schools WHERE school_id = $1")
             .bind(school_id)
             .fetch_one(&mut *tx)
             .await?;
-            
+
         let active_promo_id: Option<i32> = school_data.get("active_promo_id");
         if active_promo_id.is_some() {
             return Err("A promo code is already active for this school. It must expire before another can be applied.".into());
         }
-            
+
         let mut balance: bigdecimal::BigDecimal = school_data.get("wallet_balance");
         let mut per_student_rate: bigdecimal::BigDecimal = school_data.get("per_student_rate");
         let base_rate: bigdecimal::BigDecimal = school_data.get("base_rate");
@@ -636,15 +861,15 @@ impl AdminService {
 
         use bigdecimal::BigDecimal;
         use std::str::FromStr;
-        
+
         let mut rate_updated = false;
         if discount_percentage > BigDecimal::from_str("0").unwrap() {
             let one_hundred = BigDecimal::from_str("100").unwrap();
             let discount_factor = (&one_hundred - &discount_percentage) / &one_hundred;
-            
+
             // Apply discount to base_rate, not the current per_student_rate
             per_student_rate = (&base_rate * &discount_factor).round(2);
-            
+
             sqlx::query(
                 "UPDATE schools SET per_student_rate = $1, active_promo_id = $2, promo_expires_at = $3 WHERE school_id = $4"
             )
@@ -670,7 +895,7 @@ impl AdminService {
         // Apply Wallet Credit
         if credit > BigDecimal::from_str("0").unwrap() {
             sqlx::query(
-                "UPDATE schools SET wallet_balance = wallet_balance + $1 WHERE school_id = $2"
+                "UPDATE schools SET wallet_balance = wallet_balance + $1 WHERE school_id = $2",
             )
             .bind(&credit)
             .bind(school_id)
@@ -692,25 +917,24 @@ impl AdminService {
         }
 
         // Track usage
-        sqlx::query(
-            "INSERT INTO school_promo_codes (school_id, promo_code_id) VALUES ($1, $2)"
-        )
-        .bind(school_id)
-        .bind(promo_id)
-        .execute(&mut *tx)
-        .await?;
+        sqlx::query("INSERT INTO school_promo_codes (school_id, promo_code_id) VALUES ($1, $2)")
+            .bind(school_id)
+            .bind(promo_id)
+            .execute(&mut *tx)
+            .await?;
 
-        sqlx::query(
-            "UPDATE promo_codes SET current_uses = current_uses + 1 WHERE id = $1"
-        )
-        .bind(promo_id)
-        .execute(&mut *tx)
-        .await?;
+        sqlx::query("UPDATE promo_codes SET current_uses = current_uses + 1 WHERE id = $1")
+            .bind(promo_id)
+            .execute(&mut *tx)
+            .await?;
 
         tx.commit().await?;
 
         let msg = if rate_updated {
-            format!("Promo {} applied. New rate: ₹{}/student", code, per_student_rate)
+            format!(
+                "Promo {} applied. New rate: ₹{}/student",
+                code, per_student_rate
+            )
         } else {
             format!("Promo code {} applied successfully", code)
         };
@@ -720,19 +944,24 @@ impl AdminService {
             "message": msg
         }))
     }
-    
-    pub async fn get_promo_usage(&self, promo_id: i32) -> Result<Value, Box<dyn Error + Send + Sync>> {
+
+
+    pub async fn get_promo_usage(
+        &self,
+        promo_id: i32,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
         let rows = sqlx::query(
             "SELECT sp.school_id, s.school_name, sp.applied_at
              FROM school_promo_codes sp
              JOIN schools s ON sp.school_id = s.school_id
              WHERE sp.promo_code_id = $1
-             ORDER BY sp.applied_at DESC"
+             ORDER BY sp.applied_at DESC",
         )
         .bind(promo_id)
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *conn)
         .await?;
-        
+
         let usage: Vec<Value> = rows.iter().map(|r| {
             json!({
                 "schoolId": r.get::<String, _>("school_id"),
@@ -740,7 +969,64 @@ impl AdminService {
                 "appliedAt": r.get::<chrono::DateTime<chrono::Utc>, _>("applied_at").to_rfc3339()
             })
         }).collect();
-        
+
         Ok(json!(usage))
+    }
+
+    pub async fn get_admin_stats(&self) -> Result<serde_json::Value, Box<dyn Error>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+
+        // 1. School Metrics
+        let school_metrics = sqlx::query!(
+            r#"
+            SELECT 
+                COUNT(*) as total_schools,
+                COUNT(*) FILTER (WHERE status = 'Active') as active_schools,
+                COUNT(*) FILTER (WHERE status = 'Trial') as trial_schools
+            FROM schools
+            "#
+        )
+        .fetch_one(&mut *conn)
+        .await?;
+
+        // 2. Revenue (Last 30 days) - Based on deductions from schools
+        // We take the sum of absolute values of 'monthly_usage' transactions
+        let revenue_metrics = sqlx::query!(
+            r#"
+            SELECT 
+                ABS(COALESCE(SUM(amount), 0)) as total_revenue
+            FROM billing_ledger
+            WHERE transaction_type = 'monthly_usage'
+            AND created_at > NOW() - INTERVAL '30 days'
+            "#
+        )
+        .fetch_one(&mut *conn)
+        .await?;
+
+        // 3. System Load (Simplified)
+        let system_load = sqlx::query!(
+            r#"
+            SELECT
+                (SELECT COUNT(*) FROM students) as total_students,
+                (SELECT COUNT(*) FROM employees) as total_employees
+            "#
+        )
+        .fetch_one(&mut *conn)
+        .await?;
+
+        Ok(json!({
+            "schools": {
+                "total": school_metrics.total_schools,
+                "active": school_metrics.active_schools,
+                "trial": school_metrics.trial_schools
+            },
+            "revenue": {
+                "thirty_days": revenue_metrics.total_revenue.unwrap_or_else(|| bigdecimal::BigDecimal::from(0)).to_string()
+            },
+            "load": {
+                "students": system_load.total_students,
+                "employees": system_load.total_employees
+            }
+        }))
     }
 }

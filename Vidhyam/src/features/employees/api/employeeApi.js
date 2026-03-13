@@ -32,7 +32,50 @@ export const employeeApi = createApi({
                 method: 'DELETE',
             }),
             invalidatesTags: ['Employee'],
-        })
+        }),
+        getSalaryBreakdown: builder.query({
+            query: ({ schoolId, employeeId }) => `/employees/${schoolId}/${employeeId}/salary-breakdown`,
+            providesTags: (result, error, arg) => [{ type: 'Employee', id: arg.employeeId }],
+        }),
+        setBaseSalary: builder.mutation({
+            query: ({ schoolId, employeeId, salaryData }) => ({
+                url: `/employees/${schoolId}/employees/${employeeId}/salary`,
+                method: 'POST',
+                body: salaryData,
+            }),
+            invalidatesTags: (result, error, arg) => [{ type: 'Employee', id: arg.employeeId }],
+        }),
+        addBonus: builder.mutation({
+            query: ({ schoolId, employeeId, amount }) => ({
+                url: `/employees/${schoolId}/${employeeId}/bonus`,
+                method: 'POST',
+                body: { amount },
+            }),
+            invalidatesTags: (result, error, arg) => [{ type: 'Employee', id: arg.employeeId }],
+        }),
+        addAid: builder.mutation({
+            query: ({ schoolId, employeeId, amount }) => ({
+                url: `/employees/${schoolId}/${employeeId}/aid`,
+                method: 'POST',
+                body: { amount },
+            }),
+            invalidatesTags: (result, error, arg) => [{ type: 'Employee', id: arg.employeeId }],
+        }),
+        closeMonth: builder.mutation({
+            query: ({ schoolId, employeeId }) => ({
+                url: `/employees/${schoolId}/${employeeId}/close-month`,
+                method: 'POST',
+            }),
+            invalidatesTags: (result, error, arg) => [{ type: 'Employee', id: arg.employeeId }],
+        }),
+        bulkImportEmployees: builder.mutation({
+            query: ({ schoolId, payload }) => ({
+                url: `/employees/${schoolId}/employees/bulk`,
+                method: 'POST',
+                body: payload,
+            }),
+            invalidatesTags: ['Employee'],
+        }),
     }),
 });
 
@@ -40,4 +83,10 @@ export const {
     useGetEmployeesQuery,
     useAddEmployeeMutation,
     useDeleteEmployeeMutation,
+    useGetSalaryBreakdownQuery,
+    useSetBaseSalaryMutation,
+    useAddBonusMutation,
+    useAddAidMutation,
+    useCloseMonthMutation,
+    useBulkImportEmployeesMutation,
 } = employeeApi;

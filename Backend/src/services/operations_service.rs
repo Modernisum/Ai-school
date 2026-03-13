@@ -39,7 +39,7 @@ impl OperationsService for PostgresOperationsService {
 
         // 2. Transform for frontend (Firestore parity)
         let mut response_data = final_data.clone();
-        
+
         let transform_time = |t_str: &str| {
             if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(t_str) {
                 json!({
@@ -100,7 +100,13 @@ impl OperationsService for PostgresOperationsService {
 
         self.repos
             .operations
-            .add_attendance_history(school_id, role, user_id, "holiday_marked", holiday_data.clone())
+            .add_attendance_history(
+                school_id,
+                role,
+                user_id,
+                "holiday_marked",
+                holiday_data.clone(),
+            )
             .await?;
 
         Ok(holiday_data)
@@ -150,7 +156,13 @@ impl OperationsService for PostgresOperationsService {
 
         self.repos
             .operations
-            .add_attendance_history(school_id, role, user_id, "attendance_updated", json!({"outTime": out_time, "totalTime": total_time}))
+            .add_attendance_history(
+                school_id,
+                role,
+                user_id,
+                "attendance_updated",
+                json!({"outTime": out_time, "totalTime": total_time}),
+            )
             .await?;
 
         Ok(updated)
@@ -170,7 +182,13 @@ impl OperationsService for PostgresOperationsService {
 
         self.repos
             .operations
-            .add_attendance_history(school_id, role, user_id, "attendance_deleted", json!({"date": date}))
+            .add_attendance_history(
+                school_id,
+                role,
+                user_id,
+                "attendance_deleted",
+                json!({"date": date}),
+            )
             .await?;
 
         Ok(())
@@ -324,9 +342,12 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         student_id: &str,
-        amount: i64,
+        payload: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut fee_record = self.get_student_fee(school_id, student_id).await?;
+        let amount = payload["amount"].as_i64().unwrap_or(0);
+        let penalty_paid = payload["penaltyAmount"].as_f64().unwrap_or(0.0);
+        
         let pending = fee_record["pendingAmount"].as_f64().unwrap_or(0.0);
 
         if amount as f64 > pending {
@@ -351,6 +372,7 @@ impl OperationsService for PostgresOperationsService {
                 "payment",
                 json!({
                     "payAmount": amount,
+                    "penaltyPaid": penalty_paid,
                     "previousPending": pending,
                     "newPending": new_pending,
                     "date": Local::now().to_rfc3339()
@@ -388,7 +410,7 @@ impl OperationsService for PostgresOperationsService {
         let base_salary = emp["baseSalary"].as_f64().unwrap_or(0.0);
         let bonus = emp["bonus"].as_f64().unwrap_or(0.0);
         let aid = emp["aid"].as_f64().unwrap_or(0.0);
-        
+
         // Experience components (configurable, defaulting to flat value if not configured)
         let experience_years = emp["experienceYears"].as_f64().unwrap_or(0.0);
         let experience_rate = emp["experienceRate"].as_f64().unwrap_or(0.0);
@@ -400,7 +422,12 @@ impl OperationsService for PostgresOperationsService {
 
         // Space / Responsibility component
         let mut spaces_component: f64 = 0.0;
-        let responsibilities = self.repos.responsibility.get_employee_responsibilities(school_id, employee_id).await.unwrap_or_default();
+        let responsibilities = self
+            .repos
+            .responsibility
+            .get_employee_responsibilities(school_id, employee_id)
+            .await
+            .unwrap_or_default();
         for r in responsibilities {
             spaces_component += r["totalPrice"].as_f64().unwrap_or(0.0);
         }
@@ -409,10 +436,24 @@ impl OperationsService for PostgresOperationsService {
 
         // Deductions
         let now = Local::now();
-        let (month, year) = if now.month() == 1 { (12, now.year() - 1) } else { (now.month() - 1, now.year()) };
-        let attendance = self.repos.operations.get_attendance(school_id, "employee", employee_id).await.unwrap_or_default();
-        let absent_days = attendance.iter().filter(|a| a["status"] == "absent" && a["month"] == json!(month) && a["year"] == json!(year)).count() as f64;
-        
+        let (month, year) = if now.month() == 1 {
+            (12, now.year() - 1)
+        } else {
+            (now.month() - 1, now.year())
+        };
+        let attendance = self
+            .repos
+            .operations
+            .get_attendance(school_id, "employee", employee_id)
+            .await
+            .unwrap_or_default();
+        let absent_days = attendance
+            .iter()
+            .filter(|a| {
+                a["status"] == "absent" && a["month"] == json!(month) && a["year"] == json!(year)
+            })
+            .count() as f64;
+
         let daily_rate = gross_salary / 30.0;
         let deductions = absent_days * daily_rate;
 
@@ -448,8 +489,11 @@ impl OperationsService for PostgresOperationsService {
         let current_bonus = emp["bonus"].as_f64().unwrap_or(0.0);
         let add_amount = data["amount"].as_f64().unwrap_or(0.0);
         emp["bonus"] = json!(current_bonus + add_amount);
-        
-        self.repos.employee.update_employee(school_id, employee_id, emp).await?;
+
+        self.repos
+            .employee
+            .update_employee(school_id, employee_id, emp)
+            .await?;
         Ok(json!({"newBonus": current_bonus + add_amount}))
     }
 
@@ -469,8 +513,11 @@ impl OperationsService for PostgresOperationsService {
         let current_aid = emp["aid"].as_f64().unwrap_or(0.0);
         let add_amount = data["amount"].as_f64().unwrap_or(0.0);
         emp["aid"] = json!(current_aid + add_amount);
-        
-        self.repos.employee.update_employee(school_id, employee_id, emp).await?;
+
+        self.repos
+            .employee
+            .update_employee(school_id, employee_id, emp)
+            .await?;
         Ok(json!({"newAid": current_aid + add_amount}))
     }
 
@@ -642,7 +689,10 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         fee_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.operations.delete_custom_fee(school_id, fee_id).await
+        self.repos
+            .operations
+            .delete_custom_fee(school_id, fee_id)
+            .await
     }
 
     async fn apply_custom_fee(
@@ -650,7 +700,10 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         fee_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.apply_custom_fee(school_id, fee_id).await
+        self.repos
+            .operations
+            .apply_custom_fee(school_id, fee_id)
+            .await
     }
 
     async fn get_student_profile(
@@ -658,28 +711,96 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         student_id: &str,
     ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.get_student_profile(school_id, student_id).await
+        self.repos
+            .operations
+            .get_student_profile(school_id, student_id)
+            .await
     }
 
     // ---- Referral Coupons ----
 
-    async fn create_coupon(&self, school_id: &str, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    async fn create_coupon(
+        &self,
+        school_id: &str,
+        data: Value,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         self.repos.operations.create_coupon(school_id, data).await
     }
-    async fn list_coupons(&self, school_id: &str) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+    async fn list_coupons(
+        &self,
+        school_id: &str,
+    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
         self.repos.operations.get_coupons(school_id).await
     }
-    async fn remove_coupon(&self, school_id: &str, coupon_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.operations.delete_coupon(school_id, coupon_id).await
+    async fn remove_coupon(
+        &self,
+        school_id: &str,
+        coupon_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos
+            .operations
+            .delete_coupon(school_id, coupon_id)
+            .await
     }
-    async fn toggle_block_coupon(&self, school_id: &str, coupon_id: &str, blocked: bool) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.operations.block_coupon(school_id, coupon_id, blocked).await
+    async fn toggle_block_coupon(
+        &self,
+        school_id: &str,
+        coupon_id: &str,
+        blocked: bool,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.repos
+            .operations
+            .block_coupon(school_id, coupon_id, blocked)
+            .await
     }
-    async fn validate_coupon(&self, school_id: &str, coupon_name: &str) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.validate_coupon(school_id, coupon_name).await
+    async fn validate_coupon(
+        &self,
+        school_id: &str,
+        coupon_name: &str,
+    ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos
+            .operations
+            .validate_coupon(school_id, coupon_name)
+            .await
     }
-    async fn use_coupon(&self, school_id: &str, coupon_id: &str, student_id: &str, discount: f64) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.use_coupon(school_id, coupon_id, student_id, discount).await
+    async fn use_coupon(
+        &self,
+        school_id: &str,
+        coupon_id: &str,
+        student_id: &str,
+        discount: f64,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        self.repos
+            .operations
+            .use_coupon(school_id, coupon_id, student_id, discount)
+            .await
+    }
+
+    async fn generate_fee_reminder(
+        &self,
+        school_id: &str,
+        student_id: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let profile = self.repos.operations.get_student_profile(school_id, student_id).await?;
+        let fee = self.repos.operations.get_student_fee(school_id, student_id).await?.unwrap_or(json!({}));
+        
+        let student_name = profile.as_ref().and_then(|p| p["name"].as_str()).unwrap_or("Student");
+        let amount = fee["pendingAmount"].as_f64().unwrap_or(0.0);
+        let risk_score = profile.as_ref().and_then(|p| p["risk_score"].as_f64()).unwrap_or(0.0);
+
+        let tone = if risk_score > 70.0 { "urgent" } else { "polite" };
+        
+        let message = format!(
+            "AI Reminder ({tone}): Dear Parent of {student_name}, we noticed an outstanding balance of ₹{amount:.2}. Please clear this at your earliest convenience to avoid any disruption in learning resources. Thank you!",
+        );
+
+        Ok(json!({
+            "success": true,
+            "student_id": student_id,
+            "message": message,
+            "risk_score": risk_score,
+            "tone": tone
+        }))
     }
 }
 

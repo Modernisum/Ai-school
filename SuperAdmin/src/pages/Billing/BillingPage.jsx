@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, IndianRupee, Clock, AlertTriangle, Loader, CheckCircle, Ban } from 'lucide-react'
-import { listSchools, listPromos, createPromo, updateSchool } from '../../api.js'
+import { Wallet, IndianRupee, Clock, AlertTriangle, Loader, CheckCircle, Ban, TrendingUp, RefreshCw, PlusCircle, History } from 'lucide-react'
+import { listSchools, listPromos, createPromo, updateSchool, processRefund, getWalletLedger } from '../../api.js'
 
 export default function BillingPage() {
     const [schools, setSchools] = useState([])
     const [promos, setPromos] = useState([])
     const [loading, setLoading] = useState(true)
+
+    // Ledger Modal State
+    const [showLedgerModal, setShowLedgerModal] = useState(false)
+    const [ledgerSchool, setLedgerSchool] = useState(null)
+    const [ledgerData, setLedgerData] = useState([])
+    const [ledgerLoading, setLedgerLoading] = useState(false)
 
     // Manage School State
     const [showManageModal, setShowManageModal] = useState(false)
@@ -21,7 +27,15 @@ export default function BillingPage() {
     const [promoSubmitting, setPromoSubmitting] = useState(false)
     const [promoError, setPromoError] = useState('')
 
+    // Refund Modal State
+    const [showRefundModal, setShowRefundModal] = useState(false)
+    const [refundSchool, setRefundSchool] = useState(null)
+    const [refundForm, setRefundForm] = useState({ amount: '', description: 'Manual Adjustment' })
+    const [refundSubmitting, setRefundSubmitting] = useState(false)
+    const [refundError, setRefundError] = useState('')
+
     const loadData = () => {
+        setLoading(true)
         Promise.all([listSchools(), listPromos()])
             .then(([schoolsRes, promosRes]) => {
                 setSchools(schoolsRes.data || [])
@@ -97,21 +111,70 @@ export default function BillingPage() {
         }
     }
 
+    const handleRefundSubmit = async (e) => {
+        e.preventDefault()
+        setRefundError('')
+        setRefundSubmitting(true)
+
+        if (!refundForm.amount) {
+            setRefundError('Amount is required')
+            setRefundSubmitting(false)
+            return
+        }
+
+        try {
+            const res = await processRefund(refundSchool.schoolId, {
+                amount: refundForm.amount,
+                description: refundForm.description
+            })
+            if (res.success) {
+                setShowRefundModal(false)
+                setRefundSchool(null)
+                setRefundForm({ amount: '', description: 'Manual Adjustment' })
+                loadData()
+            } else {
+                setRefundError(res.message || 'Failed to process adjustment')
+            }
+        } catch (err) {
+            setRefundError('Network error')
+        } finally {
+            setRefundSubmitting(false)
+        }
+    }
+
+    const handleViewLedger = async (school) => {
+        setLedgerSchool(school)
+        setLedgerLoading(true)
+        setShowLedgerModal(true)
+        try {
+            const res = await getWalletLedger(school.schoolId)
+            if (res.success) {
+                setLedgerData(res.data)
+            }
+        } catch (err) {
+            console.error("Failed to fetch ledger", err)
+        } finally {
+            setLedgerLoading(false)
+        }
+    }
+
     const activeSchools = schools.filter(s => s.status === 'active')
     const totalWalletBalance = activeSchools.reduce((acc, curr) => acc + Number(curr.walletBalance || 0), 0)
-
-    // Calculate Monthly Recurring Revenue (MRR) dynamically
-    // Formula for pure MRR based on active configuration: (per_student_rate * active_student_count) 
-    // *We'll use a placeholder for active students since the API might not return it yet*
-    const currentMRR = activeSchools.reduce((acc, curr) => acc + (Number(curr.perStudentRate || 50) * 100), 0) // Placeholder logic for now
-
+    const currentMRR = activeSchools.reduce((acc, curr) => acc + (Number(curr.perStudentRate || 50) * (curr.activeStudentCount || 0)), 0)
     const atRiskSchools = schools.filter(s => s.billingStatus === 'warning' || s.billingStatus === 'suspended')
 
     const stats = [
-        { label: 'Total MRR (Est.)', value: `₹${currentMRR.toLocaleString()}`, color: '#10b981', icon: <IndianRupee size={18} /> },
-        { label: 'Total Wallet Liabilities', value: `₹${totalWalletBalance.toLocaleString()}`, color: '#6366f1', icon: <Wallet size={18} /> },
+        { label: 'Platform MRR', value: `₹${currentMRR.toLocaleString()}`, color: '#10b981', icon: <TrendingUp size={18} /> },
+        { label: 'Wallet Liabilities', value: `₹${totalWalletBalance.toLocaleString()}`, color: '#6366f1', icon: <Wallet size={18} /> },
         { label: 'Warning / Suspended', value: atRiskSchools.length, color: '#ef4444', icon: <AlertTriangle size={18} /> },
     ]
+
+    const getNextBilling = (lastDate) => {
+        if (!lastDate) return 'Pending'
+        const date = new Date(lastDate)
+        date.setDate(date.getDate() + 30)
+        return date.toLocaleDateString()
+    }
 
     return (
         <motion.div
@@ -119,7 +182,7 @@ export default function BillingPage() {
             className="page"
         >
             <h1 className="page-title">SaaS Revenue & Billing</h1>
-            <p className="page-sub">Monitor school wallets, set per-student pricing, and manage promos.</p>
+            <p className="page-sub">Monitor school wallets, set per-student pricing, and manage platform MRR.</p>
 
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
@@ -148,10 +211,12 @@ export default function BillingPage() {
 
                     <div className="card">
                         <div style={{ padding: '24px 24px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>School Wallets</h2>
-                            <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '14px' }}>
-                                + Recharge Wallet
-                            </button>
+                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>School Wallets & SaaS Metering</h2>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className="btn btn-ghost" onClick={loadData}>
+                                    <RefreshCw size={14} style={{ marginRight: 6 }} /> Sync
+                                </button>
+                            </div>
                         </div>
 
                         <div style={{ overflowX: 'auto', padding: '24px' }}>
@@ -159,57 +224,94 @@ export default function BillingPage() {
                                 <thead>
                                     <tr>
                                         <th>School Name</th>
-                                        <th>Billing Status</th>
-                                        <th>Per Student Rate</th>
+                                        <th>Bill Status</th>
+                                        <th>Rate</th>
+                                        <th>Active Students</th>
+                                        <th>Projected /30d</th>
+                                        <th>Next Billing</th>
                                         <th>Wallet Balance</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {schools.map(s => (
-                                        <tr key={s.schoolId}>
-                                            <td style={{ fontWeight: 500 }}>{s.schoolName}</td>
-                                            <td>
-                                                <span className={`badge ${s.billingStatus || 'active'}`} style={{
-                                                    padding: '4px 12px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '12px',
-                                                    backgroundColor: s.billingStatus === 'suspended' ? '#fee2e2' : s.billingStatus === 'warning' ? '#fef3c7' : '#d1fae5',
-                                                    color: s.billingStatus === 'suspended' ? '#991b1b' : s.billingStatus === 'warning' ? '#92400e' : '#065f46',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px'
+                                    {schools.map(s => {
+                                        const projected = Number(s.perStudentRate || 50) * (s.activeStudentCount || 0);
+                                        const isLow = s.walletBalance < projected;
+                                        return (
+                                            <tr key={s.schoolId}>
+                                                <td style={{ fontWeight: 600 }}>
+                                                    {s.schoolName}
+                                                    <div style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 400 }}>{s.schoolId}</div>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${s.billingStatus || 'active'}`} style={{
+                                                        padding: '4px 10px',
+                                                        borderRadius: '20px',
+                                                        fontSize: '11px',
+                                                        backgroundColor: s.billingStatus === 'suspended' ? '#fee2e2' : s.billingStatus === 'warning' ? '#fef3c7' : '#d1fae5',
+                                                        color: s.billingStatus === 'suspended' ? '#991b1b' : s.billingStatus === 'warning' ? '#92400e' : '#065f46',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        fontWeight: 600,
+                                                        textTransform: 'uppercase'
+                                                    }}>
+                                                        {s.billingStatus === 'suspended' ? <Ban size={10} /> : s.billingStatus === 'warning' ? <Clock size={10} /> : <CheckCircle size={10} />}
+                                                        {s.billingStatus || 'active'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ fontSize: '13px' }}>₹{Number(s.perStudentRate || 50).toLocaleString()}</td>
+                                                <td style={{ textAlign: 'center', fontWeight: 600 }}>{s.activeStudentCount || 0}</td>
+                                                <td style={{ fontWeight: 700, color: 'var(--accent)' }}>₹{projected.toLocaleString()}</td>
+                                                <td style={{ fontSize: '12px', color: 'var(--text2)' }}>{getNextBilling(s.lastBillingDate)}</td>
+                                                <td style={{
+                                                    color: isLow ? '#ef4444' : '#10b981',
+                                                    fontWeight: 700,
+                                                    fontSize: '15px'
                                                 }}>
-                                                    {s.billingStatus === 'suspended' ? <Ban size={12} /> : s.billingStatus === 'warning' ? <Clock size={12} /> : <CheckCircle size={12} />}
-                                                    {(s.billingStatus || 'active').charAt(0).toUpperCase() + (s.billingStatus || 'active').slice(1)}
-                                                </span>
-                                            </td>
-                                            <td>₹{(s.perStudentRate || 50).toLocaleString()} /mo</td>
-                                            <td style={{
-                                                color: s.walletBalance <= 0 ? '#ef4444' : 'inherit',
-                                                fontWeight: s.walletBalance <= 0 ? 600 : 400
-                                            }}>
-                                                ₹{Number(s.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="btn"
-                                                    style={{ padding: '4px 12px', fontSize: '13px' }}
-                                                    onClick={() => {
-                                                        setManageSchool(s)
-                                                        setManageForm({ perStudentRate: s.perStudentRate || 50, applyToAll: false })
-                                                        setShowManageModal(true)
-                                                    }}
-                                                >
-                                                    Manage
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                    ₹{Number(s.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    {isLow && <AlertTriangle size={12} style={{ display: 'inline', marginLeft: 4, verticalAlign: 'middle' }} />}
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', gap: 6 }}>
+                                                        <button
+                                                            className="btn btn-primary"
+                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            onClick={() => {
+                                                                setRefundSchool(s)
+                                                                setRefundForm({ amount: '', description: 'Manual Adjustment' })
+                                                                setShowRefundModal(true)
+                                                            }}
+                                                        >
+                                                            <PlusCircle size={12} style={{ marginRight: 4 }} /> Adjust
+                                                        </button>
+                                                        <button
+                                                            className="btn"
+                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            onClick={() => handleViewLedger(s)}
+                                                        >
+                                                            <History size={12} style={{ marginRight: 4 }} /> History
+                                                        </button>
+                                                        <button
+                                                            className="btn"
+                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            onClick={() => {
+                                                                setManageSchool(s)
+                                                                setManageForm({ perStudentRate: s.perStudentRate || 50, applyToAll: false })
+                                                                setShowManageModal(true)
+                                                            }}
+                                                        >
+                                                            Configure
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                     {schools.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-light)', padding: '3rem' }}>
-                                                No schools configured for billing yet.
+                                            <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-light)', padding: '3rem' }}>
+                                                No schools found.
                                             </td>
                                         </tr>
                                     )}
@@ -220,7 +322,7 @@ export default function BillingPage() {
 
                     <div className="card" style={{ marginTop: '2rem' }}>
                         <div style={{ padding: '24px 24px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Active Promo Codes</h2>
+                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Revenue Generation & Promos</h2>
                             <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '14px' }} onClick={() => setShowPromoModal(true)}>
                                 + Create Promo
                             </button>
@@ -232,7 +334,7 @@ export default function BillingPage() {
                                     <tr>
                                         <th>Code</th>
                                         <th>Credit Amount</th>
-                                        <th>Free Trial Days</th>
+                                        <th>Trial Days</th>
                                         <th>Uses (Current / Max)</th>
                                         <th>Created Date</th>
                                     </tr>
@@ -392,8 +494,123 @@ export default function BillingPage() {
                             </motion.div>
                         </div>
                     )}
+
+                    {showRefundModal && refundSchool && (
+                        <div className="modal-overlay" onClick={() => setShowRefundModal(false)}>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                className="modal-content" onClick={e => e.stopPropagation()}
+                                style={{ maxWidth: 450 }}
+                            >
+                                <div className="modal-header">
+                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Adjust Wallet: {refundSchool.schoolName}</h2>
+                                    <button className="btn-close" onClick={() => setShowRefundModal(false)}>×</button>
+                                </div>
+                                <form onSubmit={handleRefundSubmit} style={{ padding: 20 }}>
+                                    <div className="form-group" style={{ marginBottom: 15 }}>
+                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Adjustment Amount (₹)</label>
+                                        <input
+                                            type="number"
+                                            value={refundForm.amount}
+                                            onChange={e => setRefundForm({ ...refundForm, amount: e.target.value })}
+                                            placeholder="e.g. 500 for refund, -500 for charge"
+                                            className="input-field"
+                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
+                                            required
+                                        />
+                                        <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+                                            Positive values add credit. Negative values subtract credit.
+                                        </p>
+                                    </div>
+                                    <div className="form-group" style={{ marginBottom: 15 }}>
+                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Description / Reason</label>
+                                        <textarea
+                                            value={refundForm.description}
+                                            onChange={e => setRefundForm({ ...refundForm, description: e.target.value })}
+                                            className="input-field"
+                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)', minHeight: 80 }}
+                                            required
+                                        />
+                                    </div>
+
+                                    {refundError && (
+                                        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '6px', marginBottom: '15px', fontSize: '13px' }}>
+                                            {refundError}
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                                        <button type="button" className="btn" onClick={() => setShowRefundModal(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary" disabled={refundSubmitting}>
+                                            {refundSubmitting ? 'Processing...' : 'Apply Adjustment'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )}
+
+                    {showLedgerModal && ledgerSchool && (
+                        <div className="modal-overlay" onClick={() => setShowLedgerModal(false)}>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                className="modal-content" onClick={e => e.stopPropagation()}
+                                style={{ maxWidth: 700, width: '90%' }}
+                            >
+                                <div className="modal-header">
+                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Wallet History: {ledgerSchool.schoolName}</h2>
+                                    <button className="btn-close" onClick={() => setShowLedgerModal(false)}>×</button>
+                                </div>
+                                <div style={{ padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+                                    {ledgerLoading ? (
+                                        <div style={{ padding: 40, textAlign: 'center' }}><Loader className="spin" /></div>
+                                    ) : (
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Type</th>
+                                                    <th>Description</th>
+                                                    <th>Amount</th>
+                                                    <th>Balance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {ledgerData.map(entry => (
+                                                    <tr key={entry.id}>
+                                                        <td style={{ fontSize: 12 }}>{new Date(entry.createdAt).toLocaleString()}</td>
+                                                        <td>
+                                                            <span style={{
+                                                                fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                                                                backgroundColor: entry.type === 'REFUND' || entry.type === 'CREDIT' ? '#d1fae5' : '#fee2e2',
+                                                                color: entry.type === 'REFUND' || entry.type === 'CREDIT' ? '#065f46' : '#991b1b'
+                                                            }}>
+                                                                {entry.type}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ fontSize: 12 }}>{entry.description}</td>
+                                                        <td style={{ fontWeight: 600, color: Number(entry.amount) >= 0 ? '#10b981' : '#ef4444' }}>
+                                                            {Number(entry.amount) >= 0 ? '+' : ''}₹{Number(entry.amount).toLocaleString()}
+                                                        </td>
+                                                        <td style={{ fontWeight: 700 }}>₹{Number(entry.balanceAfter).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                                {ledgerData.length === 0 && (
+                                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>No records found</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
                 </>
             )}
+            <style>{`
+                .refresh-icon { animation: rotate 2s linear infinite; }
+                @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            `}</style>
         </motion.div>
     )
 }

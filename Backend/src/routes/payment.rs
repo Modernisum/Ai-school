@@ -5,11 +5,11 @@ use axum::{
     routing::post,
     Json, Router,
 };
+use hex;
+use hmac::{Hmac, Mac};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use hmac::{Hmac, Mac};
 use sha2::Sha256;
-use hex;
 
 use crate::AppState;
 
@@ -75,7 +75,9 @@ pub async fn create_order(
                     {
                         Ok(_) => (
                             StatusCode::OK,
-                            Json(json!({"orderId": order_id, "amount": payload.amount, "currency": currency})),
+                            Json(
+                                json!({"orderId": order_id, "amount": payload.amount, "currency": currency}),
+                            ),
                         ),
                         Err(_) => (
                             StatusCode::INTERNAL_SERVER_ERROR,
@@ -139,14 +141,16 @@ pub async fn razorpay_webhook(
                     .repos
                     .operations
                     .complete_online_transaction(order_id, payment_id, signature)
-                    .await {
-                        let webhook_engine = crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
-                        let _ = webhook_engine.trigger(&school_id, "fee.paid", json!({
+                    .await
+                {
+                    let webhook_engine =
+                        crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
+                    let _ = webhook_engine.trigger(&school_id, "fee.paid", json!({
                             "order_id": order_id,
                             "payment_id": payment_id,
                             "amount": payload["payload"]["payment"]["entity"]["amount"].as_f64().unwrap_or(0.0) / 100.0
                         })).await;
-                    }
+                }
             }
         }
     }

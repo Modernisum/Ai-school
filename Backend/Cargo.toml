@@ -49,6 +49,8 @@ tokio-stream = "0.1.18"
 futures-util = "0.3.32"
 google-cloud-storage = "0.22.0"
 google-cloud-auth = "0.16.0"
+itertools = "0.14.0"
+async-stream = "0.3"
 
 [profile.dev]
 opt-level = 0

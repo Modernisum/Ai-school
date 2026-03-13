@@ -113,13 +113,20 @@ pub async fn create_student(
         .await
     {
         Ok(data) => {
-            let webhook_engine = crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
-            let _ = webhook_engine.trigger(&school_id, "student.enrolled", json!({
-                "student_id": data["studentId"],
-                "name": payload.name,
-                "class": payload.class_name
-            })).await;
-            
+            let webhook_engine =
+                crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
+            let _ = webhook_engine
+                .trigger(
+                    &school_id,
+                    "student.enrolled",
+                    json!({
+                        "student_id": data["studentId"],
+                        "name": payload.name,
+                        "class": payload.class_name
+                    }),
+                )
+                .await;
+
             Json(json!({"success": true, "message": "Student added successfully", "data": data}))
                 .into_response()
         }
@@ -183,7 +190,11 @@ pub async fn get_student(
             .into_response();
     }
 
-    tracing::debug!("Fetching student: {} from school: {}", student_id, school_id);
+    tracing::debug!(
+        "Fetching student: {} from school: {}",
+        student_id,
+        school_id
+    );
     match state
         .services
         .student
@@ -258,7 +269,11 @@ pub async fn delete_student(
             .into_response();
     }
 
-    tracing::warn!("Deleting student: {} from school: {}", student_id, school_id);
+    tracing::warn!(
+        "Deleting student: {} from school: {}",
+        student_id,
+        school_id
+    );
     match state
         .services
         .student
@@ -300,7 +315,8 @@ pub async fn bulk_import_students(
             return (
                 axum::http::StatusCode::BAD_REQUEST,
                 Json(json!({"success": false, "message": "Expected a 'students' array"})),
-            ).into_response();
+            )
+                .into_response();
         }
     };
 
@@ -317,10 +333,17 @@ pub async fn bulk_import_students(
             "address": row.get("Address").or(row.get("address")).unwrap_or(&serde_json::Value::Null),
         });
 
-        match state.services.student.create_student(&school_id, student_data).await {
+        match state
+            .services
+            .student
+            .create_student(&school_id, student_data)
+            .await
+        {
             Ok(created) => {
                 success_count += 1;
-                results.push(json!({"row": i + 1, "status": "success", "studentId": created["studentId"]}));
+                results.push(
+                    json!({"row": i + 1, "status": "success", "studentId": created["studentId"]}),
+                );
             }
             Err(e) => {
                 fail_count += 1;
@@ -335,5 +358,6 @@ pub async fn bulk_import_students(
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    })).into_response()
+    }))
+    .into_response()
 }
