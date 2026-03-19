@@ -97,7 +97,7 @@ class _SalaryAnalyticsScreenState extends State<SalaryAnalyticsScreen> {
                 getTitlesWidget: (value, meta) {
                   const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
                   return Padding(
-                    padding: const EdgeInsets.top(8.0),
+                    padding: const EdgeInsets.only(top: 8.0),
                     child: Text(months[value.toInt() % 12], style: const TextStyle(color: Colors.white54, fontSize: 10)),
                   );
                 },

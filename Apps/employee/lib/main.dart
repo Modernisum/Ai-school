@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         child: Builder(
           builder: (context) {
             return MaterialApp.router(
-              title: 'Vidhyam Employee App',
+              title: 'Adhyapak Employee App',
               theme: AppTheme.theme,
               debugShowCheckedModeBanner: false,
               routerConfig: createRouter(context.read<AuthBloc>()),

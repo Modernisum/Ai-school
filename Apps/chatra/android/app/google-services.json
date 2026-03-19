@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "671964901221",
+    "project_id": "modernschool-d2054",
+    "storage_bucket": "modernschool-d2054.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:671964901221:android:6961fdfda6f393668abb8c",
+        "android_client_info": {
+          "package_name": "com.example.chatra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLikXQ-iRdVbmHbaq2-j_fPfLujWfraKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

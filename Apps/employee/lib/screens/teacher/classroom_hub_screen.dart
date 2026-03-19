@@ -417,6 +417,8 @@ class ClassroomHubScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
   void _showSpotlightSearch(BuildContext context) {
     showDialog(
       context: context,

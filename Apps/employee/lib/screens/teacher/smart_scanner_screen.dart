@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -311,7 +312,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                    child: Text("${marks.toInt()}/10", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amber)),
+                    child: Text("${currentMarks.toInt()}/10", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amber)),
                   ),
                 ],
               ),

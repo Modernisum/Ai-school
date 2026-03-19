@@ -90,7 +90,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             unselectedItemColor: Colors.white60,
             onTap: (index) => setState(() => _currentIndex = index),
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.school), label: 'LMS Hub'),
+              BottomNavigationBarItem(icon: Icon(Icons.badge), label: 'LMS Hub'),
               BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Community'),
             ],
           ),

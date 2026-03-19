@@ -151,6 +151,39 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
         });
     };
 
+    const validateSection = (sectionId) => {
+        const e = {};
+        if (sectionId === 'personal') {
+            if (!form.name.trim()) e.name = 'Full Name is required';
+            if (!form.dob) e.dob = 'Date of Birth is required';
+            if (!form.gender) e.gender = 'Gender is required';
+        } else if (sectionId === 'contact') {
+            if (!form.phone.trim()) e.phone = 'Mobile number is required';
+            else if (!/^\d{10}$/.test(form.phone)) e.phone = 'Enter valid 10-digit number';
+            
+            if (form.altPhone && form.phone === form.altPhone) {
+                e.altPhone = 'Alternative number must be different from primary number';
+            }
+
+            if (!form.email.trim()) {
+                e.email = 'Email ID is required';
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+                e.email = 'Enter a valid email address';
+            }
+        }
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
+
+    const handleNext = () => {
+        if (validateSection(activeSection)) {
+            const idx = SECTIONS.findIndex(s => s.id === activeSection);
+            if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
+        } else {
+            setToast({ type: 'error', msg: 'Please fix errors before proceeding' });
+        }
+    };
+
     const validate = () => {
         const e = {};
         if (!form.name.trim()) e.name = 'Name is required';
@@ -159,6 +192,17 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
         if (form.profileRoles.length === 0) e.profileRoles = 'Select at least one role';
         if (needsSchool && !form.schoolInstitutionName.trim()) e.schoolInstitutionName = 'School/Institution name required';
         if (needsUniversity && !form.universityName.trim()) e.universityName = 'University name required';
+        
+        // Final duplicate check
+        if (form.altPhone && form.phone === form.altPhone) {
+            e.altPhone = 'Alternative number must be different from primary number';
+        }
+        
+        // Final email check
+        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            e.email = 'Enter a valid email address';
+        }
+
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -216,9 +260,9 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                 <input className={inp()} placeholder="Father's full name"
                     value={form.fatherName} onChange={e => set('fatherName', e.target.value)} />
             </Field>
-            <Field label="Date of Birth">
+            <Field label="Date of Birth *" error={errors.dob}>
                 <div className="relative">
-                    <input type="date" className={inp()} value={form.dob}
+                    <input type="date" className={inp(errors.dob)} value={form.dob}
                         max={today()} onChange={e => set('dob', e.target.value)} />
                     {age !== null && (
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
@@ -227,12 +271,16 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     )}
                 </div>
             </Field>
-            <Field label="Gender">
-                <select className={inp()} value={form.gender} onChange={e => set('gender', e.target.value)}>
-                    <option value="">Select gender</option>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
+            <Field label="Gender *" error={errors.gender}>
+                <select 
+                    className={`${inp(errors.gender)} bg-slate-900`} 
+                    value={form.gender} 
+                    onChange={e => set('gender', e.target.value)}
+                >
+                    <option value="" disabled className="bg-slate-800 text-white">Select gender</option>
+                    <option className="bg-slate-800 text-white">Male</option>
+                    <option className="bg-slate-800 text-white">Female</option>
+                    <option className="bg-slate-800 text-white">Other</option>
                 </select>
             </Field>
             <Field label="Join Date">
@@ -255,16 +303,19 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                             value={form.phone} onChange={e => set('phone', e.target.value.replace(/\D/g, ''))} />
                     </div>
                 </Field>
-                <Field label="Alternate Number" optional>
+                <Field label="Alternate Number" error={errors.altPhone} optional>
                     <div className="flex">
                         <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm">+91</span>
-                        <input className={inp() + ' rounded-l-none'} placeholder="Optional" maxLength={10}
-                            value={form.altPhone} onChange={e => set('altPhone', e.target.value.replace(/\D/g, ''))} />
+                        <input className={inp(errors.altPhone) + ' rounded-l-none'} placeholder="Optional" maxLength={10}
+                            value={form.altPhone} onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                if (val.length <= 10) set('altPhone', val);
+                            }} />
                     </div>
                 </Field>
                 <div className="md:col-span-2">
-                    <Field label="Email ID" optional>
-                        <input type="email" className={inp()} placeholder="employee@school.edu"
+                    <Field label="Email ID *" error={errors.email}>
+                        <input type="email" className={inp(errors.email)} placeholder="employee@school.edu"
                             value={form.email} onChange={e => set('email', e.target.value)} />
                     </Field>
                 </div>
@@ -287,9 +338,17 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                             value={form.addressCity} onChange={e => set('addressCity', e.target.value)} />
                     </Field>
                     <Field label="State">
-                        <select className={inp()} value={form.addressState} onChange={e => set('addressState', e.target.value)}>
-                            <option value="">Select state</option>
-                            {INDIAN_STATES.map(s => <option key={s}>{s}</option>)}
+                        <select 
+                            className={`${inp()} bg-slate-900`} 
+                            value={form.addressState} 
+                            onChange={e => set('addressState', e.target.value)}
+                        >
+                            <option value="" disabled className="bg-slate-800 text-white">Select state</option>
+                            {INDIAN_STATES.map(s => (
+                                <option key={s} className="bg-slate-800 text-white">
+                                    {s}
+                                </option>
+                            ))}
                         </select>
                     </Field>
                     <Field label="Pincode">
@@ -346,9 +405,17 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
     const EducationSection = () => (
         <div className="space-y-5">
             <Field label="Highest Education Level">
-                <select className={inp()} value={form.educationLevel} onChange={e => set('educationLevel', e.target.value)}>
-                    <option value="">Select education level</option>
-                    {EDU_LEVELS.map(l => <option key={l}>{l}</option>)}
+                <select 
+                    className={`${inp()} bg-slate-900`} 
+                    value={form.educationLevel} 
+                    onChange={e => set('educationLevel', e.target.value)}
+                >
+                    <option value="" disabled className="bg-slate-800 text-white">Select education level</option>
+                    {EDU_LEVELS.map(l => (
+                        <option key={l} className="bg-slate-800 text-white">
+                            {l}
+                        </option>
+                    ))}
                 </select>
             </Field>
 
@@ -370,9 +437,17 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                             value={form.universityName} onChange={e => set('universityName', e.target.value)} />
                     </Field>
                     <Field label="Stream / Specialization">
-                        <select className={inp()} value={form.stream} onChange={e => set('stream', e.target.value)}>
-                            <option value="">Select stream</option>
-                            {STREAMS.map(s => <option key={s}>{s}</option>)}
+                        <select 
+                            className={`${inp()} bg-slate-900`} 
+                            value={form.stream} 
+                            onChange={e => set('stream', e.target.value)}
+                        >
+                            <option value="" disabled className="bg-slate-800 text-white">Select stream</option>
+                            {STREAMS.map(s => (
+                                <option key={s} className="bg-slate-800 text-white">
+                                    {s}
+                                </option>
+                            ))}
                         </select>
                     </Field>
                 </motion.div>
@@ -515,10 +590,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                                 </div>
                                 {id !== 'education' ? (
                                     <div className="flex justify-end">
-                                        <button onClick={() => {
-                                            const idx = SECTIONS.findIndex(s => s.id === id);
-                                            if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
-                                        }}
+                                        <button onClick={handleNext}
                                             className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-sm font-medium border border-white/10 transition-all">
                                             Next →
                                         </button>

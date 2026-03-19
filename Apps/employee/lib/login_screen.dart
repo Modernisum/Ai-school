@@ -72,15 +72,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.school, size: 80, color: Colors.white),
+                        const Icon(Icons.badge, size: 80, color: Colors.white),
                         const SizedBox(height: 16),
                         const Text(
-                          "Vidhyam V3",
+                          "Adhyapak",
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         const Text(
-                          "Unified Employee Portal",
+                          "Employee Portal",
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 16, color: Colors.white70),
                         ),
@@ -91,10 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
                             style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: "Mobile Number",
-                              prefixIcon: Icon(Icons.phone, color: Colors.white70),
-                            ),
+                             decoration: const InputDecoration(
+                               labelText: "Mobile Number",
+                               prefixText: "+91 ",
+                               prefixStyle: TextStyle(color: Colors.white),
+                               prefixIcon: Icon(Icons.phone, color: Colors.white70),
+                             ),
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton(

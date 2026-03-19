@@ -11,7 +11,7 @@ class TeacherAiAssistant extends StatefulWidget {
 class _TeacherAiAssistantState extends State<TeacherAiAssistant> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [
-    {"role": "assistant", "content": "Hello! I am your Vidhyam AI Assistant. How can I help you manage your classes today?"}
+    {"role": "assistant", "content": "Hello! I am your Adhyapak AI Assistant. How can I help you manage your classes today?"}
   ];
 
   @override

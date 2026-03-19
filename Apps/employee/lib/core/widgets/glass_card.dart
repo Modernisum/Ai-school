@@ -11,6 +11,7 @@ class GlassCard extends StatelessWidget {
   final Color? color;
   final double blur;
   final Border? border;
+  final Color? borderColor;
 
   const GlassCard({
     super.key,
@@ -23,6 +24,7 @@ class GlassCard extends StatelessWidget {
     this.color,
     this.blur = 15.0,
     this.border,
+    this.borderColor,
   });
 
   @override
@@ -63,7 +65,7 @@ class GlassCard extends StatelessWidget {
               borderRadius: borderRadius ?? defaultBorderRadius,
               border: border ?? Border.all(
                 width: 1.5,
-                color: Colors.white.withValues(alpha: 0.3),
+                color: borderColor ?? Colors.white.withValues(alpha: 0.3),
               ),
             ),
             child: child,

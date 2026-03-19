@@ -18,7 +18,7 @@
 
 ## Phase 2: Rust Backend - Semantic Caching and Text-to-SQL
 - [x] Implement vector (Cosine Similarity) search logic against `ai_query_cache` for Cache Hits.
-- [x] Update Gemini AI prompt in [ai_orchestrator.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/ai_orchestrator.rs) to generate Text-to-SQL dynamic queries (Cache Miss).
+- [x] Update Gemini AI prompt in `ai_orchestrator.rs` to generate Text-to-SQL dynamic queries (Cache Miss).
 - [x] Integrate RLS-secured SQL execution via `with_tenant_tx` in the AI logic.
 - [x] Create background worker jobs in [background_jobs.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/background_jobs.rs) to save new queries and vectors to the cache.
 
@@ -28,7 +28,7 @@
 - [x] Create `search_school_documents` tool for the AI to perform vector searches on documents.
 
 ## Phase 4: Removing Limitations & Multimodal Output
-- [x] Remove the hardcoded 3-turn limit in [ai_orchestrator.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/ai_orchestrator.rs).
+- [x] Remove the hardcoded 3-turn limit in `ai_orchestrator.rs`.
 - [x] Implement structured chat history persistence (Redis/DB).
 - [x] Integrate flexible output formats (e.g., dynamic PDF/quizzes).
 - [x] Fix bulk_import_spaces logic error (calling create_announcement)
@@ -37,11 +37,11 @@
 ## Phase 5: Students & Employees Module Refactor (Technical Debt resolution)
 - [x] Refactor Student Profile
     - [x] Create modular components: `IdentitySection`, `DocumentsSection`, `AttendanceCalendar`, `FeesTimeline`
-    - [x] Add RTK Query endpoints to [studentApi.js](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/students/api/studentApi.js)
+    - [x] Add RTK Query endpoints to `studentApi.js`
     - [x] Update `studentprofile.jsx` to use modular components and RTK Query
 - [x] Refactor Payroll Management
-    - [x] Add payroll/emppay endpoints to [employeeApi.js](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/employees/api/employeeApi.js)
-    - [x] Fix hardcoded URLs and integrate `useGetEmployeesQuery` in [payroll.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/employees/pages/payroll.jsx)
+    - [x] Add payroll/emppay endpoints to `employeeApi.js`
+    - [x] Fix hardcoded URLs and integrate `useGetEmployeesQuery` in `payroll.jsx`
 - [x] Backend route completions for standard parity
     - [x] Add `close_month` route in `emppay.rs`
     - [x] Add student-specific filtering in `award.rs`, `documentbox.rs`, and exams
@@ -49,7 +49,7 @@
 ## Phase 5: Infrastructure Module Upgrade (Enterprise Standards)
 - [x] Refactor `complain.jsx` with RTK Query and GCS support.
 - [x] Refactor `space.jsx` with Framer Motion Accordion and RTK Query.
-- [x] Refactor [schoolprofile.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/infrastructure/pages/schoolprofile.jsx) with Billing V2 sync and Premium UI.
+- [x] Refactor `schoolprofile.jsx` with Billing V2 sync and Premium UI.
 - [x] Verify visual and functional integrity via browser.
   - [x] Fix backend 500 Internal Server Error (School Profile)
   - [x] Verify Spaces API 404 Resolution
@@ -62,18 +62,18 @@
   - [x] Perfectly integrate GCS Signed URLs into frontend document uploads.
 - [x] **Global React Performance & Security**
   - [x] Implement a Global Error Boundary to prevent white-screen crashes.
-  - [x] Optimize heavy forms ([addstudent.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/students/components/addstudent.jsx), [employeeform.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/employees/components/employeeform.jsx)) with `useMemo` for low-end device performance.
+  - [x] Optimize heavy forms (`addstudent.jsx`, `employeeform.jsx`) with `useMemo` for low-end device performance.
 - [x] **Advanced AI and Automation UI**
-  - [x] Build the "Generate Timetable" UI frontend on top of [timetable_engine.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/timetable_engine.rs).
-  - [x] Create Developer Portal & Webhooks UI in [schoolprofile.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/infrastructure/pages/schoolprofile.jsx) for third-party integrations (API Keys, Tally/WhatsApp bots).
+  - [x] Build the "Generate Timetable" UI frontend on top of `timetable_engine.rs`.
+  - [x] Create Developer Portal & Webhooks UI in `schoolprofile.jsx` for third-party integrations (API Keys, Tally/WhatsApp bots).
 
 ## Phase 7: Vidhyam Employee App V3.0 (Flutter BLoC Migration)
 - [x] **Base Setup & Architecture**
   - [x] Add `android.permission.INTERNET` to AndroidManifest.xml.
-  - [x] Migrate `pubspec.yaml` from `provider` to `flutter_bloc` & `equatable`.
+  - [x] Migrate [pubspec.yaml](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/pubspec.yaml) from `provider` to `flutter_bloc` & `equatable`.
   - [x] Implement Premium UI ThemeData ("Cotton candy skies" & Glassmorphism).
 - [x] **Role-Based Dynamic Routing & Auth**
-  - [x] Refactor Auth flow using `AuthBloc`.
+  - [x] Refactor Auth flow using [AuthBloc](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/logic/auth/auth_bloc.dart#6-42).
   - [x] Parse `employee_type` to route Teachers, Drivers, Peons, and Management to unique dashboards.
 - [x] **Teacher Dashboard**
   - [x] Live Attendance Marking (`AttendanceBloc`).
@@ -98,8 +98,8 @@
 - [x] **On-Demand BLoC Initialization (Lazy Injection) 🧠**
   - [x] Refactor BLoC creation so role-specific BLoCs (e.g., `TransportBloc`) are only injected when their respective role is authenticated.
 - [x] **Strict Role-Based Router (`go_router`) 🛡️**
-  - [x] Add `go_router` dependency to `pubspec.yaml`.
-  - [x] Replace custom `AppRouter` with `GoRouter`.
+  - [x] Add `go_router` dependency to [pubspec.yaml](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/pubspec.yaml).
+  - [x] Replace custom [AppRouter](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/router/app_router.dart#10-54) with [GoRouter](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/router/app_router.dart#55-71).
   - [x] Implement secure `redirect` logic based on `employee_type` to block unauthorized access.
 
 ## Phase 9: Refined Teacher Dashboard (Premium Experience)
@@ -145,7 +145,7 @@
 
 ## Phase 12: Visual & Predictive Pedagogy (Salary Charts & Living Syllabus)
 - [x] **Animated Salary Analytics 📊**
-  - [x] Add `fl_chart` dependency to `pubspec.yaml`.
+  - [x] Add `fl_chart` dependency to [pubspec.yaml](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/pubspec.yaml).
   - [x] Implement `SalaryHistoryScreen` with animated Line/Bar charts.
   - [x] Connect to `salary-breakdown` API mock.
 - [x] **Deep AI "Risk Radar" (Failure Diagnosis) 🎯🤖**
@@ -175,8 +175,8 @@
 ## Phase 14: Local Upgrade & Security Master Plan (Production Readiness)
 - [x] **Flutter: Environment & Permissions 📱**
   - [x] Integrate `flutter_dotenv` for dynamic API URLs.
-  - [x] Update `AndroidManifest.xml` with Camera, GPS, and Storage permissions.
-  - [x] Refactor `api_service.dart` to use `.env`.
+  - [x] Update [AndroidManifest.xml](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/android/app/src/main/AndroidManifest.xml) with Camera, GPS, and Storage permissions.
+  - [x] Refactor [api_service.dart](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/api_service.dart) to use `.env`.
 - [x] **Rust: Security & Auth Hardening 🛡️**
   - [x] Move JWT Secrets to `.env`.
   - [x] Reduce token TTL from 10 years to 7 days.
@@ -192,8 +192,8 @@
 ## Phase 15: Enterprise Hardening & UI/UX Perfection 🛡️🎨
 - [x] **Security & Critical Hotfixes 🐞**
   - [x] Remove hardcoded credentials hint from Super Admin `Login.jsx`.
-  - [x] Connect "Upcoming Notices" in [home.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/dashboard/pages/home.jsx) to live API.
-  - [x] Standardize [FeesListAndPayment.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/billing/components/FeesListAndPayment.jsx) styling (Tailwind conversion).
+  - [x] Connect "Upcoming Notices" in `home.jsx` to live API.
+  - [x] Standardize `FeesListAndPayment.jsx` styling (Tailwind conversion).
 - [x] **Architectural & Performance Refactor 🚀**
   - [x] Implement Redux caching for Students/Employees in `fees.jsx`. (Initial pass, finalizing in Phase 17)
   - [x] Refactor Sidebar to use dynamic routing/mapping.
@@ -214,7 +214,7 @@
   - [x] Implement Spotlight Search with visible triggers.
   - [x] Add search triggers to sidebars.
 - [x] **"Live Substitute" AI Auto-Assigner 📅**
-  - [x] Add [find_available_substitutes](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/timetable_engine.rs#370-433) to Timetable Engine.
+  - [x] Add `find_available_substitutes` to Timetable Engine.
   - [x] Integrate proxy suggestions into the leave approval flow.
 - [x] **AI Automated Fee Reminders 🤖**
   - [x] Automate polite reminders for high-risk financial profiles.
@@ -230,7 +230,7 @@
   - [x] Implement `tenant_isolation_policy` in PostgreSQL.
   - [x] Set `app.current_school_id` in backend request context (Axum Middleware).
 - [x] **Performance & State Management**
-  - [x] Migrate [payroll.jsx](file:///C:/Users/ok/modernisum/Ai-school/Vidhyam/src/features/employees/pages/payroll.jsx) to RTK Query (`useGetEmployeesQuery`).
+  - [x] Migrate `payroll.jsx` to RTK Query (`useGetEmployeesQuery`).
   - [x] Migrate `fees.jsx` to RTK Query (`useGetStudentsQuery`).
 - [x] **Super Admin Dashboard Optimization**
   - [x] Implement `/api/admin/stats` for SQL-level chart aggregation.
@@ -239,10 +239,10 @@
 
 ## Phase 18: Advanced Enterprise AI & Engagement 🚀🤖
 - [x] **Predictive Analytics & Churn**
-  - [x] Implement [analytics_engine.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/analytics_engine.rs) with churn scoring logic.
+  - [x] Implement `analytics_engine.rs` with churn scoring logic.
   - [x] Auto-flag high-risk schools (>50 points logic).
 - [x] **Automated Scheduling (CSP Engine)**
-  - [x] Implement Greedy CSP in [timetable_engine.rs](file:///C:/Users/ok/modernisum/Ai-school/Backend/src/logic/timetable_engine.rs).
+  - [x] Implement Greedy CSP in `timetable_engine.rs`.
   - [x] Handle `teacher_availability` and `timetable_rooms` constraints.
 - [x] **External Integration (Webhooks)**
   - [x] Build Outbound Webhook Engine with HMAC-SHA256.
@@ -250,3 +250,25 @@
 - [x] **Cloud Native Storage (GCS Full Shift)**
   - [x] Implement Pre-signed PUT/GET URLs for all modules (Materials, Complaints, etc).
   - [x] Remove all local file system dependencies for user uploads.
+
+## Phase 19: Chatra App Modernization (Enterprise Upgrade) 📱🚀
+- [x] **Step 1: Base Dependencies & Security Fixes**
+    - [x] Inject `android.permission.INTERNET` into [AndroidManifest.xml](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/android/app/src/main/AndroidManifest.xml).
+    - [x] Migrate State Management: Remove `provider`, add `flutter_bloc` and `equatable`.
+    - [x] Verify/Ensure `flutter_secure_storage` for auth persistence.
+- [x] **Step 2: Premium UI Engine (Cotton Candy Skies)**
+    - [x] Configuration of [AppTheme](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/theme/app_theme.dart#14-39) with enterprise colors and typography.
+    - [x] Implementation of [AnimatedGradientBg](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/widgets/animated_gradient_bg.dart#4-11) for dynamic visual energy.
+    - [x] Creation of reusable [GlassCard](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/widgets/glass_card.dart#5-50) (Glassmorphism) component.
+    - [x] Global Integration and verification.
+- [x] **Step 3: Role-Based Router & Auth Bloc 🔐**
+    - [x] Implement [AuthBloc](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/logic/auth/auth_bloc.dart#6-42) (Initial, Loading, Authenticated, Unauthenticated).
+    - [x] Refactor [ApiService](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/api_service.dart#5-159) for JWT persistence via `flutter_secure_storage`.
+    - [x] Integrate `go_router` with [AuthBloc](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/logic/auth/auth_bloc.dart#6-42) refresh listenable.
+    - [x] Implement Role & Auth Guards (Strict student-only access).
+- [x] **Step 4: Ultra-Modern Student Hub (Dashboard) 🎓**
+    - [x] Implement [DashboardBloc](file:///c:/Users/ok/modernisum/Ai-school/Apps/chatra/lib/logic/dashboard/dashboard_bloc.dart#6-42) with parallelized API calls.
+    - [x] Build Premium Header & Wallet Status.
+    - [x] Build Quick Action Grid (Pay Fees, Track Bus, etc).
+    - [x] Implementation of Vertical Timetable with "Ongoing" badge.
+    - [x] Integrated Attendance Radar using `fl_chart`.

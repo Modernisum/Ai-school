@@ -387,7 +387,7 @@ export default function EmployeeFormPage() {
   }, [apiError]);
 
   // Tailwind utility for inputs
-  const input = "mt-1 block w-full rounded-lg border-2 border-blue-500 px-3 py-2 shadow-sm transition-all duration-300 focus:border-blue-600 focus:ring focus:ring-blue-300";
+  const input = "mt-1 block w-full bg-white dark:bg-slate-900 rounded-lg border-2 border-blue-500 px-3 py-2 shadow-sm transition-all duration-300 focus:border-blue-600 focus:ring focus:ring-blue-300 text-gray-900 dark:text-white";
 
   // Toggle edit state for form sections
   const toggleEditState = (section, docType = null) => {
@@ -1544,10 +1544,14 @@ export default function EmployeeFormPage() {
                 <User className="mr-2" size={20} />
                 New Employee Registration
               </h3>
-              <select value={selectedEmployeeType} onChange={(e) => setSelectedEmployeeType(e.target.value)} className="w-full rounded-lg border-2 border-blue-500 px-3 py-2 shadow-sm mb-4 focus:border-blue-600 focus:ring focus:ring-blue-300">
-                <option value="">-- Select Employee Type --</option>
+              <select
+                value={selectedEmployeeType}
+                onChange={(e) => setSelectedEmployeeType(e.target.value)}
+                className={input}
+              >
+                <option value="" className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">-- Select Employee Type --</option>
                 {EMPLOYEE_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
+                  <option key={type.value} value={type.value} className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">{type.label}</option>
                 ))}
               </select>
               <button disabled={!selectedEmployeeType || isLoading || !schoolId || isFetchingExisting || isSaving} onClick={handleContinueNew} className="w-full px-6 py-2 bg-gradient-to-r from-blue-500 to-red-500 text-white font-semibold rounded-lg shadow hover:scale-105 transition disabled:opacity-50 flex items-center justify-center">
@@ -1737,11 +1741,26 @@ export default function EmployeeFormPage() {
                     <input type="text" placeholder="Age" value={age} readOnly className={`${input} bg-gray-100`} />
                     <input type="text" placeholder="Father's Name" value={formFields.fatherName} onChange={(e) => handleFormChange('fatherName', e.target.value)} className={input} />
                     <input type="text" placeholder="Mother's Name" value={formFields.motherName} onChange={(e) => handleFormChange('motherName', e.target.value)} className={input} />
-                    <select value={formFields.gender} onChange={(e) => handleFormChange('gender', e.target.value)} className={input}>
-                      <option value="">Select Gender</option><option>Male</option><option>Female</option><option>Other</option>
+                    <select 
+                      value={formFields.gender} 
+                      onChange={(e) => handleFormChange('gender', e.target.value)} 
+                      className={input}
+                    >
+                      <option value="" className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">Select Gender</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">Male</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">Female</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">Other</option>
                     </select>
-                    <select value={formFields.category} onChange={(e) => handleFormChange('category', e.target.value)} className={input}>
-                      <option value="">Select Category</option><option>General</option><option>OBC</option><option>SC</option><option>ST</option>
+                    <select 
+                      value={formFields.category} 
+                      onChange={(e) => handleFormChange('category', e.target.value)} 
+                      className={input}
+                    >
+                      <option value="" className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">Select Category</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">General</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">OBC</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">SC</option>
+                      <option className="bg-white dark:bg-slate-800 text-gray-900 dark:text-white">ST</option>
                     </select>
                   </div>
                 ) : (

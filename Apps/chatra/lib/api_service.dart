@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -39,6 +40,9 @@ class ApiService {
           // Store WhatsApp-style persistent token
           await storage.write(key: 'jwt_token', value: data['token']);
           await storage.write(key: 'user_role', value: role);
+          if (data['user'] != null && data['user']['id'] != null) {
+            await storage.write(key: 'student_id', value: data['user']['id'].toString());
+          }
           return true;
         }
       }
@@ -95,6 +99,110 @@ class ApiService {
       return null;
     } catch (e) {
       print("Create Order Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getStudentProfile(String studentId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      print("Profile Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getStudentAttendance(String studentId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      print("Attendance Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getTimetable() async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/timetable'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      print("Timetable Error: $e");
+      return null;
+    }
+  }
+
+  Future<void> downloadFeeReceipt(String transactionId) async {
+    await Future.delayed(const Duration(seconds: 2));
+    debugPrint("Simulated download for Tx: $transactionId complete.");
+  }
+
+  Future<Map<String, dynamic>?> getExams(String schoolId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/exams/$schoolId'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("Exams Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getDocumentBox(String schoolId, String studentId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/documentbox/$schoolId?studentId=$studentId'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("DocumentBox Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getAnnouncements(String schoolId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8080/api/announcements/$schoolId/school/all'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("Announcements Error: $e");
       return null;
     }
   }

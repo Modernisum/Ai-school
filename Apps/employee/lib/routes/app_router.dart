@@ -6,6 +6,8 @@ import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_state.dart';
 import '../login_screen.dart';
 
+import '../screens/common/intro_screen.dart';
+
 // Deferred Imports for Lazy Loading Chunks
 import '../screens/dashboards/teacher_dashboard.dart' deferred as teacherUI;
 import '../screens/dashboards/driver_dashboard.dart' deferred as driverUI;
@@ -29,14 +31,16 @@ class AuthStreamScope extends ChangeNotifier {
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/intro',
     refreshListenable: AuthStreamScope(authBloc),
     redirect: (context, state) {
       final authState = authBloc.state;
       final isLoggingIn = state.matchedLocation == '/login';
+      final isIntro = state.matchedLocation == '/intro';
 
       if (authState is AuthInitial || authState is AuthLoading || authState is AuthUnauthenticated || authState is AuthError) {
-        return isLoggingIn ? null : '/login';
+        if (isIntro || isLoggingIn) return null;
+        return '/intro';
       }
 
       if (authState is AuthAuthenticated) {
@@ -59,6 +63,10 @@ GoRouter createRouter(AuthBloc authBloc) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/intro',
+        builder: (context, state) => const IntroScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),

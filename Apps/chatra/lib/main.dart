@@ -1,47 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'api_service.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
+import 'logic/auth/auth_bloc.dart';
+import 'logic/auth/auth_event.dart';
+import 'services/notification_service.dart';
+import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 Firebase — required before firebase_messaging can function
+  await Firebase.initializeApp();
+
+  // 🔔 Notification service — registers FCM, local notifications & handlers
+  await NotificationService.instance.init();
+
   runApp(
     RepositoryProvider(
       create: (context) => ApiService(),
-      child: MyApp(),
+      child: BlocProvider(
+        create: (context) => AuthBloc(
+          apiService: context.read<ApiService>(),
+        )..add(AppStarted()),
+        child: const MyApp(),
+      ),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Adhyapk / Chatra Portal',
-      theme: AppTheme.lightTheme,
-      home: AuthChecker(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  State<MyApp> createState() => _MyAppState();
 }
 
-class AuthChecker extends StatelessWidget {
+class _MyAppState extends State<MyApp> {
+  late AppRouter _appRouter;
+
+  @override
+  void initState() {
+    super.initState();
+    _appRouter = AppRouter(authBloc: context.read<AuthBloc>());
+    // 🔔 Deep link support — allow notifications to trigger GoRouter navigations
+    NotificationService.router = _appRouter.router;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final apiService = context.read<ApiService>();
-    
-    return FutureBuilder<bool>(
-      future: apiService.isLoggedIn(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        if (snapshot.data == true) {
-          return HomeScreen();
-        }
-        return LoginScreen();
-      },
+    return MaterialApp.router(
+      title: 'Chatra — Student Portal',
+      theme: AppTheme.lightTheme,
+      routerConfig: _appRouter.router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

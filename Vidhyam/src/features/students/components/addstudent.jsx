@@ -291,11 +291,15 @@ export default function AddStudentPage({ onSuccess, onBack }) {
             max={today()} onChange={e => set('dob', e.target.value)} />
         </Field>
         <Field label="Gender">
-          <select className={inp()} value={form.gender} onChange={e => set('gender', e.target.value)}>
-            <option value="">Select gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
+          <select 
+            className={`${inp()} bg-slate-900`} 
+            value={form.gender} 
+            onChange={e => set('gender', e.target.value)}
+          >
+            <option value="" disabled className="bg-slate-800 text-white">Select gender</option>
+            <option value="Male" className="bg-slate-800 text-white">Male</option>
+            <option value="Female" className="bg-slate-800 text-white">Female</option>
+            <option value="Other" className="bg-slate-800 text-white">Other</option>
           </select>
         </Field>
         <Field label="Aadhaar Number" error={errors.aadhaarNumber}>
@@ -333,9 +337,17 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               value={form.addressCity} onChange={e => set('addressCity', e.target.value)} />
           </Field>
           <Field label="State">
-            <select className={inp()} value={form.addressState} onChange={e => set('addressState', e.target.value)}>
-              <option value="">Select state</option>
-              {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            <select 
+              className={`${inp()} bg-slate-900`} 
+              value={form.addressState} 
+              onChange={e => set('addressState', e.target.value)}
+            >
+              <option value="" disabled className="bg-slate-800 text-white">Select state</option>
+              {INDIAN_STATES.map(s => (
+                <option key={s} value={s} className="bg-slate-800 text-white">
+                  {s}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Pincode">
@@ -391,11 +403,16 @@ export default function AddStudentPage({ onSuccess, onBack }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Class *" error={errors.className}>
-          <select className={inp(errors.className)} value={form.className}
-            onChange={e => handleClassChange(e.target.value)}>
-            <option value="">Select class</option>
+          <select 
+            className={`${inp(errors.className)} bg-slate-900`} 
+            value={form.className}
+            onChange={e => handleClassChange(e.target.value)}
+          >
+            <option value="" disabled className="bg-slate-800 text-white">Select class</option>
             {classes.map(name => (
-              <option key={name} value={name}>{name}</option>
+              <option key={name} value={name} className="bg-slate-800 text-white">
+                {name}
+              </option>
             ))}
           </select>
         </Field>
@@ -412,9 +429,13 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                 <span className="text-[10px] text-slate-500 ml-auto">Auto-assigned for Class {form.className}</span>
               </div>
             ) : (
-              <select className={inp()} value={form.studentType} onChange={e => set('studentType', e.target.value)}>
-                <option value="Regular">Regular</option>
-                <option value="Private">Private</option>
+              <select 
+                className={`${inp()} bg-slate-900`} 
+                value={form.studentType} 
+                onChange={e => set('studentType', e.target.value)}
+              >
+                <option value="Regular" className="bg-slate-800 text-white">Regular</option>
+                <option value="Private" className="bg-slate-800 text-white">Private</option>
               </select>
             )}
           </Field>

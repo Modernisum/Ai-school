@@ -16,6 +16,7 @@ use crate::AppState;
 pub struct WsAuthPayload {
     pub token: String,
     pub school_id: String,
+    pub vehicle_id: Option<String>,
 }
 
 pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
@@ -24,7 +25,7 @@ pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> 
 
 async fn handle_socket(mut socket: WebSocket, state: AppState) {
     // 1. Authenticate first message
-    let (user_id, school_id) = match authenticate_socket(&mut socket, &state).await {
+    let (user_id, school_id, vehicle_id) = match authenticate_socket(&mut socket, &state).await {
         Ok(info) => info,
         Err(_) => {
             let _ = socket
@@ -39,18 +40,23 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
         .send(Message::Text("Authenticated successfully".into()))
         .await;
 
-    // 2. Setup Redis Pub/Sub subscription for this user
-    let channel_name = format!("school:{}:user:{}", school_id, user_id);
+    // 2. Setup Redis Pub/Sub subscription
     let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
-
     let redis_client = match redis::Client::open(redis_url) {
         Ok(c) => c,
-        Err(_) => return, // Failed to connect to redis
+        Err(_) => return, 
     };
 
     let mut pubsub_conn = match redis_client.get_async_pubsub().await {
         Ok(conn) => conn,
         Err(_) => return,
+    };
+
+    // Dynamic Channel Selection
+    let channel_name = if let Some(vid) = vehicle_id {
+        format!("school:{}:transport:{}", school_id, vid)
+    } else {
+        format!("school:{}:user:{}", school_id, user_id)
     };
 
     if pubsub_conn.subscribe(&channel_name).await.is_err() {
@@ -96,23 +102,16 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
 async fn authenticate_socket(
     socket: &mut WebSocket,
     state: &AppState,
-) -> Result<(String, String), ()> {
+) -> Result<(String, String, Option<String>), ()> {
     if let Some(Ok(msg)) = socket.recv().await {
         if let Message::Text(text) = msg {
             if let Ok(payload) = serde_json::from_str::<WsAuthPayload>(&text) {
-                // Here you would validate payload.token against secret or database
-                // For this example, we'll verify it via the token table/auth logic loosely
-                // In production, decode the JWT directly if using stateless tokens
-
-                // Let's assume the token is a standard JWT or session token.
-                // We'll trust it just enough to extract the user ID if the structure matches
-                // OR check DB:
                 if let Ok(Some(token_data)) = state.repos.auth.get_token(&payload.token).await {
                     let u_id = token_data["tokenId"]
                         .as_str()
                         .unwrap_or("unknown")
-                        .to_string(); // In a real app, map token to user_id properly
-                    return Ok((u_id, payload.school_id));
+                        .to_string(); 
+                    return Ok((u_id, payload.school_id, payload.vehicle_id));
                 }
             }
         }

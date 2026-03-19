@@ -1,6 +1,9 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -13,6 +16,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -28,6 +32,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -37,6 +42,29 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.15.0")
+        force("androidx.core:core-ktx:1.15.0")
+        force("androidx.lifecycle:lifecycle-common:2.8.7")
+        force("androidx.lifecycle:lifecycle-runtime:2.8.7")
+        force("androidx.lifecycle:lifecycle-viewmodel:2.8.7")
+        force("androidx.lifecycle:lifecycle-livedata:2.8.7")
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0")
+        eachDependency {
+            if (requested.group == "org.jetbrains.kotlin") {
+                useVersion("2.1.0")
+            }
+        }
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {
