@@ -367,10 +367,7 @@ impl StudentRepository for PostgresStudentRepository {
         Ok(row.get(0))
     }
 
-    async fn generate_student_id(
-        &self,
-        school_id: &str,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn generate_student_id(&self, school_id: &str) -> Result<String, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT COALESCE(MAX(CAST(SUBSTRING(student_id FROM 2) AS INTEGER)), 0) + 1 FROM students WHERE school_id = $1 AND student_id ~ '^S[0-9]+$'")
             .bind(school_id)
@@ -378,6 +375,43 @@ impl StudentRepository for PostgresStudentRepository {
             .await?;
         let next_val: i32 = row.get(0);
         Ok(format!("S{:06}", next_val))
+    }
+
+    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str) -> Result<bool, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT EXISTS (SELECT 1 FROM students WHERE school_id = $1 AND aadhaar_number = $2) OR 
+                    EXISTS (SELECT 1 FROM employees WHERE school_id = $1 AND data->>'aadhaarNumber' = $2)"
+        )
+        .bind(school_id)
+        .bind(aadhaar)
+        .fetch_one(&mut *conn)
+        .await?;
+        Ok(row.get(0))
+    }
+
+    async fn count_phone_usage(&self, school_id: &str, phone: &str) -> Result<i32, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) FROM students WHERE school_id = $1 AND (contact = $2 OR alternative_contact = $2)"
+        )
+        .bind(school_id)
+        .bind(phone)
+        .fetch_one(&mut *conn)
+        .await?;
+        Ok(row.get::<i64, _>(0) as i32)
+    }
+
+    async fn count_email_usage(&self, school_id: &str, email: &str) -> Result<i32, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) FROM students WHERE school_id = $1 AND email = $2"
+        )
+        .bind(school_id)
+        .bind(email)
+        .fetch_one(&mut *conn)
+        .await?;
+        Ok(row.get::<i64, _>(0) as i32)
     }
 }
 
@@ -447,6 +481,8 @@ impl AcademicRepository for PostgresAcademicRepository {
                     "class_fees": r.get::<f64, _>("class_fees"),
                     "sections": sections,
                     "streams": streams,
+                    "sectionSize": r.get::<i32, _>("section_size"),
+                    "section_size": r.get::<i32, _>("section_size"),
                 })
             })
             .collect())
@@ -463,11 +499,39 @@ impl AcademicRepository for PostgresAcademicRepository {
             .bind(class_id)
             .fetch_optional(&mut *conn)
             .await?;
-        Ok(
-            row.map(
-                |r| json!({"id": r.get::<String, _>("id"), "name": r.get::<String, _>("name")}),
-            ),
-        )
+        Ok(row.map(|r| {
+            let id = r.get::<String, _>("id");
+            let name = r.get::<String, _>("name");
+            json!({
+                "id": id,
+                "classId": id,
+                "name": name,
+                "className": name,
+                "sectionSize": r.get::<i32, _>("section_size"),
+                "section_size": r.get::<i32, _>("section_size"),
+            })
+        }))
+    }
+
+    async fn get_class_by_name(&self, school_id: &str, name: &str) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query("SELECT * FROM classes WHERE school_id = $1 AND name = $2")
+            .bind(school_id)
+            .bind(name)
+            .fetch_optional(&mut *conn)
+            .await?;
+        Ok(row.map(|r| {
+            let id = r.get::<String, _>("id");
+            let name = r.get::<String, _>("name");
+            json!({
+                "id": id,
+                "classId": id,
+                "name": name,
+                "className": name,
+                "sectionSize": r.get::<i32, _>("section_size"),
+                "section_size": r.get::<i32, _>("section_size"),
+            })
+        }))
     }
 
     async fn update_class(

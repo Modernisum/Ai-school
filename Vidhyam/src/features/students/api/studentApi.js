@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const studentApi = createApi({
     reducerPath: 'studentApi',
@@ -15,16 +15,16 @@ export const studentApi = createApi({
     tagTypes: ['Student'],
     endpoints: (builder) => ({
         getStudents: builder.query({
-            query: (schoolId) => `/students/${schoolId}/students`,
+            query: (schoolId) => `/students/${schoolId}`,
             providesTags: ['Student'],
         }),
         getStudentById: builder.query({
-            query: ({ schoolId, studentId }) => `/students/${schoolId}/student/${studentId}`,
+            query: ({ schoolId, studentId }) => `/students/${schoolId}/${studentId}`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
         }),
         addStudent: builder.mutation({
             query: ({ schoolId, studentData }) => ({
-                url: `/students/${schoolId}/students`,
+                url: `/students/${schoolId}`,
                 method: 'POST',
                 body: studentData,
             }),
@@ -32,14 +32,14 @@ export const studentApi = createApi({
         }),
         updateStudent: builder.mutation({
             query: ({ schoolId, studentId, studentData }) => ({
-                url: `/students/${schoolId}/student/${studentId}`,
+                url: `/students/${schoolId}/${studentId}`,
                 method: 'PUT',
                 body: studentData,
             }),
             invalidatesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }, 'Student'],
         }),
         getStudentProfile: builder.query({
-            query: ({ schoolId, studentId }) => `/students/${schoolId}/students/${studentId}/profile`,
+            query: ({ schoolId, studentId }) => `/students/${schoolId}/${studentId}/profile`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
         }),
         getStudentAttendance: builder.query({
@@ -47,11 +47,11 @@ export const studentApi = createApi({
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.userId }],
         }),
         getStudentFees: builder.query({
-            query: ({ schoolId, studentId }) => `/fees/${schoolId}/student/${studentId}`,
+            query: ({ schoolId, studentId }) => `/fees/${schoolId}/${studentId}`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
         }),
         getStudentComplains: builder.query({
-            query: ({ schoolId, studentId }) => `/complains/${schoolId}/student/${studentId}`,
+            query: ({ schoolId, studentId }) => `/complains/${schoolId}/${studentId}`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
         }),
         getStudentAwards: builder.query({
@@ -68,7 +68,7 @@ export const studentApi = createApi({
         }),
         bulkImportStudents: builder.mutation({
             query: ({ schoolId, payload }) => ({
-                url: `/students/${schoolId}/students/bulk`,
+                url: `/students/${schoolId}/bulk`,
                 method: 'POST',
                 body: payload,
             }),

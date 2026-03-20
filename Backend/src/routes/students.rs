@@ -99,10 +99,23 @@ pub async fn create_student(
         "gender": payload.gender,
         "dob": payload.dob,
         "contact": payload.contact,
-        "address": payload.address,
-        "parentName": payload.parent_name,
-        "parentContact": payload.parent_contact,
-        "totalFee": payload.total_fee,
+        "alternativeContact": payload.alternative_contact,
+        "email": payload.email,
+        "aadhaarNumber": payload.aadhaar_number,
+        "fatherName": payload.father_name,
+        "motherName": payload.mother_name,
+        "addressLine1": payload.address_line1,
+        "addressCity": payload.address_city,
+        "addressState": payload.address_state,
+        "addressPincode": payload.address_pincode,
+        "tcNumber": payload.tc_number,
+        "admissionDate": payload.admission_date,
+        "roomNumber": payload.room_number,
+        "transportEnabled": payload.transport_enabled,
+        "transportRadius": payload.transport_radius,
+        "studentType": payload.student_type,
+        "enrolledSubjects": payload.enrolled_subjects,
+        "totalFees": payload.total_fee,
         "selectedSubjects": payload.selected_subjects,
     });
 
@@ -360,4 +373,19 @@ pub async fn bulk_import_students(
         "failCount": fail_count,
     }))
     .into_response()
+}
+
+pub async fn validate_student(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state.services.student.validate_student_data(&school_id, payload).await {
+        Ok(_) => Json(json!({"success": true, "message": "Data is valid"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
 }

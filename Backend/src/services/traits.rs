@@ -30,6 +30,7 @@ pub trait StudentService: Send + Sync {
         class_name: &str,
     ) -> Result<(), AppError>;
     async fn list_student_ids(&self, school_id: &str) -> Result<Vec<String>, AppError>;
+    async fn validate_student_data(&self, school_id: &str, data: Value) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -53,6 +54,7 @@ pub trait EmployeeService: Send + Sync {
         data: Value,
     ) -> Result<(), AppError>;
     async fn delete_employee(&self, school_id: &str, employee_id: &str) -> Result<(), AppError>;
+    async fn validate_employee_data(&self, school_id: &str, data: Value) -> Result<(), AppError>;
 }
 
 #[async_trait]

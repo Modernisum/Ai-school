@@ -1,6 +1,6 @@
 // AddStudentPage.jsx — Full-page multi-section student admission form
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, BookOpen, Bus, Save, Loader,
@@ -9,12 +9,13 @@ import {
 } from 'lucide-react';
 import { getClassesByLevel } from '../../../utils/academicUtils';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
+// Hardcoded /api for stability with Vite proxy, or use env if present
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const getSchoolId = () => {
   for (const k of ['schoolId', 'school_id', 'currentSchoolId']) {
     const v = localStorage.getItem(k);
-    if (v && v !== 'undefined') return v;
+    if (v && v !== 'undefined' && v !== 'null') return v;
   }
   return '622079';
 };
@@ -28,14 +29,7 @@ const SECTIONS = [
   { id: 'transport', label: 'Transport', icon: Bus },
 ];
 
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-  'Delhi', 'Jammu & Kashmir', 'Ladakh',
-];
+
 
 /* ───────────── Reusable helpers ───────────── */
 function inp(err) {
@@ -54,6 +48,9 @@ function Field({ label, children, error }) {
 
 export default function AddStudentPage({ onSuccess, onBack }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode'); // 'edit' or null
+  const editStudentId = searchParams.get('studentId');
   const schoolId = getSchoolId();
 
   const [activeSection, setActiveSection] = useState('personal');
@@ -80,8 +77,13 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     motherName: '',
     aadhaarNumber: '',
     addressLine1: '',
-    addressCity: '',
+    addressCountryId: '',
+    addressCountryCode: '',
+    addressPhoneCode: '+91',
+    addressStateId: '',
     addressState: '',
+    addressDistrict: '',
+    addressCity: '',
     addressPincode: '',
     tcNumber: '',
     // contact
@@ -90,7 +92,6 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     email: '',
     // academic
     className: '',
-    section: '',
     studentType: 'Regular',   // 'Regular' | 'Private'
     enrolledSubjects: [],     // Array of {id, name, fee}
     totalFees: 0,
@@ -103,6 +104,45 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   const [subjects, setSubjects] = useState([]);
   const [errors, setErrors] = useState({});
 
+  // Geo state
+  const [countries, setCountries] = useState([]);
+  const [geoStates, setGeoStates] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+
+  // Fetch countries once
+  useEffect(() => {
+    fetch(`${API_BASE}/geo/countries`)
+      .then(r => r.json())
+      .then(d => setCountries(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
+
+  // Fetch states when country changes
+  useEffect(() => {
+    if (!form.addressCountryId) { setGeoStates([]); setDistricts([]); return; }
+    setLoadingStates(true);
+    setGeoStates([]); setDistricts([]);
+    fetch(`${API_BASE}/geo/states/${form.addressCountryId}`)
+      .then(r => r.json())
+      .then(d => setGeoStates(Array.isArray(d) ? d : []))
+      .catch(() => {})
+      .finally(() => setLoadingStates(false));
+  }, [form.addressCountryId]);
+
+  // Fetch districts when state changes
+  useEffect(() => {
+    if (!form.addressStateId) { setDistricts([]); return; }
+    setLoadingDistricts(true);
+    setDistricts([]);
+    fetch(`${API_BASE}/geo/districts/${form.addressStateId}`)
+      .then(r => r.json())
+      .then(d => setDistricts(Array.isArray(d) ? d : []))
+      .catch(() => {})
+      .finally(() => setLoadingDistricts(false));
+  }, [form.addressStateId]);
+
   // Load classes from school level
   useEffect(() => {
     const schoolLevel = localStorage.getItem('schoolLevel') || 10;
@@ -112,7 +152,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   // Load subjects when class changes
   useEffect(() => {
     if (!form.className) return;
-    fetch(`${API_BASE_URL}/subjects/${schoolId}`)
+    fetch(`${API_BASE}/subjects/${schoolId}`)
       .then(r => r.json())
       .then(d => {
         const all = d.data || d.subjects || [];
@@ -144,13 +184,39 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       setForm(f => ({ ...f, roomNumber: cls.roomNumber || cls.room_number || '' }));
     }
     // fetch next roll number
-    fetch(`${API_BASE_URL}/students/${schoolId}/nextRoll?className=${encodeURIComponent(form.className)}`)
+    fetch(`${API_BASE}/students/${schoolId}/nextRoll?className=${encodeURIComponent(form.className)}`)
       .then(r => r.json())
       .then(d => {
         if (d.nextRollNumber) setForm(f => ({ ...f, rollNumber: d.nextRollNumber }));
       })
       .catch(() => { });
   }, [form.className, classes, schoolId]);
+
+  // Edit Mode: Load student data
+  useEffect(() => {
+    if (mode === 'edit' && editStudentId) {
+      fetch(`${API_BASE}/students/${schoolId}/${editStudentId}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.data) {
+            const s = d.data;
+            setForm(f => ({
+              ...f,
+              ...s,
+              studentId: s.studentId || editStudentId,
+              enrolledSubjects: s.enrolledSubjects || [],
+              totalFees: parseFloat(s.totalFees) || 0,
+            }));
+            
+            // Auto-load subjects for the class if it's set
+            if (s.className) {
+              set('className', s.className);
+            }
+          }
+        })
+        .catch(() => { });
+    }
+  }, [mode, editStudentId, schoolId]);
 
   const set = useCallback((k, v) => {
     setForm(f => ({ ...f, [k]: v }));
@@ -189,6 +255,56 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     });
   };
 
+  const validateSection = (sectionId) => {
+    const e = {};
+    if (sectionId === 'personal') {
+      if (!form.name.trim()) e.name = 'Full name is required';
+      if (!form.dob) e.dob = 'Date of birth is required';
+      if (!form.gender) e.gender = 'Gender is required';
+      if (form.aadhaarNumber && !/^\d{12}$/.test(form.aadhaarNumber))
+        e.aadhaarNumber = 'Aadhaar must be 12 digits';
+    } else if (sectionId === 'contact') {
+      if (!form.contact.trim()) e.contact = 'Mobile number is required';
+      else if (!/^\d{10}$/.test(form.contact)) e.contact = 'Enter valid 10-digit number';
+      if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+        e.email = 'Enter a valid email address';
+    } else if (sectionId === 'academic') {
+      if (!form.className) e.className = 'Class is required';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleNext = async () => {
+    if (validateSection(activeSection)) {
+      // Backend validation for duplicates (Aadhaar, Phone, Email)
+      try {
+        const res = await fetch(`${API_BASE}/students/${schoolId}/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        const d = await res.json();
+        
+        if (!res.ok || !d.success) {
+          setToast({ type: 'error', msg: d.message || 'Server validation failed' });
+          // Map backend error to specific field for UX
+          if (d.message?.toLowerCase().includes('aadhaar')) setErrors(e => ({ ...e, aadhaarNumber: d.message }));
+          if (d.message?.toLowerCase().includes('contact')) setErrors(e => ({ ...e, contact: d.message }));
+          if (d.message?.toLowerCase().includes('email')) setErrors(e => ({ ...e, email: d.message }));
+          return;
+        }
+
+        const idx = SECTIONS.findIndex(s => s.id === activeSection);
+        if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
+      } catch (err) {
+        setToast({ type: 'error', msg: 'Network error: Could not validate with server' });
+      }
+    } else {
+      setToast({ type: 'error', msg: 'Please fix required fields before proceeding' });
+    }
+  };
+
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Full name is required';
@@ -197,6 +313,14 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     if (!/^\d{10}$/.test(form.contact)) e.contact = 'Enter valid 10-digit mobile';
     if (form.aadhaarNumber && !/^\d{12}$/.test(form.aadhaarNumber))
       e.aadhaarNumber = 'Aadhaar must be 12 digits';
+    if (!form.dob) e.dob = 'Date of birth is required';
+    if (!form.gender) e.gender = 'Gender is required';
+    
+    // Email check
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      e.email = 'Enter a valid email address';
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -206,7 +330,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     if (!code.trim()) { setCouponData(null); setCouponError(''); return; }
     setCouponLoading(true); setCouponError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/fees/${schoolId}/coupons/validate`, {
+      const res = await fetch(`${API_BASE}/fees/${schoolId}/coupons/validate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ couponName: code.trim() })
       });
@@ -245,8 +369,13 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       transportEnabled: form.transportEnabled,
     };
     try {
-      const res = await fetch(`${API_BASE_URL}/students/${schoolId}/students`, {
-        method: 'POST',
+      const url = mode === 'edit' 
+        ? `${API_BASE}/students/${schoolId}/${editStudentId}`
+        : `${API_BASE}/students/${schoolId}`;
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -256,14 +385,19 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       // Use coupon if one was applied
       if (couponData?.couponId && data.data?.studentId) {
         try {
-          await fetch(`${API_BASE_URL}/fees/${schoolId}/coupons/${couponData.couponId}/use`, {
+          await fetch(`${API_BASE}/fees/${schoolId}/coupons/${couponData.couponId}/use`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ studentId: data.data.studentId, discount: couponDiscount })
           });
         } catch { }
       }
 
-      setToast({ type: 'success', msg: `Student ${form.name} created successfully!` });
+      setToast({ 
+        type: 'success', 
+        msg: mode === 'edit' 
+          ? `Student ${form.name} updated successfully!` 
+          : `Student ${form.name} created! ID: ${data.data?.studentId}, Roll: ${data.data?.rollNumber}, Sec: ${data.data?.section}` 
+      });
       setTimeout(() => {
         if (onSuccess) onSuccess(data);
         else navigate(-1);
@@ -283,16 +417,16 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Full Name *" error={errors.name}>
-          <input className={inp(errors.name)} placeholder="e.g. Rahul Kumar Sharma"
+          <input className={inp(errors.name)} placeholder="e.g. Rahul Sharma"
             value={form.name} onChange={e => set('name', e.target.value)} />
         </Field>
-        <Field label="Date of Birth">
-          <input type="date" className={inp()} value={form.dob}
+        <Field label="Date of Birth *" error={errors.dob}>
+          <input type="date" className={inp(errors.dob)} value={form.dob}
             max={today()} onChange={e => set('dob', e.target.value)} />
         </Field>
-        <Field label="Gender">
+        <Field label="Gender *" error={errors.gender}>
           <select 
-            className={`${inp()} bg-slate-900`} 
+            className={`${inp(errors.gender)} bg-slate-900`} 
             value={form.gender} 
             onChange={e => set('gender', e.target.value)}
           >
@@ -314,92 +448,148 @@ export default function AddStudentPage({ onSuccess, onBack }) {
           <input className={inp()} placeholder="Mother's full name"
             value={form.motherName} onChange={e => set('motherName', e.target.value)} />
         </Field>
-        <Field label="TC Number (optional)">
-          <input className={inp()} placeholder="Transfer certificate number"
-            value={form.tcNumber} onChange={e => set('tcNumber', e.target.value)} />
-        </Field>
       </div>
 
-      {/* Address */}
-      <div className="mt-4">
-        <p className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-          <MapPin size={14} className="text-indigo-400" /> Address
+    </div>
+  );
+
+  const renderContactSection = () => (
+    <div className="space-y-6">
+      {/* ── Address Section ── */}
+      <div>
+        <p className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+          <MapPin size={14} className="text-indigo-400" /> Address Details
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Full address line */}
           <div className="md:col-span-2">
             <Field label="Street / House / Village">
               <input className={inp()} placeholder="House No, Street, Village/Area"
                 value={form.addressLine1} onChange={e => set('addressLine1', e.target.value)} />
             </Field>
           </div>
-          <Field label="City">
-            <input className={inp()} placeholder="City"
-              value={form.addressCity} onChange={e => set('addressCity', e.target.value)} />
-          </Field>
-          <Field label="State">
-            <select 
-              className={`${inp()} bg-slate-900`} 
-              value={form.addressState} 
-              onChange={e => set('addressState', e.target.value)}
+
+          {/* Country */}
+          <Field label="Country">
+            <select
+              className={`${inp()} bg-slate-900`}
+              value={form.addressCountryId}
+              onChange={e => {
+                const c = countries.find(x => String(x.id) === e.target.value);
+                setForm(f => ({
+                  ...f,
+                  addressCountryId: e.target.value,
+                  addressCountryCode: c?.code || '',
+                  addressPhoneCode: c?.phone_code || '+91',
+                  addressStateId: '',
+                  addressState: '',
+                  addressDistrict: '',
+                }));
+              }}
             >
-              <option value="" disabled className="bg-slate-800 text-white">Select state</option>
-              {INDIAN_STATES.map(s => (
-                <option key={s} value={s} className="bg-slate-800 text-white">
-                  {s}
+              <option value="" disabled className="bg-slate-800 text-white">Select country</option>
+              {countries.map(c => (
+                <option key={c.id} value={String(c.id)} className="bg-slate-800 text-white">
+                  {c.name} ({c.phone_code})
                 </option>
               ))}
             </select>
           </Field>
+
+          {/* State */}
+          <Field label="State">
+            <select
+              className={`${inp()} bg-slate-900`}
+              value={form.addressStateId}
+              disabled={!form.addressCountryId || loadingStates}
+              onChange={e => {
+                const s = geoStates.find(x => String(x.id) === e.target.value);
+                setForm(f => ({
+                  ...f,
+                  addressStateId: e.target.value,
+                  addressState: s?.name || '',
+                  addressDistrict: '',
+                }));
+              }}
+            >
+              <option value="" disabled className="bg-slate-800 text-white">
+                {loadingStates ? 'Loading…' : 'Select state'}
+              </option>
+              {geoStates.map(s => (
+                <option key={s.id} value={String(s.id)} className="bg-slate-800 text-white">{s.name}</option>
+              ))}
+            </select>
+          </Field>
+
+          {/* District */}
+          <Field label="District">
+            <select
+              className={`${inp()} bg-slate-900`}
+              value={form.addressDistrict}
+              disabled={!form.addressStateId || loadingDistricts}
+              onChange={e => set('addressDistrict', e.target.value)}
+            >
+              <option value="" disabled className="bg-slate-800 text-white">
+                {loadingDistricts ? 'Loading…' : 'Select district'}
+              </option>
+              {districts.map(d => (
+                <option key={d.id} value={d.name} className="bg-slate-800 text-white">{d.name}</option>
+              ))}
+            </select>
+          </Field>
+
+          {/* City */}
+          <Field label="City / Village">
+            <input className={inp()} placeholder="City or village"
+              value={form.addressCity} onChange={e => set('addressCity', e.target.value)} />
+          </Field>
+
+          {/* Pincode */}
           <Field label="Pincode">
             <input className={inp()} placeholder="6-digit pincode" maxLength={6}
               value={form.addressPincode} onChange={e => set('addressPincode', e.target.value.replace(/\D/g, ''))} />
           </Field>
         </div>
       </div>
-    </div>
-  );
 
-  const renderContactSection = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Mobile Number *" error={errors.contact}>
-        <div className="flex">
-          <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm">+91</span>
-          <input className={inp(errors.contact) + ' rounded-l-none'} placeholder="10-digit mobile"
-            maxLength={10} value={form.contact}
-            onChange={e => set('contact', e.target.value.replace(/\D/g, ''))} />
+      {/* ── Contact Section ── */}
+      <div>
+        <p className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+          <Phone size={14} className="text-green-400" /> Contact Details
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Mobile Number *" error={errors.contact}>
+            <div className="flex">
+              <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm whitespace-nowrap">
+                {form.addressPhoneCode || '+91'}
+              </span>
+              <input className={inp(errors.contact) + ' rounded-l-none'} placeholder="Mobile number"
+                value={form.contact}
+                onChange={e => set('contact', e.target.value.replace(/\D/g, ''))} />
+            </div>
+          </Field>
+          <Field label="Alternative Number (optional)" error={errors.alternativeContact}>
+            <div className="flex">
+              <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm whitespace-nowrap">
+                {form.addressPhoneCode || '+91'}
+              </span>
+              <input className={inp(errors.alternativeContact) + ' rounded-l-none'} placeholder="Alternate number"
+                value={form.alternativeContact}
+                onChange={e => set('alternativeContact', e.target.value.replace(/\D/g, ''))} />
+            </div>
+          </Field>
+          <Field label="Email ID" error={errors.email}>
+            <input type="email" className={inp(errors.email)} placeholder="student@email.com"
+              value={form.email} onChange={e => set('email', e.target.value)} />
+          </Field>
         </div>
-      </Field>
-      <Field label="Alternative Number (optional)">
-        <div className="flex">
-          <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm">+91</span>
-          <input className={inp() + ' rounded-l-none'} placeholder="Alternate number"
-            maxLength={10} value={form.alternativeContact}
-            onChange={e => set('alternativeContact', e.target.value.replace(/\D/g, ''))} />
-        </div>
-      </Field>
-      <Field label="Email ID">
-        <input type="email" className={inp()} placeholder="student@email.com"
-          value={form.email} onChange={e => set('email', e.target.value)} />
-      </Field>
+      </div>
     </div>
   );
 
   const renderAcademicSection = () => (
     <div className="space-y-5">
       {/* Auto-generated info cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Student ID', value: form.studentId, icon: Hash },
-          { label: 'Roll Number', value: form.rollNumber || 'Auto-assign', icon: UserCheck },
-          { label: 'Admission Date', value: form.admissionDate, icon: Calendar },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-center">
-            <Icon size={16} className="text-indigo-400 mx-auto mb-1" />
-            <p className="text-xs text-slate-500">{label}</p>
-            <p className="text-sm font-bold text-indigo-300 truncate">{value}</p>
-          </div>
-        ))}
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Class *" error={errors.className}>
@@ -415,10 +605,6 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               </option>
             ))}
           </select>
-        </Field>
-        <Field label="Section">
-          <input className={inp()} placeholder="e.g. A, B, C"
-            value={form.section} onChange={e => set('section', e.target.value)} />
         </Field>
         {/* Student Type — locked for Class ≤9, choosable for Class 10+ */}
         {form.className && (
@@ -448,6 +634,10 @@ export default function AddStudentPage({ onSuccess, onBack }) {
         <Field label="Admission Date">
           <input type="date" className={inp()} value={form.admissionDate}
             onChange={e => set('admissionDate', e.target.value)} />
+        </Field>
+        <Field label="TC Number (optional)">
+          <input className={inp()} placeholder="Transfer certificate number"
+            value={form.tcNumber} onChange={e => set('tcNumber', e.target.value)} />
         </Field>
       </div>
 
@@ -536,13 +726,13 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                 <p className="text-xs font-semibold text-violet-400 flex items-center gap-2"><Tag size={14} /> Referral / Discount Coupon</p>
                 <div className="flex gap-2">
                   <input
-                    className="input-dark flex-1 uppercase"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white uppercase"
                     placeholder="Enter coupon code..."
                     value={referralCode}
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError(''); }}
                   />
                   <button type="button" onClick={() => validateCoupon(referralCode)} disabled={couponLoading || !referralCode.trim()}
-                    className="btn-secondary px-4 flex items-center gap-1 disabled:opacity-50">
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-1">
                     {couponLoading ? <Loader size={14} className="animate-spin" /> : <CheckCircle size={14} />} Apply
                   </button>
                 </div>
@@ -554,7 +744,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                       <div>
                         <p className="text-xs font-bold text-emerald-300">{couponData.couponName}</p>
                         <p className="text-[10px] text-slate-500">
-                          {couponData.discountType === 'percentage' ? `${couponData.discountValue}% off` : `₹${parseFloat(couponData.discountValue).toLocaleString('en-IN')} off`}
+                           {couponData.discountType === 'percentage' ? `${couponData.discountValue}% off` : `₹${parseFloat(couponData.discountValue).toLocaleString('en-IN')} off`}
                         </p>
                       </div>
                     </div>
@@ -638,15 +828,17 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               <div className="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center">
                 <User size={14} className="text-indigo-400" />
               </div>
-              New Student Admission
+              {mode === 'edit' ? 'Edit Student Profile' : 'New Student Admission'}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">Fill all sections • System generates ID &amp; Roll No</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {mode === 'edit' ? `Editing record for ID: ${editStudentId}` : 'Fill all sections • System generates ID & Roll No'}
+            </p>
           </div>
         </div>
         <button onClick={handleSubmit} disabled={saving}
           className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-900/40">
           {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
-          {saving ? 'Saving…' : 'Save Student'}
+          {saving ? 'Saving…' : (mode === 'edit' ? 'Update Profile' : 'Save Student')}
         </button>
       </div>
 
@@ -691,10 +883,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               </div>
               {activeSection === id && id !== 'transport' && (
                 <div className="flex justify-end">
-                  <button onClick={() => {
-                    const idx = SECTIONS.findIndex(s => s.id === id);
-                    if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
-                  }}
+                  <button onClick={handleNext}
                     className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-xl text-sm font-medium transition-all border border-white/10">
                     Next →
                   </button>
@@ -705,7 +894,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                   <button onClick={handleSubmit} disabled={saving}
                     className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all">
                     {saving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}
-                    {saving ? 'Saving…' : 'Create Student'}
+                    {saving ? 'Saving…' : (mode === 'edit' ? 'Update Profile' : 'Create Student')}
                   </button>
                 </div>
               )}

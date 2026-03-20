@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, BookOpen, Users, Calendar, Clock, Edit3 } from 'lucide-react';
+import { User, BookOpen, Users, Calendar, Clock, Edit3, Phone, Mail, Fingerprint, Heart, CalendarDays } from 'lucide-react';
 import { formatClassName, formatDate } from '../../../../utils/helpers';
 
 const IdentitySection = ({ student, studentId, schoolId, onEdit }) => {
@@ -63,6 +63,67 @@ const IdentitySection = ({ student, studentId, schoolId, onEdit }) => {
             <span className="text-sm text-gray-600 font-medium">Last Updated</span>
           </div>
           <p className="text-lg font-semibold text-gray-800">{formatDate(student?.updatedAt)}</p>
+        </div>
+      </div>
+
+      {/* Detailed Personal & Contact Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div className="bg-white/50 border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Heart size={14} className="text-red-400" /> Family & Personal
+          </h3>
+          <div className="space-y-4">
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Father's Name</span>
+              <span className="font-semibold text-gray-800">{student?.fatherName || 'Not Set'}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Mother's Name</span>
+              <span className="font-semibold text-gray-800">{student?.motherName || 'Not Set'}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Date of Birth</span>
+              <span className="font-semibold text-gray-800">{student?.dob || 'Not Set'}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Gender</span>
+              <span className="font-semibold text-gray-800">{student?.gender || 'Not Set'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 text-sm">Aadhaar</span>
+              <span className="font-mono font-bold text-blue-600">{student?.aadhaarNumber || 'Not Set'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/50 border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Phone size={14} className="text-green-400" /> Contact & Enrollment
+          </h3>
+          <div className="space-y-4">
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Primary Mobile</span>
+              <span className="font-semibold text-gray-800 flex items-center gap-1">
+                 <Phone size={12} className="text-green-500" /> {student?.contact || 'Not Set'}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Email ID</span>
+              <span className="font-semibold text-gray-800 flex items-center gap-1">
+                 <Mail size={12} className="text-blue-500" /> {student?.email || 'N/A'}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-gray-50 pb-2">
+              <span className="text-gray-500 text-sm">Admission Date</span>
+              <span className="font-semibold text-gray-800 flex items-center gap-1">
+                 <CalendarDays size={12} className="text-purple-500" /> {student?.admissionDate || 'Not Set'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 text-sm">TC Number</span>
+              <span className="font-semibold text-amber-600">{student?.tcNumber || 'None'}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

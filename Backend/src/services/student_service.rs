@@ -30,13 +30,11 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        // Security checks (Aadhaar, Phone, Email)
+        self.validate_student_data(school_id, data.clone()).await?;
+
         // Validate required fields
         let class_name = data["className"].as_str().ok_or("Missing className")?;
-
-        // Name is explicitly optional because the Admin frontend creates a "shell"
-        // student immediately after class selection to generate an ID ahead of time.
-        // It patches the name later via update_student.
-        let _name = data["name"].as_str().unwrap_or("");
 
         // 1. Get next roll number
         let roll_number = self
@@ -45,16 +43,16 @@ impl StudentService for PostgresStudentService {
             .get_next_roll_number(school_id, class_name)
             .await?;
 
-        // 2. Assign section (Parity with Node.js logic)
-        let section = if roll_number <= 60 {
-            "A"
-        } else if roll_number <= 120 {
-            "B"
-        } else {
-            "C"
-        };
+        // 2. Assign section
+        let class_details = self.repos.academic.get_class_by_name(school_id, class_name).await?;
+        let section_size = class_details
+            .as_ref()
+            .and_then(|c| c["sectionSize"].as_i64())
+            .unwrap_or(60) as i32;
+        
+        let section = self.get_section_for_roll(roll_number, section_size);
 
-        // 3. Generate Student ID (Parity Sequential S+6 digits)
+        // 3. Generate Student ID
         let student_id = self.repos.student.generate_student_id(school_id).await?;
 
         let mut student_data = data.clone();
@@ -69,12 +67,9 @@ impl StudentService for PostgresStudentService {
             .add_student(school_id, student_data)
             .await?;
 
-        // 4. Invalidate cache (student list changed)
-        // Cache removed since generic Redis methods exist in Repositories
-
         tracing::info!(
-            "Cache invalidated: students:list:{} (new student created)",
-            school_id
+            "Student Created: {} (Roll: {}, Class: {})",
+            student_id, roll_number, class_name
         );
 
         Ok(result)
@@ -90,12 +85,10 @@ impl StudentService for PostgresStudentService {
         let mut errors = Vec::new();
 
         for (index, mut student_data) in data.into_iter().enumerate() {
-            // Assume frontend sends "rowNumber" but fallback to index + 2 (Excel header offset)
             let row_number = student_data["rowNumber"]
                 .as_u64()
                 .unwrap_or((index + 2) as u64);
 
-            // Validate required fields
             let class_name = match student_data["className"].as_str() {
                 Some(c) if !c.trim().is_empty() => c.to_string(),
                 _ => {
@@ -114,7 +107,13 @@ impl StudentService for PostgresStudentService {
                 }
             };
 
-            // Generate sequence IDs
+            // Security checks for bulk import (Optional: can be slow, but recommended)
+            if let Err(e) = self.validate_student_data(school_id, student_data.clone()).await {
+                failed += 1;
+                errors.push(json!({ "row": row_number, "name": name, "error": e.to_string() }));
+                continue;
+            }
+
             let roll_number = match self
                 .repos
                 .student
@@ -129,13 +128,13 @@ impl StudentService for PostgresStudentService {
                 }
             };
 
-            let section = if roll_number <= 60 {
-                "A"
-            } else if roll_number <= 120 {
-                "B"
-            } else {
-                "C"
-            };
+            let class_details = self.repos.academic.get_class_by_name(school_id, &class_name).await?;
+            let section_size = class_details
+                .as_ref()
+                .and_then(|c| c["sectionSize"].as_i64())
+                .unwrap_or(60) as i32;
+
+            let section = self.get_section_for_roll(roll_number, section_size);
 
             let student_id = match self.repos.student.generate_student_id(school_id).await {
                 Ok(id) => id,
@@ -151,7 +150,6 @@ impl StudentService for PostgresStudentService {
             student_data["section"] = json!(section);
             student_data["status"] = json!("active");
 
-            // Attempt Database Insert
             match self
                 .repos
                 .student
@@ -166,13 +164,6 @@ impl StudentService for PostgresStudentService {
             }
         }
 
-        tracing::info!(
-            "Bulk student import for school {}: {} successful, {} failed",
-            school_id,
-            successful,
-            failed
-        );
-
         Ok(json!({
             "total": successful + failed,
             "successful": successful,
@@ -185,15 +176,7 @@ impl StudentService for PostgresStudentService {
         &self,
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
-        // Cache key for this school's students list
-        let cache_key = format!("students:list:{}", school_id);
-
-        tracing::debug!("Cache MISS for {}", cache_key);
-
-        // Cache miss - fetch from database
-        let students = self.repos.student.get_students(school_id).await?;
-
-        Ok(students)
+        self.repos.student.get_students(school_id).await
     }
 
     async fn get_student(
@@ -220,18 +203,23 @@ impl StudentService for PostgresStudentService {
         let old_class = old_student["className"].as_str().unwrap_or("");
         let new_class = data["className"].as_str();
 
-        // 1. If className changes, handle roll number and resequencing
         let mut final_data = data.clone();
         if let Some(nc) = new_class {
             if nc != old_class {
-                // Get next roll number in NEW class
                 let next_roll = self
                     .repos
                     .student
                     .get_next_roll_number(school_id, nc)
                     .await?;
+                
+                let class_details = self.repos.academic.get_class_by_name(school_id, nc).await?;
+                let section_size = class_details
+                    .as_ref()
+                    .and_then(|c| c["sectionSize"].as_i64())
+                    .unwrap_or(60) as i32;
+
                 final_data["rollNumber"] = json!(next_roll);
-                final_data["section"] = json!(self.get_section_for_roll(next_roll));
+                final_data["section"] = json!(self.get_section_for_roll(next_roll, section_size));
             }
         }
 
@@ -240,19 +228,11 @@ impl StudentService for PostgresStudentService {
             .update_student(school_id, student_id, final_data)
             .await?;
 
-        // 2. Resequence OLD class if student moved out
         if let Some(nc) = new_class {
             if nc != old_class && !old_class.is_empty() {
                 self.resequence_roll_numbers(school_id, old_class).await?;
             }
         }
-
-        // 3. Invalidate cache
-        // Cache removed since generic Redis methods aren't in Repositories
-        tracing::info!(
-            "Cache invalidated: students:list:{} (student updated)",
-            school_id
-        );
 
         Ok(())
     }
@@ -274,19 +254,10 @@ impl StudentService for PostgresStudentService {
                 .delete_student(school_id, student_id)
                 .await?;
 
-            // Logic Parity: Resequence roll numbers after deletion
             if !class_name.is_empty() {
                 self.resequence_roll_numbers(school_id, class_name).await?;
             }
         }
-
-        // Invalidate cache
-        // Cache removed since generic Redis methods aren't in Repositories
-        tracing::info!(
-            "Cache invalidated: students:list:{} (student deleted)",
-            school_id
-        );
-
         Ok(())
     }
 
@@ -301,12 +272,17 @@ impl StudentService for PostgresStudentService {
             .filter(|s| s["className"].as_str() == Some(class_name))
             .collect();
 
-        // Sort by existing roll number for stable resequence
         class_students.sort_by_key(|s| s["rollNumber"].as_i64().unwrap_or(0));
 
         for (i, student) in class_students.into_iter().enumerate() {
             let new_roll = (i + 1) as i32;
-            let new_section = self.get_section_for_roll(new_roll);
+            let class_details = self.repos.academic.get_class_by_name(school_id, class_name).await?;
+            let section_size = class_details
+                .as_ref()
+                .and_then(|c| c["sectionSize"].as_i64())
+                .unwrap_or(60) as i32;
+
+            let new_section = self.get_section_for_roll(new_roll, section_size);
 
             let sid = student["studentId"].as_str().unwrap_or("");
             let update_data = json!({
@@ -326,20 +302,53 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
     ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let students = self.repos.student.get_students(school_id).await?;
-        let ids = students
+        Ok(students
             .into_iter()
             .filter_map(|s| s["studentId"].as_str().map(|id| id.to_string()))
-            .collect();
-        Ok(ids)
+            .collect())
+    }
+
+    async fn validate_student_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
+        // 1. Aadhaar Uniqueness (Cross Student & Employee)
+        if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
+            if !aadhaar.trim().is_empty() {
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar).await? {
+                    return Err("Aadhaar Number already exists for another student or staff member".into());
+                }
+            }
+        }
+
+        // 2. Phone Limit (Max 3 students)
+        if let Some(phone) = data["contact"].as_str() {
+            if !phone.trim().is_empty() {
+                let count = self.repos.student.count_phone_usage(school_id, phone).await?;
+                if count >= 3 {
+                    return Err("This Contact Number is already used by 3 or more student accounts".into());
+                }
+            }
+        }
+
+        // 3. Email Limit (Max 3 students)
+        if let Some(email) = data["email"].as_str() {
+            if !email.trim().is_empty() {
+                let count = self.repos.student.count_email_usage(school_id, email).await?;
+                if count >= 3 {
+                    return Err("This Email Address is already used by 3 or more student accounts".into());
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
 impl PostgresStudentService {
-    fn get_section_for_roll(&self, roll: i32) -> String {
+    fn get_section_for_roll(&self, roll: i32, section_size: i32) -> String {
         if roll <= 0 {
             return "A".to_string();
         }
-        let index = ((roll - 1) / 60) as usize;
+        let size = if section_size <= 0 { 60 } else { section_size };
+        let index = ((roll - 1) / size) as usize;
         let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         alphabet.chars().nth(index).unwrap_or('Z').to_string()
     }

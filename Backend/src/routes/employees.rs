@@ -34,6 +34,7 @@ pub async fn create_employee(
         "temporaryAddress": payload.temporary_address,
         "experience": payload.experience,
         "education": payload.education,
+        "aadhaarNumber": payload.aadhaar_number,
     });
 
     match state
@@ -213,4 +214,19 @@ pub async fn bulk_import_employees(
         "failCount": fail_count,
     }))
     .into_response()
+}
+
+pub async fn validate_employee(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state.services.employee.validate_employee_data(&school_id, payload).await {
+        Ok(_) => Json(json!({"success": true, "message": "Data is valid"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
 }

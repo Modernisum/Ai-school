@@ -40,6 +40,11 @@ pub trait StudentRepository: Send + Sync {
         class_name: &str,
     ) -> Result<i32, AppError>;
     async fn generate_student_id(&self, school_id: &str) -> Result<String, AppError>;
+    
+    // Security & Validation
+    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str) -> Result<bool, AppError>;
+    async fn count_phone_usage(&self, school_id: &str, phone: &str) -> Result<i32, AppError>;
+    async fn count_email_usage(&self, school_id: &str, email: &str) -> Result<i32, AppError>;
 }
 
 #[async_trait]
@@ -67,6 +72,7 @@ pub trait AcademicRepository: Send + Sync {
     async fn add_class(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_classes(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
     async fn get_class(&self, school_id: &str, class_id: &str) -> Result<Option<Value>, AppError>;
+    async fn get_class_by_name(&self, school_id: &str, name: &str) -> Result<Option<Value>, AppError>;
     async fn update_class(
         &self,
         school_id: &str,

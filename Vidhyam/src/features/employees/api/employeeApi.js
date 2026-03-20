@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const employeeApi = createApi({
     reducerPath: 'employeeApi',
@@ -15,12 +15,12 @@ export const employeeApi = createApi({
     tagTypes: ['Employee'],
     endpoints: (builder) => ({
         getEmployees: builder.query({
-            query: (schoolId) => `/employees/${schoolId}/employees`,
+            query: (schoolId) => `/employees/${schoolId}`,
             providesTags: ['Employee'],
         }),
         addEmployee: builder.mutation({
             query: ({ schoolId, employeeData }) => ({
-                url: `/employees/${schoolId}/employees`,
+                url: `/employees/${schoolId}`,
                 method: 'POST',
                 body: employeeData,
             }),
@@ -28,7 +28,7 @@ export const employeeApi = createApi({
         }),
         deleteEmployee: builder.mutation({
             query: ({ schoolId, employeeId }) => ({
-                url: `/employees/${schoolId}/employees/${employeeId}`,
+                url: `/employees/${schoolId}/${employeeId}`,
                 method: 'DELETE',
             }),
             invalidatesTags: ['Employee'],
@@ -39,7 +39,7 @@ export const employeeApi = createApi({
         }),
         setBaseSalary: builder.mutation({
             query: ({ schoolId, employeeId, salaryData }) => ({
-                url: `/employees/${schoolId}/employees/${employeeId}/salary`,
+                url: `/employees/${schoolId}/${employeeId}/salary`,
                 method: 'POST',
                 body: salaryData,
             }),
@@ -70,7 +70,7 @@ export const employeeApi = createApi({
         }),
         bulkImportEmployees: builder.mutation({
             query: ({ schoolId, payload }) => ({
-                url: `/employees/${schoolId}/employees/bulk`,
+                url: `/employees/${schoolId}/bulk`,
                 method: 'POST',
                 body: payload,
             }),

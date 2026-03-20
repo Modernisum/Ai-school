@@ -174,6 +174,30 @@ impl DbClient {
         .await?;
 
         sqlx::query(
+            "ALTER TABLE students
+             ADD COLUMN IF NOT EXISTS dob TEXT,
+             ADD COLUMN IF NOT EXISTS gender VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS father_name TEXT,
+             ADD COLUMN IF NOT EXISTS mother_name TEXT,
+             ADD COLUMN IF NOT EXISTS aadhaar_number VARCHAR(20),
+             ADD COLUMN IF NOT EXISTS address_line1 TEXT,
+             ADD COLUMN IF NOT EXISTS address_city VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS address_state VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS address_pincode VARCHAR(20),
+             ADD COLUMN IF NOT EXISTS tc_number VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS contact VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS alternative_contact VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS email VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS transport_enabled BOOLEAN DEFAULT FALSE,
+             ADD COLUMN IF NOT EXISTS transport_radius VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS additional_subjects TEXT,
+             ADD COLUMN IF NOT EXISTS admission_date VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS room_number VARCHAR(50)"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
             "CREATE TABLE IF NOT EXISTS employees (
                 id SERIAL PRIMARY KEY,
                 employee_id VARCHAR(255) UNIQUE NOT NULL,
@@ -199,6 +223,7 @@ impl DbClient {
                 class_fees DOUBLE PRECISION DEFAULT 0.0,
                 sections JSONB DEFAULT '[]',
                 streams JSONB DEFAULT '[]',
+                section_size INTEGER DEFAULT 60,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (school_id, id)
@@ -215,7 +240,8 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS total_periods INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS class_fees DOUBLE PRECISION DEFAULT 0.0,
              ADD COLUMN IF NOT EXISTS sections JSONB DEFAULT '[]',
-             ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]'",
+             ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]',
+             ADD COLUMN IF NOT EXISTS section_size INTEGER DEFAULT 60",
         )
         .execute(&pool)
         .await?;

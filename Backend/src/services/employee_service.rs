@@ -16,6 +16,9 @@ impl EmployeeService for PostgresEmployeeService {
         school_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        // Security checks (Aadhaar uniqueness)
+        self.validate_employee_data(school_id, data.clone()).await?;
+
         let employee_id = self.repos.employee.generate_employee_id().await?;
         let mut emp_data = data.clone();
         emp_data["employeeId"] = json!(employee_id);
@@ -124,5 +127,18 @@ impl EmployeeService for PostgresEmployeeService {
             .employee
             .delete_employee(school_id, employee_id)
             .await
+    }
+
+    async fn validate_employee_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
+        // 1. Aadhaar Uniqueness (Cross Student & Employee)
+        if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
+            if !aadhaar.trim().is_empty() {
+                // Reuse the check_aadhaar_exists from student repo as it's cross-table
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar).await? {
+                    return Err("Aadhaar Number already exists for another student or staff member".into());
+                }
+            }
+        }
+        Ok(())
     }
 }

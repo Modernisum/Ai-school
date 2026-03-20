@@ -346,28 +346,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/students",
             Router::new()
                 .route(
-                    "/:schoolId/students",
+                    "/:schoolId",
                     post(routes::students::create_student),
                 )
                 .route(
-                    "/:schoolId/students/bulk",
+                    "/:schoolId/validate",
+                    post(routes::students::validate_student),
+                )
+                .route(
+                    "/:schoolId/bulk",
                     post(routes::students::bulk_import_students),
                 )
-                .route("/:schoolId/students", get(routes::students::list_students))
+                .route("/:schoolId", get(routes::students::list_students))
                 .route(
                     "/:schoolId/studentIds",
                     get(routes::students::list_student_ids),
                 )
                 .route(
-                    "/:schoolId/students/:studentId",
+                    "/:schoolId/:studentId",
                     get(routes::students::get_student),
                 )
                 .route(
-                    "/:schoolId/students/:studentId",
+                    "/:schoolId/:studentId",
                     put(routes::students::update_student),
                 )
                 .route(
-                    "/:schoolId/students/:studentId",
+                    "/:schoolId/:studentId",
                     delete(routes::students::delete_student),
                 ),
         )
@@ -375,27 +379,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/employees",
             Router::new()
                 .route(
-                    "/:schoolId/employees",
+                    "/:schoolId",
                     post(routes::employees::create_employee),
                 )
                 .route(
-                    "/:schoolId/employees/bulk",
+                    "/:schoolId/validate",
+                    post(routes::employees::validate_employee),
+                )
+                .route(
+                    "/:schoolId/bulk",
                     post(routes::employees::bulk_import_employees),
                 )
                 .route(
-                    "/:schoolId/employees",
+                    "/:schoolId",
                     get(routes::employees::list_employees),
                 )
                 .route(
-                    "/:schoolId/employees/:employeeId",
+                    "/:schoolId/:employeeId",
                     get(routes::employees::get_employee),
                 )
                 .route(
-                    "/:schoolId/employees/:employeeId",
+                    "/:schoolId/:employeeId",
                     put(routes::employees::update_employee),
                 )
                 .route(
-                    "/:schoolId/employees/:employeeId",
+                    "/:schoolId/:employeeId",
                     delete(routes::employees::delete_employee),
                 )
                 .route(

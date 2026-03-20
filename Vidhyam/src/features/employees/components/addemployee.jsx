@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import { useAddEmployeeMutation } from '../api/employeeApi';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const getSchoolId = () => {
     for (const k of ['schoolId', 'school_id']) {
         const v = localStorage.getItem(k);
-        if (v && v !== 'undefined') return v;
+        if (v && v !== 'undefined' && v !== 'null') return v;
     }
     return '622079';
 };
@@ -132,6 +132,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
         stream: '',
         experienceYears: '',
         organizationName: '',
+        aadhaarNumber: '',
     });
 
     const age = useMemo(() => calcAge(form.dob), [form.dob]);
@@ -157,6 +158,9 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             if (!form.name.trim()) e.name = 'Full Name is required';
             if (!form.dob) e.dob = 'Date of Birth is required';
             if (!form.gender) e.gender = 'Gender is required';
+            if (form.aadhaarNumber && !/^\d{12}$/.test(form.aadhaarNumber)) {
+                e.aadhaarNumber = 'Aadhaar must be 12 digits';
+            }
         } else if (sectionId === 'contact') {
             if (!form.phone.trim()) e.phone = 'Mobile number is required';
             else if (!/^\d{10}$/.test(form.phone)) e.phone = 'Enter valid 10-digit number';
@@ -170,17 +174,43 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
                 e.email = 'Enter a valid email address';
             }
+        } else if (sectionId === 'professional') {
+            if (form.profileRoles.length === 0) e.profileRoles = 'Select at least one role';
+            if (!form.baseSalary) e.baseSalary = 'Base salary is required';
+        } else if (sectionId === 'education') {
+            if (!form.educationLevel) e.educationLevel = 'Education level is required';
+            if (needsSchool && !form.schoolInstitutionName.trim()) e.schoolInstitutionName = 'School/Institution name required';
+            if (needsUniversity && !form.universityName.trim()) e.universityName = 'University name required';
         }
         setErrors(e);
         return Object.keys(e).length === 0;
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (validateSection(activeSection)) {
-            const idx = SECTIONS.findIndex(s => s.id === activeSection);
-            if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
+            // Backend validation for duplicates (Aadhaar)
+            try {
+                const res = await fetch(`${API_BASE_URL}/employees/${schoolId}/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                });
+                const d = await res.json();
+                
+                if (!res.ok || !d.success) {
+                    setToast({ type: 'error', msg: d.message || 'Server validation failed' });
+                    // Map backend error to specific field for UX
+                    if (d.message?.toLowerCase().includes('aadhaar')) setErrors(e => ({ ...e, aadhaarNumber: d.message }));
+                    return;
+                }
+
+                const idx = SECTIONS.findIndex(s => s.id === activeSection);
+                if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
+            } catch (err) {
+                setToast({ type: 'error', msg: 'Network error: Could not validate with server' });
+            }
         } else {
-            setToast({ type: 'error', msg: 'Please fix errors before proceeding' });
+            setToast({ type: 'error', msg: 'Please fix required fields before proceeding' });
         }
     };
 
@@ -234,6 +264,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             stream: form.stream,
             experienceYears: form.experienceYears,
             organizationName: form.organizationName,
+            aadhaar_number: form.aadhaarNumber,
         };
         try {
             const data = await addEmployee({ schoolId, employeeData: payload }).unwrap();
@@ -289,6 +320,10 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             <Field label="Base Salary (₹)" optional>
                 <input type="number" className={inp()} placeholder="e.g. 25000"
                     value={form.baseSalary} onChange={e => set('baseSalary', e.target.value)} />
+            </Field>
+            <Field label="Aadhaar Number" error={errors.aadhaarNumber} optional>
+                <input className={inp(errors.aadhaarNumber)} placeholder="12-digit Aadhaar number" maxLength={12}
+                    value={form.aadhaarNumber} onChange={e => set('aadhaarNumber', e.target.value.replace(/\D/g, ''))} />
             </Field>
         </div>
     );
@@ -399,14 +434,29 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     })}
                 </div>
             </Field>
+
+            {/* Join Date */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Monthly Base Salary *" error={errors.baseSalary}>
+                    <div className="flex">
+                        <span className="flex items-center px-3 bg-slate-700 border border-r-0 border-white/10 rounded-l-lg text-slate-400 text-sm">₹</span>
+                        <input type="number" className={inp(errors.baseSalary) + ' rounded-l-none'} placeholder="e.g. 25000"
+                            value={form.baseSalary} onChange={e => set('baseSalary', e.target.value)} />
+                    </div>
+                </Field>
+                <Field label="Joining Date">
+                    <input type="date" className={inp()}
+                        value={form.joinDate} onChange={e => set('joinDate', e.target.value)} />
+                </Field>
+            </div>
         </div>
     );
 
     const EducationSection = () => (
         <div className="space-y-5">
-            <Field label="Highest Education Level">
+            <Field label="Highest Education Level *" error={errors.educationLevel}>
                 <select 
-                    className={`${inp()} bg-slate-900`} 
+                    className={`${inp(errors.educationLevel)} bg-slate-900`} 
                     value={form.educationLevel} 
                     onChange={e => set('educationLevel', e.target.value)}
                 >
@@ -421,9 +471,9 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
 
             {/* Conditional: High School / Inter → school name */}
             {needsSchool && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <Field label="School / Institution Name *" error={errors.schoolInstitutionName}>
-                        <input className={inp(errors.schoolInstitutionName)} placeholder="e.g. St. Mary's High School"
+                        <input className={inp(errors.schoolInstitutionName)} placeholder="e.g. St. Xavier's School"
                             value={form.schoolInstitutionName} onChange={e => set('schoolInstitutionName', e.target.value)} />
                     </Field>
                 </motion.div>
@@ -431,7 +481,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
 
             {/* Conditional: Graduation+ → university name + stream */}
             {needsUniversity && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     <Field label="University / College Name *" error={errors.universityName}>
                         <input className={inp(errors.universityName)} placeholder="e.g. Delhi University"
                             value={form.universityName} onChange={e => set('universityName', e.target.value)} />
@@ -613,13 +663,21 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             {/* Toast */}
             {toast && (
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-                    onAnimationComplete={() => setTimeout(() => setToast(null), 4000)}
+                    key={toast.msg}
                     className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium max-w-sm ${toast.type === 'success'
                             ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
                             : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'
                         }`}>
                     {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
                     {toast.msg}
+                    <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70">
+                        <Loader size={12} className="rotate-45" /> 
+                    </button>
+                    <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white">
+                             {/* <X size={12} /> - X is not imported, using Loader rotated for now as close btn */}
+                         </button>
+                    </div>
                 </motion.div>
             )}
         </div>

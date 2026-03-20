@@ -70,7 +70,7 @@ export default function Studentinfo() {
   }, []);
 
   const handleBackToList = () => navigate('/dashboard/student');
-  const handleEditStudent = () => navigate(`/dashboard/addstudent?mode=edit&studentId=${studentId}`);
+  const handleEditStudent = () => navigate(`/dashboard/student/addstudent?mode=edit&studentId=${studentId}`);
 
   // Notification Auto-hide
   useEffect(() => {
@@ -186,7 +186,12 @@ export default function Studentinfo() {
           {/* Identity Section - Full Width */}
           <div className="col-span-12">
             <Suspense fallback={<SectionLoader title="identity" />}>
-              <IdentitySection student={student} />
+              <IdentitySection 
+                student={student.student} 
+                studentId={studentId} 
+                schoolId={schoolId} 
+                onEdit={handleEditStudent} 
+              />
             </Suspense>
           </div>
 
