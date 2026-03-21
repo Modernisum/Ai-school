@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
   Box, Plus, ChevronDown, ChevronRight, Loader, Search,
   CheckCircle, AlertTriangle, X, RefreshCw, Trash2, Package, Upload, Users
@@ -33,10 +35,11 @@ export default function SpaceManagement() {
   const schoolId = getSchoolId();
   
   // RTK Query Hooks
-  const { data: spacesData, isLoading: spacesLoading, isFetching: spacesFetching, refetch: refetchSpaces } = useGetSpacesQuery(schoolId);
-  const { data: categoriesData, isFetching: categoriesFetching } = useGetSpaceCategoriesQuery(schoolId);
-  const { data: materialsData } = useGetMaterialsQuery(schoolId);
-  const { data: employeesData } = useGetEmployeesQuery(schoolId);
+  const pollingInterval = useSelector(selectPollingInterval);
+  const { data: spacesData, isLoading: spacesLoading, isFetching: spacesFetching, refetch: refetchSpaces } = useGetSpacesQuery(schoolId, { pollingInterval });
+  const { data: categoriesData, isFetching: categoriesFetching } = useGetSpaceCategoriesQuery(schoolId, { pollingInterval });
+  const { data: materialsData } = useGetMaterialsQuery(schoolId, { pollingInterval });
+  const { data: employeesData } = useGetEmployeesQuery(schoolId, { pollingInterval });
 
   const [createSpace] = useCreateSpaceMutation();
   const [updateSpace] = useUpdateSpaceMutation();
@@ -182,7 +185,7 @@ export default function SpaceManagement() {
     <div className="min-h-full">
       <div className="page-header flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400">
+          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
             <Box size={18} />
           </div>
           <div>
@@ -193,7 +196,7 @@ export default function SpaceManagement() {
         <div className="flex gap-2">
           <button onClick={() => refetchSpaces()} className={`btn-secondary p-2 ${spacesFetching ? 'animate-spin opacity-50' : ''}`}><RefreshCw size={14} /></button>
           <button onClick={() => setShowCategories(true)} className="btn-secondary flex items-center gap-2 group">
-            <Package size={14} className="group-hover:text-violet-400 transition-colors" />
+            <Package size={14} className="group-hover:text-primary transition-colors" />
             <span className="text-xs font-bold">CATEGORIES</span>
           </button>
           <button onClick={() => setBulkModalOpen(true)} className="btn-secondary flex items-center gap-2 text-xs font-bold">
@@ -208,9 +211,9 @@ export default function SpaceManagement() {
 
       <div className="p-6 space-y-4">
         <div className="relative group">
-          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-violet-400 transition-colors" />
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" />
           <input 
-            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50 focus:bg-violet-500/5 transition-all" 
+            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:bg-primary/5 transition-all" 
             placeholder="FILTER BY SPACE NAME OR ID..." 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
@@ -218,7 +221,7 @@ export default function SpaceManagement() {
         </div>
 
         {spacesLoading ? (
-          <div className="flex items-center justify-center py-24"><Loader size={32} className="animate-spin text-violet-500" /></div>
+          <div className="flex items-center justify-center py-24"><Loader size={32} className="animate-spin text-primary" /></div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 bg-white/[0.02] border border-white/5 rounded-3xl border-dashed">
             <Box size={40} className="text-slate-700 mx-auto mb-3" />
@@ -347,12 +350,12 @@ export default function SpaceManagement() {
               </div>
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {categoriesFetching ? (
-                  <div className="flex justify-center py-10"><Loader className="animate-spin text-violet-500" /></div>
+                  <div className="flex justify-center py-10"><Loader className="animate-spin text-primary" /></div>
                 ) : categories.map(c => (
                   <div key={c.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                     <span className="text-xs font-bold text-slate-300 uppercase italic">{c.name} {c.isDefault && <span className="text-[10px] text-slate-500 ml-1">(SYSTEM DEFAULT)</span>}</span>
                     {!c.isDefault && (
-                      <button onClick={() => handleDeleteCategory(c.id)} className="text-slate-600 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-all"><X size={14} /></button>
+                      <button onClick={() => handleDeleteCategory(c.id)} className="text-slate-600 hover:text-accent p-1.5 rounded-lg hover:bg-accent/10 transition-all"><X size={14} /></button>
                     )}
                   </div>
                 ))}
@@ -450,7 +453,7 @@ export default function SpaceManagement() {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setDeletingSpace(null)} className="btn-secondary py-3 font-black text-[10px] tracking-widest">ABORT</button>
-                <button onClick={handleDeleteSpace} className="btn-primary bg-rose-500 hover:bg-rose-600 border-rose-600 py-3 font-black text-[10px] tracking-widest">CONFIRM PURGE</button>
+                <button onClick={handleDeleteSpace} className="btn-primary bg-accent hover:brightness-110 border-accent/40 py-3 font-black text-[10px] tracking-widest">CONFIRM PURGE</button>
               </div>
             </motion.div>
           </motion.div>
@@ -461,7 +464,7 @@ export default function SpaceManagement() {
         {toast && (
           <motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
             className={`fixed bottom-8 right-8 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black tracking-widest shadow-2xl backdrop-blur-md border uppercase
-              ${toast.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/20 border-rose-500/30 text-rose-400'}`}>
+              ${toast.type === 'success' ? 'bg-success/20 border-success/30 text-success' : 'bg-accent/20 border-accent/30 text-accent'}`}>
             {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
             {toast.msg}
           </motion.div>
@@ -493,17 +496,17 @@ function SpaceAccordionItem({
     <motion.div
       initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      className={`glass-card overflow-hidden transition-all duration-300 ${isOpen ? 'ring-1 ring-violet-500/50 shadow-2xl shadow-violet-500/5' : ''}`}
+      className={`glass-card overflow-hidden transition-all duration-300 ${isOpen ? 'ring-1 ring-primary/50 shadow-2xl shadow-primary/5' : ''}`}
     >
       <div 
         className={`flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.04] transition-colors ${isOpen ? 'bg-white/[0.04]' : ''}`} 
         onClick={onToggle}
       >
         <div className="flex items-center gap-4 flex-1">
-          <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-violet-400' : 'text-slate-600'}`}>
+          <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-primary' : 'text-slate-600'}`}>
             <ChevronRight size={18} />
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-400 group">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group">
             <Box size={20} className="group-hover:scale-110 transition-transform" />
           </div>
           <div className="min-w-0">
@@ -519,14 +522,14 @@ function SpaceAccordionItem({
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2">
             {space.capacity > 0 && (
-              <div className="px-2.5 py-1 rounded-full bg-blue-500/5 border border-blue-500/10 flex items-center gap-1.5">
-                <Users size={10} className="text-blue-400" />
-                <span className="text-[10px] font-black text-blue-400">{space.capacity}</span>
+              <div className="px-2.5 py-1 rounded-full bg-secondary/5 border border-secondary/10 flex items-center gap-1.5">
+                <Users size={10} className="text-secondary" />
+                <span className="text-[10px] font-black text-secondary">{space.capacity}</span>
               </div>
             )}
-            <div className="px-2.5 py-1 rounded-full bg-violet-500/5 border border-violet-500/10 flex items-center gap-1.5">
-              <Package size={10} className="text-violet-400" />
-              <span className="text-[10px] font-black text-violet-400">{items.length}</span>
+            <div className="px-2.5 py-1 rounded-full bg-primary/5 border border-primary/10 flex items-center gap-1.5">
+              <Package size={10} className="text-primary" />
+              <span className="text-[10px] font-black text-primary">{items.length}</span>
             </div>
           </div>
           
@@ -539,7 +542,7 @@ function SpaceAccordionItem({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
+              className="p-2 text-slate-500 hover:text-accent hover:bg-accent/10 rounded-xl transition-all active:scale-90"
             >
               <Trash2 size={14} />
             </button>
@@ -557,7 +560,7 @@ function SpaceAccordionItem({
             <div className="p-6 space-y-6">
               {isFetching && !detailsData ? (
                 <div className="flex flex-col items-center justify-center py-6 gap-3">
-                  <Loader size={24} className="animate-spin text-violet-500" />
+                  <Loader size={24} className="animate-spin text-primary" />
                   <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Hydrating Space Manifest...</p>
                 </div>
               ) : (
@@ -565,10 +568,10 @@ function SpaceAccordionItem({
                   <section className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Package size={14} className="text-violet-400" />
+                        <Package size={14} className="text-primary" />
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Inventory & Materials</h4>
                       </div>
-                      <button className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-all flex items-center gap-1.5" onClick={onAddMaterial}>
+                      <button className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all flex items-center gap-1.5" onClick={onAddMaterial}>
                         <Plus size={10} /> ADD ITEM
                       </button>
                     </div>
@@ -586,7 +589,7 @@ function SpaceAccordionItem({
                             className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex justify-between items-center group hover:bg-white/[0.04] transition-all"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-violet-400 transition-colors">
+                              <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-primary transition-colors">
                                 <Package size={14} />
                               </div>
                               <div>
@@ -607,10 +610,10 @@ function SpaceAccordionItem({
                   <section className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Users size={14} className="text-blue-400" />
+                        <Users size={14} className="text-secondary" />
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Operational Personnel</h4>
                       </div>
-                      <button className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all flex items-center gap-1.5" onClick={onAssignEmployee}>
+                      <button className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary/20 transition-all flex items-center gap-1.5" onClick={onAssignEmployee}>
                         <Plus size={10} /> ASSIGN STAFF
                       </button>
                     </div>
@@ -629,7 +632,7 @@ function SpaceAccordionItem({
                               className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 flex justify-between items-center group hover:bg-white/[0.04] transition-all"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                                <div className="w-8 h-8 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
                                   <Users size={14} />
                                 </div>
                                 <div className="min-w-0">
@@ -637,7 +640,7 @@ function SpaceAccordionItem({
                                   <p className="text-[9px] text-slate-500 font-bold uppercase truncate">{emp.designation}</p>
                                 </div>
                               </div>
-                              <button className="text-slate-700 hover:text-rose-400 transition-colors p-1">
+                              <button className="text-slate-700 hover:text-accent transition-colors p-1">
                                 <X size={14} />
                               </button>
                             </motion.div>

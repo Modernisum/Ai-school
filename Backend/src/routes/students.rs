@@ -3,8 +3,9 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 /* ════════════ VALIDATION HELPERS ════════════ */
@@ -80,6 +81,7 @@ fn validate_update_student(payload: &serde_json::Value) -> Result<(), String> {
 
 pub async fn create_student(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<CreateStudentRequest>,
 ) -> impl IntoResponse {
@@ -105,8 +107,13 @@ pub async fn create_student(
         "fatherName": payload.father_name,
         "motherName": payload.mother_name,
         "addressLine1": payload.address_line1,
-        "addressCity": payload.address_city,
+        "addressCountryId": payload.address_country_id,
+        "addressCountryCode": payload.address_country_code,
+        "addressPhoneCode": payload.address_phone_code,
+        "addressStateId": payload.address_state_id,
         "addressState": payload.address_state,
+        "addressDistrict": payload.address_district,
+        "addressCity": payload.address_city,
         "addressPincode": payload.address_pincode,
         "tcNumber": payload.tc_number,
         "admissionDate": payload.admission_date,
@@ -122,7 +129,7 @@ pub async fn create_student(
     match state
         .services
         .student
-        .create_student(&school_id, student_data)
+        .create_student(&school_id, &t_ctx.admin_id, student_data)
         .await
     {
         Ok(data) => {
@@ -154,13 +161,14 @@ pub async fn create_student(
 #[allow(dead_code)]
 pub async fn bulk_create_students(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<Vec<serde_json::Value>>,
 ) -> impl IntoResponse {
     match state
         .services
         .student
-        .bulk_create_students(&school_id, payload)
+        .bulk_create_students(&school_id, &t_ctx.admin_id, payload)
         .await
     {
         Ok(data) => {
@@ -230,6 +238,7 @@ pub async fn get_student(
 
 pub async fn update_student(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -256,7 +265,7 @@ pub async fn update_student(
     match state
         .services
         .student
-        .update_student(&school_id, &student_id, payload)
+        .update_student(&school_id, &student_id, &t_ctx.admin_id, payload)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Student updated successfully"}))
@@ -271,6 +280,7 @@ pub async fn update_student(
 
 pub async fn delete_student(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     // Validate student_id
@@ -290,7 +300,7 @@ pub async fn delete_student(
     match state
         .services
         .student
-        .delete_student(&school_id, &student_id)
+        .delete_student(&school_id, &student_id, &t_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Student deleted successfully"}))
@@ -319,6 +329,7 @@ pub async fn list_student_ids(
 // POST /api/students/:schoolId/bulk
 pub async fn bulk_import_students(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -349,7 +360,7 @@ pub async fn bulk_import_students(
         match state
             .services
             .student
-            .create_student(&school_id, student_data)
+            .create_student(&school_id, &t_ctx.admin_id, student_data)
             .await
         {
             Ok(created) => {

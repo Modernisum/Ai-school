@@ -1,6 +1,8 @@
-// src/App.js
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { selectTheme } from "./features/settings/settingsSlice";
+import { applyTheme } from "./utils/theme";
 
 // Layout & Critical Paths
 import DashboardLayout from "./features/dashboard/pages/dashboard.jsx";
@@ -19,6 +21,7 @@ const SpacePage = lazy(() => import("./features/infrastructure/pages/space.jsx")
 const StudentManager = lazy(() => import("./features/students/pages/student.jsx"));
 const SubjectPage = lazy(() => import("./features/academics/pages/subject.jsx"));
 const DocumentUploadPage = lazy(() => import("./features/documents/pages/DocumentUploadPage.jsx"));
+const AddStudentPage = lazy(() => import("./features/students/components/addstudent.jsx"));
 const Studentinfo = lazy(() => import("./features/students/components/studentprofile.jsx"));
 const SchoolProfilePage = lazy(() => import("./features/infrastructure/pages/schoolprofile.jsx"));
 const EmployeeFormPage = lazy(() => import("./features/employees/components/employeeform.jsx"));
@@ -29,17 +32,25 @@ const AttendanceManager = lazy(() => import("./features/academics/pages/attendan
 const ReferralCouponsPage = lazy(() => import("./features/billing/pages/referralCoupons.jsx"));
 const AiStudioPage = lazy(() => import("./features/ai/pages/AiStudio.jsx"));
 const TimetableGeneratorPage = lazy(() => import("./features/academics/pages/timetable.jsx"));
+const RecoveryPage = lazy(() => import("./features/dashboard/pages/RecoveryPage.jsx"));
+const GeneralSettings = lazy(() => import("./features/dashboard/pages/GeneralSettings.jsx"));
 
 // Lazy Loader
 const PageLoader = () => (
   <div className="w-full h-[calc(100vh-100px)] flex flex-col items-center justify-center">
-    <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+    <div className="w-12 h-12 border-4 rounded-full animate-spin" style={{ borderColor: 'var(--primary-glow)', borderTopColor: 'var(--primary-color)' }}></div>
     <p className="mt-4 text-slate-400 font-medium animate-pulse">Loading module...</p>
   </div>
 );
 
 
 export default function App() {
+  const theme = useSelector(selectTheme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
   return (
     <Router>
       <Routes>
@@ -59,6 +70,8 @@ export default function App() {
           <Route path="school" element={<Suspense fallback={<PageLoader />}><SchoolPage /></Suspense>} />
           <Route path="space" element={<Suspense fallback={<PageLoader />}><SpacePage /></Suspense>} />
           <Route path="student" element={<Suspense fallback={<PageLoader />}><StudentManager /></Suspense>} />
+          <Route path="student/profile/:studentId" element={<Suspense fallback={<PageLoader />}><Studentinfo /></Suspense>} />
+          <Route path="student/addstudent" element={<Suspense fallback={<PageLoader />}><AddStudentPage /></Suspense>} />
           <Route path="subject" element={<Suspense fallback={<PageLoader />}><SubjectPage /></Suspense>} />
           <Route path="upload" element={<Suspense fallback={<PageLoader />}><DocumentUploadPage /></Suspense>} />
           <Route path="announcements" element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
@@ -71,6 +84,8 @@ export default function App() {
           <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
           <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />
           <Route path="timetable" element={<Suspense fallback={<PageLoader />}><TimetableGeneratorPage /></Suspense>} />
+          <Route path="recovery" element={<Suspense fallback={<PageLoader />}><RecoveryPage /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<PageLoader />}><GeneralSettings /></Suspense>} />
         </Route>
 
         {/* Fallback 404 */}

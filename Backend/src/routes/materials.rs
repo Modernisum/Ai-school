@@ -2,8 +2,9 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn list_materials(
@@ -32,13 +33,14 @@ pub async fn list_materials(
 
 pub async fn buy_material(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, material_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .update_material(&school_id, &material_id, payload)
+        .update_material(&school_id, &tenant_ctx.admin_id, &material_id, payload)
         .await
     {
         Ok(_) => {
@@ -55,6 +57,7 @@ pub async fn buy_material(
 // POST /api/materials/:schoolId/bulk
 pub async fn bulk_import_materials(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -83,7 +86,7 @@ pub async fn bulk_import_materials(
         match state
             .services
             .resource
-            .create_material(&school_id, mat_data)
+            .create_material(&school_id, &tenant_ctx.admin_id, mat_data)
             .await
         {
             Ok(_) => {

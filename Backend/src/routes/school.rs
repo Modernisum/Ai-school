@@ -3,8 +3,9 @@ use axum::{
     extract::{Path, State},
     http::HeaderMap,
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 /// Helper: extract Bearer token from Authorization header
@@ -37,59 +38,21 @@ pub async fn get_school_details(
 /// School-level self-update endpoint.
 /// Schools update their own profile using their accessToken (JWT stored in the school auth table).
 pub async fn update_school_self(
-    headers: HeaderMap,
+    Extension(tenant_ctx): Extension<TenantContext>,
     State(state): State<AppState>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    // Verify that a token is present (basic auth gating)
-    // The school's accessToken is validated by the existing token system
-    let _token = match extract_token(&headers) {
-        Some(t) => t,
-        None => {
-            return (
-                axum::http::StatusCode::UNAUTHORIZED,
-                Json(json!({"success": false, "message": "Authorization token required"})),
-            )
-                .into_response();
-        }
-    };
+    let admin_id = tenant_ctx.admin_id.clone();
 
-    // Build a flat JSON update object that the DB can merge with data || $1
-    // We accept schoolName at top level + all other fields go into data
-    let school_name = payload["schoolName"].as_str();
-    let update_data = payload.clone();
-
-    // Update the data jsonb column via merge, and optionally school_name
-    let result = sqlx::query(
-        "UPDATE schools SET data = COALESCE(data, '{}'::jsonb) || $1::jsonb, updated_at = NOW() WHERE school_id = $2"
-    )
-    .bind(&update_data)
-    .bind(&school_id)
-    .execute(&state.db.pool)
-    .await;
-
-    match result {
-        Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"success": false, "message": e.to_string()})),
-            )
-                .into_response()
-        }
-        Ok(_) => {}
+    match state.services.school.update_school(&school_id, &admin_id, payload).await {
+        Ok(_) => Json(json!({"success": true, "message": "School profile updated successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
     }
-
-    // If schoolName is provided, update the dedicated column too
-    if let Some(name) = school_name {
-        let _ = sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
-            .bind(name)
-            .bind(&school_id)
-            .execute(&state.db.pool)
-            .await;
-    }
-
-    Json(json!({"success": true, "message": "School profile updated successfully"})).into_response()
 }
 
 /// School self-service password change (uses school's own accessToken)

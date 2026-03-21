@@ -24,4 +24,14 @@ class LoginRequested extends AuthEvent {
   List<Object> get props => [schoolId, identifier, password];
 }
 
+class ProfileSelected extends AuthEvent {
+  final Map<String, dynamic> profile;
+  final String identifier;
+  
+  const ProfileSelected({required this.profile, required this.identifier});
+  
+  @override
+  List<Object> get props => [profile, identifier];
+}
+
 class LogoutRequested extends AuthEvent {}

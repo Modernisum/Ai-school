@@ -205,7 +205,7 @@ fn get_subjects() -> &'static HashMap<&'static str, Vec<&'static str>> {
 
 #[async_trait]
 impl SetupService for PostgresSetupService {
-    async fn setup_school(&self, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    async fn setup_school(&self, admin_id: &str, data: Value) -> Result<Value, AppError> {
         let _school_name = data["schoolName"].as_str().ok_or("Missing schoolName")?;
         let _school_address = data["schoolAddress"]
             .as_str()
@@ -230,6 +230,10 @@ impl SetupService for PostgresSetupService {
         school_payload["schoolCode"] = json!(school_code);
 
         self.repos.auth.create_school(school_payload).await?;
+
+        // 2.5 Ensure the school-specific schema exists and is initialized
+        self.repos.db_client.ensure_tenant_schema(&school_id).await
+            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e.to_string()))?;
 
         // 3. Create Auth record
         self.repos
@@ -353,6 +357,16 @@ impl SetupService for PostgresSetupService {
             }
         }
 
+        // System Audit Log
+        let _ = self.repos.audit.log_action(
+            &school_id,
+            admin_id,
+            "SCHOOL",
+            &school_id,
+            "SETUP",
+            data
+        ).await;
+
         Ok(json!({
             "success": true,
             "schoolId": school_id,
@@ -361,10 +375,10 @@ impl SetupService for PostgresSetupService {
         }))
     }
 
-    async fn get_setup(&self, school_id: &str) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    async fn get_setup(&self, school_id: &str) -> Result<Value, AppError> {
         match self.repos.school.get_school(school_id).await? {
             Some(v) => Ok(v),
-            None => Err("School not found".into()),
+            None => Err(Box::<dyn std::error::Error + Send + Sync>::from("School not found")),
         }
     }
 }

@@ -29,7 +29,8 @@ pub async fn setup_school_handler(
 ) -> impl IntoResponse {
     let password = payload["password"].as_str().unwrap_or("").to_string();
 
-    match state.services.setup.setup_school(payload).await {
+    let admin_id = "setup_admin";
+    match state.services.setup.setup_school(admin_id, payload).await {
         Ok(res) => {
             let school_id = res["schoolId"].as_str().unwrap_or("");
             let login_data = serde_json::json!({

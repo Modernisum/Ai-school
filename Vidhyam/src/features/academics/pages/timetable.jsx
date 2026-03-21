@@ -179,27 +179,27 @@ export default function TimetableGeneratorPage() {
       <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead>
-            <tr className="bg-slate-800 text-slate-300">
-              <th className="px-4 py-3 border-b border-r border-slate-700 font-semibold">Day / Period</th>
+            <tr className="bg-white/5 text-slate-300">
+              <th className="px-4 py-3 border-b border-r border-white/10 font-semibold">Day / Period</th>
               {Array.from({ length: periods }).map((_, i) => (
-                <th key={i} className="px-4 py-3 border-b border-r border-slate-700 font-semibold text-center">Period {i + 1}</th>
+                <th key={i} className="px-4 py-3 border-b border-r border-white/10 font-semibold text-center">Period {i + 1}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {days.map(dayNum => (
-              <tr key={dayNum} className="border-b border-slate-700/50">
-                <td className="px-4 py-3 border-r border-slate-700/50 font-medium text-slate-300 bg-slate-800/30">
+              <tr key={dayNum} className="border-b border-white/5">
+                <td className="px-4 py-3 border-r border-white/5 font-medium text-slate-300 bg-white/[0.02]">
                   {DAYS_MAP[dayNum] || `Day ${dayNum}`}
                 </td>
                 {Array.from({ length: periods }).map((_, p) => {
                   const periodNum = p + 1;
                   const slot = slots.find(s => s.day_of_week === dayNum && s.period_number === periodNum);
                   return (
-                    <td key={periodNum} className="px-4 py-2 border-r border-slate-700/50 text-center min-w-[120px] align-middle">
+                    <td key={periodNum} className="px-4 py-2 border-r border-white/5 text-center min-w-[120px] align-middle">
                       {slot ? (
-                        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded p-1.5 flex flex-col justify-center items-center">
-                          <span className="font-bold text-indigo-300 text-xs">{slot.subject}</span>
+                        <div className="bg-primary/10 border border-primary/20 rounded p-1.5 flex flex-col justify-center items-center">
+                          <span className="font-bold text-primary text-xs">{slot.subject}</span>
                           <span className="text-[10px] text-slate-400 mt-1 truncate max-w-full">{slot.teacher_name}</span>
                         </div>
                       ) : (
@@ -217,36 +217,37 @@ export default function TimetableGeneratorPage() {
   };
 
   return (
-    <div className="min-h-full p-6 max-w-7xl mx-auto space-y-6">
+    <div className="min-h-full page-bg text-slate-300">
+      <div className="container mx-auto p-6 max-w-[1600px]">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar className="text-indigo-400" />
-            AI Timetable Generator
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Constraint-satisfaction engine for automated school period scheduling
-          </p>
-        </div>
-        <button
-          onClick={() => setShowGenerateModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg"
-        >
-          <Settings size={16} /> Generate Timetable
-        </button>
+      <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                  <Calendar size={24} className="text-primary" />
+              </div>
+              <div>
+                  <h1 className="text-2xl font-black text-white tracking-tight">AI Timetable Generator</h1>
+                  <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Automated period scheduling engine</p>
+              </div>
+          </div>
+          <button
+            onClick={() => setShowGenerateModal(true)}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all duration-300 active:scale-95"
+          >
+            <Settings size={18} /> Generate Timetable
+          </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 flex items-center gap-3">
+        <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl text-accent flex items-center gap-3">
           <AlertTriangle size={18} /> {error}
-          <button onClick={() => setError(null)} className="ml-auto hover:text-rose-300"><Trash2 size={14} /></button>
+          <button onClick={() => setError(null)} className="ml-auto hover:text-accent"><Trash2 size={14} /></button>
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 flex items-center gap-3">
+        <div className="p-4 bg-success/10 border border-success/20 rounded-xl text-success flex items-center gap-3">
           <CheckCircle size={18} /> {success}
         </div>
       )}
@@ -254,7 +255,7 @@ export default function TimetableGeneratorPage() {
       {/* List */}
       <div className="glass-card overflow-hidden">
         {loading ? (
-          <div className="py-20 flex justify-center"><Loader className="animate-spin text-indigo-400" size={30} /></div>
+          <div className="py-20 flex justify-center"><Loader className="animate-spin text-primary" size={30} /></div>
         ) : timetables.length === 0 ? (
           <div className="text-center py-20 text-slate-500">
             <Database size={40} className="mx-auto mb-3 opacity-20" />
@@ -262,9 +263,9 @@ export default function TimetableGeneratorPage() {
             <p className="text-sm">Click "Generate Timetable" to build a new schedule.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="dark-table">
             <thead>
-              <tr className="border-b border-white/5 text-slate-400 uppercase tracking-wider text-[11px] font-semibold bg-slate-800/50">
+              <tr>
                 <th className="px-6 py-4">Class</th>
                 <th className="px-6 py-4">Config ID</th>
                 <th className="px-6 py-4">Days / Periods</th>
@@ -276,18 +277,18 @@ export default function TimetableGeneratorPage() {
               {timetables.map((t, idx) => (
                 <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-4 font-bold text-white">{t.class_name}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-indigo-300">{t.config_id}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-primary">{t.config_id}</td>
                   <td className="px-6 py-4 text-slate-400">{t.working_days?.length || 5} Days / {t.periods_per_day || 8} Periods</td>
                   <td className="px-6 py-4 text-slate-400">{new Date(t.created_at || Date.now()).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => viewTimetable(t)}
-                      className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors mr-2"
+                      className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors mr-2"
                       title="View Table"
                     ><Eye size={16} /></button>
                     <button
                       onClick={() => handleDelete(t.config_id)}
-                      className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      className="p-2 text-accent hover:bg-accent/10 rounded-lg transition-colors"
                       title="Delete"
                     ><Trash size={16} /></button>
                   </td>
@@ -310,7 +311,7 @@ export default function TimetableGeneratorPage() {
               <div className="p-6 border-b border-white/10 bg-slate-800/50 sticky top-0 z-10 flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Settings className="text-indigo-400" /> Configure Engine
+                    <Settings className="text-primary" /> Configure Engine
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">Define requirements and constraints</p>
                 </div>
@@ -323,7 +324,7 @@ export default function TimetableGeneratorPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Class Parameter</label>
-                    <select className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    <select className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary"
                       value={form.className} onChange={e => setForm(f => ({ ...f, className: e.target.value }))}>
                       <option value="">Select Class...</option>
                       {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
@@ -332,7 +333,7 @@ export default function TimetableGeneratorPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Periods / Day</label>
-                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+                    <input type="number" className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary"
                       value={form.periodsPerDay} min="1" max="15" onChange={e => setForm(f => ({ ...f, periodsPerDay: e.target.value }))} />
                   </div>
                 </div>
@@ -341,7 +342,7 @@ export default function TimetableGeneratorPage() {
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject & Teacher Allocations</label>
-                    <button onClick={addRequirement} className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-lg hover:bg-indigo-500/20 flex items-center gap-1">
+                    <button onClick={addRequirement} className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 flex items-center gap-1">
                       <Plus size={12} /> Add Subject
                     </button>
                   </div>
@@ -349,18 +350,18 @@ export default function TimetableGeneratorPage() {
                   <div className="space-y-3">
                     {form.requirements.map((req, idx) => (
                       <div key={idx} className="bg-slate-800/50 border border-white/5 rounded-xl p-4 relative group">
-                        <button onClick={() => removeRequirement(idx)} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => removeRequirement(idx)} className="absolute -top-2 -right-2 w-6 h-6 bg-accent/20 text-accent rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash size={12} />
                         </button>
                         <div className="grid grid-cols-3 gap-3">
                           <input placeholder="Subject (e.g. Math)" value={req.subject} onChange={e => updateRequirement(idx, 'subject', e.target.value)}
-                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-indigo-500" />
+                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-primary" />
                           <input placeholder="Teacher Name" value={req.teacher_name} onChange={e => updateRequirement(idx, 'teacher_name', e.target.value)}
-                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-indigo-500" />
+                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-primary" />
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-slate-500 whitespace-nowrap">Periods/wk</span>
                             <input type="number" min="1" value={req.required_periods} onChange={e => updateRequirement(idx, 'required_periods', e.target.value)}
-                              className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-indigo-500" />
+                              className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-primary" />
                           </div>
                         </div>
                       </div>
@@ -377,7 +378,7 @@ export default function TimetableGeneratorPage() {
                 </button>
                 <button
                   onClick={handleGenerate} disabled={generating}
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-primary hover:brightness-110 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   {generating ? <Loader className="animate-spin" size={18} /> : <Settings size={18} />}
                   {generating ? 'Processing Engine...' : 'Run Generator'}
@@ -400,7 +401,7 @@ export default function TimetableGeneratorPage() {
               <div className="p-6 border-b border-white/10 flex justify-between items-center bg-slate-800/50">
                 <div>
                   <h2 className="text-xl font-bold text-white">Timetable: {viewingTimetable.class_name}</h2>
-                  <p className="text-xs text-indigo-400 mt-1 font-mono">Config ID: {viewingTimetable.config_id}</p>
+                  <p className="text-xs text-primary mt-1 font-mono">Config ID: {viewingTimetable.config_id}</p>
                 </div>
                 <button onClick={() => setViewingTimetable(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
                   <Trash2 size={18} />
@@ -416,6 +417,7 @@ export default function TimetableGeneratorPage() {
         )}
       </AnimatePresence>
 
+      </div>
     </div>
   );
 }

@@ -42,9 +42,15 @@ pub trait StudentRepository: Send + Sync {
     async fn generate_student_id(&self, school_id: &str) -> Result<String, AppError>;
     
     // Security & Validation
-    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str) -> Result<bool, AppError>;
-    async fn count_phone_usage(&self, school_id: &str, phone: &str) -> Result<i32, AppError>;
-    async fn count_email_usage(&self, school_id: &str, email: &str) -> Result<i32, AppError>;
+    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str, exclude_sid: Option<&str>) -> Result<bool, AppError>;
+    async fn count_phone_usage(&self, school_id: &str, phone: &str, exclude_sid: Option<&str>) -> Result<i32, AppError>;
+    async fn count_email_usage(&self, school_id: &str, email: &str, exclude_sid: Option<&str>) -> Result<i32, AppError>;
+
+    // History & Rollback
+    async fn add_history(&self, school_id: &str, student_id: &str, rev_no: i32, snapshot: Value, delta: Value) -> Result<(), AppError>;
+    async fn get_next_rev_no(&self, school_id: &str, student_id: &str) -> Result<i32, AppError>;
+    async fn get_history_by_id(&self, school_id: &str, id: i32) -> Result<Option<Value>, AppError>;
+    async fn get_all_student_history(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
 }
 
 #[async_trait]
@@ -130,6 +136,14 @@ pub trait AcademicRepository: Send + Sync {
         class_id: &str,
         data: Value,
     ) -> Result<(), AppError>;
+
+    async fn delete_class(&self, school_id: &str, class_id: &str) -> Result<(), AppError>;
+    async fn get_subject(&self, school_id: &str, subject_id: &str) -> Result<Option<Value>, AppError>;
+    async fn update_subject(&self, school_id: &str, subject_id: &str, data: Value) -> Result<(), AppError>;
+    async fn delete_subject(&self, school_id: &str, subject_id: &str) -> Result<(), AppError>;
+    async fn get_exam(&self, school_id: &str, exam_id: &str) -> Result<Option<Value>, AppError>;
+    async fn update_exam(&self, school_id: &str, exam_id: &str, data: Value) -> Result<(), AppError>;
+    async fn delete_exam(&self, school_id: &str, exam_id: &str) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -305,7 +319,7 @@ pub trait ResourceRepository: Send + Sync {
     ) -> Result<(), AppError>;
     async fn delete_space(&self, school_id: &str, space_id: &str) -> Result<(), AppError>;
     async fn add_item(&self, school_id: &str, space_id: &str, data: Value) -> Result<(), AppError>;
-    async fn add_material(&self, school_id: &str, data: Value) -> Result<(), AppError>;
+    async fn add_material(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_material(
         &self,
         school_id: &str,
@@ -347,9 +361,11 @@ pub trait ResourceRepository: Send + Sync {
         collection: &str,
         user_id: &str,
     ) -> Result<Vec<Value>, AppError>;
+    async fn get_announcement(&self, school_id: &str, announcement_id: i32) -> Result<Option<Value>, AppError>;
 
     // Events
     async fn add_event_summary(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
+    async fn get_event(&self, school_id: &str, event_id: i32) -> Result<Option<Value>, AppError>;
     async fn get_materials(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
     async fn get_spaces(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
 
@@ -388,6 +404,10 @@ pub trait ResourceRepository: Send + Sync {
         space_id: &str,
         employee_id: &str,
     ) -> Result<(), AppError>;
+
+    async fn delete_announcement(&self, school_id: &str, announcement_id: i32) -> Result<(), AppError>;
+    async fn delete_material(&self, school_id: &str, material_id: &str) -> Result<(), AppError>;
+    async fn delete_event(&self, school_id: &str, event_id: i32) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -405,6 +425,8 @@ pub trait AwardRepository: Send + Sync {
         school_id: &str,
         student_id: Option<&str>,
     ) -> Result<Vec<Value>, AppError>;
+    async fn get_award(&self, school_id: &str, award_id: i32) -> Result<Option<Value>, AppError>;
+    async fn delete_award(&self, school_id: &str, award_id: i32) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -415,12 +437,16 @@ pub trait ComplainRepository: Send + Sync {
         school_id: &str,
         student_id: Option<&str>,
     ) -> Result<Vec<Value>, AppError>;
+    async fn get_complain(&self, school_id: &str, complain_id: i32) -> Result<Option<Value>, AppError>;
+    async fn delete_complain(&self, school_id: &str, complain_id: i32) -> Result<(), AppError>;
 }
 
 #[async_trait]
 pub trait ReminderRepository: Send + Sync {
     async fn add_reminder(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_reminders(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_reminder(&self, school_id: &str, reminder_id: i32) -> Result<Option<Value>, AppError>;
+    async fn delete_reminder(&self, school_id: &str, reminder_id: i32) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -431,6 +457,8 @@ pub trait DocumentBoxRepository: Send + Sync {
         school_id: &str,
         student_id: Option<&str>,
     ) -> Result<Vec<Value>, AppError>;
+    async fn get_document(&self, school_id: &str, document_id: i32) -> Result<Option<Value>, AppError>;
+    async fn delete_document(&self, school_id: &str, document_id: i32) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -474,6 +502,7 @@ pub trait TaskRepository: Send + Sync {
 pub trait LeaveRepository: Send + Sync {
     async fn add_leave(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_leaves(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_leave(&self, school_id: &str, leave_id: &str) -> Result<Option<Value>, AppError>;
     async fn update_leave_status(
         &self,
         school_id: &str,
@@ -487,6 +516,7 @@ pub trait LeaveRepository: Send + Sync {
         action: &str,
         days: i32,
     ) -> Result<(), AppError>;
+    async fn delete_leave_application(&self, school_id: &str, leave_id: &str) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -500,4 +530,30 @@ pub trait ComprehensiveAnalyticsRepository: Send + Sync {
     ) -> Result<Vec<Value>, AppError>;
     async fn get_fee_summary(&self, school_id: &str) -> Result<Value, AppError>;
     async fn query_staff_analytics(&self, school_id: &str) -> Result<Value, AppError>;
+}
+
+#[async_trait]
+pub trait AuditRepository: Send + Sync {
+    async fn log_action(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        entity_type: &str,
+        entity_id: &str,
+        action_type: &str,
+        changed_data: Value,
+    ) -> Result<(), AppError>;
+
+    async fn get_logs(
+        &self,
+        school_id: &str,
+        entity_type: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn get_log_by_id(
+        &self,
+        school_id: &str,
+        log_id: i32,
+    ) -> Result<Option<Value>, AppError>;
 }

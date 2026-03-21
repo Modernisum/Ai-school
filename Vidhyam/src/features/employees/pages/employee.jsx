@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
     Users, Plus, Search, Eye, Edit3, Trash2, Loader,
     CheckCircle, AlertTriangle, X, User, GraduationCap,
@@ -14,19 +16,31 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.locat
 const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
 
 const typeColor = {
-    'Teacher': 'bg-indigo-500/15 border-indigo-500/25 text-indigo-400',
-    'Principal': 'bg-violet-500/15 border-violet-500/25 text-violet-400',
-    'Vice Principal': 'bg-purple-500/15 border-purple-500/25 text-purple-400',
-    'Admin Staff': 'bg-slate-500/15 border-slate-500/30 text-slate-400',
-    'default': 'bg-blue-500/15 border-blue-500/25 text-blue-400',
+    'Teacher': 'border-white/10 text-slate-300',
+    'Principal': 'border-white/10 text-slate-300',
+    'Vice Principal': 'border-white/10 text-slate-300',
+    'Admin Staff': 'border-white/10 text-slate-400',
+    'default': 'border-white/10 text-slate-400',
+};
+
+const getTypeStyle = (t) => {
+  const backgrounds = {
+    'Teacher': 'var(--primary-glow)',
+    'Principal': 'var(--primary-glow)',
+    'Vice Principal': 'var(--primary-glow)',
+    'Admin Staff': 'rgba(255,255,255,0.05)',
+    'default': 'rgba(255,255,255,0.05)',
+  };
+  return { backgroundColor: backgrounds[t] || backgrounds.default };
 };
 
 export default function EmployeeManagement() {
     const location = useLocation();
     const schoolId = getSchoolId();
+    const pollingInterval = useSelector(selectPollingInterval);
 
     // RTK Query Hooks replace manual state & fetch
-    const { data: empData, isLoading: empLoading, refetch: fetchEmployees } = useGetEmployeesQuery(schoolId);
+    const { data: empData, isLoading: empLoading, refetch: fetchEmployees } = useGetEmployeesQuery(schoolId, { pollingInterval });
     const employees = empData?.data || empData?.employees || [];
     const [deleteEmployeeMutation] = useDeleteEmployeeMutation();
     const [bulkImportEmployees] = useBulkImportEmployeesMutation();
@@ -91,12 +105,12 @@ export default function EmployeeManagement() {
         <div className="min-h-full">
             <div className="page-header flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                        <Users size={18} className="text-violet-400" />
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                        <Users size={20} style={{ color: 'var(--primary-color)' }} />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white">Employee Management</h1>
-                        <p className="text-xs text-slate-500">{employees.length} staff members</p>
+                        <h1 className="text-lg font-bold text-white tracking-tight">Employees</h1>
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">{employees.length} staff members</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -123,20 +137,22 @@ export default function EmployeeManagement() {
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
-                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input className="input-dark pl-9" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input className="input-standard pl-10" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
-                    <select className="input-dark sm:w-44" value={filterType} onChange={e => setFilterType(e.target.value)}>
-                        {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
-                    </select>
+                    <div className="sm:w-48">
+                        <select className="input-standard bg-slate-900" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                            {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Grid */}
                 {empLoading ? (
                     <div className="flex items-center justify-center py-20">
-                        <Loader size={28} className="animate-spin text-indigo-400" />
+                        <Loader size={28} className="animate-spin text-primary" />
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16">
@@ -159,7 +175,7 @@ export default function EmployeeManagement() {
                                 >
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
                                                 <span className="text-white font-bold text-base">{name[0]}</span>
                                             </div>
                                             <div>
@@ -206,12 +222,12 @@ export default function EmployeeManagement() {
                                 </button>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-2xl font-bold text-white">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center text-2xl font-bold text-white">
                                     {(viewEmp.name || viewEmp.employeeName || 'E')[0]}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white">{viewEmp.name || viewEmp.employeeName}</h3>
-                                    <p className="text-xs text-violet-400">{viewEmp.employeeType || viewEmp.type}</p>
+                                    <p className="text-xs text-secondary">{viewEmp.employeeType || viewEmp.type}</p>
                                     <p className="font-mono text-xs text-slate-500">{viewEmp.employeeId || viewEmp.employee_id}</p>
                                 </div>
                             </div>
@@ -242,7 +258,7 @@ export default function EmployeeManagement() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl
-              ${toast.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'}`}
+              ${toast.type === 'success' ? 'bg-success/20 border border-success/30 text-success' : 'bg-accent/20 border border-accent/30 text-accent'}`}
                     >
                         {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
                         {toast.msg}

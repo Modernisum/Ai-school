@@ -11,6 +11,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({required this.apiService}) : super(AuthInitial()) {
     on<AppStarted>(_onAppStarted);
     on<LoginRequested>(_onLoginRequested);
+    on<ProfileSelected>(_onProfileSelected);
     on<LogoutRequested>(_onLogoutRequested);
   }
 
@@ -40,7 +41,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      // Step 1: Request OTP / Login
+      // Step 1: Request OTP / Login (mock sending)
       final loginSuccess = await apiService.login(event.identifier, 'employee');
       if (!loginSuccess) {
         emit(const AuthError('User not found or Invalid credentials.'));
@@ -48,12 +49,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      // Step 2: Verify OTP (Using 'password' field as OTP for this flow)
-      final success = await apiService.verifyOtp(event.identifier, 'employee', event.password);
+      // Step 2: Verify OTP
+      final profiles = await apiService.verifyOtp(event.identifier, 'employee', event.password);
       
+      if (profiles != null) {
+        emit(AuthProfileSelection(profiles: profiles, identifier: event.identifier));
+      } else {
+        emit(const AuthError('Invalid OTP or Password.'));
+        emit(AuthUnauthenticated());
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onProfileSelected(
+      ProfileSelected event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final success = await apiService.selectProfile(
+        event.identifier,
+        event.profile['id'].toString(),
+        event.profile['user_type'].toString()
+      );
+
       if (success) {
         final token = await storage.read(key: 'jwt_token');
-        // Temporarily fetching role from storage set by ApiService, we will refactor ApiService too
         final employeeType = await storage.read(key: 'user_role') ?? 'staff'; 
         
         emit(AuthAuthenticated(
@@ -62,7 +84,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           user: const {},
         ));
       } else {
-        emit(const AuthError('Invalid OTP or Password.'));
+        emit(const AuthError('Failed to login with this profile.'));
         emit(AuthUnauthenticated());
       }
     } catch (e) {

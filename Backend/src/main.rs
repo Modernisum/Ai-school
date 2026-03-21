@@ -375,6 +375,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     delete(routes::students::delete_student),
                 ),
         )
+        .route(
+            "/api/recovery/history/students/:schoolId",
+            get(routes::recovery::list_student_history),
+        )
+        .route(
+            "/api/recovery/history/undo/:schoolId/:id",
+            post(routes::recovery::undo_student_change),
+        )
+        .route(
+            "/api/recovery/audit/:schoolId",
+            get(routes::recovery::list_audit_logs),
+        )
+        .route(
+            "/api/recovery/audit/undo/:schoolId/:logId",
+            post(routes::recovery::undo_audit_log),
+        )
         .nest(
             "/api/employees",
             Router::new()

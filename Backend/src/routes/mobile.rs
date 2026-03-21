@@ -21,8 +21,24 @@ pub struct MobileLoginRequest {
 #[derive(Deserialize)]
 pub struct MobileVerifyRequest {
     pub ident: String,
-    pub role: String,
+    pub role: String, // Deprecated usage, we search both
     pub otp: String,
+}
+
+#[derive(Serialize)]
+pub struct MobileProfile {
+    pub id: String,
+    pub name: String,
+    pub class_name: String,
+    pub user_type: String,
+    pub image_url: String,
+}
+
+#[derive(Deserialize)]
+pub struct MobileSelectProfileRequest {
+    pub user_id: String,
+    pub user_type: String,
+    pub ident: String,
 }
 
 #[allow(dead_code)]
@@ -76,28 +92,129 @@ pub async fn mobile_login(
     })))
 }
 
-// ─── VERIFY OTP (Login Success) ─────────────────────────────────────────
+// ─── VERIFY OTP (Return Matched Profiles) ───────────────────────────────
 pub async fn mobile_verify(
     Path(school_id): Path<String>,
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<MobileVerifyRequest>,
 ) -> Result<Json<Value>, axum::http::StatusCode> {
-    if payload.otp != "1234" {
+    if payload.otp != "1234" && payload.otp != "123456" {
         return Ok(Json(json!({
             "success": false,
             "message": "Invalid OTP"
         })));
     }
 
-    // Generate WhatsApp-style 10-year token
-    let token = create_long_lived_token(&payload.ident, &payload.role, &school_id);
+    let mut profiles = Vec::new();
 
-    // Mock User Data Return (In real app, fetch from DB)
+    // 1. Check Students by contact or alt_contact
+    let student_rows = sqlx::query(
+        r#"
+        SELECT student_id, name, class_name 
+        FROM students 
+        WHERE school_id = $1 AND (contact = $2 OR alternative_contact = $2)
+        "#
+    )
+    .bind(&school_id)
+    .bind(&payload.ident)
+    .fetch_all(&state.repos.db_client.pool)
+    .await
+    .unwrap_or_default();
+
+    for row in student_rows {
+        let id: String = sqlx::Row::try_get(&row, "student_id").unwrap_or_else(|_| "".to_string());
+        let name: Option<String> = sqlx::Row::try_get(&row, "name").unwrap_or(Some("Unknown Student".to_string()));
+        let class_name: String = sqlx::Row::try_get(&row, "class_name").unwrap_or_else(|_| "".to_string());
+        
+        profiles.push(MobileProfile {
+            id,
+            name: name.unwrap_or_else(|| "Unknown Student".to_string()),
+            class_name,
+            user_type: "student".to_string(),
+            image_url: "".to_string(),
+        });
+    }
+
+    // 2. Check Employees by contact in column or JSON
+    let employee_rows = sqlx::query(
+        r#"
+        SELECT employee_id, data->>'name' as name, employee_type 
+        FROM employees 
+        WHERE school_id = $1 AND (contact = $2 OR data->>'contact' = $2)
+        "#
+    )
+    .bind(&school_id)
+    .bind(&payload.ident)
+    .fetch_all(&state.repos.db_client.pool)
+    .await
+    .unwrap_or_default();
+
+    for row in employee_rows {
+        let id: String = sqlx::Row::try_get(&row, "employee_id").unwrap_or_else(|_| "".to_string());
+        let name: Option<String> = sqlx::Row::try_get(&row, "name").unwrap_or(Some("Unknown Employee".to_string()));
+        let employee_type: String = sqlx::Row::try_get(&row, "employee_type").unwrap_or_else(|_| "".to_string());
+        
+        profiles.push(MobileProfile {
+            id,
+            name: name.unwrap_or_else(|| "Unknown Employee".to_string()),
+            class_name: employee_type,
+            user_type: "employee".to_string(),
+            image_url: "".to_string(),
+        });
+    }
+
+    Ok(Json(json!({
+        "success": true,
+        "profiles": profiles
+    })))
+}
+
+// ─── SELECT PROFILE (Issue Token) ───────────────────────────────────────
+pub async fn mobile_select_profile(
+    Path(school_id): Path<String>,
+    State(state): State<AppState>,
+    Json(payload): Json<MobileSelectProfileRequest>,
+) -> Result<Json<Value>, axum::http::StatusCode> {
+    // Generate WhatsApp-style 10-year token
+    let token = create_long_lived_token(&payload.ident, &payload.user_type, &school_id);
+
+    // Fetch the robust display name
+    let mut name = if payload.user_type == "student" {
+        "Student Demo".to_string()
+    } else {
+        "Teacher Demo".to_string()
+    };
+
+    if payload.user_type == "student" {
+        if let Ok(row) = sqlx::query("SELECT name FROM students WHERE student_id = $1 AND school_id = $2")
+            .bind(&payload.user_id)
+            .bind(&school_id)
+            .fetch_one(&state.repos.db_client.pool)
+            .await 
+        {
+            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&row, "name").unwrap_or(None) {
+                name = n;
+            }
+        }
+    } else {
+        if let Ok(row) = sqlx::query("SELECT data->>'name' as name FROM employees WHERE employee_id = $1 AND school_id = $2")
+            .bind(&payload.user_id)
+            .bind(&school_id)
+            .fetch_one(&state.repos.db_client.pool)
+            .await 
+        {
+            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&row, "name").unwrap_or(None) {
+                name = n;
+            }
+        }
+    }
+
     let user_data = json!({
         "ident": payload.ident,
-        "role": payload.role,
+        "role": payload.user_type,
         "schoolId": school_id,
-        "name": if payload.role == "teacher" { "Teacher Demo" } else { "Student Demo" }
+        "id": payload.user_id,
+        "name": name
     });
 
     Ok(Json(json!({
@@ -199,6 +316,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/:school_id/mobile/login", post(mobile_login))
         .route("/:school_id/mobile/verify", post(mobile_verify))
+        .route("/:school_id/mobile/select-profile", post(mobile_select_profile))
         .route("/:school_id/mobile/fees/:student_id", get(get_student_fee_mobile))
         .route("/:school_id/mobile/order", post(create_mobile_order))
 }

@@ -1,8 +1,9 @@
+use crate::middleware::rls::TenantContext;
 use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Extension, Json,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -14,16 +15,17 @@ pub struct PendingFeesQuery {
     #[serde(rename = "className")]
     pub class_name: Option<String>,
 }
-
 pub async fn create_school_fee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
+
     match state
         .services
         .operations
-        .create_school_fee(&school_id, payload)
+        .create_school_fee(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -89,13 +91,14 @@ pub async fn get_student_fee(
 }
 pub async fn pay_fee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .pay_fee(&school_id, &student_id, payload)
+        .pay_fee(&school_id, &student_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -106,9 +109,9 @@ pub async fn pay_fee(
             .into_response(),
     }
 }
-
 pub async fn add_fee_to_student_route(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -118,7 +121,7 @@ pub async fn add_fee_to_student_route(
     match state
         .services
         .operations
-        .add_fee_to_student(&school_id, &student_id, amount, fee_id)
+        .add_fee_to_student(&school_id, &student_id, amount, fee_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -129,17 +132,18 @@ pub async fn add_fee_to_student_route(
             .into_response(),
     }
 }
-
 pub async fn apply_discount(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     let discount = payload["discount"].as_f64().unwrap_or(0.0);
+
     match state
         .services
         .operations
-        .apply_discount(&school_id, &student_id, discount)
+        .apply_discount(&school_id, &student_id, discount, &tenant_ctx.admin_id)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -155,13 +159,14 @@ pub async fn apply_discount(
 
 pub async fn create_custom_fee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .create_custom_fee(&school_id, payload)
+        .create_custom_fee(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -189,12 +194,13 @@ pub async fn list_custom_fees(
 
 pub async fn delete_custom_fee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, fee_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .remove_custom_fee(&school_id, &fee_id)
+        .remove_custom_fee(&school_id, &fee_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Deleted"})).into_response(),
@@ -208,12 +214,13 @@ pub async fn delete_custom_fee(
 
 pub async fn apply_custom_fee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, fee_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .apply_custom_fee(&school_id, &fee_id)
+        .apply_custom_fee(&school_id, &fee_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -253,13 +260,14 @@ pub async fn get_student_profile(
 
 pub async fn create_coupon(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .create_coupon(&school_id, payload)
+        .create_coupon(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -287,12 +295,13 @@ pub async fn list_coupons(
 
 pub async fn delete_coupon(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, coupon_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .remove_coupon(&school_id, &coupon_id)
+        .remove_coupon(&school_id, &coupon_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Deleted"})).into_response(),
@@ -306,6 +315,7 @@ pub async fn delete_coupon(
 
 pub async fn block_coupon(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, coupon_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -313,7 +323,7 @@ pub async fn block_coupon(
     match state
         .services
         .operations
-        .toggle_block_coupon(&school_id, &coupon_id, blocked)
+        .toggle_block_coupon(&school_id, &coupon_id, &tenant_ctx.admin_id, blocked)
         .await
     {
         Ok(_) => {
@@ -356,6 +366,7 @@ pub async fn validate_coupon(
 
 pub async fn use_coupon(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, coupon_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -364,7 +375,7 @@ pub async fn use_coupon(
     match state
         .services
         .operations
-        .use_coupon(&school_id, &coupon_id, student_id, discount)
+        .use_coupon(&school_id, &coupon_id, student_id, &tenant_ctx.admin_id, discount)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),

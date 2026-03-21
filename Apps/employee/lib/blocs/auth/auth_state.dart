@@ -26,6 +26,16 @@ class AuthAuthenticated extends AuthState {
   List<Object?> get props => [token, employeeType, user];
 }
 
+class AuthProfileSelection extends AuthState {
+  final List<dynamic> profiles;
+  final String identifier;
+
+  const AuthProfileSelection({required this.profiles, required this.identifier});
+
+  @override
+  List<Object?> get props => [profiles, identifier];
+}
+
 class AuthUnauthenticated extends AuthState {}
 
 class AuthError extends AuthState {

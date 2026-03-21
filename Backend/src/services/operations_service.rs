@@ -17,6 +17,7 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         role: &str,
         user_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let date = data["date"]
@@ -67,6 +68,16 @@ impl OperationsService for PostgresOperationsService {
             .add_attendance_history(school_id, role, user_id, "mark", final_data.clone())
             .await?;
 
+        // System Audit Log
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "ATTENDANCE",
+            user_id,
+            "MARK",
+            final_data.clone()
+        ).await.ok();
+
         Ok(response_data)
     }
 
@@ -75,6 +86,7 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         role: &str,
         user_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let date = data["date"]
@@ -109,6 +121,15 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "ATTENDANCE_HOLIDAY",
+            user_id,
+            "MARK_HOLIDAY",
+            holiday_data.clone()
+        ).await.ok();
+
         Ok(holiday_data)
     }
 
@@ -118,6 +139,7 @@ impl OperationsService for PostgresOperationsService {
         role: &str,
         user_id: &str,
         date: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let out_time = data["outTime"]
@@ -165,6 +187,19 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
+        // System Audit Log
+        let delta = self.calculate_delta(&existing, &updated);
+        if !delta.as_object().map(|o| o.is_empty()).unwrap_or(true) {
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "ATTENDANCE",
+                user_id,
+                "UPDATE",
+                delta
+            ).await.ok();
+        }
+
         Ok(updated)
     }
 
@@ -174,11 +209,26 @@ impl OperationsService for PostgresOperationsService {
         role: &str,
         user_id: &str,
         date: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let existing_list = self.repos.operations.get_attendance(school_id, role, user_id).await?;
+        let existing = existing_list.iter().find(|a| a["date"].as_str() == Some(date)).cloned();
+
         self.repos
             .operations
             .delete_attendance(school_id, role, user_id, date)
             .await?;
+        
+        if let Some(e) = existing {
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "ATTENDANCE",
+                user_id,
+                "DELETE",
+                e
+            ).await.ok();
+        }
 
         self.repos
             .operations
@@ -209,12 +259,27 @@ impl OperationsService for PostgresOperationsService {
     async fn create_school_fee(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos
+        let res = self
+            .repos
             .operations
             .add_school_fee(school_id, data.clone())
-            .await
+            .await?;
+        
+        let fee_id = res["id"].as_str().or(res["feeId"].as_str()).unwrap_or("unknown");
+
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "SCHOOL_FEE",
+            fee_id,
+            "CREATE",
+            data
+        ).await.ok();
+
+        Ok(res)
     }
 
     async fn get_school_fees(
@@ -258,6 +323,7 @@ impl OperationsService for PostgresOperationsService {
         student_id: &str,
         amount: f64,
         fee_id: &str,
+        admin_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut fee_record = match self
             .repos
@@ -297,6 +363,15 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "STUDENT_FEE_ADDITION",
+            student_id,
+            "ADD_FEE",
+            json!({"amount": amount, "feeId": fee_id})
+        ).await.ok();
+
         Ok(fee_record)
     }
 
@@ -305,6 +380,7 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         student_id: &str,
         discount: f64,
+        admin_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut fee_record = self.get_student_fee(school_id, student_id).await?;
         let _total = fee_record["totalFees"].as_f64().unwrap_or(0.0);
@@ -335,6 +411,15 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "STUDENT_FEE_DISCOUNT",
+            student_id,
+            "APPLY_DISCOUNT",
+            json!({"discount": discount})
+        ).await.ok();
+
         Ok(fee_record)
     }
 
@@ -342,6 +427,7 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         student_id: &str,
+        admin_id: &str,
         payload: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut fee_record = self.get_student_fee(school_id, student_id).await?;
@@ -380,19 +466,16 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
-        Ok(fee_record)
-    }
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "STUDENT_FEE_PAYMENT",
+            student_id,
+            "PAY",
+            payload
+        ).await.ok();
 
-    async fn set_employee_salary_params(
-        &self,
-        school_id: &str,
-        employee_id: &str,
-        data: Value,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos
-            .operations
-            .update_employee_salary_params(school_id, employee_id, data)
-            .await
+        Ok(fee_record)
     }
 
     async fn get_salary_breakdown(
@@ -477,6 +560,7 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut emp = self
@@ -494,6 +578,17 @@ impl OperationsService for PostgresOperationsService {
             .employee
             .update_employee(school_id, employee_id, emp)
             .await?;
+        
+        // System Audit Log
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EMPLOYEE_BONUS",
+            employee_id,
+            "ADD",
+            json!({"amount": add_amount, "newBonus": current_bonus + add_amount})
+        ).await;
+
         Ok(json!({"newBonus": current_bonus + add_amount}))
     }
 
@@ -501,6 +596,7 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut emp = self
@@ -518,6 +614,17 @@ impl OperationsService for PostgresOperationsService {
             .employee
             .update_employee(school_id, employee_id, emp)
             .await?;
+
+        // System Audit Log
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EMPLOYEE_AID",
+            employee_id,
+            "ADD",
+            json!({"amount": add_amount, "newAid": current_aid + add_amount})
+        ).await;
+
         Ok(json!({"newAid": current_aid + add_amount}))
     }
 
@@ -525,6 +632,7 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let now = Local::now();
         let (month, year) = if now.month() == 1 {
@@ -614,6 +722,16 @@ impl OperationsService for PostgresOperationsService {
             )
             .await?;
 
+        // System Audit Log
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "PAYROLL_CLOSE_MONTH",
+            employee_id,
+            "CLOSE",
+            json!({"month": month, "year": year})
+        ).await;
+
         Ok(())
     }
 
@@ -621,6 +739,7 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let p_type = data["type"].as_str().ok_or("Missing payment type")?;
@@ -664,6 +783,16 @@ impl OperationsService for PostgresOperationsService {
                 .await?;
         }
 
+        // System Audit Log
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EMPLOYEE_PAYMENT",
+            employee_id,
+            "ADD",
+            data.clone()
+        ).await;
+
         Ok(data)
     }
 
@@ -672,9 +801,20 @@ impl OperationsService for PostgresOperationsService {
     async fn create_custom_fee(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.add_custom_fee(school_id, data).await
+        let res = self.repos.operations.add_custom_fee(school_id, data.clone()).await?;
+        
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "CUSTOM_FEE",
+            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            "CREATE",
+            data
+        ).await;
+        Ok(res)
     }
 
     async fn list_custom_fees(
@@ -688,22 +828,44 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         fee_id: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.repos
             .operations
             .delete_custom_fee(school_id, fee_id)
-            .await
+            .await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "CUSTOM_FEE",
+            fee_id,
+            "DELETE",
+            json!({})
+        ).await;
+        Ok(())
     }
 
     async fn apply_custom_fee(
         &self,
         school_id: &str,
         fee_id: &str,
+        admin_id: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos
+        let res = self.repos
             .operations
             .apply_custom_fee(school_id, fee_id)
-            .await
+            .await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "CUSTOM_FEE_APPLY",
+            fee_id,
+            "APPLY",
+            json!({})
+        ).await;
+        Ok(res)
     }
 
     async fn get_student_profile(
@@ -722,9 +884,20 @@ impl OperationsService for PostgresOperationsService {
     async fn create_coupon(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos.operations.create_coupon(school_id, data).await
+        let res = self.repos.operations.create_coupon(school_id, data.clone()).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "COUPON",
+            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            "CREATE",
+            data
+        ).await;
+        Ok(res)
     }
     async fn list_coupons(
         &self,
@@ -736,22 +909,44 @@ impl OperationsService for PostgresOperationsService {
         &self,
         school_id: &str,
         coupon_id: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.repos
             .operations
             .delete_coupon(school_id, coupon_id)
-            .await
+            .await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "COUPON",
+            coupon_id,
+            "DELETE",
+            json!({})
+        ).await;
+        Ok(())
     }
     async fn toggle_block_coupon(
         &self,
         school_id: &str,
         coupon_id: &str,
+        admin_id: &str,
         blocked: bool,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.repos
             .operations
             .block_coupon(school_id, coupon_id, blocked)
-            .await
+            .await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "COUPON_BLOCK",
+            coupon_id,
+            if blocked { "BLOCK" } else { "UNBLOCK" },
+            json!({})
+        ).await;
+        Ok(())
     }
     async fn validate_coupon(
         &self,
@@ -768,12 +963,23 @@ impl OperationsService for PostgresOperationsService {
         school_id: &str,
         coupon_id: &str,
         student_id: &str,
+        admin_id: &str,
         discount: f64,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        self.repos
+        let res = self.repos
             .operations
             .use_coupon(school_id, coupon_id, student_id, discount)
-            .await
+            .await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "COUPON_USE",
+            coupon_id,
+            "USE",
+            json!({"studentId": student_id, "discount": discount})
+        ).await;
+        Ok(res)
     }
 
     async fn generate_fee_reminder(
@@ -802,6 +1008,29 @@ impl OperationsService for PostgresOperationsService {
             "tone": tone
         }))
     }
+
+    async fn set_employee_salary_params(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let old = self.repos.employee.get_employee(school_id, employee_id).await?.unwrap_or(json!({}));
+        self.repos.employee.update_employee(school_id, employee_id, data.clone()).await?;
+        
+        // System Audit Log
+        let delta = self.calculate_delta(&old, &data);
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EMPLOYEE_SALARY_PARAMS",
+            employee_id,
+            "UPDATE",
+            delta
+        ).await;
+        Ok(())
+    }
 }
 
 impl PostgresOperationsService {
@@ -818,5 +1047,30 @@ impl PostgresOperationsService {
             }
             _ => "".to_string(),
         }
+    }
+
+    fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
+        let mut delta = json!({});
+        if let (Some(old_obj), Some(new_obj)) = (old.as_object(), new.as_object()) {
+            for (key, new_val) in new_obj {
+                if key == "updatedAt" || key == "updated_at" || key == "createdAt" || key == "created_at" {
+                    continue;
+                }
+                if let Some(old_val) = old_obj.get(key) {
+                    if old_val != new_val {
+                        delta[key] = json!({
+                            "old": old_val.clone(),
+                            "new": new_val.clone()
+                        });
+                    }
+                } else {
+                    delta[key] = json!({
+                        "old": null,
+                        "new": new_val.clone()
+                    });
+                }
+            }
+        }
+        delta
     }
 }

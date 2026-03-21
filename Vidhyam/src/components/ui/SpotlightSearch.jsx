@@ -102,7 +102,7 @@ export default function SpotlightSearch() {
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 overflow-hidden"
+            className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-primary/10 overflow-hidden"
           >
             {/* Search Header */}
             <div className="flex items-center px-4 py-3 border-b border-slate-800">
@@ -116,7 +116,7 @@ export default function SpotlightSearch() {
                 className="flex-1 bg-transparent border-none outline-none text-slate-100 placeholder-slate-500 text-lg py-1"
               />
               <div className="flex items-center gap-2">
-                {loading && <Loader2 className="animate-spin text-indigo-500" size={18} />}
+                {loading && <Loader2 className="animate-spin text-primary" size={18} />}
                 <button 
                   onClick={() => setIsOpen(false)}
                   className="p-1 hover:bg-slate-800 rounded-md text-slate-500 transition-colors"
@@ -130,7 +130,7 @@ export default function SpotlightSearch() {
             <div className="max-h-[400px] overflow-y-auto p-2">
               {!query && (
                 <div className="p-8 text-center">
-                  <div className="inline-flex p-3 bg-indigo-500/10 rounded-xl text-indigo-400 mb-3">
+                  <div className="inline-flex p-3 bg-primary/10 rounded-xl text-primary mb-3">
                     <Command size={24} />
                   </div>
                   <p className="text-slate-400 text-sm">Type to search for students, staff, or schools.</p>
@@ -150,14 +150,14 @@ export default function SpotlightSearch() {
                       onMouseEnter={() => setSelectedIndex(index)}
                       className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 text-left w-full gap-4 ${
                         selectedIndex === index 
-                        ? 'bg-indigo-500/10 border-indigo-500/20' 
+                        ? 'bg-primary/10 border-primary/20' 
                         : 'hover:bg-slate-800/50 border-transparent'
                       } border`}
                     >
                       <div className={`p-2 rounded-lg ${
-                        result.type === 'student' ? 'bg-emerald-500/10 text-emerald-500' :
-                        result.type === 'employee' ? 'bg-amber-500/10 text-amber-500' :
-                        'bg-blue-500/10 text-blue-500'
+                        result.type === 'student' ? 'bg-success/10 text-success' :
+                        result.type === 'employee' ? 'bg-warning/10 text-warning' :
+                        'bg-secondary/10 text-secondary'
                       }`}>
                         {result.type === 'student' && <GraduationCap size={18} />}
                         {result.type === 'employee' && <User size={18} />}

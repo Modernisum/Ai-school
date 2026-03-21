@@ -14,6 +14,7 @@ impl EmployeeService for PostgresEmployeeService {
     async fn create_employee(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         // Security checks (Aadhaar uniqueness)
@@ -28,12 +29,24 @@ impl EmployeeService for PostgresEmployeeService {
             .employee
             .add_employee(school_id, emp_data.clone())
             .await?;
+
+        // Audit Log
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EMPLOYEE",
+            &employee_id,
+            "CREATE",
+            emp_data.clone()
+        ).await.ok();
+
         Ok(emp_data)
     }
 
     async fn bulk_create_employees(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Vec<Value>,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut successful = 0;
@@ -64,8 +77,20 @@ impl EmployeeService for PostgresEmployeeService {
             emp_data["employeeId"] = json!(employee_id);
             emp_data["status"] = json!("active");
 
-            match self.repos.employee.add_employee(school_id, emp_data).await {
-                Ok(_) => successful += 1,
+            match self.repos.employee.add_employee(school_id, emp_data.clone()).await {
+                Ok(_) => {
+                    successful += 1;
+                    // Audit Log
+                    let employee_id_str = emp_data["employeeId"].as_str().unwrap_or("unknown").to_string();
+                    self.repos.audit.log_action(
+                        school_id,
+                        admin_id,
+                        "EMPLOYEE",
+                        &employee_id_str,
+                        "CREATE_BULK",
+                        emp_data
+                    ).await.ok();
+                },
                 Err(e) => {
                     failed += 1;
                     errors.push(json!({ "row": row_number, "name": name, "error": format!("Database Error: {}", e) }));
@@ -110,23 +135,60 @@ impl EmployeeService for PostgresEmployeeService {
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let old_emp = self.repos.employee.get_employee(school_id, employee_id).await?
+            .ok_or("Employee not found")?;
+
         self.repos
             .employee
-            .update_employee(school_id, employee_id, data)
-            .await
+            .update_employee(school_id, employee_id, data.clone())
+            .await?;
+
+        let delta = self.calculate_delta(&old_emp, &data);
+
+        // Audit Log
+        if !delta.as_object().map(|o| o.is_empty()).unwrap_or(true) {
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "EMPLOYEE",
+                employee_id,
+                "UPDATE",
+                delta
+            ).await.ok();
+        }
+
+        Ok(())
     }
 
     async fn delete_employee(
         &self,
         school_id: &str,
         employee_id: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let emp = self.repos.employee.get_employee(school_id, employee_id).await?;
+        
         self.repos
             .employee
             .delete_employee(school_id, employee_id)
-            .await
+            .await?;
+
+        if let Some(e) = emp {
+            // Audit Log
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "EMPLOYEE",
+                employee_id,
+                "DELETE",
+                e
+            ).await.ok();
+        }
+
+        Ok(())
     }
 
     async fn validate_employee_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
@@ -134,11 +196,38 @@ impl EmployeeService for PostgresEmployeeService {
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
                 // Reuse the check_aadhaar_exists from student repo as it's cross-table
-                if self.repos.student.check_aadhaar_exists(school_id, aadhaar).await? {
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, None).await? {
                     return Err("Aadhaar Number already exists for another student or staff member".into());
                 }
             }
         }
         Ok(())
+    }
+}
+
+impl PostgresEmployeeService {
+    fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
+        let mut delta = json!({});
+        if let (Some(old_obj), Some(new_obj)) = (old.as_object(), new.as_object()) {
+            for (key, new_val) in new_obj {
+                if key == "updatedAt" || key == "updated_at" || key == "createdAt" || key == "created_at" {
+                    continue;
+                }
+                if let Some(old_val) = old_obj.get(key) {
+                    if old_val != new_val {
+                        delta[key] = json!({
+                            "old": old_val.clone(),
+                            "new": new_val.clone()
+                        });
+                    }
+                } else {
+                    delta[key] = json!({
+                        "old": null,
+                        "new": new_val.clone()
+                    });
+                }
+            }
+        }
+        delta
     }
 }

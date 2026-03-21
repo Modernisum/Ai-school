@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import { 
   AlertCircle, Loader, RefreshCw, CheckCircle, AlertTriangle, 
   X, Clock, User, Eye, Download, FileText 
@@ -13,7 +15,8 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year: 'nume
 
 export default function ComplainManagement() {
   const schoolId = getSchoolId();
-  const { data: complainsData, isLoading, isFetching, refetch } = useGetComplaintsQuery(schoolId);
+  const pollingInterval = useSelector(selectPollingInterval);
+  const { data: complainsData, isLoading, isFetching, refetch } = useGetComplaintsQuery(schoolId, { pollingInterval });
   const { messages } = useWebSockets(schoolId);
   
   const [toast, setToast] = useState(null);

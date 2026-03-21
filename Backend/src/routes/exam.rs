@@ -1,21 +1,23 @@
 use crate::AppState;
+use crate::middleware::rls::TenantContext;
 use axum::{
     extract::{Path, State, Query},
     response::IntoResponse,
-    Json,
+    Extension, Json,
 };
 use std::collections::HashMap;
 use serde_json::json;
 
 pub async fn create_exam(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .academic
-        .create_exam(&school_id, payload)
+        .create_exam(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(data).into_response(),

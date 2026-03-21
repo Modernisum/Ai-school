@@ -2,19 +2,21 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn set_base_salary(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .set_employee_salary_params(&school_id, &employee_id, payload)
+        .set_employee_salary_params(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(_) => {
@@ -49,13 +51,14 @@ pub async fn get_salary_breakdown(
 
 pub async fn add_bonus(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .add_bonus(&school_id, &employee_id, payload)
+        .add_bonus(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -69,13 +72,14 @@ pub async fn add_bonus(
 
 pub async fn add_aid(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .add_aid(&school_id, &employee_id, payload)
+        .add_aid(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -89,12 +93,13 @@ pub async fn add_aid(
 
 pub async fn auto_close_month(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .operations
-        .auto_close_month(&school_id, &employee_id)
+        .auto_close_month(&school_id, &employee_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Month closed successfully"})).into_response(),

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { selectSchoolId, updateProfile, logout as logoutAction } from '../../auth/authSlice';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import { 
     useGetSchoolProfileQuery, 
     useUpdateSchoolProfileMutation 
@@ -29,7 +30,8 @@ export default function AccountPage() {
     const schoolId = getSchoolId();
     
     // RTK Query hooks
-    const { data: profileData, isLoading, isFetching, refetch } = useGetSchoolProfileQuery(schoolId);
+    const pollingInterval = useSelector(selectPollingInterval);
+    const { data: profileData, isLoading, isFetching, refetch } = useGetSchoolProfileQuery(schoolId, { pollingInterval });
     const [updateSchoolProfile, { isLoading: isUpdating }] = useUpdateSchoolProfileMutation();
 
     const [editSection, setEditSection] = useState(null);
@@ -162,7 +164,7 @@ export default function AccountPage() {
 
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-            <Loader size={40} className="animate-spin text-orange-500" />
+            <Loader size={40} className="animate-spin text-primary" />
             <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] animate-pulse">Synchronizing Records...</p>
         </div>
     );
@@ -174,8 +176,8 @@ export default function AccountPage() {
         <div className="min-h-full pb-12">
             <div className="page-header flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/5 flex items-center justify-center border border-orange-500/20 shadow-lg shadow-orange-500/5">
-                        <Building2 size={22} className="text-orange-400" />
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 shadow-lg shadow-primary/5">
+                        <Building2 size={22} className="text-primary" />
                     </div>
                     <div>
                         <h1 className="text-xl font-black text-white italic tracking-tighter uppercase italic">Institutional Profile</h1>
@@ -186,7 +188,7 @@ export default function AccountPage() {
                     <button onClick={() => refetch()} className={`p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all ${isFetching ? 'animate-spin opacity-50' : ''}`}>
                         <RefreshCw size={16} />
                     </button>
-                    <button onClick={handleSignOut} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-500/5">
+                    <button onClick={handleSignOut} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-accent/5">
                         <LogOut size={14} /> De-Authenticate
                     </button>
                 </div>
@@ -198,8 +200,8 @@ export default function AccountPage() {
                     initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                     className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
-                    <div className="glass-card p-4 flex items-center gap-4 border-l-4 border-l-indigo-500 shadow-xl shadow-indigo-500/5 hover:bg-white/[0.04] transition-all">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                    <div className="glass-card p-4 flex items-center gap-4 border-l-4 border-l-primary shadow-xl shadow-primary/5 hover:bg-white/[0.04] transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                             <Landmark size={20} />
                         </div>
                         <div>
@@ -207,8 +209,8 @@ export default function AccountPage() {
                             <p className="text-lg font-black text-white italic tracking-tight">₹{walletBalance}</p>
                         </div>
                     </div>
-                    <div className="glass-card p-4 flex items-center gap-4 border-l-4 border-l-emerald-500 shadow-xl shadow-emerald-500/5 hover:bg-white/[0.04] transition-all">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                    <div className="glass-card p-4 flex items-center gap-4 border-l-4 border-l-success shadow-xl shadow-success/5 hover:bg-white/[0.04] transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success">
                             <TrendingUp size={20} />
                         </div>
                         <div>
@@ -216,15 +218,15 @@ export default function AccountPage() {
                             <p className="text-lg font-black text-white italic tracking-tight">{school.studentCount || '0'} ALLOCATED</p>
                         </div>
                     </div>
-                    <div className={`glass-card p-4 flex items-center gap-4 border-l-4 shadow-xl shadow-orange-500/5 hover:bg-white/[0.04] transition-all ${billingStatus === 'suspended' ? 'border-l-rose-500' : 'border-l-orange-500'}`}>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${billingStatus === 'suspended' ? 'bg-rose-500/10 text-rose-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                    <div className={`glass-card p-4 flex items-center gap-4 border-l-4 shadow-xl shadow-warning/5 hover:bg-white/[0.04] transition-all ${billingStatus === 'suspended' ? 'border-l-accent' : 'border-l-warning'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${billingStatus === 'suspended' ? 'bg-accent/10 text-accent' : 'bg-warning/10 text-warning'}`}>
                             <Shield size={20} />
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Account Status</p>
                             <div className="flex items-center gap-2">
-                                <p className={`text-lg font-black italic tracking-tight uppercase ${billingStatus === 'suspended' ? 'text-rose-400' : 'text-orange-400'}`}>{billingStatus}</p>
-                                {billingStatus !== 'active' && <AlertTriangle size={14} className="text-orange-500 animate-pulse" />}
+                                <p className={`text-lg font-black italic tracking-tight uppercase ${billingStatus === 'suspended' ? 'text-accent' : 'text-warning'}`}>{billingStatus}</p>
+                                {billingStatus !== 'active' && <AlertTriangle size={14} className="text-warning animate-pulse" />}
                             </div>
                         </div>
                     </div>
@@ -322,7 +324,7 @@ export default function AccountPage() {
                     >
                         <div className="divide-y divide-white/[0.04]">
                             <DataRow label="Access Credentials" value="••••••••" />
-                            <DataRow label="School Identifier" value={<span className="font-mono text-orange-400/80">{schoolId}</span>} />
+                            <DataRow label="School Identifier" value={<span className="font-mono text-warning/80">{schoolId}</span>} />
                             <DataRow label="Audit Trail" value="LAST SIGN-IN FROM 192.168.1.1" />
                         </div>
                     </ProfileSection>
@@ -340,8 +342,8 @@ export default function AccountPage() {
                     >
                         {editSection === 'developer' ? (
                             <div className="space-y-4 pt-2">
-                                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl space-y-3">
-                                    <p className="text-xs text-indigo-300 font-bold uppercase tracking-widest">Generate New Key</p>
+                                <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl space-y-3">
+                                    <p className="text-xs text-primary font-bold uppercase tracking-widest">Generate New Key</p>
                                     <div className="flex gap-2">
                                         <input className="input-dark flex-1 py-2 text-sm" placeholder="App Name (e.g. Tally Integration)"
                                             value={newKeyName} onChange={e => setNewKeyName(e.target.value)} />
@@ -354,11 +356,11 @@ export default function AccountPage() {
                                     ) : apiKeys.map(k => (
                                         <div key={k.id} className="flex items-center justify-between p-3 bg-slate-800/50 border border-white/5 rounded-xl">
                                             <div>
-                                                <p className="text-sm font-bold text-white">{k.name} <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase ${k.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{k.status}</span></p>
+                                                <p className="text-sm font-bold text-white">{k.name} <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase ${k.status === 'active' ? 'bg-success/20 text-success' : 'bg-accent/20 text-accent'}`}>{k.status}</span></p>
                                                 <p className="text-[10px] text-slate-500 font-mono mt-1">ID: {k.key_id}</p>
                                             </div>
                                             {k.status === 'active' && (
-                                                <button onClick={() => handleRevokeApiKey(k.key_id)} className="text-rose-400 hover:text-rose-300 p-2 hover:bg-rose-500/10 rounded-lg">
+                                                <button onClick={() => handleRevokeApiKey(k.key_id)} className="text-accent hover:brightness-110 p-2 hover:bg-accent/10 rounded-lg">
                                                     <Trash2 size={14} />
                                                 </button>
                                             )}
@@ -370,7 +372,7 @@ export default function AccountPage() {
                             <div className="divide-y divide-white/[0.04]">
                                 <DataRow label="Active Integrations" value={`${apiKeys.filter(k => k.status === 'active').length} App(s) Connected`} />
                                 <DataRow label="Webhooks" value="Coming Soon" />
-                                <DataRow label="API Status" value={<span className="text-emerald-400 font-bold">Operational</span>} />
+                                <DataRow label="API Status" value={<span className="text-success font-bold">Operational</span>} />
                             </div>
                         )}
                     </ProfileSection>
@@ -382,7 +384,7 @@ export default function AccountPage() {
                 {toast && (
                     <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
                         className={`fixed bottom-8 right-8 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black tracking-widest shadow-2xl backdrop-blur-md border uppercase
-                        ${toast.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/20 border-rose-500/30 text-rose-400'}`}>
+                        ${toast.type === 'success' ? 'bg-success/20 border-success/30 text-success' : 'bg-accent/20 border-accent/30 text-accent'}`}>
                         {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
                         {toast.msg}
                     </motion.div>
@@ -394,18 +396,18 @@ export default function AccountPage() {
                 {showKeyModal && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowKeyModal(false)} />
-                        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative bg-slate-900 border border-indigo-500/30 w-full max-w-md rounded-2xl shadow-2xl p-6 overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
-                            <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative bg-slate-900 border border-primary/30 w-full max-w-md rounded-2xl shadow-2xl p-6 overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary" />
+                            <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4 mx-auto">
                                 <Key size={24} />
                             </div>
                             <h2 className="text-lg font-black text-white text-center mb-2 uppercase tracking-wide">Developer Key Generated</h2>
-                            <p className="text-xs text-rose-400 text-center font-bold mb-6 bg-rose-500/10 p-2 rounded-lg">Copy this key now. You won't be able to see it again!</p>
+                            <p className="text-xs text-accent text-center font-bold mb-6 bg-accent/10 p-2 rounded-lg">Copy this key now. You won't be able to see it again!</p>
                             
                             <div className="flex items-center gap-2 bg-slate-950 border border-white/10 p-3 rounded-xl mb-6 group relative">
-                                <code className="text-sm font-mono text-indigo-300 break-all flex-1 select-all">{generatedKey}</code>
+                                <code className="text-sm font-mono text-primary break-all flex-1 select-all">{generatedKey}</code>
                                 <button onClick={() => { navigator.clipboard.writeText(generatedKey); showToast('success', 'Copied to clipboard!'); }} 
-                                    className="p-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 rounded-lg transition-colors absolute right-2 opacity-0 group-hover:opacity-100">
+                                    className="p-2 bg-primary/20 text-primary hover:bg-primary/40 rounded-lg transition-colors absolute right-2 opacity-0 group-hover:opacity-100">
                                     <Copy size={16} />
                                 </button>
                             </div>
@@ -425,11 +427,11 @@ function ProfileSection({ title, icon, isEditing, onEdit, onCancel, onSave, savi
     return (
         <motion.div 
             layout
-            className={`glass-card overflow-hidden transition-all duration-300 ${isEditing ? 'ring-2 ring-orange-500/30 shadow-2xl shadow-orange-500/10 scale-[1.02]' : ''}`}
+            className={`glass-card overflow-hidden transition-all duration-300 ${isEditing ? 'ring-2 ring-warning/30 shadow-2xl shadow-warning/10 scale-[1.02]' : ''}`}
         >
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.01]">
                 <div className="flex items-center gap-2.5 text-xs font-black text-slate-300 uppercase tracking-widest italic">
-                    <span className="text-orange-400">{icon}</span>
+                    <span className="text-warning">{icon}</span>
                     {title}
                 </div>
                 {isEditing ? (
@@ -443,7 +445,7 @@ function ProfileSection({ title, icon, isEditing, onEdit, onCancel, onSave, savi
                                 <button onClick={onCancel} className="text-[10px] font-black text-slate-500 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all uppercase tracking-widest">
                                     Abort
                                 </button>
-                                <button onClick={onSave} disabled={saving} className="flex items-center gap-1.5 text-[10px] font-black px-4 py-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 transition-all uppercase tracking-widest shadow-lg shadow-orange-500/5">
+                                <button onClick={onSave} disabled={saving} className="flex items-center gap-1.5 text-[10px] font-black px-4 py-1.5 rounded-lg bg-warning/20 hover:bg-warning/30 text-warning border border-warning/30 transition-all uppercase tracking-widest shadow-lg shadow-warning/5">
                                     {saving ? <Loader size={12} className="animate-spin" /> : <Save size={12} />}
                                     Commit
                                 </button>

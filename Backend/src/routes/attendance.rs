@@ -1,8 +1,9 @@
+use crate::middleware::rls::TenantContext;
 use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse,
-    Json,
+    Extension, Json,
 };
 use chrono::{Datelike, Local};
 use serde::Deserialize;
@@ -26,6 +27,7 @@ fn validate_role(role: &str) -> Result<(), String> {
 // POST /:schoolId/:role/:userId/present
 pub async fn mark_present(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, role, user_id)): Path<(String, String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -36,7 +38,6 @@ pub async fn mark_present(
         )
             .into_response();
     }
-
     let date = payload["date"]
         .as_str()
         .unwrap_or(&Local::now().format("%Y-%m-%d").to_string())
@@ -52,7 +53,7 @@ pub async fn mark_present(
     match state
         .services
         .operations
-        .mark_attendance(&school_id, &role, &user_id, payload)
+        .mark_attendance(&school_id, &role, &user_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => {
@@ -70,6 +71,7 @@ pub async fn mark_present(
 // POST /:schoolId/:role/:userId/holiday
 pub async fn mark_holiday(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, role, user_id)): Path<(String, String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -90,11 +92,10 @@ pub async fn mark_holiday(
             ).into_response();
         }
     }
-
     match state
         .services
         .operations
-        .mark_holiday(&school_id, &role, &user_id, payload)
+        .mark_holiday(&school_id, &role, &user_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "message": "Holiday posted", "data": data}))
@@ -110,6 +111,7 @@ pub async fn mark_holiday(
 // PUT /:schoolId/:role/:userId/:date
 pub async fn update_attendance(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, role, user_id, date)): Path<(String, String, String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -127,11 +129,10 @@ pub async fn update_attendance(
             Json(json!({"success": false, "message": format!("Cannot modify attendance on a holiday: {}", reason)})),
         ).into_response();
     }
-
     match state
         .services
         .operations
-        .update_attendance(&school_id, &role, &user_id, &date, payload)
+        .update_attendance(&school_id, &role, &user_id, &date, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "message": "Attendance updated", "data": data}))
@@ -174,6 +175,7 @@ pub async fn list_attendance(
 // DELETE /:schoolId/:role/:userId/:date
 pub async fn delete_attendance(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, role, user_id, date)): Path<(String, String, String, String)>,
 ) -> impl IntoResponse {
     if let Err(e) = validate_role(&role) {
@@ -186,7 +188,7 @@ pub async fn delete_attendance(
     match state
         .services
         .operations
-        .delete_attendance(&school_id, &role, &user_id, &date)
+        .delete_attendance(&school_id, &role, &user_id, &date, &tenant_ctx.admin_id)
         .await
     {
         Ok(()) => Json(json!({"success": true, "message": "Attendance deleted successfully"}))

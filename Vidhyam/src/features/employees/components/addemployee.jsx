@@ -79,7 +79,7 @@ const SECTIONS = [
 
 // ─── Helpers ─────────────────────────────────────────────
 function inp(err) {
-    return `w-full bg-white/5 border ${err ? 'border-red-500/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60 focus:bg-white/[0.08] transition-all`;
+    return `w-full bg-white/5 border ${err ? 'border-accent/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:bg-white/[0.08] transition-all`;
 }
 
 function Field({ label, children, error, optional }) {
@@ -296,7 +296,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     <input type="date" className={inp(errors.dob)} value={form.dob}
                         max={today()} onChange={e => set('dob', e.target.value)} />
                     {age !== null && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                             {age} yrs
                         </span>
                     )}
@@ -359,7 +359,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             {/* Address */}
             <div>
                 <p className="text-xs font-semibold text-slate-400 mb-3 flex items-center gap-2">
-                    <MapPin size={12} className="text-violet-400" /> Address
+                    <MapPin size={12} className="text-secondary" /> Address
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
@@ -405,10 +405,10 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                         return (
                             <button key={role} type="button" onClick={() => toggleArr('profileRoles', role)}
                                 className={`text-left px-3 py-2 rounded-xl border text-sm transition-all ${active
-                                        ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
+                                        ? 'bg-primary/20 border-primary/50 text-primary'
                                         : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20 hover:text-white'
                                     }`}>
-                                {active && <CheckCircle size={11} className="inline mr-1 text-violet-400" />}
+                                {active && <CheckCircle size={11} className="inline mr-1 text-primary" />}
                                 {role}
                             </button>
                         );
@@ -424,10 +424,10 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                         return (
                             <button key={r} type="button" onClick={() => toggleArr('responsibilities', r)}
                                 className={`text-left px-3 py-2 rounded-xl border text-xs transition-all ${active
-                                        ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                                        ? 'bg-secondary/20 border-secondary/40 text-secondary'
                                         : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20 hover:text-white'
                                     }`}>
-                                {active && <CheckCircle size={10} className="inline mr-1 text-indigo-400" />}
+                                {active && <CheckCircle size={10} className="inline mr-1 text-secondary" />}
                                 {r}
                             </button>
                         );
@@ -506,7 +506,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             {/* Experience */}
             <div className="pt-2 border-t border-white/[0.06]">
                 <p className="text-xs font-semibold text-slate-400 mb-3 flex items-center gap-2">
-                    <Clock size={12} className="text-violet-400" /> Work Experience
+                    <Clock size={12} className="text-primary" /> Work Experience
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Years of Experience" optional>
@@ -538,20 +538,20 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
             <div className="min-h-full flex items-center justify-center">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                     className="glass-card p-12 max-w-md w-full mx-6 text-center">
-                    <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle size={40} className="text-emerald-400" />
+                    <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle size={40} className="text-success" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Employee Added!</h2>
                     <p className="text-slate-400 mb-6">Successfully registered into the system</p>
-                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-5 mb-8">
+                    <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-8">
                         <p className="text-xs text-slate-500 mb-1">Employee ID</p>
-                        <p className="text-3xl font-mono font-bold text-violet-300 tracking-wider">{createdId}</p>
+                        <p className="text-3xl font-mono font-bold text-primary tracking-wider">{createdId}</p>
                         <p className="text-sm text-slate-400 mt-2 font-medium">{form.name}</p>
                         <p className="text-xs text-slate-500">{form.profileRoles.join(' · ')}</p>
                     </div>
                     <div className="flex gap-3">
                         <button onClick={() => { if (onSuccess) onSuccess({ employeeId: createdId }); else goBack(); }}
-                            className="flex-1 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-sm font-semibold transition-all">
+                            className="flex-1 py-3 bg-primary hover:brightness-110 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/20">
                             Back to Employees
                         </button>
                         <button onClick={() => {
@@ -580,8 +580,8 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     </button>
                     <div>
                         <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                            <div className="w-7 h-7 bg-violet-500/20 rounded-lg flex items-center justify-center">
-                                <Briefcase size={14} className="text-violet-400" />
+                            <div className="w-7 h-7 bg-primary/20 rounded-lg flex items-center justify-center">
+                                <Briefcase size={14} className="text-primary" />
                             </div>
                             New Employee Registration
                         </h1>
@@ -589,7 +589,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     </div>
                 </div>
                 <button onClick={handleSubmit} disabled={saving}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-violet-900/40">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:brightness-110 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/40">
                     {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
                     {saving ? 'Saving…' : 'Save Employee'}
                 </button>
@@ -599,14 +599,14 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                 {/* Left nav */}
                 <div className="hidden md:flex flex-col gap-2 w-44 flex-shrink-0 sticky top-24 self-start">
                     {/* Auto-generated badge */}
-                    <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-3 mb-2">
+                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-2">
                         <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><Hash size={10} /> Employee ID</p>
-                        <p className="text-sm font-mono font-bold text-violet-300 break-all">{form.employeeId}</p>
+                        <p className="text-sm font-mono font-bold text-primary break-all">{form.employeeId}</p>
                     </div>
                     {SECTIONS.map(({ id, label, icon: Icon }) => (
                         <button key={id} onClick={() => setActiveSection(id)}
                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSection === id
-                                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                                    ? 'bg-primary/20 text-primary border border-primary/30'
                                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}>
                             <Icon size={15} /> {label}
@@ -619,7 +619,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                     {SECTIONS.map(({ id, label, icon: Icon }) => (
                         <button key={id} onClick={() => setActiveSection(id)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 ${activeSection === id
-                                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
+                                    ? 'bg-primary/20 text-primary border border-primary/30'
                                     : 'bg-white/5 text-slate-400'
                                 }`}>
                             <Icon size={12} /> {label}
@@ -634,7 +634,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                             <div key={id}>
                                 <div className="glass-card p-6 mb-4">
                                     <h2 className="text-base font-bold text-white mb-5 flex items-center gap-2 pb-3 border-b border-white/[0.06]">
-                                        <Icon size={16} className="text-violet-400" /> {label}
+                                        <Icon size={16} className="text-primary" /> {label}
                                     </h2>
                                     {sectionContent[id]}
                                 </div>
@@ -648,7 +648,7 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                                 ) : (
                                     <div className="flex justify-end">
                                         <button onClick={handleSubmit} disabled={saving}
-                                            className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-sm font-semibold transition-all">
+                                            className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:brightness-110 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/20">
                                             {saving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}
                                             {saving ? 'Saving…' : 'Register Employee'}
                                         </button>
@@ -665,8 +665,8 @@ export default function AddEmployeePage({ onBack, onSuccess }) {
                 <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                     key={toast.msg}
                     className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium max-w-sm ${toast.type === 'success'
-                            ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
-                            : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'
+                            ? 'bg-success/20 border border-success/30 text-success'
+                            : 'bg-accent/20 border border-accent/30 text-accent'
                         }`}>
                     {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
                     {toast.msg}

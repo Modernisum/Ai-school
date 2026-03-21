@@ -6,7 +6,7 @@
     "data": {
       "name": "Modern AI School",
       "email": "",
-      "phone": "",
+      "phone": "9368671007",
       "medium": "",
       "address": "",
       "landline": "",
@@ -22,7 +22,7 @@
       "affiliationNumber": ""
     },
     "created_at": "2026-03-06T13:16:56.353281+00:00",
-    "updated_at": "2026-03-12T12:06:21.313535+00:00",
+    "updated_at": "2026-03-21T06:15:10.828519+00:00",
     "status": "active",
     "is_blocked": false,
     "session_duration_hours": 24,

@@ -4,36 +4,30 @@ import {
   Users, UserCheck, CreditCard, School, Box, Layers,
   BookOpen, AlertCircle, FileText, CalendarCheck,
   Plus, ChevronRight, UserPlus, ClipboardList,
-  BookPlus, Bell, Sparkles, Search
+  BookPlus, Bell, Sparkles, Search, History, Settings
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Navigation configuration object
 const NAV_CONFIG = [
-  { 
-    name: "Home", 
-    icon: Home, 
-    path: "/dashboard/home" 
+  {
+    name: "Home",
+    icon: Home,
+    path: "/dashboard/home"
   },
-  { 
-    name: "Search", 
-    icon: Search, 
-    onClick: () => window.dispatchEvent(new CustomEvent('toggle-spotlight')),
-    isAction: true
-  },
-  { 
-    name: "Student", 
-    icon: Users, 
+  {
+    name: "Student",
+    icon: Users,
     path: "/dashboard/student",
     subLinks: [
       { label: "All Students", path: "/dashboard/student", icon: Users },
       { label: "Add Student", path: "/dashboard/student?add=1", icon: UserPlus },
     ]
   },
-  { 
-    name: "Employee", 
-    icon: UserCheck, 
+  {
+    name: "Employee",
+    icon: UserCheck,
     path: "/dashboard/employee",
     subLinks: [
       { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
@@ -42,14 +36,14 @@ const NAV_CONFIG = [
       { label: "Leave Management", path: "/dashboard/leave-management", icon: CalendarCheck },
     ]
   },
-  { 
-    name: "Announcements", 
-    icon: Bell, 
-    path: "/dashboard/announcements" 
+  {
+    name: "Announcements",
+    icon: Bell,
+    path: "/dashboard/announcements"
   },
-  { 
-    name: "Fees", 
-    icon: CreditCard, 
+  {
+    name: "Fees",
+    icon: CreditCard,
     path: "/dashboard/fees",
     subLinks: [
       { label: "Fee Records", path: "/dashboard/fees", icon: CreditCard },
@@ -57,9 +51,9 @@ const NAV_CONFIG = [
       { label: "Referral Coupons", path: "/dashboard/referral-coupons", icon: ClipboardList },
     ]
   },
-  { 
-    name: "Subject", 
-    icon: BookOpen, 
+  {
+    name: "Subject",
+    icon: BookOpen,
     path: "/dashboard/subject",
     subLinks: [
       { label: "All Subjects", path: "/dashboard/subject", icon: BookOpen },
@@ -67,42 +61,47 @@ const NAV_CONFIG = [
       { label: "Timetable", path: "/dashboard/timetable", icon: CalendarCheck },
     ]
   },
-  { 
-    name: "Space", 
-    icon: Box, 
+  {
+    name: "Space",
+    icon: Box,
     path: "/dashboard/space",
     subLinks: [
       { label: "All Spaces", path: "/dashboard/space", icon: Box },
       { label: "Add Space", path: "/dashboard/space?add=1", icon: Plus },
     ]
   },
-  { 
-    name: "Materials", 
-    icon: Layers, 
+  {
+    name: "Materials",
+    icon: Layers,
     path: "/dashboard/materials",
     subLinks: [
       { label: "All Materials", path: "/dashboard/materials", icon: Layers },
       { label: "Add Material", path: "/dashboard/materials?add=1", icon: Plus },
     ]
   },
-  { 
-    name: "Exam", 
-    icon: FileText, 
+  {
+    name: "Exam",
+    icon: FileText,
     path: "/dashboard/exam",
     subLinks: [
       { label: "All Exams", path: "/dashboard/exam", icon: FileText },
       { label: "Add Exam", path: "/dashboard/exam?add=1", icon: Plus },
     ]
   },
-  { 
-    name: "Complaint", 
-    icon: AlertCircle, 
-    path: "/dashboard/complains" 
+  {
+    name: "Complaint",
+    icon: AlertCircle,
+    path: "/dashboard/complains"
   },
-  { 
-    name: "AI Studio", 
-    icon: Sparkles, 
-    path: "/dashboard/ai-studio" 
+  {
+    name: "AI Studio",
+    icon: Sparkles,
+    path: "/dashboard/ai-studio"
+  },
+  {
+    name: "Settings",
+    icon: Settings,
+    path: "/dashboard/settings"
   },
 ];
 
@@ -144,13 +143,14 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarOpen ? 260 : 76 }}
+      animate={{ width: sidebarOpen ? 280 : 80 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="relative z-50 h-screen bg-slate-950 border-r border-white/5 flex flex-col overflow-hidden flex-shrink-0 shadow-2xl"
+      className="relative z-50 h-screen backdrop-blur-[32px] border-r border-white/5 flex flex-col flex-shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)] overflow-hidden transition-colors duration-500"
+      style={{ backgroundColor: 'color-mix(in srgb, var(--bg-via) 30%, rgba(0,0,0,0.6))' }}
     >
-      {/* Glow Effect */}
-      <div className="absolute top-0 -left-20 w-40 h-40 bg-indigo-500/10 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-0 -right-20 w-40 h-40 bg-violet-500/10 blur-[100px] pointer-events-none" />
+      {/* Background Decor */}
+      <div className="absolute top-0 -left-20 w-40 h-40 blur-[100px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--primary-color)' }} />
+      <div className="absolute bottom-10 -right-20 w-40 h-40 blur-[100px] pointer-events-none opacity-10" style={{ backgroundColor: 'var(--secondary-color)' }} />
 
       {/* Logo */}
       <div className="flex items-center justify-between px-5 h-20 border-b border-white/[0.03]">
@@ -165,12 +165,12 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               className="flex items-center gap-3 overflow-hidden"
               onClick={() => navigate("/dashboard/home")}
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-black/20" style={{ background: 'linear-gradient(to tr, var(--primary-color), var(--secondary-color))' }}>
                 <span className="text-white font-black text-lg tracking-tighter">V</span>
               </div>
               <div className="flex flex-col overflow-hidden cursor-pointer">
                 <span className="text-sm font-bold text-white whitespace-nowrap tracking-tight leading-tight">Vidhyam</span>
-                <span className="text-[10px] text-indigo-400 whitespace-nowrap leading-tight font-semibold tracking-wider uppercase opacity-80">Management</span>
+                <span className="text-[10px] whitespace-nowrap leading-tight font-semibold tracking-wider uppercase opacity-80" style={{ color: 'var(--primary-color)' }}>Management</span>
               </div>
             </motion.div>
           ) : (
@@ -180,7 +180,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
-              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20"
+              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-black/20"
+              style={{ background: 'linear-gradient(to tr, var(--primary-color), var(--secondary-color))' }}
               onClick={() => navigate("/dashboard/home")}
             >
               <span className="text-white font-black text-lg">V</span>
@@ -253,22 +254,23 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                   className={({ isActive }) => `
                     relative flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group overflow-hidden w-full
                     ${sectionActive
-                      ? "bg-gradient-to-r from-indigo-500/15 to-transparent text-indigo-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
-                      : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]"
+                      ? "text-white bg-white/10 shadow-lg border border-white/10"
+                      : "text-slate-400 hover:text-slate-100 hover:bg-white/[0.05]"
                     }
                   `}
                 >
                   {sectionActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute left-0 top-3 bottom-3 w-1 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                      className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full shadow-lg"
+                      style={{ backgroundColor: 'var(--primary-color)', boxShadow: '0 0 12px var(--primary-glow)' }}
                     />
                   )}
 
                   <Icon
                     size={18}
-                    className={`flex-shrink-0 transition-transform duration-300 group-hover:scale-110 
-                      ${sectionActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}
+                    className={`flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}
+                    style={sectionActive ? { color: 'var(--primary-color)' } : {}}
                   />
 
                   <AnimatePresence>
@@ -279,13 +281,14 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                         exit={{ opacity: 0, x: -10 }}
                         className="flex-1 flex items-center justify-between overflow-hidden"
                       >
-                        <span className={`text-[13px] font-semibold whitespace-nowrap ${sectionActive ? "text-indigo-100" : "text-slate-300"}`}>
+                        <span className={`text-[13px] font-semibold whitespace-nowrap ${sectionActive ? "text-white" : "text-slate-300"}`}>
                           {name}
                         </span>
                         {subLinks && (
                           <ChevronRight
                             size={13}
-                            className={`transition-transform duration-300 ${subsExpanded ? "rotate-90 text-indigo-400" : "text-slate-600 group-hover:text-slate-400"}`}
+                            className={`transition-transform duration-300 ${subsExpanded ? "rotate-90" : "text-slate-600 group-hover:text-slate-400"}`}
+                            style={subsExpanded ? { color: 'var(--primary-color)' } : {}}
                           />
                         )}
                       </motion.div>
@@ -321,12 +324,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                             className={`
                               flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all duration-200
                               ${subActive
-                                ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                                ? "text-primary border border-white/5"
                                 : "text-slate-500 hover:text-white hover:bg-white/[0.03]"
                               }
                             `}
+                            style={subActive ? { backgroundColor: 'var(--primary-glow)' } : {}}
                           >
-                            <sub.icon size={12} className={`flex-shrink-0 ${subActive ? "text-indigo-400" : "text-slate-600"}`} />
+                            <sub.icon size={12} className={`flex-shrink-0 ${subActive ? "text-primary" : "text-slate-600"}`} />
                             <span className="whitespace-nowrap font-medium tracking-tight">{sub.label}</span>
                           </NavLink>
                         );

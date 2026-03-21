@@ -28,6 +28,7 @@ impl StudentService for PostgresStudentService {
     async fn create_student(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Value,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         // Security checks (Aadhaar, Phone, Email)
@@ -68,9 +69,19 @@ impl StudentService for PostgresStudentService {
             .await?;
 
         tracing::info!(
-            "Student Created: {} (Roll: {}, Class: {})",
-            student_id, roll_number, class_name
+            "Student Created: {} (Roll: {}, Class: {}) by admin: {}",
+            student_id, roll_number, class_name, admin_id
         );
+
+        // Audit Log
+        self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "STUDENT",
+            &student_id,
+            "CREATE",
+            result.clone()
+        ).await.ok(); // ok() because logging failure shouldn't crash the main action
 
         Ok(result)
     }
@@ -78,6 +89,7 @@ impl StudentService for PostgresStudentService {
     async fn bulk_create_students(
         &self,
         school_id: &str,
+        admin_id: &str,
         data: Vec<Value>,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
         let mut successful = 0;
@@ -153,10 +165,22 @@ impl StudentService for PostgresStudentService {
             match self
                 .repos
                 .student
-                .add_student(school_id, student_data)
+                .add_student(school_id, student_data.clone())
                 .await
             {
-                Ok(_) => successful += 1,
+                Ok(_) => {
+                    successful += 1;
+                    // Log each creation (optional, could be noisy but accurate)
+                    let student_id_str = student_data["studentId"].as_str().unwrap_or("unknown").to_string();
+                    self.repos.audit.log_action(
+                        school_id,
+                        admin_id,
+                        "STUDENT",
+                        &student_id_str,
+                        "CREATE_BULK",
+                        student_data
+                    ).await.ok();
+                },
                 Err(e) => {
                     failed += 1;
                     errors.push(json!({ "row": row_number, "name": name, "error": format!("Database Error: {}", e) }));
@@ -191,8 +215,9 @@ impl StudentService for PostgresStudentService {
         &self,
         school_id: &str,
         student_id: &str,
+        admin_id: &str,
         data: Value,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> Result<(), AppError> {
         let old_student = self
             .repos
             .student
@@ -223,10 +248,30 @@ impl StudentService for PostgresStudentService {
             }
         }
 
+        // Perform the update
         self.repos
             .student
-            .update_student(school_id, student_id, final_data)
+            .update_student(school_id, student_id, final_data.clone())
             .await?;
+
+        // Audit History Logic
+        let rev_no = self.repos.student.get_next_rev_no(school_id, student_id).await?;
+        let delta = self.calculate_delta(&old_student, &final_data);
+        
+        // Universal Audit Log
+        if !delta.as_object().map(|obj| obj.is_empty()).unwrap_or(true) {
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "STUDENT",
+                student_id,
+                "UPDATE",
+                delta.clone()
+            ).await.ok();
+            
+            // Legacy Audit History Logic
+            self.repos.student.add_history(school_id, student_id, rev_no, final_data, delta).await?;
+        }
 
         if let Some(nc) = new_class {
             if nc != old_class && !old_class.is_empty() {
@@ -241,6 +286,7 @@ impl StudentService for PostgresStudentService {
         &self,
         school_id: &str,
         student_id: &str,
+        admin_id: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let student = self
             .repos
@@ -248,14 +294,24 @@ impl StudentService for PostgresStudentService {
             .get_student(school_id, student_id)
             .await?;
         if let Some(s) = student {
-            let class_name = s["className"].as_str().unwrap_or("");
+            let class_name = s["className"].as_str().unwrap_or("").to_string();
             self.repos
                 .student
                 .delete_student(school_id, student_id)
                 .await?;
 
+            // Audit Log
+            self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "STUDENT",
+                student_id,
+                "DELETE",
+                s
+            ).await.ok();
+
             if !class_name.is_empty() {
-                self.resequence_roll_numbers(school_id, class_name).await?;
+                self.resequence_roll_numbers(school_id, &class_name).await?;
             }
         }
         Ok(())
@@ -309,10 +365,12 @@ impl StudentService for PostgresStudentService {
     }
 
     async fn validate_student_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
+        let exclude_sid = data["studentId"].as_str();
+
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
-                if self.repos.student.check_aadhaar_exists(school_id, aadhaar).await? {
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid).await? {
                     return Err("Aadhaar Number already exists for another student or staff member".into());
                 }
             }
@@ -321,7 +379,7 @@ impl StudentService for PostgresStudentService {
         // 2. Phone Limit (Max 3 students)
         if let Some(phone) = data["contact"].as_str() {
             if !phone.trim().is_empty() {
-                let count = self.repos.student.count_phone_usage(school_id, phone).await?;
+                let count = self.repos.student.count_phone_usage(school_id, phone, exclude_sid).await?;
                 if count >= 3 {
                     return Err("This Contact Number is already used by 3 or more student accounts".into());
                 }
@@ -331,7 +389,7 @@ impl StudentService for PostgresStudentService {
         // 3. Email Limit (Max 3 students)
         if let Some(email) = data["email"].as_str() {
             if !email.trim().is_empty() {
-                let count = self.repos.student.count_email_usage(school_id, email).await?;
+                let count = self.repos.student.count_email_usage(school_id, email, exclude_sid).await?;
                 if count >= 3 {
                     return Err("This Email Address is already used by 3 or more student accounts".into());
                 }
@@ -343,6 +401,32 @@ impl StudentService for PostgresStudentService {
 }
 
 impl PostgresStudentService {
+    fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
+        let mut delta = json!({});
+        if let (Some(old_obj), Some(new_obj)) = (old.as_object(), new.as_object()) {
+            for (key, new_val) in new_obj {
+                // Skip tracking fields that are internal or updated automatically
+                if key == "updatedAt" || key == "updated_at" || key == "createdAt" || key == "created_at" {
+                    continue;
+                }
+                if let Some(old_val) = old_obj.get(key) {
+                    if old_val != new_val {
+                        delta[key] = json!({
+                            "old": old_val.clone(),
+                            "new": new_val.clone()
+                        });
+                    }
+                } else {
+                    delta[key] = json!({
+                        "old": null,
+                        "new": new_val.clone()
+                    });
+                }
+            }
+        }
+        delta
+    }
+
     fn get_section_for_roll(&self, roll: i32, section_size: i32) -> String {
         if roll <= 0 {
             return "A".to_string();

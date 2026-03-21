@@ -72,6 +72,7 @@ impl BackupService {
             "countries",
             "states",
             "districts",
+            "student_history",
         ];
 
         for table in tables {

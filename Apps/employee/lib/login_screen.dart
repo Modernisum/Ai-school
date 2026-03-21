@@ -63,6 +63,62 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (context, state) {
               final isLoading = state is AuthLoading;
 
+              if (state is AuthProfileSelection) {
+                final profiles = state.profiles;
+                return Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Icon(Icons.group, size: 80, color: Colors.white),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Select Profile",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          const SizedBox(height: 24),
+                          if (profiles.isEmpty)
+                            const Text("No profile found.", textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
+                          ...profiles.map((p) {
+                             final profile = p as Map<String, dynamic>;
+                             return Card(
+                               color: Colors.white.withOpacity(0.2),
+                               margin: const EdgeInsets.only(bottom: 12),
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                               child: ListTile(
+                                 leading: CircleAvatar(
+                                   backgroundColor: profile['user_type'] == 'employee' ? Colors.indigoAccent : Colors.deepPurpleAccent,
+                                   child: Icon(profile['user_type'] == 'employee' ? Icons.work : Icons.school, color: Colors.white),
+                                 ),
+                                 title: Text(profile['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                 subtitle: Text("${profile['user_type'].toString().toUpperCase()} • ${profile['class_name'] ?? ''}", style: const TextStyle(color: Colors.white70)),
+                                 trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                 onTap: isLoading ? null : () {
+                                    context.read<AuthBloc>().add(ProfileSelected(profile: profile, identifier: state.identifier));
+                                 },
+                               ),
+                             );
+                          }).toList(),
+                          const SizedBox(height: 16),
+                          TextButton(
+                            onPressed: () {
+                              setState(() => _isOtpSent = false);
+                              context.read<AuthBloc>().add(LogoutRequested());
+                            },
+                            child: const Text("Back To Login", style: TextStyle(color: Colors.white)),
+                          )
+                        ]
+                      )
+                    )
+                  )
+                );
+              }
+
               return Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),

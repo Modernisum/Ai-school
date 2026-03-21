@@ -3,12 +3,14 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn create_employee(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<CreateEmployeeRequest>,
 ) -> impl IntoResponse {
@@ -40,7 +42,7 @@ pub async fn create_employee(
     match state
         .services
         .employee
-        .create_employee(&school_id, emp_data)
+        .create_employee(&school_id, &t_ctx.admin_id, emp_data)
         .await
     {
         Ok(data) => Json(json!({"success": true, "employee": data})).into_response(),
@@ -55,13 +57,14 @@ pub async fn create_employee(
 #[allow(dead_code)]
 pub async fn bulk_create_employees(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<Vec<serde_json::Value>>,
 ) -> impl IntoResponse {
     match state
         .services
         .employee
-        .bulk_create_employees(&school_id, payload)
+        .bulk_create_employees(&school_id, &t_ctx.admin_id, payload)
         .await
     {
         Ok(data) => {
@@ -116,13 +119,14 @@ pub async fn get_employee(
 
 pub async fn update_employee(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .employee
-        .update_employee(&school_id, &employee_id, payload)
+        .update_employee(&school_id, &employee_id, &t_ctx.admin_id, payload)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Employee updated successfully"}))
@@ -137,12 +141,13 @@ pub async fn update_employee(
 
 pub async fn delete_employee(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .employee
-        .delete_employee(&school_id, &employee_id)
+        .delete_employee(&school_id, &employee_id, &t_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Employee deleted successfully"}))
@@ -158,6 +163,7 @@ pub async fn delete_employee(
 // POST /api/employees/:schoolId/bulk
 pub async fn bulk_import_employees(
     State(state): State<AppState>,
+    Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -190,7 +196,7 @@ pub async fn bulk_import_employees(
         match state
             .services
             .employee
-            .create_employee(&school_id, emp_data)
+            .create_employee(&school_id, &t_ctx.admin_id, emp_data)
             .await
         {
             Ok(created) => {

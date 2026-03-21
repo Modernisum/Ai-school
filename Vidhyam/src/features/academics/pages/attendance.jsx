@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
   CalendarDays, Plus, Trash2, Loader, CheckCircle, AlertTriangle,
   ChevronLeft, ChevronRight, Users, GraduationCap, Shield, Info
@@ -38,8 +40,10 @@ export default function AnnouncementsPage() {
   const schoolId = getSchoolId();
 
   // RTK Query Hooks for Holidays
+  const pollingInterval = useSelector(selectPollingInterval);
   const { data: holidays = [], isLoading: isHolidaysLoading, refetch: refetchHolidays } = useGetHolidaysQuery(schoolId, {
     skip: !schoolId,
+    pollingInterval
   });
   const [createHolidayApi] = useCreateHolidayMutation();
   const [deleteHolidayApi] = useDeleteHolidayMutation();
@@ -170,34 +174,37 @@ export default function AnnouncementsPage() {
   const toggleEmployee = (id) => setForm(f => ({ ...f, exemptEmployees: f.exemptEmployees.includes(id) ? f.exemptEmployees.filter(x => x !== id) : [...f.exemptEmployees, id] }));
 
   return (
-    <div className="min-h-full">
-      {/* Header */}
-      <div className="page-header flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
-            <CalendarDays size={18} className="text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-white">Announcements &amp; Holidays</h1>
-            <p className="text-xs text-slate-500">Manage school holidays, Sunday auto-holiday</p>
-          </div>
+    <div className="min-h-full page-bg text-slate-300">
+      <div className="container mx-auto p-6 max-w-[1600px]">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                    <CalendarDays size={24} className="text-accent" />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-black text-white tracking-tight">Announcements & Holidays</h1>
+                    <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Manage school holidays & events</p>
+                </div>
+            </div>
+            <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 shadow-lg shadow-accent/20 transition-all duration-300 active:scale-95">
+                <Plus size={18} /> Add Holiday
+            </button>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
-          <Plus size={15} /> Add Holiday
-        </button>
-      </div>
 
       <div className="p-6 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
         {/* ── Left: Holiday List ── */}
         <div className="space-y-4">
           {/* Sunday notice */}
-          <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-            <Info size={13} className="mt-0.5 flex-shrink-0" />
-            <span><strong>Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/10 text-xs text-accent/70 backdrop-blur-md">
+            <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
+                <Info size={14} className="text-accent" />
+            </div>
+            <span><strong className="text-accent">Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
           </div>
 
           {loading || isHolidaysLoading ? (
-            <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-amber-400" /></div>
+            <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-accent" /></div>
           ) : holidays.length === 0 ? (
             <div className="glass-card p-8 text-center">
               <CalendarDays size={32} className="text-slate-600 mx-auto mb-2" />
@@ -213,17 +220,17 @@ export default function AnnouncementsPage() {
                 return (
                   <motion.div key={h.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     className="glass-card p-4 flex items-start gap-3">
-                    <div className="w-1 self-stretch rounded-full bg-amber-500/60 flex-shrink-0" />
+                    <div className="w-1 self-stretch rounded-full bg-accent/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white">{h.title}</p>
                       {h.description && <p className="text-xs text-slate-500 mt-0.5">{h.description}</p>}
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
-                        <span className="text-[10px] text-amber-400 font-mono">{dateLabel}</span>
+                        <span className="text-[10px] text-accent font-mono">{dateLabel}</span>
                         <span className="text-[10px] text-slate-500 flex items-center gap-1"><GraduationCap size={10} />{cls}</span>
                         {h.exemptEmployees?.length > 0 && <span className="text-[10px] text-slate-500 flex items-center gap-1"><Users size={10} />{h.exemptEmployees.length} emp exempt</span>}
                       </div>
                     </div>
-                    <button onClick={() => deleteHoliday(h.id)} className="p-1.5 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                    <button onClick={() => deleteHoliday(h.id)} className="p-1.5 rounded-lg text-slate-600 hover:text-accent hover:bg-accent/10 transition-colors">
                       <Trash2 size={13} />
                     </button>
                   </motion.div>
@@ -249,7 +256,7 @@ export default function AnnouncementsPage() {
           {/* Day headers */}
           <div className="grid grid-cols-7 mb-1">
             {DAYS.map(d => (
-              <div key={d} className={`text-center text-[10px] font-semibold pb-1 ${d === 'Sun' ? 'text-rose-400' : 'text-slate-500'}`}>{d}</div>
+              <div key={d} className={`text-center text-[10px] font-semibold pb-1 ${d === 'Sun' ? 'text-accent' : 'text-slate-500'}`}>{d}</div>
             ))}
           </div>
 
@@ -273,7 +280,7 @@ export default function AnnouncementsPage() {
 
           {/* Legend */}
           <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t border-white/5">
-            {[['bg-indigo-500/20 ring-1 ring-indigo-500', 'text-indigo-300', 'Today'], ['bg-amber-500/20', 'text-amber-300', 'Holiday'], ['bg-rose-500/10', 'text-rose-400', 'Sunday']].map(([cls, txt, lbl]) => (
+            {[['bg-primary/20 ring-1 ring-primary', 'text-primary', 'Today'], ['bg-accent/20', 'text-accent', 'Holiday'], ['bg-accent/10', 'text-accent', 'Sunday']].map(([cls, txt, lbl]) => (
               <div key={lbl} className="flex items-center gap-1.5">
                 <div className={`w-3 h-3 rounded ${cls}`} />
                 <span className={`text-[10px] ${txt}`}>{lbl}</span>
@@ -323,12 +330,12 @@ export default function AnnouncementsPage() {
                 <label className="text-xs text-slate-400 mb-2 block">Applicable Classes</label>
                 <div className="flex flex-wrap gap-2">
                   <button onClick={() => setForm(f => ({ ...f, allClasses: true, classes: ['All'] }))}
-                    className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${form.allClasses ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
+                    className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${form.allClasses ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
                     All Classes
                   </button>
                   {classes.map(c => (
                     <button key={c} onClick={() => toggleClass(c)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${!form.allClasses && form.classes.includes(c) ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
+                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${!form.allClasses && form.classes.includes(c) ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
                       {c}
                     </button>
                   ))}
@@ -337,7 +344,7 @@ export default function AnnouncementsPage() {
 
               {/* Advanced section */}
               <div>
-                <button onClick={() => setForm(f => ({ ...f, showAdvanced: !f.showAdvanced }))} className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
+                <button onClick={() => setForm(f => ({ ...f, showAdvanced: !f.showAdvanced }))} className="text-xs text-primary hover:brightness-110 font-medium flex items-center gap-1">
                   <Shield size={12} /> {form.showAdvanced ? '− Hide' : '+ Show'} Advanced Exceptions
                 </button>
               </div>
@@ -352,7 +359,7 @@ export default function AnnouncementsPage() {
                       const sel = form.exemptEmployees.includes(id);
                       return (
                         <button key={id} onClick={() => toggleEmployee(id)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${sel ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${sel ? 'bg-accent/20 border border-accent/30 text-accent' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
                           {sel ? <CheckCircle size={11} /> : <div className="w-[11px] h-[11px] rounded-full border border-slate-600" />}
                           {name}
                           {e.category && <span className="ml-auto text-slate-600">{e.category}</span>}
@@ -376,12 +383,13 @@ export default function AnnouncementsPage() {
       <AnimatePresence>
         {toast && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'}`}>
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-success/20 border border-success/30 text-success' : 'bg-accent/20 border border-accent/30 text-accent'}`}>
             {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
             {toast.msg}
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

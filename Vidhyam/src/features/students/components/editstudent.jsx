@@ -1,7 +1,8 @@
-// EditStudentForm.jsx - Minimal form for editing existing students
+// EditStudentForm.jsx - Premium form for looking up and editing students
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Search, User, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Edit, Search, User, ArrowRight, Loader, Shield, Hash, SearchCode } from "lucide-react";
 
 export default function EditStudentForm() {
   const [studentId, setStudentId] = useState("");
@@ -11,8 +12,10 @@ export default function EditStudentForm() {
   const handleEditStudent = () => {
     if (studentId.trim()) {
       setIsLoading(true);
-      // Navigate to student form with edit mode and student ID
-      navigate(`/dashboard/student/addstudent?mode=edit&studentId=${studentId}`);
+      // Simulate/Show loading for better UX before navigation
+      setTimeout(() => {
+        navigate(`/dashboard/student/addstudent?mode=edit&studentId=${studentId.trim().toUpperCase()}`);
+      }, 600);
     }
   };
 
@@ -23,50 +26,80 @@ export default function EditStudentForm() {
   };
 
   return (
-    <div className="bg-white border-2 border-dashed border-green-400 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-          <Edit className="text-green-600" size={32} />
-        </div>
-        <h2 className="text-xl font-bold text-green-700 mb-2">Edit Student</h2>
-        <p className="text-gray-600 text-sm">Modify existing student record</p>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <Search className="inline mr-1" size={16} />
-            Student ID
-          </label>
-          <input 
-            type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Enter Student ID (e.g., S000001)"
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
-          />
+    <div className="relative group overflow-hidden glass-card rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 border border-white/5 hover:border-emerald-500/30">
+      {/* Decorative background glow */}
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 blur-[100px] rounded-full group-hover:bg-emerald-500/20 transition-all duration-700" />
+      
+      <div className="relative z-10">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500">
+            <Edit className="text-emerald-400" size={28} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Edit Student</h2>
+            <p className="text-sm text-slate-500">Update existing academic records</p>
+          </div>
         </div>
 
-        <button 
-          onClick={handleEditStudent}
-          disabled={!studentId.trim() || isLoading}
-          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          {isLoading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-          ) : (
-            <User className="mr-2" size={18} />
-          )}
-          {isLoading ? 'Loading...' : 'Edit Student'}
-          <ArrowRight className="ml-2" size={18} />
-        </button>
-      </div>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">
+              <Hash size={12} className="text-emerald-500" />
+              Student Unique ID
+            </label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                <Search size={18} />
+              </div>
+              <input 
+                type="text"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Enter Student ID (e.g. S000001)"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-all duration-300 font-mono"
+              />
+            </div>
+          </div>
 
-      <div className="mt-4 p-3 bg-green-50 rounded-lg">
-        <p className="text-xs text-green-700">
-          💡 Enter the Student ID to load and edit existing student information. You'll be taken to the full form with pre-filled data.
-        </p>
+          <button 
+            onClick={handleEditStudent}
+            disabled={!studentId.trim() || isLoading}
+            className="w-full relative overflow-hidden group/btn px-6 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-xl shadow-emerald-900/20 transition-all duration-300 flex items-center justify-center gap-3"
+          >
+            <AnimatePresence mode="wait">
+              {isLoading ? (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <Loader size={20} className="animate-spin" />
+                  <span>Searching...</span>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <SearchCode size={20} className="group-hover/btn:scale-110 transition-transform" />
+                  <span>Fetch Record</span>
+                  <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
+
+        <div className="mt-8 flex items-start gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+          <Shield size={16} className="text-emerald-500 mt-0.5" />
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Verify the <span className="text-emerald-400 font-semibold">Student ID</span> carefully. Editing allows modification of personal details, subjects, and fee structures.
+          </p>
+        </div>
       </div>
     </div>
   );

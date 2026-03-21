@@ -22,6 +22,7 @@ pub mod mobile;
 pub mod ocr;
 pub mod payment;
 pub mod public_api;
+pub mod recovery;
 pub mod reminder;
 pub mod responsibility;
 pub mod school;

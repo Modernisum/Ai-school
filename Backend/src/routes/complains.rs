@@ -2,8 +2,9 @@ use crate::AppState;
 use axum::{
     extract::{Path, State, Query},
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use std::collections::HashMap;
 
 pub async fn list_complains(
@@ -34,13 +35,14 @@ pub async fn list_complains(
 
 pub async fn create_complain(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .complain
-        .create_complain(&school_id, payload)
+        .create_complain(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(complain) => {

@@ -2,8 +2,9 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn list_spaces(
@@ -23,6 +24,7 @@ pub async fn list_spaces(
 // POST /api/spaces/:schoolId/spaces/bulk
 pub async fn bulk_import_spaces(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -54,7 +56,7 @@ pub async fn bulk_import_spaces(
         match state
             .services
             .resource
-            .create_space(&school_id, space_data)
+            .create_space(&school_id, &tenant_ctx.admin_id, space_data)
             .await
         {
             Ok(_) => {
@@ -99,13 +101,14 @@ pub async fn get_space_categories(
 
 pub async fn create_space_category(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .create_space_category(&school_id, payload)
+        .create_space_category(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
@@ -119,12 +122,13 @@ pub async fn create_space_category(
 
 pub async fn delete_category(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, category_id)): Path<(String, i32)>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .delete_space_category(&school_id, category_id)
+        .delete_space_category(&school_id, &tenant_ctx.admin_id, category_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Category deleted successfully"}))
@@ -139,13 +143,14 @@ pub async fn delete_category(
 
 pub async fn create_space(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .create_space(&school_id, payload)
+        .create_space(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(data) => Json(json!({"success": true, "space": data})).into_response(),
@@ -159,13 +164,14 @@ pub async fn create_space(
 
 pub async fn update_space(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .update_space(&school_id, &space_id, payload)
+        .update_space(&school_id, &tenant_ctx.admin_id, &space_id, payload)
         .await
     {
         Ok(_) => {
@@ -181,12 +187,13 @@ pub async fn update_space(
 
 pub async fn delete_space(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .delete_space(&school_id, &space_id)
+        .delete_space(&school_id, &tenant_ctx.admin_id, &space_id)
         .await
     {
         Ok(_) => {
@@ -226,13 +233,14 @@ pub async fn get_space_details(
 
 pub async fn assign_space_materials(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<serde_json::Value>>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .assign_space_materials(&school_id, &space_id, payload)
+        .assign_space_materials(&school_id, &tenant_ctx.admin_id, &space_id, payload)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Materials assigned successfully"}))
@@ -247,13 +255,14 @@ pub async fn assign_space_materials(
 
 pub async fn assign_space_employees(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<String>>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .assign_space_employees(&school_id, &space_id, payload)
+        .assign_space_employees(&school_id, &tenant_ctx.admin_id, &space_id, payload)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Employees assigned successfully"}))
@@ -268,12 +277,13 @@ pub async fn assign_space_employees(
 
 pub async fn remove_space_employee(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id, employee_id)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .resource
-        .remove_space_employee(&school_id, &space_id, &employee_id)
+        .remove_space_employee(&school_id, &tenant_ctx.admin_id, &space_id, &employee_id)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Employee removed successfully"}))

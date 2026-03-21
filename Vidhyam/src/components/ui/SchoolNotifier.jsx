@@ -60,20 +60,20 @@ const SchoolNotifier = memo(() => {
     // Determine styles and icon based on notification type
     const type = notif.type || "info";
     let Icon = BellRing;
-    let bgClass = "bg-slate-900 border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.15)]";
-    let iconBg = "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
-    let btnClass = "bg-indigo-500 hover:bg-indigo-600 text-white";
+    let bgClass = "bg-slate-900 border-primary/30 shadow-primary/20";
+    let iconBg = "bg-primary/10 text-primary border-primary/20";
+    let btnClass = "bg-primary hover:brightness-110 text-white";
 
     if (type === "warning") {
         Icon = AlertTriangle;
-        bgClass = "bg-slate-900 border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)]";
-        iconBg = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-        btnClass = "bg-amber-500 hover:bg-amber-600 text-white";
+        bgClass = "bg-slate-900 border-warning/30 shadow-warning/20";
+        iconBg = "bg-warning/10 text-warning border-warning/20";
+        btnClass = "bg-warning hover:brightness-110 text-white";
     } else if (type === "error") {
         Icon = AlertCircle;
-        bgClass = "bg-slate-900 border-rose-500/30 shadow-[0_0_40px_rgba(225,29,72,0.15)]";
-        iconBg = "bg-rose-500/10 text-rose-400 border-rose-500/20";
-        btnClass = "bg-rose-500 hover:bg-rose-600 text-white";
+        bgClass = "bg-slate-900 border-accent/30 shadow-accent/20";
+        iconBg = "bg-accent/10 text-accent border-accent/20";
+        btnClass = "bg-accent hover:brightness-110 text-white";
     }
 
     return (

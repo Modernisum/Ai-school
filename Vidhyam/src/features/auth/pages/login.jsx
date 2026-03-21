@@ -124,7 +124,7 @@ export default function AuthPage() {
                 placeholder="e.g. 474220"
                 value={form.schoolId}
                 onChange={handleChange}
-                className="input-dark"
+                className="input-standard"
                 required
               />
             </div>
@@ -137,7 +137,7 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
-                className="input-dark"
+                className="input-standard"
                 required
               />
             </div>

@@ -9,6 +9,7 @@ import {
 import { getClassesByLevel } from '../../../utils/academicUtils';
 import { useSelector } from 'react-redux';
 import { selectSchoolId } from '../../auth/authSlice';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import { 
     useGetFeesQuery, 
     useGetCustomFeesQuery, 
@@ -36,9 +37,10 @@ export default function FeesManagement() {
     const [selectedStudent, setSelectedStudent] = useState(null);
 
     // RTK Query hooks
-    const { data: fees = [], isLoading: loading, refetch: refetchFees } = useGetFeesQuery(schoolId);
-    const { data: customFeesRaw = [], isLoading: customLoading, refetch: refetchCustom } = useGetCustomFeesQuery(schoolId);
-    const { data: studentsData = [] } = useGetStudentsQuery(schoolId);
+    const pollingInterval = useSelector(selectPollingInterval);
+    const { data: fees = [], isLoading: loading, refetch: refetchFees } = useGetFeesQuery(schoolId, { pollingInterval });
+    const { data: customFeesRaw = [], isLoading: customLoading, refetch: refetchCustom } = useGetCustomFeesQuery(schoolId, { pollingInterval });
+    const { data: studentsData = [] } = useGetStudentsQuery(schoolId, { pollingInterval });
     
     // Fallback/Transform custom fees
     const customFees = customFeesRaw.data || customFeesRaw || [];
@@ -145,32 +147,33 @@ export default function FeesManagement() {
     });
 
     const scopeLabel = (s) => ({ school: 'Whole School', class: 'Selected Classes', student: 'Selected Students' }[s] || s);
-    const scopeColor = (s) => ({ school: 'text-indigo-400 bg-indigo-500/15 border-indigo-500/25', class: 'text-violet-400 bg-violet-500/15 border-violet-500/25', student: 'text-amber-400 bg-amber-500/15 border-amber-500/25' }[s] || '');
+    const scopeColor = (s) => ({ school: 'text-primary bg-primary/15 border-primary/25', class: 'text-secondary bg-secondary/15 border-secondary/25', student: 'text-accent bg-accent/15 border-accent/25' }[s] || '');
 
     return (
-        <div className="min-h-full">
-            {/* Header */}
-            <div className="page-header flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/10 shadow-lg shadow-emerald-500/10">
-                        <CreditCard size={24} className="text-emerald-400" />
+        <div className="min-h-full page-bg text-slate-300">
+            <div className="container mx-auto p-6 max-w-[1600px]">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                            <CreditCard size={24} className="text-success" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-white tracking-tight">Fees Ledger</h1>
+                            <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">{fees.length} active records • {customFees.length} definitions</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-black text-white uppercase tracking-tight">Fees Ledger</h1>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{fees.length} active records • {customFees.length} custom definitions</p>
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => { refetchFees(); refetchCustom(); }} className="btn-secondary p-2.5 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 transition-all">
-                        <RefreshCw size={18} className="text-slate-400" />
-                    </button>
-                    {activeTab === 'custom' && (
-                        <button onClick={() => setShowAddCustom(true)} className="btn-primary flex items-center gap-2 px-6 shadow-lg shadow-indigo-600/20">
-                            <Plus size={18} /> <span className="text-xs font-black uppercase tracking-widest">Create Fee</span>
+                    <div className="flex gap-3">
+                        <button onClick={() => { refetchFees(); refetchCustom(); }} className="p-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-300">
+                            <RefreshCw size={18} />
                         </button>
-                    )}
+                        {activeTab === 'custom' && (
+                            <button onClick={() => setShowAddCustom(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all duration-300 active:scale-95">
+                                <Plus size={18} /> Create Fee
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
 
             {/* Content Tabs */}
             <div className="px-6 pt-6 flex gap-2">
@@ -181,7 +184,7 @@ export default function FeesManagement() {
                     <button key={id} onClick={() => setActiveTab(id)}
                         className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border
                             ${activeTab === id 
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-lg shadow-emerald-500/5' 
+                                ? 'bg-success/10 text-success border-success/25 shadow-lg shadow-success/5' 
                                 : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'}`}>
                         <Icon size={14} />{label}
                     </button>
@@ -194,31 +197,31 @@ export default function FeesManagement() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: 'Total Collected', value: fmt(analytics.collected), icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
-                            { label: 'Total Overdue', value: fmt(analytics.pending), icon: AlertTriangle, color: 'text-rose-400', bg: 'bg-rose-500/15' },
-                            { label: 'Active Students', value: analytics.count, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
-                            { label: 'Fulfillment', value: `${analytics.rate}%`, icon: Percent, color: 'text-violet-400', bg: 'bg-violet-500/15' },
+                            { label: 'Total Collected', value: fmt(analytics.collected), icon: CheckCircle, color: 'text-success', bg: 'bg-success/15' },
+                            { label: 'Total Overdue', value: fmt(analytics.pending), icon: AlertTriangle, color: 'text-accent', bg: 'bg-accent/15' },
+                            { label: 'Active Students', value: analytics.count, icon: Users, color: 'text-primary', bg: 'bg-primary/15' },
+                            { label: 'Fulfillment', value: `${analytics.rate}%`, icon: Percent, color: 'text-secondary', bg: 'bg-secondary/15' },
                         ].map(({ label, value, icon: Icon, color, bg }, i) => (
                             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                                className="glass-card p-6 border-white/5 bg-white/[0.02]">
-                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-4 border border-white/5 ${bg}`}>
+                                className="glass-card p-6 flex flex-col items-center text-center">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 border border-white/5 ${bg}`}>
                                     <Icon size={20} className={color} />
                                 </div>
                                 <p className={`text-2xl font-black ${color}`}>{value}</p>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1 opacity-60">{label}</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">{label}</p>
                             </motion.div>
                         ))}
                     </div>
 
                     {/* Filter Engine */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1 group">
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
-                            <input className="input-dark pl-12 h-14 bg-white/[0.03] border-white/5 text-sm font-bold placeholder:text-slate-700" 
+                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                        <div className="relative flex-1">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input className="input-standard pl-12 h-14 bg-slate-900/50" 
                                 placeholder="Search records by student name or ID..." value={search} onChange={e => setSearch(e.target.value)} />
                         </div>
                         <div className="flex gap-2">
-                             <select className="input-dark sm:w-48 h-14 bg-white/[0.03] border-white/5 text-xs font-black uppercase tracking-widest appearance-none cursor-pointer" 
+                             <select className="input-standard sm:w-48 h-14 bg-slate-900/50 text-xs font-bold uppercase tracking-widest" 
                                 value={filter} onChange={e => setFilter(e.target.value)}>
                                 <option value="All">All Status</option>
                                 <option value="Paid">Fully Paid</option>
@@ -231,7 +234,7 @@ export default function FeesManagement() {
                     {/* Unified Ledger Table */}
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
-                            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                            <div className="w-12 h-12 border-4 border-success/20 border-t-success rounded-full animate-spin" />
                             <p className="text-xs font-black text-slate-500 uppercase tracking-[0.25em]">Syncing Ledger Data...</p>
                         </div>
                     ) : (
@@ -245,7 +248,7 @@ export default function FeesManagement() {
                 <div className="p-6 space-y-6">
                     {customLoading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
-                            <Loader size={32} className="animate-spin text-emerald-400" />
+                            <Loader size={32} className="animate-spin text-success" />
                             <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Loading Definitions...</p>
                         </div>
                     ) : customFees.length === 0 ? (
@@ -258,26 +261,26 @@ export default function FeesManagement() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {customFees.map((cf, i) => (
                                 <motion.div key={cf.feeId || i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                                    className="glass-card p-6 border-white/5 bg-white/[0.02] hover:border-emerald-500/30 transition-all group relative overflow-hidden">
+                                    className="glass-card p-6 border-white/5 bg-white/[0.02] hover:border-success/30 transition-all group relative overflow-hidden">
                                      <div className="absolute top-0 right-0 p-4">
                                         <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black border uppercase tracking-[0.15em] ${scopeColor(cf.scope)}`}>
                                             {scopeLabel(cf.scope)}
                                         </span>
                                     </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 flex items-center justify-center mb-6 border border-emerald-500/10 shadow-lg shadow-emerald-500/5">
-                                        <Zap size={20} className="text-emerald-400" />
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-success/20 to-primary/10 flex items-center justify-center mb-6 border border-success/10 shadow-lg shadow-success/5">
+                                        <Zap size={20} className="text-success" />
                                     </div>
                                     <h3 className="text-base font-black text-white uppercase tracking-tight mb-2">{cf.feeName}</h3>
                                     {cf.description && <p className="text-xs text-slate-500 font-medium line-clamp-2 mb-6">{cf.description}</p>}
                                     
                                     <div className="space-y-3 pt-6 border-t border-white/5">
                                         <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
-                                            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><DollarSign size={12} /></div>
+                                            <div className="p-1.5 rounded-lg bg-success/10 text-success"><DollarSign size={12} /></div>
                                             <span className="uppercase tracking-widest">{fmt(cf.amount)} • {cf.feeType === 'one_time' ? 'One-time' : 'Recurring'}</span>
                                         </div>
                                         {cf.dueDate && (
                                             <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
-                                                <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400"><Calendar size={12} /></div>
+                                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary"><Calendar size={12} /></div>
                                                 <span className="uppercase tracking-widest">Valid Until: {fmtDate(cf.dueDate)}</span>
                                             </div>
                                         )}
@@ -344,7 +347,7 @@ export default function FeesManagement() {
                                         {[['school', 'Global', School], ['class', 'Target Classes', BookOpen], ['student', 'Granular', User]].map(([val, label, Icon]) => (
                                             <button key={val} onClick={() => setNewFee(f => ({ ...f, scope: val, targetClasses: [], targetStudents: [] }))}
                                                 className={`flex-1 flex flex-col items-center justify-center gap-2 py-4 rounded-2xl text-[10px] font-black border transition-all uppercase tracking-widest
-                                                    ${newFee.scope === val ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-white/5 border-transparent text-slate-500 hover:text-slate-300'}`}>
+                                                    ${newFee.scope === val ? 'bg-primary border-primary/80 text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-transparent text-slate-500 hover:text-slate-300'}`}>
                                                 <Icon size={16} />{label}
                                             </button>
                                         ))}
@@ -358,7 +361,7 @@ export default function FeesManagement() {
                                             {derivedClasses.map(c => (
                                                 <button key={c} onClick={() => toggleClass(c)}
                                                     className={`px-3 py-1.5 rounded-xl text-[10px] font-black border transition-all uppercase tracking-widest
-                                                        ${newFee.targetClasses.includes(c) ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-slate-800/50 border-white/5 text-slate-500 hover:text-white'}`}>
+                                                        ${newFee.targetClasses.includes(c) ? 'bg-success/20 border-success/30 text-success' : 'bg-slate-800/50 border-white/5 text-slate-500 hover:text-white'}`}>
                                                     {c}
                                                 </button>
                                             ))}
@@ -375,8 +378,8 @@ export default function FeesManagement() {
                                                 const name = s.name || s.studentName || sid;
                                                 return (
                                                     <label key={sid} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-white/5">
-                                                        <input type="checkbox" checked={newFee.targetStudents.includes(sid)} onChange={() => toggleStudent(sid)} className="w-4 h-4 rounded bg-white/10 border-white/10 checked:bg-indigo-600 transition-all opacity-0 peer absolute" />
-                                                        <div className="w-4 h-4 border border-white/20 rounded-md flex items-center justify-center transition-all peer-checked:bg-indigo-600 peer-checked:border-indigo-600">
+                                                        <input type="checkbox" checked={newFee.targetStudents.includes(sid)} onChange={() => toggleStudent(sid)} className="w-4 h-4 rounded bg-white/10 border-white/10 checked:bg-primary transition-all opacity-0 peer absolute" />
+                                                        <div className="w-4 h-4 border border-white/20 rounded-md flex items-center justify-center transition-all peer-checked:bg-primary peer-checked:border-primary">
                                                             <CheckCircle size={12} className="text-white opacity-0 peer-checked:opacity-100" />
                                                         </div>
                                                         <span className="text-xs font-bold text-white uppercase">{name}</span>
@@ -398,7 +401,7 @@ export default function FeesManagement() {
                                 <button onClick={() => setShowAddCustom(false)} className="px-8 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-all bg-white/5 rounded-2xl">
                                     Cancel
                                 </button>
-                                <button onClick={handleCreateCustomFee} className="px-10 py-3 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">
+                                <button onClick={handleCreateCustomFee} className="px-10 py-3 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all">
                                     Commit Definition
                                 </button>
                             </div>
@@ -413,13 +416,14 @@ export default function FeesManagement() {
                     <motion.div initial={{ opacity: 0, scale: 0.9, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9, x: 20 }}
                         className={`fixed bottom-8 right-8 z-[200] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md
                             ${toast.type === 'success' 
-                                ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
-                                : 'bg-rose-500/20 border-rose-500/30 text-rose-400'}`}>
+                                ? 'bg-success/20 border-success/30 text-success' 
+                                : 'bg-accent/20 border-accent/30 text-accent'}`}>
                         {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
                         <span className="text-[10px] font-black uppercase tracking-widest">{toast.msg}</span>
                     </motion.div>
                 )}
             </AnimatePresence>
+            </div>
         </div>
     );
 }

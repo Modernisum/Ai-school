@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { selectPollingInterval } from '../../settings/settingsSlice';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileText, 
+  Settings, 
+  CheckCircle, 
+  AlertTriangle, 
+  RefreshCw, 
+  CheckCircle2,
+  Trash2,
+  ChevronRight,
+  Printer
+} from 'lucide-react';
 import {
   useGetClassIdsQuery,
   useLazyGetSubjectIdsQuery,
@@ -59,7 +73,8 @@ const ExamManager = () => {
   const schoolId = getSchoolId();
 
   // RTK Query hooks
-  const { data: classes = [] } = useGetClassIdsQuery(schoolId);
+  const pollingInterval = useSelector(selectPollingInterval);
+  const { data: classes = [] } = useGetClassIdsQuery(schoolId, { pollingInterval });
   const [fetchSubjects, { data: subjects = [] }] = useLazyGetSubjectIdsQuery();
   const [fetchChapterNames] = useLazyGetChapterNamesQuery();
   const [generatePaperMut, { isLoading: generateLoading }] = useGeneratePaperMutation();
@@ -407,322 +422,48 @@ const ExamManager = () => {
   }, [formData.className, formData.subject]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <style jsx>{`
-        .container {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        
-        .header {
-          text-align: center;
-          color: white;
-          padding: 20px;
-          margin-bottom: 30px;
-        }
-        
-        .main-content {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 30px;
-          height: calc(100vh - 200px);
-        }
-        
-        .left-panel, .right-panel {
-          background: white;
-          border-radius: 15px;
-          padding: 25px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-          overflow-y: auto;
-        }
-        
-        .form-section {
-          margin-bottom: 25px;
-        }
-        
-        .form-section h3 {
-          margin-bottom: 15px;
-          color: #333;
-          font-size: 18px;
-          border-bottom: 2px solid #e0e0e0;
-          padding-bottom: 8px;
-        }
-        
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
-          margin-bottom: 20px;
-        }
-        
-        .form-group {
-          margin-bottom: 15px;
-        }
-        
-        .form-group.full-width {
-          grid-column: 1 / -1;
-        }
-        
-        .form-group label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 600;
-          color: #444;
-        }
-        
-        .form-control {
-          width: 100%;
-          padding: 12px;
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          font-size: 14px;
-          transition: all 0.3s ease;
-          box-sizing: border-box;
-        }
-        
-        .form-control:focus {
-          outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .chapters-container {
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          padding: 15px;
-          max-height: 200px;
-          overflow-y: auto;
-          background: #f9f9f9;
-        }
-        
-        .chapter-item {
-          display: flex;
-          align-items: center;
-          margin-bottom: 10px;
-          padding: 8px;
-          background: white;
-          border-radius: 6px;
-          transition: background 0.2s;
-        }
-        
-        .chapter-item:hover {
-          background: #f0f0f0;
-        }
-        
-        .chapter-item input {
-          margin-right: 10px;
-          transform: scale(1.2);
-        }
-        
-        .btn {
-          padding: 12px 24px;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-        }
-        
-        .btn-primary {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-        }
-        
-        .btn-success {
-          background: linear-gradient(135deg, #4facfe, #00f2fe);
-          color: white;
-        }
-        
-        .btn-warning {
-          background: linear-gradient(135deg, #fa709a, #fee140);
-          color: white;
-        }
-        
-        .btn-danger {
-          background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-          color: white;
-        }
-        
-        .btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-        }
-        
-        .question-list {
-          margin-bottom: 20px;
-        }
-        
-        .question-section {
-          margin-bottom: 25px;
-          border: 1px solid #e0e0e0;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-        
-        .question-section-header {
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          color: white;
-          padding: 12px 15px;
-          font-weight: 600;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        
-        .question-item {
-          padding: 15px;
-          border-bottom: 1px solid #f0f0f0;
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-        }
-        
-        .question-item:last-child {
-          border-bottom: none;
-        }
-        
-        .question-item.selected {
-          background: #f8f9ff;
-          border-left: 4px solid #667eea;
-        }
-        
-        .question-checkbox {
-          margin-top: 4px;
-          transform: scale(1.2);
-        }
-        
-        .question-text {
-          flex: 1;
-          line-height: 1.5;
-        }
-        
-        .question-marks {
-          background: #667eea;
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        
-        .preview-container {
-          border: 1px solid #e0e0e0;
-          border-radius: 8px;
-          padding: 20px;
-          background: #fafafa;
-          font-family: 'Times New Roman', serif;
-          min-height: 400px;
-        }
-        
-        .preview-header {
-          text-align: center;
-          border-bottom: 2px solid #000;
-          padding-bottom: 15px;
-          margin-bottom: 20px;
-        }
-        
-        .preview-controls {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 15px;
-          padding: 10px;
-          background: #f0f0f0;
-          border-radius: 8px;
-        }
-        
-        .font-size-control {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        
-        .total-marks {
-          font-size: 18px;
-          font-weight: bold;
-          color: #667eea;
-        }
-        
-        .alert {
-          padding: 12px 16px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          font-weight: 500;
-        }
-        
-        .alert-success {
-          background: #d4edda;
-          color: #155724;
-          border: 1px solid #c3e6cb;
-        }
-        
-        .alert-error {
-          background: #f8d7da;
-          color: #721c24;
-          border: 1px solid #f5c6cb;
-        }
-        
-        .alert-warning {
-          background: #fff3cd;
-          color: #856404;
-          border: 1px solid #ffeaa7;
-        }
-        
-        .loading-spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 3px solid #f3f3f3;
-          border-top: 3px solid #667eea;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      <div className="container">
-        <div className="header">
-          <h1 style={{ fontSize: '36px', margin: '0 0 10px 0', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-            📝 Exam Paper Generator
-          </h1>
-          <p style={{ fontSize: '18px', margin: 0, opacity: 0.9 }}>
-            {getSchoolName()} • {getBoard()} Board • {getMedium()} Medium
-          </p>
+    <div className="min-h-full page-bg text-slate-300">
+      <div className="container mx-auto p-6 max-w-[1600px]">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                <FileText size={24} style={{ color: 'var(--primary-color)' }} />
+            </div>
+            <div>
+                <h1 className="text-2xl font-black text-white tracking-tight">Exam AI Laboratory</h1>
+                <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Generate & Approve Assessment Papers</p>
+            </div>
         </div>
 
-        {/* Messages */}
-        {success && <div className="alert alert-success">{success}</div>}
-        {error && <div className="alert alert-error">{error}</div>}
+        {/* Status Messages */}
+        <AnimatePresence>
+          {success && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-6 flex items-center gap-3">
+              <CheckCircle size={18} /> {success}
+            </motion.div>
+          )}
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium mb-6 flex items-center gap-3">
+              <AlertTriangle size={18} /> {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="main-content">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+
           {/* Left Panel - Form */}
-          <div className="left-panel">
+          <div className="glass-card p-8 space-y-8 animate-fade-in overflow-y-auto max-h-[calc(100vh-200px)]">
+            <div className="section-header flex items-center gap-3 border-b border-white/[0.05] pb-4 mb-6">
+                <Settings size={18} className="text-slate-400" />
+                <h3 className="text-lg font-bold text-white">Basic Information</h3>
+            </div>
             <div className="form-section">
               <h3>📚 Basic Information</h3>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Class Name</label>
-                  <select
-                    className="form-control"
+                   <select
+                    className="input-standard bg-slate-900"
                     value={formData.className}
                     onChange={(e) => handleFormChange('className', e.target.value)}
                     required
@@ -738,8 +479,8 @@ const ExamManager = () => {
 
                 <div className="form-group">
                   <label>Subject Name</label>
-                  <select
-                    className="form-control"
+                   <select
+                    className="input-standard bg-slate-900"
                     value={formData.subject}
                     onChange={(e) => handleFormChange('subject', e.target.value)}
                     disabled={!formData.className}
@@ -784,8 +525,8 @@ const ExamManager = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>Exam Type</label>
-                  <select
-                    className="form-control"
+                   <select
+                    className="input-standard bg-slate-900"
                     value={formData.examType}
                     onChange={(e) => handleFormChange('examType', e.target.value)}
                   >
@@ -962,11 +703,14 @@ const ExamManager = () => {
           </div>
 
           {/* Right Panel - Questions and Preview */}
-          <div className="right-panel">
+          <div className="glass-card p-8 space-y-8 animate-fade-in overflow-y-auto max-h-[calc(100vh-200px)]">
             {!generatedPaper ? (
-              <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
-                <h3>📄 Paper Preview</h3>
-                <p>Generate a paper to see preview here</p>
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-4">
+                <Printer size={48} className="opacity-20" />
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-slate-400">Paper Preview</h3>
+                    <p className="text-sm">Configure and generate a paper to see the preview here</p>
+                </div>
               </div>
             ) : (
               <>
@@ -1032,7 +776,7 @@ const ExamManager = () => {
                           />
                           <div className="question-text">
                             {question.text}
-                            <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
+                            <div style={{ marginTop: '5px', fontSize: '12px', color: 'var(--slate-500)' }}>
                               {question.options.map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`).join(' | ')}
                             </div>
                           </div>
@@ -1080,7 +824,7 @@ const ExamManager = () => {
                       </div>
                     </div>
 
-                    <div style={{ background: '#f5f5f5', padding: '15px', margin: '20px 0', borderLeft: '4px solid #007bff' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', margin: '20px 0', borderLeft: '4px solid var(--primary-color)', borderRadius: '8px' }}>
                       <strong>Instructions:</strong><br />
                       1. All questions are compulsory.<br />
                       2. Write your answers clearly and legibly.<br />
@@ -1162,27 +906,31 @@ const ExamManager = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '30px' }}>
+                <div className="flex items-center justify-center gap-4 mt-8 pt-8 border-t border-white/[0.05]">
                   <button
-                    className="btn btn-warning"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all duration-300 active:scale-95"
                     onClick={generateNewPaper}
                     disabled={generateLoading}
                   >
-                    🔄 Generate New Paper
+                    <RefreshCw size={18} className={generateLoading ? 'animate-spin' : ''} />
+                    Regenerate Paper
                   </button>
 
                   <button
-                    className="btn btn-success"
+                    className="flex items-center gap-2 px-8 py-3 rounded-xl bg-primary text-white font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                     onClick={approveExam}
                     disabled={loading || calculateTotalMarks() === 0}
                   >
                     {loading ? (
                       <>
-                        <span className="loading-spinner"></span>
+                        <RefreshCw size={18} className="animate-spin" />
                         Approving...
                       </>
                     ) : (
-                      '✅ Approve & Export PDF'
+                      <>
+                        <CheckCircle2 size={18} />
+                        Approve & Export PDF
+                      </>
                     )}
                   </button>
                 </div>

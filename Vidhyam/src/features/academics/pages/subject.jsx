@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
   BookOpen, Plus, Search, Loader, X, CheckCircle,
   AlertTriangle, Users, DollarSign, School, RefreshCw, Trash2, Eye,
@@ -18,8 +20,9 @@ export default function SubjectManagement() {
   const location = useLocation();
   const schoolId = getSchoolIdFromStorage() || "622079";
   const schoolLevel = localStorage.getItem('schoolLevel') || 10;
+  const pollingInterval = useSelector(selectPollingInterval);
 
-  const { data: subjects = [], isLoading: loadingSubjects, refetch: refetchSubjects } = useGetSubjectsQuery(schoolId);
+  const { data: subjects = [], isLoading: loadingSubjects, refetch: refetchSubjects } = useGetSubjectsQuery(schoolId, { pollingInterval });
   const classes = getClassesByLevel(schoolLevel);
 
   const loading = loadingSubjects;
@@ -94,15 +97,16 @@ export default function SubjectManagement() {
   const uniqueClassesInTable = ['All', ...new Set(subjects.map(s => s.className || s.class_name || '').filter(Boolean))];
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full page-bg text-slate-300">
+      <div className="container mx-auto p-6 max-w-[1600px]">
       <div className="page-header flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-            <BookOpen size={18} className="text-indigo-400" />
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+            <BookOpen size={20} style={{ color: 'var(--primary-color)' }} />
           </div>
           <div>
-            <h1 className="text-base font-bold text-white">Subject Management</h1>
-            <p className="text-xs text-slate-500">{subjects.length} subjects & activities</p>
+            <h1 className="text-lg font-bold text-white tracking-tight">Subjects</h1>
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">{subjects.length} subjects & activities</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -113,20 +117,22 @@ export default function SubjectManagement() {
 
       <div className="p-6 space-y-4">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input className="input-dark pl-9" placeholder="Search subjects..." value={search} onChange={e => setSearch(e.target.value)} />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input className="input-standard pl-10" placeholder="Search subjects..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="input-dark sm:w-44" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
-            {uniqueClassesInTable.map(c => <option key={c} value={c}>{c === 'All' ? 'All Classes' : c}</option>)}
-          </select>
+          <div className="sm:w-48">
+            <select className="input-standard bg-slate-900" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
+              {uniqueClassesInTable.map(c => <option key={c} value={c}>{c === 'All' ? 'All Classes' : c}</option>)}
+            </select>
+          </div>
         </div>
 
         {/* Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader size={28} className="animate-spin text-indigo-400" />
+            <Loader size={28} className="animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-14">
@@ -154,11 +160,11 @@ export default function SubjectManagement() {
                   className="glass-card p-5 hover-card flex flex-col group relative"
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-violet-500/30 flex items-center justify-center">
-                      <BookOpen size={17} className="text-indigo-400" />
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                      <BookOpen size={17} className="text-primary" />
                     </div>
                     {comp && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-bold text-accent uppercase tracking-wider">
                         <Star size={10} /> Compulsory
                       </div>
                     )}
@@ -166,17 +172,17 @@ export default function SubjectManagement() {
 
                   <h3 className="font-bold text-white text-sm mb-1 leading-snug">{name}</h3>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="badge bg-blue-500/10 border-blue-500/20 text-blue-400 text-[10px]">{cls}</span>
-                    {cat && <span className="badge bg-violet-500/10 border-violet-500/20 text-violet-400 text-[10px]">{cat}</span>}
+                    <span className="badge bg-primary/10 border-primary/20 text-primary text-[10px]">{cls}</span>
+                    {cat && <span className="badge bg-secondary/10 border-secondary/20 text-secondary text-[10px]">{cat}</span>}
                   </div>
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                      <DollarSign size={12} className="text-emerald-400" />
+                      <DollarSign size={12} className="text-success" />
                       <span>₹{Number(fees).toLocaleString('en-IN')} / {fInt > 1 ? `${fInt} ${fType}` : fType}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                      <Calendar size={12} className="text-indigo-400" />
+                      <Calendar size={12} className="text-primary" />
                       <span className="capitalize">{sType} Schedule</span>
                     </div>
                   </div>
@@ -235,14 +241,14 @@ export default function SubjectManagement() {
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <div className="relative inline-flex items-center">
                       <input type="checkbox" className="sr-only peer" checked={newSubject.isCompulsory} onChange={e => setNewSubject(p => ({ ...p, isCompulsory: e.target.checked }))} />
-                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white"></div>
+                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
                     </div>
                     <span className="text-sm font-semibold text-slate-300 group-hover:text-white transition-colors">Is Compulsory Subject</span>
                   </label>
                 </div>
 
                 <div className="col-span-2 flex items-center gap-2 pt-2 pb-1">
-                  <DollarSign size={14} className="text-emerald-400" />
+                  <DollarSign size={14} className="text-success" />
                   <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">Fee Structure</span>
                 </div>
 
@@ -302,6 +308,7 @@ export default function SubjectManagement() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

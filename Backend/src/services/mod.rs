@@ -8,6 +8,7 @@ pub mod operations_service;
 pub mod resource_service;
 pub mod setup_service;
 pub mod student_service;
+pub mod recovery_service;
 pub mod traits;
 
 use crate::repository::Repositories;
@@ -20,6 +21,7 @@ use crate::services::operations_service::PostgresOperationsService;
 use crate::services::resource_service::{PostgresOCRService, PostgresResourceService};
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
+use crate::services::recovery_service::PostgresRecoveryService;
 use crate::services::traits::*;
 use std::sync::Arc;
 
@@ -41,6 +43,7 @@ pub struct Services {
     pub task: Arc<dyn TaskService>,
     pub leave: Arc<dyn LeaveService>,
     pub ai: Arc<dyn AiService>,
+    pub recovery: Arc<dyn RecoveryService>,
 }
 
 pub fn initialize_services(repos: Arc<Repositories>) -> Services {
@@ -95,5 +98,8 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
             timetable: Arc::new(crate::logic::timetable_engine::TimetableEngine::new(repos.db_client.pool.clone())),
         }),
         ai: ai_service,
+        recovery: Arc::new(PostgresRecoveryService {
+            repos: repos.clone(),
+        }),
     }
 }

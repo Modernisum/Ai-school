@@ -1,19 +1,25 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search, Users, Plus, Edit3, Eye, Loader, AlertTriangle,
-    X, CheckCircle, GraduationCap, RefreshCw, UploadCloud,
-    TrendingUp, UserCheck, UserX, CalendarCheck, Calendar, ClipboardList,
-    DollarSign, Zap
+  Users, UserPlus, FileDown, Search,
+  ChevronRight, Filter, MoreVertical, Eye,
+  Edit, Trash2, Calendar, CheckCircle, Clock,
+  X, UserX, Info, Download, Upload, RefreshCw, UploadCloud,
+  Plus, Edit3, Loader, AlertTriangle, GraduationCap,
+  TrendingUp, UserCheck, CalendarCheck, ClipboardList,
+  DollarSign, Zap
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
 import {
-    PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-    AreaChart, Area, XAxis, YAxis, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, LineChart, Line,
+  PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import AddStudentPage from '../components/addstudent';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
-import { useGetStudentsQuery } from '../api/studentApi';
+import { useGetStudentsQuery, useDeleteStudentMutation, useUpdateStudentMutation } from '../api/studentApi';
+import { selectPollingInterval } from '../../settings/settingsSlice';
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
@@ -25,7 +31,12 @@ const fmtDate = (date) => {
     return isNaN(d) ? 'N/A' : d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-const COLORS = { regular: '#6366f1', private: '#a78bfa', present: '#34d399', absent: '#f87171' };
+const COLORS = { 
+    regular: 'var(--primary-color)', 
+    private: 'var(--secondary-color)', 
+    present: 'var(--success-color)', 
+    absent: 'var(--accent-color)' 
+};
 
 // ─── Mini Pie Chart Card ──────────────────────────────────────────────────────
 function MiniPieCard({ title, subtitle, data, loading, extra }) {
@@ -38,12 +49,12 @@ function MiniPieCard({ title, subtitle, data, loading, extra }) {
                     <p className="text-[10px] text-slate-500">{subtitle}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xl font-bold text-indigo-300">{total}</p>
+                    <p className="text-xl font-bold" style={{ color: 'var(--primary-color)' }}>{total}</p>
                     {extra}
                 </div>
             </div>
             {loading ? (
-                <div className="h-[100px] flex items-center justify-center"><Loader size={18} className="animate-spin text-indigo-400" /></div>
+                <div className="h-[100px] flex items-center justify-center"><Loader size={18} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>
             ) : (
                 <>
                     <ResponsiveContainer width="100%" height={100}>
@@ -84,24 +95,24 @@ function ProfileFeeSummary({ studentId, schoolId }) {
             .finally(() => setLoading(false));
     }, [studentId, schoolId]);
 
-    if (loading) return <div className="flex justify-center py-4"><Loader size={18} className="animate-spin text-indigo-400" /></div>;
+    if (loading) return <div className="flex justify-center py-4"><Loader size={18} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>;
     if (!profile) return null;
 
     return (
         <div className="space-y-3">
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <DollarSign size={13} className="text-emerald-400" /> Fee Summary
+                <DollarSign size={13} className="text-success" /> Fee Summary
             </h4>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-2">
                 {[
-                    ['Subjects', profile.totalSubjects, 'text-indigo-400', 'bg-indigo-500/10'],
-                    ['Subject Fees', fmtMoney(profile.subjectFees), 'text-violet-400', 'bg-violet-500/10'],
+                    ['Subjects', profile.totalSubjects, 'text-primary', 'bg-primary/10'],
+                    ['Subject Fees', fmtMoney(profile.subjectFees), 'text-secondary', 'bg-violet-500/10'],
                     ['Custom Fees', fmtMoney(profile.totalCustomFees), 'text-teal-400', 'bg-teal-500/10'],
-                    ['Penalty', fmtMoney(profile.totalPenalty), 'text-rose-400', 'bg-rose-500/10'],
-                    ['Discount', fmtMoney(profile.discount), 'text-amber-400', 'bg-amber-500/10'],
-                    ['Total Paid', fmtMoney(profile.totalPaid), 'text-emerald-400', 'bg-emerald-500/10'],
+                    ['Penalty', fmtMoney(profile.totalPenalty), 'text-accent', 'bg-rose-500/10'],
+                    ['Discount', fmtMoney(profile.discount), 'text-accent', 'bg-amber-500/10'],
+                    ['Total Paid', fmtMoney(profile.totalPaid), 'text-success', 'bg-emerald-500/10'],
                 ].map(([label, val, color, bg]) => (
                     <div key={label} className={`${bg} rounded-xl px-3 py-2.5 border border-white/5`}>
                         <p className="text-[10px] text-slate-500">{label}</p>
@@ -118,7 +129,7 @@ function ProfileFeeSummary({ studentId, schoolId }) {
                 </div>
                 <div className="text-right">
                     <p className="text-[10px] text-slate-500">Pending</p>
-                    <p className="text-lg font-bold text-rose-400">{fmtMoney(profile.totalPending)}</p>
+                    <p className="text-lg font-bold text-accent">{fmtMoney(profile.totalPending)}</p>
                 </div>
             </div>
 
@@ -129,17 +140,17 @@ function ProfileFeeSummary({ studentId, schoolId }) {
                     {profile.customFees.map((cf, i) => (
                         <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-slate-800/40 rounded-lg border border-white/5">
                             <div className="flex items-center gap-2 min-w-0">
-                                <Zap size={11} className="text-emerald-400 flex-shrink-0" />
+                                <Zap size={11} className="text-success flex-shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-[11px] text-white truncate">{cf.feeName}</p>
                                     {cf.hasPenalty && cf.penalty > 0 && (
-                                        <p className="text-[9px] text-rose-400">+{fmtMoney(cf.penalty)} penalty</p>
+                                        <p className="text-[9px] text-accent">+{fmtMoney(cf.penalty)} penalty</p>
                                     )}
                                 </div>
                             </div>
                             <div className="text-right flex-shrink-0 ml-2">
-                                <p className={`text-[11px] font-medium ${cf.status === 'paid' ? 'text-emerald-400' : 'text-amber-400'}`}>{fmtMoney(cf.amount)}</p>
-                                <span className={`text-[8px] px-1 py-0.5 rounded ${cf.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>{cf.status}</span>
+                                <p className={`text-[11px] font-medium ${cf.status === 'paid' ? 'text-success' : 'text-accent'}`}>{fmtMoney(cf.amount)}</p>
+                                <span className={`text-[8px] px-1 py-0.5 rounded ${cf.status === 'paid' ? 'bg-success/15 text-success' : 'bg-accent/15 text-accent'}`}>{cf.status}</span>
                             </div>
                         </div>
                     ))}
@@ -153,8 +164,11 @@ function ProfileFeeSummary({ studentId, schoolId }) {
 export default function StudentManagement() {
     const location = useLocation();
     const schoolId = getSchoolId();
+    const pollingInterval = useSelector(selectPollingInterval);
 
-    const { data: sData, isLoading: sLoading, refetch: refetchStudents } = useGetStudentsQuery(schoolId);
+    const { data: sData, isLoading: sLoading } = useGetStudentsQuery(schoolId, { pollingInterval });
+    const [deleteStudent] = useDeleteStudentMutation();
+    const [updateStudent] = useUpdateStudentMutation();
     const students = useMemo(() => sData?.data || sData?.students || [], [sData]);
 
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'attendance'
@@ -164,7 +178,9 @@ export default function StudentManagement() {
     const [lineFilter, setLineFilter] = useState('year');
     const [toast, setToast] = useState(null);
     const [showAddForm, setShowAddForm] = useState(new URLSearchParams(location.search).get('add') === '1');
+    const [editStudentId, setEditStudentId] = useState(null);
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null); // { type: 'delete' | 'block', student: any }
 
     // Sync showAddForm with URL search params
     useEffect(() => {
@@ -278,6 +294,36 @@ export default function StudentManagement() {
         showToast('success', `${targets.length} students marked present`);
     };
 
+    const handleDeleteStudent = async (sid) => {
+        try {
+            const res = await deleteStudent({ schoolId, studentId: sid }).unwrap();
+            if (res.success) {
+                showToast('success', 'Student deleted successfully');
+            } else {
+                throw new Error(res.message);
+            }
+        } catch (e) {
+            showToast('error', e.message || 'Failed to delete student');
+        } finally {
+            setConfirmAction(null);
+        }
+    };
+
+    const handleBlockStudent = async (sid) => {
+        try {
+            const res = await updateStudent({ schoolId, studentId: sid, studentData: { status: 'blocked' } }).unwrap();
+            if (res.success) {
+                showToast('success', 'Student blocked successfully');
+            } else {
+                throw new Error(res.message);
+            }
+        } catch (e) {
+            showToast('error', e.message || 'Failed to block student');
+        } finally {
+            setConfirmAction(null);
+        }
+    };
+
     // ── Derived data ──────────────────────────────────────────────────────────
     const regularStudents = useMemo(() => students.filter(s => (s.type || s.studentType || '').toLowerCase() !== 'private'), [students]);
     const privateStudents = useMemo(() => students.filter(s => (s.type || s.studentType || '').toLowerCase() === 'private'), [students]);
@@ -326,8 +372,10 @@ export default function StudentManagement() {
     if (showAddForm) {
         return (
             <AddStudentPage
-                onBack={() => setShowAddForm(false)}
-                onSuccess={() => { setShowAddForm(false); refetchStudents(); showToast('success', 'Student added!'); }}
+                mode={editStudentId ? 'edit' : 'add'}
+                studentId={editStudentId}
+                onBack={() => { setShowAddForm(false); setEditStudentId(null); }}
+                onSuccess={() => { setShowAddForm(false); setEditStudentId(null); showToast('success', editStudentId ? 'Profile updated!' : 'Student added!'); }}
             />
         );
     }
@@ -337,28 +385,28 @@ export default function StudentManagement() {
             {/* ─── Header ── */}
             <div className="page-header flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                        <Users size={18} className="text-indigo-400" />
+                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                        <Users size={20} style={{ color: 'var(--primary-color)' }} />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white">Students</h1>
-                        <p className="text-xs text-slate-500">{students.length} total enrolled</p>
+                        <h1 className="text-lg font-bold text-white tracking-tight">Students</h1>
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">{students.length} total enrolled</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => { refetchStudents(); fetchAttendance(); }} className="btn-secondary p-2"><RefreshCw size={15} /></button>
+
                     <button onClick={() => setBulkModalOpen(true)} className="btn-secondary hidden sm:flex"><UploadCloud size={15} /> Import</button>
-                    <button onClick={() => setShowAddForm(true)} className="btn-primary"><Plus size={15} /> Add Student</button>
+                    <button onClick={() => { setEditStudentId(null); setShowAddForm(true); }} className="btn-primary"><Plus size={15} /> Add Student</button>
                 </div>
             </div>
 
             {/* ─── Tabs ── */}
-            <div className="px-6 pt-4 flex gap-1">
-                {[['overview', <GraduationCap size={13} />, 'Overview'], ['attendance', <CalendarCheck size={13} />, 'Attendance']].map(([id, icon, label]) => (
+            <div className="px-6 pt-4 flex gap-2">
+                {[['overview', <GraduationCap size={14} />, 'General List'], ['attendance', <CalendarCheck size={14} />, 'Daily Attendance']].map(([id, icon, label]) => (
                     <button
                         key={id}
                         onClick={() => setActiveTab(id)}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === id ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === id ? 'bg-white/10 text-white border border-white/10 shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
                     >
                         {icon}{label}
                     </button>
@@ -367,21 +415,14 @@ export default function StudentManagement() {
 
             {/* ─── OVERVIEW TAB ── */}
             {activeTab === 'overview' && (
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 flex-col">
                     {/* Pie charts row */}
                     <div>
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Live Overview</p>
                         <div className="flex gap-4 overflow-x-auto pb-1">
-                            <MiniPieCard title="Total Students" subtitle={`Session Apr ${new Date().getFullYear() - (new Date().getMonth() < 3 ? 1 : 0)}`} data={pieData1} loading={sLoading} />
+                            <MiniPieCard title="Total Students" data={pieData1} loading={sLoading} />
                             {/* Quick stats */}
-                            <div className="glass-card p-4 flex flex-col gap-3 min-w-[150px] justify-center">
-                                {[['indigo', <Users size={13} />, 'Total', students.length], ['violet', <UserCheck size={13} />, 'Regular', regularStudents.length], ['emerald', <GraduationCap size={13} />, 'Classes', classes.length]].map(([c, icon, lbl, val]) => (
-                                    <div key={lbl} className="flex items-center justify-between">
-                                        <div className={`flex items-center gap-2 text-${c}-400`}>{icon}<span className="text-xs text-slate-400">{lbl}</span></div>
-                                        <span className={`text-sm font-bold text-${c}-300`}>{val}</span>
-                                    </div>
-                                ))}
-                            </div>
+
                         </div>
                     </div>
 
@@ -389,15 +430,20 @@ export default function StudentManagement() {
 
                     {/* Student table */}
                     <div className="space-y-3">
-                        <div className="flex gap-3">
-                            <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" /><input className="input-dark pl-9 w-full" placeholder="Search by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-                            <select className="input-dark sm:w-40" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
-                                <option value="All">All Classes</option>
-                                {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                            </select>
+                        <div className="flex gap-4">
+                            <div className="relative flex-1">
+                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <input className="input-standard pl-10 w-full" placeholder="Search by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                            </div>
+                            <div className="w-48">
+                                <select className="input-standard bg-slate-900" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
+                                    <option value="All">All Classes</option>
+                                    {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <div className="glass-card overflow-hidden">
-                            {sLoading ? <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-indigo-400" /></div>
+                            {sLoading ? <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-primary" /></div>
                                 : filtered.length === 0 ? (
                                     <div className="text-center py-16"><GraduationCap size={34} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500">No students found</p></div>
                                 ) : (
@@ -409,13 +455,15 @@ export default function StudentManagement() {
                                                     <motion.tr key={s.studentId || s.student_id || i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.4) }}>
                                                         <td className="text-slate-500 text-xs">{i + 1}</td>
                                                         <td><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold">{(s.studentName || s.name || 'S')[0].toUpperCase()}</div><span className="font-medium text-white">{s.studentName || s.student_name || s.name || 'N/A'}</span></div></td>
-                                                        <td><span className="font-mono text-xs text-violet-400">{s.studentId || s.student_id || 'N/A'}</span></td>
-                                                        <td><span className="badge bg-indigo-500/15 border-indigo-500/25 text-indigo-300">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
-                                                        <td><span className={`badge ${(s.type || s.studentType || '').toLowerCase() === 'private' ? 'bg-violet-500/15 border-violet-500/25 text-violet-300' : 'bg-slate-500/15 border-slate-500/25 text-slate-400'}`}>{s.type || s.studentType || 'Regular'}</span></td>
+                                                        <td><span className="font-mono text-xs text-secondary">{s.studentId || s.student_id || 'N/A'}</span></td>
+                                                        <td><span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
+                                                        <td><span className={`badge ${(s.type || s.studentType || '').toLowerCase() === 'private' ? 'bg-secondary/15 border-violet-500/25 text-violet-300' : 'bg-slate-500/15 border-slate-500/25 text-slate-400'}`}>{s.type || s.studentType || 'Regular'}</span></td>
                                                         <td className="text-xs text-slate-500">{fmtDate(s.createdAt || s.created_at)}</td>
                                                         <td><div className="flex gap-1">
-                                                            <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"><Eye size={14} /></button>
-                                                            <button onClick={() => setShowAddForm(true)} className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"><Edit3 size={14} /></button>
+                                                            <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} title="View Profile" className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-colors"><Eye size={14} /></button>
+                                                            <button onClick={() => { setEditStudentId(s.studentId || s.student_id); setShowAddForm(true); }} title="Edit Student" className="p-1.5 rounded-lg text-slate-500 hover:text-success hover:bg-emerald-500/10 transition-colors"><Edit3 size={14} /></button>
+                                                            <button onClick={() => setConfirmAction({ type: 'block', student: s })} title="Block Student" className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-amber-500/10 transition-colors"><UserX size={14} /></button>
+                                                            <button onClick={() => setConfirmAction({ type: 'delete', student: s })} title="Delete Student" className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-rose-500/10 transition-colors"><X size={14} /></button>
                                                         </div></td>
                                                     </motion.tr>
                                                 ))}
@@ -451,7 +499,7 @@ export default function StudentManagement() {
                     </div>
 
                     {isHoliday.isHoliday && (
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 text-amber-400">
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 text-accent">
                             <AlertTriangle size={18} />
                             <div>
                                 <p className="text-sm font-bold">School Closed / Holiday</p>
@@ -468,7 +516,7 @@ export default function StudentManagement() {
                             </div>
                         ))}
                         <div className="ml-auto flex items-center gap-2">
-                            <span className="text-lg font-bold text-emerald-400">{pct}%</span>
+                            <span className="text-lg font-bold text-success">{pct}%</span>
                             <span className="text-xs text-slate-500">Attendance</span>
                         </div>
                     </div>
@@ -476,7 +524,7 @@ export default function StudentManagement() {
                     {/* Student attendance list */}
                     <div className="glass-card overflow-hidden">
                         {(sLoading || attLoading) ? (
-                            <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-emerald-400" /></div>
+                            <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-success" /></div>
                         ) : attStudents.length === 0 ? (
                             <div className="text-center py-16"><ClipboardList size={34} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500">No students found</p></div>
                         ) : (
@@ -495,15 +543,15 @@ export default function StudentManagement() {
                                             className={`grid grid-cols-[2rem_1fr_auto_auto] gap-3 items-center px-5 py-3.5 transition-colors ${isPresent ? 'bg-emerald-500/5' : ''}`}>
                                             <span className="text-xs text-slate-600">{i + 1}</span>
                                             <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isPresent ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{name[0]?.toUpperCase()}</div>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isPresent ? 'bg-success/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{name[0]?.toUpperCase()}</div>
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-medium text-white truncate">{name}</p>
                                                     <p className="text-[10px] text-slate-500 font-mono truncate">{sid}</p>
                                                 </div>
                                             </div>
-                                            <span className="badge bg-indigo-500/15 border-indigo-500/25 text-indigo-300 text-[10px] whitespace-nowrap">{cls}</span>
+                                            <span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300 text-[10px] whitespace-nowrap">{cls}</span>
                                             <button onClick={() => togglePresent(s)} disabled={isLoad || isHoliday.isHoliday}
-                                                className={`w-14 h-7 rounded-full relative transition-all ${isPresent ? 'bg-emerald-500/20 border-emerald-500/40' : 'bg-slate-700/50 border-white/5'} border ${(isLoad || isHoliday.isHoliday) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
+                                                className={`w-14 h-7 rounded-full relative transition-all ${isPresent ? 'bg-success/20 border-emerald-500/40' : 'bg-slate-700/50 border-white/5'} border ${(isLoad || isHoliday.isHoliday) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
                                                 <div className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full transition-all shadow-lg ${isPresent ? 'right-1 bg-emerald-400' : 'left-1 bg-slate-500'}`} />
                                             </button>
                                         </motion.div>
@@ -525,7 +573,7 @@ export default function StudentManagement() {
                             <div className="flex items-center justify-between">
                                 <h2 className="font-bold text-white">Student Profile</h2>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setProfileDrawer(p => ({ ...p, mode: p.mode === 'view' ? 'edit' : 'view' }))} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 ${profileDrawer.mode === 'edit' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
+                                    <button onClick={() => setProfileDrawer(p => ({ ...p, mode: p.mode === 'view' ? 'edit' : 'view' }))} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 ${profileDrawer.mode === 'edit' ? 'bg-success/20 text-emerald-300' : 'bg-primary/20 text-indigo-300'}`}>
                                         {profileDrawer.mode === 'edit' ? <><CheckCircle size={12} /> View</> : <><Edit3 size={12} /> Edit</>}
                                     </button>
                                     <button onClick={() => setProfileDrawer(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg"><X size={18} /></button>
@@ -537,8 +585,8 @@ export default function StudentManagement() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white text-lg">{profileDrawer.student.studentName || profileDrawer.student.name}</h3>
-                                    <p className="text-xs text-indigo-400 font-mono">{profileDrawer.student.studentId || profileDrawer.student.student_id}</p>
-                                    <span className="badge bg-indigo-500/15 border-indigo-500/25 text-indigo-300 mt-1">{profileDrawer.student.classId || profileDrawer.student.className || 'N/A'}</span>
+                                    <p className="text-xs text-primary font-mono">{profileDrawer.student.studentId || profileDrawer.student.student_id}</p>
+                                    <span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300 mt-1">{profileDrawer.student.classId || profileDrawer.student.className || 'N/A'}</span>
                                 </div>
                             </div>
                             <div className="space-y-1">
@@ -566,7 +614,7 @@ export default function StudentManagement() {
             <AnimatePresence>
                 {toast && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'}`}>
+                        className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-success/20 border border-emerald-500/30 text-emerald-300' : 'bg-accent/20 border border-rose-500/30 text-rose-300'}`}>
                         {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
                         {toast.msg}
                     </motion.div>
@@ -579,11 +627,41 @@ export default function StudentManagement() {
                     const res = await fetch(`${API}/students/${schoolId}/students/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     const data = await res.json();
                     if (!data.success) throw new Error(data.message || 'Import failed');
-                    refetchStudents();
                     showToast('success', `Imported ${data.data?.successful || 0} students!`);
                     setBulkModalOpen(false);
                 }}
             />
+
+            {/* Confirmation Modal */}
+            <AnimatePresence>
+                {confirmAction && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmAction(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card max-w-sm w-full p-6 relative z-10 border-white/10 shadow-2xl">
+                            <div className={`w-12 h-12 rounded-2xl mb-4 flex items-center justify-center ${confirmAction.type === 'delete' ? 'bg-accent/20 text-accent' : 'bg-accent/20 text-accent'}`}>
+                                {confirmAction.type === 'delete' ? <AlertTriangle size={24} /> : <UserX size={24} />}
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">
+                                {confirmAction.type === 'delete' ? 'Confirm Delete' : 'Confirm Block'}
+                            </h3>
+                            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                                {confirmAction.type === 'delete'
+                                    ? `Are you sure you want to permanently delete ${confirmAction.student.name || 'this student'}? This action cannot be undone.`
+                                    : "kya app student ka name or class ko delete karna chate hai?"}
+                            </p>
+                            <div className="flex gap-3">
+                                <button onClick={() => setConfirmAction(null)} className="btn-secondary flex-1 justify-center">No</button>
+                                <button
+                                    onClick={() => confirmAction.type === 'delete' ? handleDeleteStudent(confirmAction.student.studentId || confirmAction.student.student_id) : handleBlockStudent(confirmAction.student.studentId || confirmAction.student.student_id)}
+                                    className={`flex-1 justify-center py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${confirmAction.type === 'delete' ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}
+                                >
+                                    Yes
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div >
     );
 }

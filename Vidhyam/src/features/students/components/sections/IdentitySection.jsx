@@ -1,128 +1,111 @@
 import React from 'react';
-import { User, BookOpen, Users, Calendar, Clock, Edit3, Phone, Mail, Fingerprint, Heart, CalendarDays } from 'lucide-react';
-import { formatClassName, formatDate } from '../../../../utils/helpers';
+import { 
+  User, BookOpen, Users, Calendar, Clock, 
+  Edit3, Phone, Mail, Fingerprint, Heart, 
+  CalendarDays, Shield, Tag, Hash
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const IdentitySection = ({ student, studentId, schoolId, onEdit }) => {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="bg-gradient-to-r from-blue-500 to-red-500 p-4 rounded-full shadow-lg">
-            <User className="text-white" size={32} />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">{student?.name || 'Student Name Not Set'}</h2>
-            <p className="text-gray-600">
-              {formatClassName(student?.className)} • Roll No: {student?.rollNumber} • Section: {student?.section}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              ID: {studentId} | School: {schoolId}
-            </p>
-          </div>
+  const fmtDate = (date) => {
+    if (!date) return 'Not Set';
+    const d = new Date(date);
+    return isNaN(d) ? 'Not Set' : d.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const InfoCard = ({ icon: Icon, label, value, color }) => (
+    <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 hover:bg-white/[0.05] transition-all group">
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`p-2 rounded-lg bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
+          <Icon size={18} />
         </div>
-        <button 
-          onClick={onEdit}
-          className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-red-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
-        >
-          <Edit3 className="mr-2" size={16} />Edit Student
-        </button>
+        <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{label}</span>
       </div>
+      <p className="text-lg font-bold text-slate-200 truncate">{value || '—'}</p>
+    </div>
+  );
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white border-2 border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center mb-2">
-            <BookOpen className="text-blue-600 mr-2" size={20} />
-            <span className="text-sm text-gray-600 font-medium">Class</span>
-          </div>
-          <p className="text-lg font-semibold text-gray-800">{formatClassName(student?.className)}</p>
+  return (
+    <div className="space-y-8">
+      {/* Header Info */}
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            Primary Identification
+            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 uppercase tracking-tighter">Verified</span>
+          </h3>
+          <p className="text-slate-500 text-sm">Official student record for the academic session.</p>
         </div>
-
-        <div className="bg-white border-2 border-green-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center mb-2">
-            <Users className="text-green-600 mr-2" size={20} />
-            <span className="text-sm text-gray-600 font-medium">Status</span>
-          </div>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-            student?.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'
+        
+        <div className="flex items-center gap-3">
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+            (student?.studentType || '').toLowerCase() === 'private'
+            ? 'bg-violet-500/10 border-violet-500/20 text-violet-400'
+            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
           }`}>
-            {student?.status === 'active' ? '✓ Active' : '○ Inactive'}
+            <Tag size={12} />
+            {student?.studentType || 'Regular'} Student
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-800/50 border border-white/10 text-slate-400">
+            <Hash size={12} />
+            Roll: {student?.rollNumber || 'N/A'}
           </span>
         </div>
-
-        <div className="bg-white border-2 border-purple-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center mb-2">
-            <Calendar className="text-purple-600 mr-2" size={20} />
-            <span className="text-sm text-gray-600 font-medium">Enrolled</span>
-          </div>
-          <p className="text-lg font-semibold text-gray-800">{formatDate(student?.createdAt)}</p>
-        </div>
-
-        <div className="bg-white border-2 border-orange-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center mb-2">
-            <Clock className="text-orange-600 mr-2" size={20} />
-            <span className="text-sm text-gray-600 font-medium">Last Updated</span>
-          </div>
-          <p className="text-lg font-semibold text-gray-800">{formatDate(student?.updatedAt)}</p>
-        </div>
       </div>
 
-      {/* Detailed Personal & Contact Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white/50 border border-gray-100 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Heart size={14} className="text-red-400" /> Family & Personal
-          </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Father's Name</span>
-              <span className="font-semibold text-gray-800">{student?.fatherName || 'Not Set'}</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Mother's Name</span>
-              <span className="font-semibold text-gray-800">{student?.motherName || 'Not Set'}</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Date of Birth</span>
-              <span className="font-semibold text-gray-800">{student?.dob || 'Not Set'}</span>
-            </div>
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Gender</span>
-              <span className="font-semibold text-gray-800">{student?.gender || 'Not Set'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 text-sm">Aadhaar</span>
-              <span className="font-mono font-bold text-blue-600">{student?.aadhaarNumber || 'Not Set'}</span>
-            </div>
+      {/* Core Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <InfoCard icon={Users} label="Class & Section" value={`${student?.className} - ${student?.section || 'A'}`} color="indigo" />
+        <InfoCard icon={Shield} label="Status" value={student?.status === 'active' ? 'Active' : 'Inactive'} color={student?.status === 'active' ? 'emerald' : 'rose'} />
+        <InfoCard icon={Calendar} label="Enrollment Date" value={student?.admissionDate} color="amber" />
+        <InfoCard icon={Fingerprint} label="Aadhaar Number" value={student?.aadhaarNumber} color="sky" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+        {/* Family Details */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Heart size={16} className="text-rose-400" />
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Family & Personal</h4>
+          </div>
+          <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.05]">
+            {[
+              { label: "Father's Name", value: student?.fatherName },
+              { label: "Mother's Name", value: student?.motherName },
+              { label: "Date of Birth", value: student?.dob },
+              { label: "Gender", value: student?.gender },
+              { label: "TC Number", value: student?.tcNumber, highlight: 'text-amber-400' },
+            ].map((item, i) => (
+              <div key={i} className="flex justify-between items-center p-4 hover:bg-white/[0.01] transition-colors">
+                <span className="text-sm text-slate-500 font-medium">{item.label}</span>
+                <span className={`text-sm font-bold ${item.highlight || 'text-slate-200'}`}>{item.value || 'Not Set'}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="bg-white/50 border border-gray-100 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Phone size={14} className="text-green-400" /> Contact & Enrollment
-          </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Primary Mobile</span>
-              <span className="font-semibold text-gray-800 flex items-center gap-1">
-                 <Phone size={12} className="text-green-500" /> {student?.contact || 'Not Set'}
-              </span>
-            </div>
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Email ID</span>
-              <span className="font-semibold text-gray-800 flex items-center gap-1">
-                 <Mail size={12} className="text-blue-500" /> {student?.email || 'N/A'}
-              </span>
-            </div>
-            <div className="flex justify-between border-b border-gray-50 pb-2">
-              <span className="text-gray-500 text-sm">Admission Date</span>
-              <span className="font-semibold text-gray-800 flex items-center gap-1">
-                 <CalendarDays size={12} className="text-purple-500" /> {student?.admissionDate || 'Not Set'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 text-sm">TC Number</span>
-              <span className="font-semibold text-amber-600">{student?.tcNumber || 'None'}</span>
-            </div>
+        {/* Contact Details */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Phone size={16} className="text-emerald-400" />
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Contact & Metadata</h4>
+          </div>
+          <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.05]">
+            {[
+              { label: "Primary Contact", value: student?.contact, icon: Phone, iconColor: 'text-emerald-500' },
+              { label: "Email Address", value: student?.email, icon: Mail, iconColor: 'text-sky-500' },
+              { label: "Profile Created", value: fmtDate(student?.createdAt), icon: CalendarDays, iconColor: 'text-indigo-500' },
+              { label: "Last Modified", value: fmtDate(student?.updatedAt), icon: Clock, iconColor: 'text-violet-500' },
+              { label: "Registration ID", value: studentId, highlight: 'font-mono text-indigo-400' },
+            ].map((item, i) => (
+              <div key={i} className="flex justify-between items-center p-4 hover:bg-white/[0.01] transition-colors">
+                <span className="text-sm text-slate-500 font-medium">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  {item.icon && <item.icon size={12} className={item.iconColor} />}
+                  <span className={`text-sm font-bold ${item.highlight || 'text-slate-200'}`}>{item.value || 'Not Set'}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

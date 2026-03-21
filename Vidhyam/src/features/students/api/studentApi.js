@@ -39,9 +39,17 @@ export const studentApi = createApi({
             invalidatesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }, 'Student'],
         }),
         getStudentProfile: builder.query({
-            query: ({ schoolId, studentId }) => `/students/${schoolId}/${studentId}/profile`,
+            query: ({ schoolId, studentId }) => `/students/${schoolId}/students/${studentId}/profile`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.studentId }],
         }),
+        deleteStudent: builder.mutation({
+            query: ({ schoolId, studentId }) => ({
+                url: `/students/${schoolId}/${studentId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Student'],
+        }),
+
         getStudentAttendance: builder.query({
             query: ({ schoolId, role, userId }) => `/operations/attendance/${schoolId}/${role}/${userId}`,
             providesTags: (result, error, arg) => [{ type: 'Student', id: arg.userId }],
@@ -90,4 +98,5 @@ export const {
     useGetStudentExamsQuery,
     useGetStudentDocumentsQuery,
     useBulkImportStudentsMutation,
+    useDeleteStudentMutation,
 } = studentApi;

@@ -27,7 +27,7 @@ class ApiService {
     }
   }
 
-  Future<bool> verifyOtp(String ident, String role, String otp) async {
+  Future<List<dynamic>?> verifyOtp(String ident, String role, String otp) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/verify'),
@@ -36,16 +36,39 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] == true && data['profiles'] != null) {
+          return data['profiles'] as List<dynamic>;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Verify OTP Error: $e");
+      return null;
+    }
+  }
+
+  Future<bool> selectProfile(String ident, String userId, String userType) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/select-profile'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'ident': ident,
+          'user_id': userId,
+          'user_type': userType
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          // Store WhatsApp-style persistent token
           await storage.write(key: 'jwt_token', value: data['token']);
-          await storage.write(key: 'user_role', value: role);
+          await storage.write(key: 'user_role', value: userType);
           return true;
         }
       }
       return false;
     } catch (e) {
-      debugPrint("Verify OTP Error: $e");
+      debugPrint("Select Profile Error: $e");
       return false;
     }
   }

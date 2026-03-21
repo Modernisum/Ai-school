@@ -33,7 +33,7 @@ const SECTIONS = [
 
 /* ───────────── Reusable helpers ───────────── */
 function inp(err) {
-  return `w-full bg-white/5 border ${err ? 'border-red-500/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:bg-white/[0.08] transition-all`;
+  return `w-full bg-white/5 border ${err ? 'border-accent/60' : 'border-white/10'} rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:bg-white/[0.08] transition-all`;
 }
 
 function Field({ label, children, error }) {
@@ -46,11 +46,11 @@ function Field({ label, children, error }) {
   );
 }
 
-export default function AddStudentPage({ onSuccess, onBack }) {
+export default function AddStudentPage({ onSuccess, onBack, mode: propMode, studentId: propStudentId }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode'); // 'edit' or null
-  const editStudentId = searchParams.get('studentId');
+  const mode = propMode || searchParams.get('mode'); // 'edit' or null
+  const editStudentId = propStudentId || searchParams.get('studentId');
   const schoolId = getSchoolId();
 
   const [activeSection, setActiveSection] = useState('personal');
@@ -100,6 +100,10 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     transportRadius: '',
   });
 
+  const [initialForm, setInitialForm] = useState(null);
+  const [showDiffModal, setShowDiffModal] = useState(false);
+  const [diffData, setDiffData] = useState([]);
+
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [errors, setErrors] = useState({});
@@ -116,7 +120,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     fetch(`${API_BASE}/geo/countries`)
       .then(r => r.json())
       .then(d => setCountries(Array.isArray(d) ? d : []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch states when country changes
@@ -127,7 +131,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     fetch(`${API_BASE}/geo/states/${form.addressCountryId}`)
       .then(r => r.json())
       .then(d => setGeoStates(Array.isArray(d) ? d : []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingStates(false));
   }, [form.addressCountryId]);
 
@@ -139,7 +143,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     fetch(`${API_BASE}/geo/districts/${form.addressStateId}`)
       .then(r => r.json())
       .then(d => setDistricts(Array.isArray(d) ? d : []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingDistricts(false));
   }, [form.addressStateId]);
 
@@ -207,7 +211,13 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               enrolledSubjects: s.enrolledSubjects || [],
               totalFees: parseFloat(s.totalFees) || 0,
             }));
-            
+            setInitialForm({
+              ...s,
+              studentId: s.studentId || editStudentId,
+              enrolledSubjects: s.enrolledSubjects || [],
+              totalFees: parseFloat(s.totalFees) || 0,
+            });
+
             // Auto-load subjects for the class if it's set
             if (s.className) {
               set('className', s.className);
@@ -275,37 +285,8 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = async () => {
-    if (validateSection(activeSection)) {
-      // Backend validation for duplicates (Aadhaar, Phone, Email)
-      try {
-        const res = await fetch(`${API_BASE}/students/${schoolId}/validate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form)
-        });
-        const d = await res.json();
-        
-        if (!res.ok || !d.success) {
-          setToast({ type: 'error', msg: d.message || 'Server validation failed' });
-          // Map backend error to specific field for UX
-          if (d.message?.toLowerCase().includes('aadhaar')) setErrors(e => ({ ...e, aadhaarNumber: d.message }));
-          if (d.message?.toLowerCase().includes('contact')) setErrors(e => ({ ...e, contact: d.message }));
-          if (d.message?.toLowerCase().includes('email')) setErrors(e => ({ ...e, email: d.message }));
-          return;
-        }
-
-        const idx = SECTIONS.findIndex(s => s.id === activeSection);
-        if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
-      } catch (err) {
-        setToast({ type: 'error', msg: 'Network error: Could not validate with server' });
-      }
-    } else {
-      setToast({ type: 'error', msg: 'Please fix required fields before proceeding' });
-    }
-  };
-
-  const validate = () => {
+  // Frontend validation for all fields
+  const validateForm = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Full name is required';
     if (!form.contact.trim()) e.contact = 'Mobile number is required';
@@ -315,7 +296,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       e.aadhaarNumber = 'Aadhaar must be 12 digits';
     if (!form.dob) e.dob = 'Date of birth is required';
     if (!form.gender) e.gender = 'Gender is required';
-    
+
     // Email check
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       e.email = 'Enter a valid email address';
@@ -323,6 +304,54 @@ export default function AddStudentPage({ onSuccess, onBack }) {
 
     setErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  // Backend validation for duplicates (Aadhaar, Phone, Email)
+  const validateBackend = async (payload) => {
+    try {
+      // Pass studentId to exclude current record during edits
+      const checkPayload = { ...payload };
+      if (mode === 'edit' && editStudentId) {
+        checkPayload.studentId = editStudentId;
+      }
+
+      const res = await fetch(`${API_BASE}/students/${schoolId}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkPayload)
+      });
+      const d = await res.json();
+
+      if (!res.ok || !d.success) {
+        setToast({ type: 'error', msg: d.message || 'Server validation failed' });
+        // Map backend error to specific field for UX
+        if (d.message?.toLowerCase().includes('aadhaar')) setErrors(e => ({ ...e, aadhaarNumber: d.message }));
+        if (d.message?.toLowerCase().includes('contact')) setErrors(e => ({ ...e, contact: d.message }));
+        if (d.message?.toLowerCase().includes('email')) setErrors(e => ({ ...e, email: d.message }));
+        return false;
+      }
+      return true;
+    } catch (err) {
+      setToast({ type: 'error', msg: 'Network error: Could not validate with server' });
+      return false;
+    }
+  };
+
+  const handleNext = async () => {
+    if (validateSection(activeSection)) {
+      const payload = {
+        aadhaarNumber: form.aadhaarNumber,
+        contact: form.contact,
+        email: form.email,
+      };
+      const isValid = await validateBackend(payload);
+      if (!isValid) return;
+
+      const idx = SECTIONS.findIndex(s => s.id === activeSection);
+      if (idx < SECTIONS.length - 1) setActiveSection(SECTIONS[idx + 1].id);
+    } else {
+      setToast({ type: 'error', msg: 'Please fix required fields before proceeding' });
+    }
   };
 
   // Validate referral coupon
@@ -350,17 +379,16 @@ export default function AddStudentPage({ onSuccess, onBack }) {
   const finalFees = Math.max(0, form.totalFees - couponDiscount);
 
   const handleSubmit = async () => {
-    if (!validate()) {
+    if (!validateForm()) {
       setToast({ type: 'error', msg: 'Please fix the highlighted errors' });
       return;
     }
-    setSaving(true);
+
     const payload = {
       ...form,
       type: form.studentType,
-      studentType: form.studentType,
-      enrolledSubjects: JSON.stringify(form.enrolledSubjects),
-      totalFees: finalFees,
+      enrolledSubjects: form.enrolledSubjects,
+      totalFee: finalFees,
       originalFees: form.totalFees,
       couponDiscount,
       referralCouponId: couponData?.couponId || null,
@@ -368,8 +396,24 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       additionalSubjects: form.enrolledSubjects.map(s => s.name).join(', '),
       transportEnabled: form.transportEnabled,
     };
+
+    const isValidBackend = await validateBackend(payload);
+    if (!isValidBackend) return;
+
+    // Clean payload: convert empty strings to null and parse numbers
+    const cleanPayload = Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => {
+        if (v === '') return [k, null];
+        if (['addressCountryId', 'addressStateId', 'transportRadius', 'totalFee', 'originalFees', 'couponDiscount'].includes(k)) {
+          return [k, v === null ? null : Number(v)];
+        }
+        return [k, v];
+      })
+    );
+
+    setSaving(true);
     try {
-      const url = mode === 'edit' 
+      const url = mode === 'edit'
         ? `${API_BASE}/students/${schoolId}/${editStudentId}`
         : `${API_BASE}/students/${schoolId}`;
       const method = mode === 'edit' ? 'PUT' : 'POST';
@@ -377,7 +421,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(cleanPayload),
       });
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.message || 'Failed to create student');
@@ -392,11 +436,11 @@ export default function AddStudentPage({ onSuccess, onBack }) {
         } catch { }
       }
 
-      setToast({ 
-        type: 'success', 
-        msg: mode === 'edit' 
-          ? `Student ${form.name} updated successfully!` 
-          : `Student ${form.name} created! ID: ${data.data?.studentId}, Roll: ${data.data?.rollNumber}, Sec: ${data.data?.section}` 
+      setToast({
+        type: 'success',
+        msg: mode === 'edit'
+          ? `Student ${form.name} updated successfully!`
+          : `Student ${form.name} created! ID: ${data.data?.studentId}, Roll: ${data.data?.rollNumber}, Sec: ${data.data?.section}`
       });
       setTimeout(() => {
         if (onSuccess) onSuccess(data);
@@ -409,6 +453,82 @@ export default function AddStudentPage({ onSuccess, onBack }) {
     }
   };
 
+  const handleUpdateChanges = () => {
+    if (!validateForm()) {
+      setToast({ type: 'error', msg: 'Please fix the highlighted errors' });
+      return;
+    }
+
+    const changes = [];
+    const fieldsToCompare = [
+      { key: 'name', label: 'Full Name' },
+      { key: 'dob', label: 'Date of Birth' },
+      { key: 'gender', label: 'Gender' },
+      { key: 'aadhaarNumber', label: 'Aadhaar Number' },
+      { key: 'fatherName', label: "Father's Name" },
+      { key: 'motherName', label: "Mother's Name" },
+      { key: 'addressLine1', label: 'Street / House / Village' },
+      { key: 'addressCountryId', label: 'Country', map: (id) => countries.find(c => String(c.id) === String(id))?.name || id },
+      { key: 'addressStateId', label: 'State', map: (id) => geoStates.find(s => String(s.id) === String(id))?.name || id },
+      { key: 'addressDistrict', label: 'District' },
+      { key: 'addressCity', label: 'City / Village' },
+      { key: 'addressPincode', label: 'Pincode' },
+      { key: 'contact', label: 'Mobile Number' },
+      { key: 'alternativeContact', label: 'Alternative Number' },
+      { key: 'email', label: 'Email ID' },
+      { key: 'className', label: 'Class' },
+      { key: 'studentType', label: 'Student Type' },
+      { key: 'admissionDate', label: 'Admission Date' },
+      { key: 'tcNumber', label: 'TC Number' },
+      { key: 'transportEnabled', label: 'Transport Enabled', map: (val) => val ? 'Yes' : 'No' },
+      { key: 'transportRadius', label: 'Transport Radius' },
+    ];
+
+    fieldsToCompare.forEach(({ key, label, map }) => {
+      const initialValue = initialForm ? initialForm[key] : undefined;
+      const currentValue = form[key];
+
+      let displayInitial = initialValue;
+      let displayCurrent = currentValue;
+
+      if (map) {
+        displayInitial = map(initialValue);
+        displayCurrent = map(currentValue);
+      }
+
+      if (String(displayInitial) !== String(displayCurrent)) {
+        changes.push({
+          label,
+          old: displayInitial || 'Empty',
+          new: displayCurrent || 'Empty',
+        });
+      }
+    });
+
+    // Compare enrolled subjects
+    const initialSubjects = initialForm?.enrolledSubjects?.map(s => s.id).sort().join(',') || '';
+    const currentSubjects = form.enrolledSubjects.map(s => s.id).sort().join(',') || '';
+    if (initialSubjects !== currentSubjects) {
+      changes.push({
+        label: 'Enrolled Subjects',
+        old: initialForm?.enrolledSubjects?.map(s => s.name).join(', ') || 'None',
+        new: form.enrolledSubjects.map(s => s.name).join(', ') || 'None',
+      });
+    }
+
+    if (changes.length > 0) {
+      setDiffData(changes);
+      setShowDiffModal(true);
+    } else {
+      setToast({ type: 'info', msg: 'No changes detected to save.' });
+    }
+  };
+
+  const confirmSubmit = async () => {
+    setShowDiffModal(false);
+    await handleSubmit();
+  };
+
   const goBack = () => { if (onBack) onBack(); else navigate(-1); };
 
   /* ───────────── Section renderers ───────────── */
@@ -418,6 +538,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Full Name *" error={errors.name}>
           <input className={inp(errors.name)} placeholder="e.g. Rahul Sharma"
+            autoComplete="off"
             value={form.name} onChange={e => set('name', e.target.value)} />
         </Field>
         <Field label="Date of Birth *" error={errors.dob}>
@@ -425,9 +546,9 @@ export default function AddStudentPage({ onSuccess, onBack }) {
             max={today()} onChange={e => set('dob', e.target.value)} />
         </Field>
         <Field label="Gender *" error={errors.gender}>
-          <select 
-            className={`${inp(errors.gender)} bg-slate-900`} 
-            value={form.gender} 
+          <select
+            className={`${inp(errors.gender)} bg-slate-900`}
+            value={form.gender}
             onChange={e => set('gender', e.target.value)}
           >
             <option value="" disabled className="bg-slate-800 text-white">Select gender</option>
@@ -438,14 +559,17 @@ export default function AddStudentPage({ onSuccess, onBack }) {
         </Field>
         <Field label="Aadhaar Number" error={errors.aadhaarNumber}>
           <input className={inp(errors.aadhaarNumber)} placeholder="12-digit Aadhaar" maxLength={12}
+            autoComplete="off"
             value={form.aadhaarNumber} onChange={e => set('aadhaarNumber', e.target.value.replace(/\D/g, ''))} />
         </Field>
         <Field label="Father's Name">
           <input className={inp()} placeholder="Father's full name"
+            autoComplete="off"
             value={form.fatherName} onChange={e => set('fatherName', e.target.value)} />
         </Field>
         <Field label="Mother's Name">
           <input className={inp()} placeholder="Mother's full name"
+            autoComplete="off"
             value={form.motherName} onChange={e => set('motherName', e.target.value)} />
         </Field>
       </div>
@@ -458,13 +582,14 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       {/* ── Address Section ── */}
       <div>
         <p className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-          <MapPin size={14} className="text-indigo-400" /> Address Details
+          <MapPin size={14} className="text-primary" /> Address Details
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Full address line */}
           <div className="md:col-span-2">
             <Field label="Street / House / Village">
               <input className={inp()} placeholder="House No, Street, Village/Area"
+                autoComplete="off"
                 value={form.addressLine1} onChange={e => set('addressLine1', e.target.value)} />
             </Field>
           </div>
@@ -541,12 +666,14 @@ export default function AddStudentPage({ onSuccess, onBack }) {
           {/* City */}
           <Field label="City / Village">
             <input className={inp()} placeholder="City or village"
+              autoComplete="off"
               value={form.addressCity} onChange={e => set('addressCity', e.target.value)} />
           </Field>
 
           {/* Pincode */}
           <Field label="Pincode">
             <input className={inp()} placeholder="6-digit pincode" maxLength={6}
+              autoComplete="off"
               value={form.addressPincode} onChange={e => set('addressPincode', e.target.value.replace(/\D/g, ''))} />
           </Field>
         </div>
@@ -564,6 +691,8 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                 {form.addressPhoneCode || '+91'}
               </span>
               <input className={inp(errors.contact) + ' rounded-l-none'} placeholder="Mobile number"
+                autoComplete="off"
+                maxLength={10}
                 value={form.contact}
                 onChange={e => set('contact', e.target.value.replace(/\D/g, ''))} />
             </div>
@@ -574,16 +703,20 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                 {form.addressPhoneCode || '+91'}
               </span>
               <input className={inp(errors.alternativeContact) + ' rounded-l-none'} placeholder="Alternate number"
+                autoComplete="off"
+                maxLength={10}
                 value={form.alternativeContact}
                 onChange={e => set('alternativeContact', e.target.value.replace(/\D/g, ''))} />
             </div>
           </Field>
           <Field label="Email ID" error={errors.email}>
             <input type="email" className={inp(errors.email)} placeholder="student@email.com"
+              autoComplete="off"
               value={form.email} onChange={e => set('email', e.target.value)} />
           </Field>
         </div>
       </div>
+
     </div>
   );
 
@@ -593,8 +726,8 @@ export default function AddStudentPage({ onSuccess, onBack }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Class *" error={errors.className}>
-          <select 
-            className={`${inp(errors.className)} bg-slate-900`} 
+          <select
+            className={`${inp(errors.className)} bg-slate-900`}
             value={form.className}
             onChange={e => handleClassChange(e.target.value)}
           >
@@ -610,14 +743,14 @@ export default function AddStudentPage({ onSuccess, onBack }) {
         {form.className && (
           <Field label="Student Type">
             {getClassNum(form.className) <= 9 && getClassNum(form.className) > 0 ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                <span className="text-sm text-indigo-300 font-medium">Regular</span>
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-lg">
+                <span className="text-sm text-primary font-medium">Regular</span>
                 <span className="text-[10px] text-slate-500 ml-auto">Auto-assigned for Class {form.className}</span>
               </div>
             ) : (
-              <select 
-                className={`${inp()} bg-slate-900`} 
-                value={form.studentType} 
+              <select
+                className={`${inp()} bg-slate-900`}
+                value={form.studentType}
                 onChange={e => set('studentType', e.target.value)}
               >
                 <option value="Regular" className="bg-slate-800 text-white">Regular</option>
@@ -667,7 +800,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                   <button key={subId} type="button"
                     onClick={() => toggleSubject(sub)}
                     className={`relative text-left px-4 py-3 rounded-2xl border transition-all duration-300 ${isSelected
-                      ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-100 ring-1 ring-indigo-500/20 shadow-lg shadow-indigo-500/10'
+                      ? 'bg-primary/10 border-primary/40 text-white ring-1 ring-primary/20 shadow-lg shadow-primary/10'
                       : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
                       } ${isComp ? 'cursor-default' : 'hover:-translate-y-0.5'}`}>
 
@@ -684,7 +817,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                       </div>
 
                       <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isSelected
-                        ? 'bg-indigo-500 border-indigo-400 text-white'
+                        ? 'bg-primary border-primary/60 text-white'
                         : 'border-white/20 text-transparent'
                         }`}>
                         <CheckCircle size={12} strokeWidth={3} />
@@ -704,19 +837,19 @@ export default function AddStudentPage({ onSuccess, onBack }) {
 
           {form.enrolledSubjects.length > 0 && (
             <>
-              <div className="mt-6 bg-gradient-to-r from-emerald-500/20 via-indigo-500/10 to-transparent border border-emerald-500/20 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl">
+              <div className="mt-6 bg-gradient-to-r from-success/20 via-primary/10 to-transparent border border-success/20 rounded-2xl px-5 py-4 flex items-center justify-between shadow-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                    <DollarSign size={20} className="text-emerald-400" />
+                  <div className="w-10 h-10 rounded-xl bg-success/20 flex items-center justify-center">
+                    <DollarSign size={20} className="text-success" />
                   </div>
                   <div>
                     <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Subject Fees</p>
-                    <p className="text-sm text-emerald-300 font-medium">{form.enrolledSubjects.length} subjects & activities enrolled</p>
+                    <p className="text-sm text-success font-medium">{form.enrolledSubjects.length} subjects & activities enrolled</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-2xl font-black tracking-tighter ${couponDiscount > 0 ? 'text-slate-500 line-through text-lg' : 'text-emerald-400'}`}>₹{form.totalFees.toLocaleString('en-IN')}</p>
-                  {couponDiscount > 0 && <p className="text-2xl font-black text-emerald-400 tracking-tighter">₹{finalFees.toLocaleString('en-IN')}</p>}
+                  <p className={`text-2xl font-black tracking-tighter ${couponDiscount > 0 ? 'text-slate-500 line-through text-lg' : 'text-success'}`}>₹{form.totalFees.toLocaleString('en-IN')}</p>
+                  {couponDiscount > 0 && <p className="text-2xl font-black text-success tracking-tighter">₹{finalFees.toLocaleString('en-IN')}</p>}
                   <p className="text-[10px] text-slate-500 font-bold">{couponDiscount > 0 ? 'AFTER DISCOUNT' : 'ESTIMATED TOTAL'}</p>
                 </div>
               </div>
@@ -732,23 +865,23 @@ export default function AddStudentPage({ onSuccess, onBack }) {
                     onChange={e => { setReferralCode(e.target.value.toUpperCase()); setCouponData(null); setCouponError(''); }}
                   />
                   <button type="button" onClick={() => validateCoupon(referralCode)} disabled={couponLoading || !referralCode.trim()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-1">
+                    className="px-4 py-2 bg-primary hover:brightness-110 text-white rounded-lg text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-1">
                     {couponLoading ? <Loader size={14} className="animate-spin" /> : <CheckCircle size={14} />} Apply
                   </button>
                 </div>
                 {couponError && <p className="text-xs text-rose-400 flex items-center gap-1"><AlertTriangle size={12} /> {couponError}</p>}
                 {couponData && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
+                  <div className="bg-success/10 border border-success/20 rounded-xl p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CheckCircle size={14} className="text-emerald-400" />
+                      <CheckCircle size={14} className="text-success" />
                       <div>
-                        <p className="text-xs font-bold text-emerald-300">{couponData.couponName}</p>
+                        <p className="text-xs font-bold text-success">{couponData.couponName}</p>
                         <p className="text-[10px] text-slate-500">
-                           {couponData.discountType === 'percentage' ? `${couponData.discountValue}% off` : `₹${parseFloat(couponData.discountValue).toLocaleString('en-IN')} off`}
+                          {couponData.discountType === 'percentage' ? `${couponData.discountValue}% off` : `₹${parseFloat(couponData.discountValue).toLocaleString('en-IN')} off`}
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm font-bold text-emerald-400">-₹{couponDiscount.toLocaleString('en-IN')}</p>
+                    <p className="text-sm font-bold text-success">-₹{couponDiscount.toLocaleString('en-IN')}</p>
                   </div>
                 )}
               </div>
@@ -764,19 +897,19 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       <div
         onClick={() => set('transportEnabled', !form.transportEnabled)}
         className={`cursor-pointer flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${form.transportEnabled
-          ? 'bg-blue-500/15 border-blue-500/50'
+          ? 'bg-secondary/15 border-secondary/50'
           : 'bg-white/5 border-white/10 hover:border-white/20'
           }`}>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${form.transportEnabled ? 'bg-blue-500/20' : 'bg-slate-700'
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${form.transportEnabled ? 'bg-secondary/20' : 'bg-slate-700'
           }`}>
-          <Bus size={22} className={form.transportEnabled ? 'text-blue-400' : 'text-slate-500'} />
+          <Bus size={22} className={form.transportEnabled ? 'text-secondary' : 'text-slate-500'} />
         </div>
         <div className="flex-1">
           <p className="font-semibold text-white">School Transport</p>
           <p className="text-sm text-slate-400">Student requires school bus facility</p>
         </div>
         {/* Toggle */}
-        <div className={`relative w-12 h-6 rounded-full transition-colors ${form.transportEnabled ? 'bg-blue-500' : 'bg-slate-600'
+        <div className={`relative w-12 h-6 rounded-full transition-colors ${form.transportEnabled ? 'bg-secondary' : 'bg-slate-600'
           }`}>
           <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.transportEnabled ? 'left-7' : 'left-1'
             }`} />
@@ -819,27 +952,30 @@ export default function AddStudentPage({ onSuccess, onBack }) {
       {/* Header */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-slate-900/80 border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={goBack}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
-            <ArrowLeft size={18} />
-          </button>
           <div>
             <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              <div className="w-7 h-7 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                <User size={14} className="text-indigo-400" />
+              <div className="w-7 h-7 bg-primary/20 rounded-lg flex items-center justify-center">
+                <User size={14} className="text-primary" />
               </div>
               {mode === 'edit' ? 'Edit Student Profile' : 'New Student Admission'}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {mode === 'edit' ? `Editing record for ID: ${editStudentId}` : 'Fill all sections • System generates ID & Roll No'}
-            </p>
           </div>
         </div>
-        <button onClick={handleSubmit} disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-900/40">
-          {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
-          {saving ? 'Saving…' : (mode === 'edit' ? 'Update Profile' : 'Save Student')}
-        </button>
+
+        <div className="flex items-center gap-3">
+          {mode === 'edit' && (
+            <button
+              onClick={() => handleUpdateChanges()}
+              className="px-4 py-2 rounded-xl text-sm font-bold bg-primary hover:brightness-110 text-white shadow-lg shadow-primary/25 transition-all flex items-center gap-2"
+            >
+              <Save size={16} />
+              Update Changes
+            </button>
+          )}
+          <button onClick={goBack} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-6 flex gap-6">
@@ -848,7 +984,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setActiveSection(id)}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSection === id
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                ? 'bg-primary/20 text-primary border border-primary/30'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}>
               <Icon size={15} /> {label}
@@ -861,7 +997,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setActiveSection(id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${activeSection === id
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                ? 'bg-primary/20 text-primary border border-primary/30'
                 : 'bg-white/5 text-slate-400'
                 }`}>
               <Icon size={12} /> {label}
@@ -877,7 +1013,7 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               animate={{ opacity: activeSection === id ? 1 : 0, display: activeSection === id ? 'block' : 'none' }}>
               <div className="glass-card p-6 mb-4">
                 <h2 className="text-base font-bold text-white mb-5 flex items-center gap-2 pb-3 border-b border-white/[0.06]">
-                  <Icon size={16} className="text-indigo-400" /> {label}
+                  <Icon size={16} className="text-primary" /> {label}
                 </h2>
                 {sectionContent[id]}
               </div>
@@ -892,9 +1028,9 @@ export default function AddStudentPage({ onSuccess, onBack }) {
               {activeSection === id && id === 'transport' && (
                 <div className="flex justify-end">
                   <button onClick={handleSubmit} disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all">
+                    className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:brightness-110 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/20">
                     {saving ? <Loader size={15} className="animate-spin" /> : <Save size={15} />}
-                    {saving ? 'Saving…' : (mode === 'edit' ? 'Update Profile' : 'Create Student')}
+                    {saving ? 'Saving…' : (mode === 'edit' ? 'Save Changes' : 'Create Student')}
                   </button>
                 </div>
               )}
@@ -903,13 +1039,62 @@ export default function AddStudentPage({ onSuccess, onBack }) {
         </div>
       </div>
 
+      {/* Confirmation Modal */}
+      {showDiffModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <ShieldAlert size={20} className="text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Review Changes</h2>
+                <p className="text-sm text-slate-400">Are you sure you want to update these fields?</p>
+              </div>
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto mb-8 space-y-2 pr-2 custom-scrollbar">
+              {diffData.map((d, i) => (
+                <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/[0.03]">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{d.label}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-accent line-through opacity-60 truncate max-w-[150px]">{String(d.old || 'none')}</span>
+                    <ArrowRight size={12} className="text-slate-600 flex-shrink-0" />
+                    <span className="text-xs text-success font-medium truncate">{String(d.new || 'none')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDiffModal(false)}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 transition-all"
+              >
+                No, Keep Editing
+              </button>
+              <button
+                onClick={() => confirmSubmit()}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-bold bg-primary hover:brightness-110 text-white shadow-lg shadow-primary/25 transition-all"
+              >
+                Yes, Save Changes
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
           onAnimationComplete={() => setTimeout(() => setToast(null), 3000)}
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium ${toast.type === 'success'
-            ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
-            : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'
+            ? 'bg-success/20 border border-success/30 text-success'
+            : 'bg-accent/20 border border-accent/30 text-accent'
             }`}>
           {toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
           {toast.msg}

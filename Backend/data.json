@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "data": [
+    {
+      "studentId": "S000001",
+      "name": "aksh bhati ",
+      "className": "Class 1",
+      "rollNumber": 1,
+      "section": "A",
+      "status": "active",
+      "enrolledSubjects": null,
+      "totalFees": "0"
+    },
+    {
+      "studentId": "S000002",
+      "name": "shivank",
+      "className": "Class 1",
+      "rollNumber": 2,
+      "section": "A",
+      "status": "active",
+      "enrolledSubjects": null,
+      "totalFees": "0"
+    },
+    {
+      "studentId": "S000003",
+      "name": "Priya Sharma",
+      "className": "Class 5",
+      "rollNumber": 1,
+      "section": "A",
+      "status": "active",
+      "enrolledSubjects": [
+        {
+          "id": "sub-1",
+          "fee": 500,
+          "name": "Mathematics"
+        },
+        {
+          "id": "sub-2",
+          "fee": 600,
+          "name": "Science"
+        }
+      ],
+      "totalFees": "0"
+    }
+  ]
+}

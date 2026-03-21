@@ -2,8 +2,9 @@ use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json,
+    Json, Extension,
 };
+use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn list_responsibilities(
@@ -27,13 +28,14 @@ pub async fn list_responsibilities(
 
 pub async fn create_responsibility(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     match state
         .services
         .responsibility
-        .create_responsibility(&school_id, payload)
+        .create_responsibility(&school_id, &tenant_ctx.admin_id, payload)
         .await
     {
         Ok(res) => Json(json!({"success": true, "data": res})).into_response(),
@@ -47,6 +49,7 @@ pub async fn create_responsibility(
 
 pub async fn assign_responsibility(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
@@ -64,7 +67,7 @@ pub async fn assign_responsibility(
     match state
         .services
         .responsibility
-        .assign_responsibility(&school_id, &employee_id, responsibility_id)
+        .assign_responsibility(&school_id, &employee_id, responsibility_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true})).into_response(),
@@ -78,12 +81,13 @@ pub async fn assign_responsibility(
 
 pub async fn remove_responsibility(
     State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id, responsibility_id)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .responsibility
-        .remove_responsibility(&school_id, &employee_id, &responsibility_id)
+        .remove_responsibility(&school_id, &employee_id, &responsibility_id, &tenant_ctx.admin_id)
         .await
     {
         Ok(_) => Json(json!({"success": true})).into_response(),
