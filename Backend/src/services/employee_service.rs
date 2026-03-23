@@ -39,6 +39,20 @@ impl EmployeeService for PostgresEmployeeService {
             "CREATE",
             emp_data.clone()
         ).await.ok();
+        
+        // Sync to Global
+        let sync_data = json!({
+            "phone": emp_data["contact"],
+            "email": emp_data["email"],
+            "alternativePhone": emp_data["alternativeContact"],
+            "aadhaarNumber": emp_data["aadhaarNumber"],
+            "schoolId": school_id,
+            "userId": employee_id,
+            "userType": "employee",
+            "name": emp_data["name"],
+            "imageUrl": emp_data["imageUrl"]
+        });
+        self.repos.global_user.sync_user(sync_data).await.ok();
 
         Ok(emp_data)
     }
@@ -88,8 +102,22 @@ impl EmployeeService for PostgresEmployeeService {
                         "EMPLOYEE",
                         &employee_id_str,
                         "CREATE_BULK",
-                        emp_data
+                        emp_data.clone()
                     ).await.ok();
+
+                    // Sync to Global
+                    let sync_data = json!({
+                        "phone": emp_data["contact"],
+                        "email": emp_data["email"],
+                        "alternativePhone": emp_data["alternativeContact"],
+                        "aadhaarNumber": emp_data["aadhaarNumber"],
+                        "schoolId": school_id,
+                        "userId": employee_id_str,
+                        "userType": "employee",
+                        "name": emp_data["name"],
+                        "imageUrl": emp_data["imageUrl"]
+                    });
+                    self.repos.global_user.sync_user(sync_data).await.ok();
                 },
                 Err(e) => {
                     failed += 1;
@@ -160,6 +188,21 @@ impl EmployeeService for PostgresEmployeeService {
             ).await.ok();
         }
 
+        // Sync Updated Data to Global
+        let updated_emp = self.repos.employee.get_employee(school_id, employee_id).await?.unwrap_or(data);
+        let sync_data = json!({
+            "phone": updated_emp["contact"],
+            "email": updated_emp["email"],
+            "alternativePhone": updated_emp["alternativeContact"],
+            "aadhaarNumber": updated_emp["aadhaarNumber"],
+            "schoolId": school_id,
+            "userId": employee_id,
+            "userType": "employee",
+            "name": updated_emp["name"],
+            "imageUrl": updated_emp["imageUrl"]
+        });
+        self.repos.global_user.sync_user(sync_data).await.ok();
+
         Ok(())
     }
 
@@ -186,6 +229,9 @@ impl EmployeeService for PostgresEmployeeService {
                 "DELETE",
                 e
             ).await.ok();
+
+            // Remove from Global
+            self.repos.global_user.delete_user(school_id, employee_id, "employee").await.ok();
         }
 
         Ok(())

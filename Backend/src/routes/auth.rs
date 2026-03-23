@@ -42,9 +42,37 @@ pub async fn login_handler(
     State(state): State<AppState>,
     Json(payload): Json<SchoolLoginRequest>,
 ) -> impl IntoResponse {
+    if let Some(ident) = payload.ident {
+        let app_type = payload.user_type.as_deref().unwrap_or("student");
+        match state.services.auth.login_global(&ident, app_type).await {
+            Ok(res) => return Json(res).into_response(),
+            Err(e) => return (
+                axum::http::StatusCode::UNAUTHORIZED,
+                Json(json!({"success": false, "message": e.to_string()})),
+            ).into_response(),
+        }
+    }
+
+    // 2. Existing School-based Login (Admin/Staff)
+    let school_id = match payload.school_id {
+        Some(id) => id,
+        None => return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": "Missing school_id or ident"})),
+        ).into_response(),
+    };
+
+    let password = match payload.password {
+        Some(p) => p,
+        None => return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": "Missing password"})),
+        ).into_response(),
+    };
+
     let login_data = json!({
-        "schoolId": payload.school_id,
-        "password": payload.password,
+        "schoolId": school_id,
+        "password": password,
         "userType": payload.user_type
     });
 
@@ -62,6 +90,19 @@ pub async fn login_handler(
             Json(json!({"success": false, "message": e.to_string()})),
         )
             .into_response(),
+    }
+}
+
+pub async fn verify_otp_global_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<VerifyOtpGlobalRequest>,
+) -> impl IntoResponse {
+    match state.services.auth.verify_otp_global(&payload.ident, &payload.otp).await {
+        Ok(res) => Json(res).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::UNAUTHORIZED,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
     }
 }
 
@@ -188,4 +229,16 @@ pub async fn verify_otp_handler(
         }
     }))
     .into_response()
+}
+
+pub async fn sync_global_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    match state.services.auth.sync_all().await {
+        Ok(_) => Json(json!({"success": true, "message": "Global user synchronization completed successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
 }

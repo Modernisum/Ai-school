@@ -24,8 +24,7 @@ class BusTrackingBloc extends Bloc<BusTrackingEvent, BusTrackingState> {
         return;
       }
 
-      // Convert HTTP URL to WS URL
-      final wsUrl = ApiService.baseUrl.replaceFirst('http', 'ws') + '/ws/';
+      final wsUrl = ApiService.wsUrl;
       
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 

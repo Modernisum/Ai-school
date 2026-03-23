@@ -7,7 +7,6 @@ import 'logic/attendance/attendance_history_event.dart';
 import 'logic/attendance/attendance_history_state.dart';
 import 'widgets/glass_card.dart';
 import 'widgets/animated_gradient_bg.dart';
-import 'theme/app_theme.dart';
 import 'api_service.dart';
 
 class AttendanceCalendarScreen extends StatefulWidget {

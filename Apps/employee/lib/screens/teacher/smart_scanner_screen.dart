@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../api_service.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -213,7 +215,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
     
     try {
       final baseUrl = dotenv.env['VITE_API_BASE_URL'] ?? 'http://localhost:8080/api';
-      final schoolId = "153490"; // Mock/Stored schoolId
+      final schoolId = await context.read<ApiService>().getSchoolId() ?? "";
       
       // 1. In a real flow, we'd first upload to GCS, then send the URL to OCR
       // For this implementation, we simulate the OCR + AI pipeline call

@@ -500,7 +500,7 @@ function SelectField({ label, value, options, onChange }) {
 const getSchoolId = () => {
   const keys = ['schoolId', 'school_id'];
   for (const k of keys) { const v = localStorage.getItem(k); if (v && v !== 'undefined') return v; }
-  return "622079";
+  return "";
 };
 
 import { RefreshCw, Settings } from 'lucide-react';

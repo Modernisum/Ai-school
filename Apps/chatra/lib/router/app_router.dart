@@ -1,11 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../api_service.dart';
 import '../logic/auth/auth_bloc.dart';
 import '../logic/auth/auth_state.dart';
+import '../logic/dashboard/dashboard_bloc.dart';
+import '../logic/notices/notice_bloc.dart';
 import '../login_screen.dart';
-import '../home_screen.dart';
+import '../navbar_screen.dart';
 import '../intro_screen.dart';
+
+
 
 // ─── DEFERRED IMPORTS — heavy screens load only on demand ⚡ ───────────────────
 import '../fees_screen.dart' deferred as fees;
@@ -89,8 +95,17 @@ class AppRouter {
       // ── Student Hub (always resident, never deferred) ─────────────────────
       GoRoute(
         path: '/dashboard',
-        pageBuilder: (context, state) => const NoTransitionPage(child: HomeScreen()),
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (ctx) => DashboardBloc(apiService: ctx.read<ApiService>())),
+              BlocProvider(create: (ctx) => NoticeBloc(apiService: ctx.read<ApiService>())),
+            ],
+            child: const NavbarScreen(),
+          ),
+        ),
       ),
+
 
       // ── Fees — deferred ───────────────────────────────────────────────────
       GoRoute(

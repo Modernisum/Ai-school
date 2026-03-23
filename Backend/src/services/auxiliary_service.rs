@@ -269,8 +269,17 @@ impl SchoolService for PostgresAuxiliaryService {
         admin_id: &str,
         data: Value,
     ) -> Result<(), AppError> {
-        // Fetch old data for delta if needed, but schools table is simple
-        // For now, just log and update
+        // 1. Fetch old data to check classLevel increase
+        let old_school = self.get_school_details(school_id).await?;
+        let old_level = old_school["data"]["classLevel"].as_i64()
+            .or_else(|| old_school["data"]["classLevel"].as_str().and_then(|s| s.parse().ok()))
+            .unwrap_or(0);
+        
+        let new_level = data["classLevel"].as_i64()
+            .or_else(|| data["classLevel"].as_str().and_then(|s| s.parse().ok()))
+            .unwrap_or(old_level);
+
+        // 2. Update database
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
         
         let update_data = data.clone();
@@ -288,6 +297,16 @@ impl SchoolService for PostgresAuxiliaryService {
                 .bind(school_id)
                 .execute(&mut *conn)
                 .await?;
+        }
+
+        // 3. Trigger auto-generation if level increased
+        if new_level > old_level {
+            // We need an AcademicService instance. 
+            // PostgresAcademicService is just a wrapper around repos.
+            let academic_svc = crate::services::academic_service::PostgresAcademicService {
+                repos: self.repos.clone(),
+            };
+            academic_svc.auto_generate_classes(school_id, admin_id, (old_level + 1) as i32, new_level as i32).await?;
         }
 
         let _ = self.repos.audit.log_action(

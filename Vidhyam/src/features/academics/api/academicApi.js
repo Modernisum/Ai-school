@@ -11,14 +11,22 @@ export const academicApi = createApi({
             return headers;
         },
     }),
-    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays'],
+    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays', 'Attendance'],
     endpoints: (builder) => ({
         // ---- Classes ----
         getClasses: builder.query({
             query: (schoolId) => `/class/${schoolId}/classes`,
             providesTags: ['Class'],
-            // Transform response to match expected UI structure
-            transformResponse: (response) => response.data || response.classes || [],
+            // Transform response to handle both {success: true, data: [...]} and [...].
+            transformResponse: (response) => response.data || response.classes || response || [],
+        }),
+        getClassIds: builder.query({
+            query: (schoolId) => `/class/${schoolId}/classes`,
+            providesTags: ['Class'],
+            transformResponse: (response) => {
+                const list = response.data || response.classes || response || [];
+                return list.map(c => c.id || c.classId);
+            },
         }),
         addClass: builder.mutation({
             query: ({ schoolId, className }) => ({
@@ -59,11 +67,6 @@ export const academicApi = createApi({
         }),
 
         // ---- Exam / Paper Generation ----
-        getClassIds: builder.query({
-            query: (schoolId) => `/class/${schoolId}/classIds`,
-            providesTags: ['Class'],
-            transformResponse: (response) => response.classIds || [],
-        }),
         getSubjectIds: builder.query({
             query: ({ schoolId, className }) => `/academic/${schoolId}/${className}/ids`,
             providesTags: ['Subject'],
@@ -146,6 +149,15 @@ export const academicApi = createApi({
             query: ({ schoolId, materialId }) => `/materials/${schoolId}/${materialId}/history`,
             transformResponse: (res) => res.data || [],
         }),
+        getStudentsByClass: builder.query({
+            query: ({ schoolId, className, section }) => {
+                let url = `/students/${schoolId}/class/${className}`;
+                if (section) url += `?section=${section}`;
+                return url;
+            },
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || [],
+        }),
 
         // ---- Holidays ----
         getHolidays: builder.query({
@@ -153,9 +165,14 @@ export const academicApi = createApi({
             providesTags: ['Holidays'],
             transformResponse: (res) => res.data || [],
         }),
+        getHolidayDetail: builder.query({
+            query: ({ schoolId, holidayId }) => `/operations/attendance/${schoolId}/holidays/${holidayId}`,
+            providesTags: ['Holidays'],
+            transformResponse: (res) => res.data || null,
+        }),
         createHoliday: builder.mutation({
             query: ({ schoolId, body }) => ({
-                url: `/school-holidays/${schoolId}`,
+                url: `/operations/attendance/${schoolId}/holidays`,
                 method: 'POST',
                 body,
             }),
@@ -163,10 +180,48 @@ export const academicApi = createApi({
         }),
         deleteHoliday: builder.mutation({
             query: ({ schoolId, holidayId }) => ({
-                url: `/school-holidays/${schoolId}/${holidayId}`,
+                url: `/operations/attendance/${schoolId}/holidays/${holidayId}`,
                 method: 'DELETE',
             }),
             invalidatesTags: ['Holidays'],
+        }),
+
+        // ---- Attendance ----
+        getAttendanceByDate: builder.query({
+            query: ({ schoolId, date }) => `/operations/attendance/${schoolId}/student/date/${date}`,
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || [],
+        }),
+        markPresent: builder.mutation({
+            query: ({ schoolId, role, userId, body = {} }) => ({
+                url: `/operations/attendance/${schoolId}/${role}/${userId}/present`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Attendance'],
+        }),
+        markHoliday: builder.mutation({
+            query: ({ schoolId, role, userId, body = {} }) => ({
+                url: `/operations/attendance/${schoolId}/${role}/${userId}/holiday`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Attendance'],
+        }),
+        updateAttendance: builder.mutation({
+            query: ({ schoolId, role, userId, date, body }) => ({
+                url: `/operations/attendance/${schoolId}/${role}/${userId}/${date}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: ['Attendance'],
+        }),
+        deleteAttendance: builder.mutation({
+            query: ({ schoolId, role, userId, date }) => ({
+                url: `/operations/attendance/${schoolId}/${role}/${userId}/${date}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Attendance'],
         }),
     }),
 });
@@ -193,6 +248,12 @@ export const {
     useGetMaterialHistoryQuery,
     useLazyGetMaterialHistoryQuery,
     useGetHolidaysQuery,
+    useGetHolidayDetailQuery,
     useCreateHolidayMutation,
     useDeleteHolidayMutation,
+    useGetAttendanceByDateQuery,
+    useMarkPresentMutation,
+    useMarkHolidayMutation,
+    useUpdateAttendanceMutation,
+    useDeleteAttendanceMutation,
 } = academicApi;

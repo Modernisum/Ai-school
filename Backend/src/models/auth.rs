@@ -4,9 +4,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SchoolLoginRequest {
-    pub school_id: String,
-    pub password: String,
+    pub school_id: Option<String>,
+    pub ident: Option<String>,
+    pub password: Option<String>,
     pub user_type: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VerifyOtpGlobalRequest {
+    pub ident: String,
+    pub otp: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

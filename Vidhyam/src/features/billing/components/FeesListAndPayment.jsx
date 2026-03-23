@@ -28,7 +28,7 @@ const FeesListBox = memo(({ feesList, onPaymentClick }) => {
 
     const handleAIReminder = async (student) => {
         try {
-            const schoolId = localStorage.getItem('schoolId') || "622079";
+            const schoolId = localStorage.getItem('schoolId') || "";
             const data = await sendAIReminder({ schoolId, studentId: student.studentId }).unwrap();
             if (data.success) {
                 alert(data.data?.message || data.message); // For demo, using alert to show the AI text

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { getSchoolIdFromStorage } from '../../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, UserPlus, FileDown, Search,
@@ -19,10 +20,12 @@ import {
 import AddStudentPage from '../components/addstudent';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
 import { useGetStudentsQuery, useDeleteStudentMutation, useUpdateStudentMutation } from '../api/studentApi';
+import { academicApi } from '../../academics/api/academicApi';
+const { useGetClassesQuery } = academicApi;
 import { selectPollingInterval } from '../../settings/settingsSlice';
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const getSchoolId = () => getSchoolIdFromStorage() || ''; 
 const fmtMoney = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
 const fmtDate = (date) => {
@@ -216,13 +219,14 @@ export default function StudentManagement() {
 
     const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
-    const fetchClasses = useCallback(async () => {
-        try {
-            const r = await fetch(`${API}/class/${schoolId}/classes`);
-            const d = await r.json();
-            setClasses((d.data || d.classes || []).map(c => c.name || c.className || c));
-        } catch (e) { console.error(e); }
-    }, [schoolId]);
+    // Load classes using RTK Query
+    const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
+
+    useEffect(() => {
+        if (classData.length > 0) {
+            setClasses(classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
+        }
+    }, [classData]);
 
     // Fetch present IDs for selected date
     const fetchAttendance = useCallback(async () => {
@@ -241,14 +245,23 @@ export default function StudentManagement() {
     }, [schoolId, attDate]);
 
     const fetchHolidays = useCallback(async () => {
+        if (!schoolId) return;
         try {
-            const r = await fetch(`${API}/operations/attendance/${schoolId}/holidays`);
+            const token = localStorage.getItem('accessToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            const r = await fetch(`${API}/operations/attendance/${schoolId}/holidays`, { headers });
             const d = await r.json();
             if (d.success) setHolidays(d.data || []);
         } catch (e) { console.error(e); }
     }, [schoolId]);
 
-    useEffect(() => { fetchClasses(); fetchHolidays(); }, [fetchClasses, fetchHolidays]);
+    useEffect(() => {
+        if (!schoolId) return;
+        fetchHolidays();
+    }, [schoolId, fetchHolidays]);
     useEffect(() => { if (activeTab === 'attendance') fetchAttendance(); }, [activeTab, attDate, fetchAttendance]);
 
     const togglePresent = async (student) => {

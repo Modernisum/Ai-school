@@ -19,7 +19,7 @@ impl DbClient {
 
         // Sanitize schema name (e.g., school_123)
         let schema_name = format!("school_{}", school_id.replace('-', "_"));
-        
+
         // Set search_path so queries target the school's schema first
         let query = format!("SET search_path TO {}, public", schema_name);
         sqlx::query(&query).execute(&mut *conn).await?;
@@ -290,6 +290,40 @@ impl DbClient {
              .execute(&pool)
              .await?;
 
+        println!("Creating global_users table for unified login...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS global_users (
+                id SERIAL PRIMARY KEY,
+                phone VARCHAR(50),
+                email VARCHAR(255),
+                alternative_phone VARCHAR(50),
+                aadhaar_number VARCHAR(20),
+                school_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                user_type VARCHAR(50) NOT NULL,
+                name TEXT,
+                class_name VARCHAR(100),
+                image_url TEXT,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, user_id, user_type)
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Add indexes for fast lookup
+        sqlx::query("CREATE INDEX IF NOT EXISTS global_users_phone_idx ON global_users (phone)")
+            .execute(&pool)
+            .await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS global_users_email_idx ON global_users (email)")
+            .execute(&pool)
+            .await?;
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS global_users_aadhaar_idx ON global_users (aadhaar_number)",
+        )
+        .execute(&pool)
+        .await?;
+
         println!("Connecting to Redis...");
 
         let cfg = Config::from_url(redis_url);
@@ -301,7 +335,7 @@ impl DbClient {
     /// Ensures that a specific school has its own database schema and all required tables.
     pub async fn ensure_tenant_schema(&self, school_id: &str) -> Result<(), Box<dyn Error>> {
         let schema_name = format!("school_{}", school_id.replace('-', "_"));
-        
+
         println!("Ensuring schema {} exists...", schema_name);
         sqlx::query(&format!("CREATE SCHEMA IF NOT EXISTS {}", schema_name))
             .execute(&self.pool)
@@ -314,7 +348,7 @@ impl DbClient {
             .await?;
 
         println!("Initializing tenant tables in schema {}...", schema_name);
-        
+
         // Define all tenant-specific tables here
         let tables = [
             "CREATE TABLE IF NOT EXISTS students (
@@ -395,7 +429,8 @@ impl DbClient {
                 streams JSONB DEFAULT '[]',
                 section_size INTEGER DEFAULT 60,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, id)
             )",
             "CREATE TABLE IF NOT EXISTS sections (
                 id SERIAL PRIMARY KEY,
@@ -448,7 +483,7 @@ impl DbClient {
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             )",
-             "CREATE TABLE IF NOT EXISTS custom_fee_records (
+            "CREATE TABLE IF NOT EXISTS custom_fee_records (
                 id SERIAL PRIMARY KEY,
                 school_id VARCHAR(255) NOT NULL,
                 fee_id VARCHAR(255) NOT NULL,
@@ -547,7 +582,8 @@ impl DbClient {
                 schedule_type VARCHAR(50) DEFAULT 'daily',
                 schedule_data JSONB DEFAULT '[]',
                 created_at TIMESTAMPTZ DEFAULT NOW(),
-                updated_at TIMESTAMPTZ DEFAULT NOW()
+                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, id)
             )",
             "CREATE TABLE IF NOT EXISTS materials (
                 id VARCHAR(255) PRIMARY KEY,
@@ -555,6 +591,9 @@ impl DbClient {
                 name VARCHAR(255) NOT NULL,
                 quantity BIGINT DEFAULT 0,
                 unit_price DOUBLE PRECISION DEFAULT 0.0,
+                extra_unit INTEGER DEFAULT 0,
+                need_unit INTEGER DEFAULT 0,
+                attachment_path TEXT,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             )",
             "CREATE TABLE IF NOT EXISTS leave_applications (
@@ -613,6 +652,41 @@ impl DbClient {
                 file_url TEXT NOT NULL,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             )",
+            "CREATE TABLE IF NOT EXISTS space_materials (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                material_name VARCHAR(255) NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                unit VARCHAR(50),
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+            "CREATE TABLE IF NOT EXISTS space_employees (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                assigned_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(space_id, employee_id)
+            )",
+            "CREATE TABLE IF NOT EXISTS material_locations (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                material_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                item_id VARCHAR(255) NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, material_id, space_id, item_id)
+            )",
+            "CREATE TABLE IF NOT EXISTS schools (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) UNIQUE NOT NULL,
+                school_name VARCHAR(255) NOT NULL,
+                data JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )",
         ];
 
         for table_query in tables {
@@ -620,13 +694,22 @@ impl DbClient {
         }
 
         // Migration: Ensure user_id exists and old columns are removed
-        let _ = sqlx::query("ALTER TABLE announcements ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)").execute(&mut *conn).await;
-        let _ = sqlx::query("ALTER TABLE announcements DROP COLUMN IF EXISTS announcement_id").execute(&mut *conn).await;
-        let _ = sqlx::query("ALTER TABLE announcements DROP COLUMN IF EXISTS target_id").execute(&mut *conn).await;
+        let _ =
+            sqlx::query("ALTER TABLE announcements ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)")
+                .execute(&mut *conn)
+                .await;
+        let _ = sqlx::query("ALTER TABLE announcements DROP COLUMN IF EXISTS announcement_id")
+            .execute(&mut *conn)
+            .await;
+        let _ = sqlx::query("ALTER TABLE announcements DROP COLUMN IF EXISTS target_id")
+            .execute(&mut *conn)
+            .await;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS student_history_idx ON student_history (student_id)")
-             .execute(&mut *conn)
-             .await?;
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS student_history_idx ON student_history (student_id)",
+        )
+        .execute(&mut *conn)
+        .await?;
 
         Ok(())
     }

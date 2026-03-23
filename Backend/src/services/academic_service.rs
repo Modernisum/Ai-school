@@ -1,5 +1,6 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
+use crate::services::academic_utils;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::error::Error;
@@ -208,17 +209,6 @@ impl AcademicService for PostgresAcademicService {
         self.repos.academic.get_topics().await
     }
 
-    async fn list_class_ids(
-        &self,
-        school_id: &str,
-    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        let classes = self.repos.academic.get_classes(school_id).await?;
-        let ids = classes
-            .into_iter()
-            .filter_map(|c| c["id"].as_str().map(|id| id.to_string()))
-            .collect();
-        Ok(ids)
-    }
 
     async fn delete_class(
         &self,
@@ -291,6 +281,83 @@ impl AcademicService for PostgresAcademicService {
             exam
         ).await;
 
+        Ok(())
+    }
+
+    async fn auto_generate_classes(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        start_level: i32,
+        end_level: i32,
+    ) -> Result<(), AppError> {
+        let class_names = academic_utils::generate_classes(start_level, end_level);
+        let subjects_map = academic_utils::get_subjects_map();
+        let default_mats = academic_utils::get_default_materials();
+
+        for class_name in class_names {
+            // 1. Create Class
+            let class_data = json!({
+                "name": class_name,
+                "sections": academic_utils::generate_sections(0),
+                "monthlyFee": academic_utils::calculate_fee(&class_name)
+            });
+            
+            let class_res = self.repos.academic.add_class(school_id, class_data.clone()).await?;
+            let class_id = class_res["id"].as_str().or(class_res["classId"].as_str()).unwrap_or("");
+            let item_id = class_name.to_lowercase().replace(' ', "-");
+
+            // Audit Log
+            let _ = self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "CLASS_AUTO",
+                class_id,
+                "CREATE",
+                class_data
+            ).await;
+
+            // 2. Create Subjects
+            if let Some(subjects) = subjects_map.get(class_name.as_str()) {
+                for subj_name in subjects {
+                    let subj_data = json!({
+                        "name": subj_name,
+                        "classId": class_id,
+                        "className": class_name,
+                        "fees": 0,
+                    });
+                    let _ = self.repos.academic.add_subject(school_id, subj_data).await?;
+                }
+            }
+
+            // 3. Create Infrastructure (Space & Materials)
+            // 3.1 Ensure "classroom" space exists
+            let _ = self.repos.resource.add_space(school_id, json!({"id": "classroom", "name": "classroom"})).await;
+            
+            // 3.2 Add the class as an item in classroom space
+            let _ = self.repos.resource.add_item(school_id, "classroom", json!({
+                "id": item_id,
+                "itemName": class_name,
+                "roomNumber": class_name,
+                "classId": Some(class_id)
+            })).await;
+
+            // 3.3 Add default materials for classroom
+            if let Some(mats) = default_mats.get("classroom") {
+                for mat in mats {
+                    let material_name = mat["materialName"].as_str().unwrap();
+                    let material_id = material_name.to_lowercase();
+                    let _ = self.repos.resource.add_material(school_id, mat.clone()).await;
+                    let _ = self.repos.resource.add_material_location(
+                        school_id,
+                        &material_id,
+                        "classroom",
+                        &item_id,
+                        mat["quantity"].as_i64().unwrap() as i32
+                    ).await;
+                }
+            }
+        }
         Ok(())
     }
 }

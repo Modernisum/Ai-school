@@ -21,7 +21,7 @@ class LiveStreamBloc extends Bloc<LiveStreamEvent, LiveStreamState> {
       final token = await apiService.storage.read(key: 'jwt_token');
       if (token == null) { emit(const LiveStreamOffline("Unauthorized")); return; }
 
-      final wsUrl = ApiService.baseUrl.replaceFirst('http', 'ws') + '/ws/';
+      final wsUrl = ApiService.wsUrl;
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       // Auth handshake — subscribe to the class live channel

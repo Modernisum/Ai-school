@@ -61,7 +61,7 @@ pub async fn create_order(
                     // Save to db
                     match state
                         .repos
-                        .operations
+                        .transaction
                         .create_online_transaction(
                             &school_id,
                             &payload.student_id,
@@ -139,7 +139,7 @@ pub async fn razorpay_webhook(
                     .unwrap_or("");
                 if let Ok(Some(school_id)) = state
                     .repos
-                    .operations
+                    .transaction
                     .complete_online_transaction(order_id, payment_id, signature)
                     .await
                 {

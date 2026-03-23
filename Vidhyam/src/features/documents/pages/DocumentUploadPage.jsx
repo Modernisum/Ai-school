@@ -9,7 +9,7 @@ export default function DocumentUploadPage({ personId, onUploadComplete }) {
   const [schoolId, setSchoolId] = useState("");
 
   useEffect(() => {
-    const sid = localStorage.getItem("schoolId") || "622079";
+    const sid = localStorage.getItem("schoolId") || "";
     setSchoolId(sid);
   }, []);
 

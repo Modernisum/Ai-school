@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api_service.dart';
@@ -21,8 +22,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
+    debugPrint("[AuthBloc] Reading token from storage...");
     final token = await apiService.storage.read(key: 'jwt_token');
+    debugPrint("[AuthBloc] Token: ${token != null ? 'Present' : 'Null'}");
     final role = await apiService.storage.read(key: 'user_role');
+    debugPrint("[AuthBloc] Role: $role");
     
     if (token != null && token.isNotEmpty) {
       if (role != 'student') {

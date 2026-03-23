@@ -65,7 +65,7 @@ impl StudentService for PostgresStudentService {
         let result = self
             .repos
             .student
-            .add_student(school_id, student_data)
+            .add_student(school_id, student_data.clone())
             .await?;
 
         tracing::info!(
@@ -82,6 +82,21 @@ impl StudentService for PostgresStudentService {
             "CREATE",
             result.clone()
         ).await.ok(); // ok() because logging failure shouldn't crash the main action
+
+        // Sync to Global User Table
+        let sync_data = json!({
+            "phone": student_data["contact"],
+            "email": student_data["email"],
+            "alternativePhone": student_data["alternativeContact"],
+            "aadhaarNumber": student_data["aadhaarNumber"],
+            "schoolId": school_id,
+            "userId": student_id,
+            "userType": "student",
+            "name": student_data["name"],
+            "className": student_data["className"],
+            "imageUrl": student_data["imageUrl"]
+        });
+        self.repos.global_user.sync_user(sync_data).await.ok();
 
         Ok(result)
     }
@@ -178,8 +193,23 @@ impl StudentService for PostgresStudentService {
                         "STUDENT",
                         &student_id_str,
                         "CREATE_BULK",
-                        student_data
+                        student_data.clone()
                     ).await.ok();
+
+                    // Sync to Global
+                    let sync_data = json!({
+                        "phone": student_data["contact"],
+                        "email": student_data["email"],
+                        "alternativePhone": student_data["alternativeContact"],
+                        "aadhaarNumber": student_data["aadhaarNumber"],
+                        "schoolId": school_id,
+                        "userId": student_id_str,
+                        "userType": "student",
+                        "name": student_data["name"],
+                        "className": student_data["className"],
+                        "imageUrl": student_data["imageUrl"]
+                    });
+                    self.repos.global_user.sync_user(sync_data).await.ok();
                 },
                 Err(e) => {
                     failed += 1;
@@ -201,6 +231,18 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
     ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
         self.repos.student.get_students(school_id).await
+    }
+
+    async fn list_students_by_class(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        section: Option<&str>,
+    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+        self.repos
+            .student
+            .get_students_by_class(school_id, class_name, section)
+            .await
     }
 
     async fn get_student(
@@ -270,7 +312,7 @@ impl StudentService for PostgresStudentService {
             ).await.ok();
             
             // Legacy Audit History Logic
-            self.repos.student.add_history(school_id, student_id, rev_no, final_data, delta).await?;
+            self.repos.student.add_history(school_id, student_id, rev_no, final_data.clone(), delta).await?;
         }
 
         if let Some(nc) = new_class {
@@ -278,6 +320,22 @@ impl StudentService for PostgresStudentService {
                 self.resequence_roll_numbers(school_id, old_class).await?;
             }
         }
+
+        // Sync Updated Data to Global
+        let updated_student = self.repos.student.get_student(school_id, student_id).await?.unwrap_or(final_data);
+        let sync_data = json!({
+            "phone": updated_student["contact"],
+            "email": updated_student["email"],
+            "alternativePhone": updated_student["alternativeContact"],
+            "aadhaarNumber": updated_student["aadhaarNumber"],
+            "schoolId": school_id,
+            "userId": student_id,
+            "userType": "student",
+            "name": updated_student["name"],
+            "className": updated_student["className"],
+            "imageUrl": updated_student["imageUrl"]
+        });
+        self.repos.global_user.sync_user(sync_data).await.ok();
 
         Ok(())
     }
@@ -313,6 +371,9 @@ impl StudentService for PostgresStudentService {
             if !class_name.is_empty() {
                 self.resequence_roll_numbers(school_id, &class_name).await?;
             }
+
+            // Remove from Global
+            self.repos.global_user.delete_user(school_id, student_id, "student").await.ok();
         }
         Ok(())
     }

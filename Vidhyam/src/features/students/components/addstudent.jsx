@@ -7,18 +7,15 @@ import {
   CheckCircle, AlertTriangle, Calendar, MapPin, Plus, X,
   Hash, Shield, UserCheck, GraduationCap, DollarSign, Star, Tag
 } from 'lucide-react';
-import { getClassesByLevel } from '../../../utils/academicUtils';
+import { getSchoolIdFromStorage } from '../../../utils/api';
 
-// Hardcoded /api for stability with Vite proxy, or use env if present
+import { academicApi } from '../../academics/api/academicApi';
+const { useGetClassesQuery } = academicApi;
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
-const getSchoolId = () => {
-  for (const k of ['schoolId', 'school_id', 'currentSchoolId']) {
-    const v = localStorage.getItem(k);
-    if (v && v !== 'undefined' && v !== 'null') return v;
-  }
-  return '622079';
-};
+const getSchoolId = () => getSchoolIdFromStorage() || "";
+
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -147,11 +144,18 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
       .finally(() => setLoadingDistricts(false));
   }, [form.addressStateId]);
 
-  // Load classes from school level
+  // Load classes from backend using RTK Query
+  const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
+
   useEffect(() => {
-    const schoolLevel = localStorage.getItem('schoolLevel') || 10;
-    setClasses(getClassesByLevel(schoolLevel));
-  }, []);
+    if (classData.length > 0) {
+      const list = classData.map(c => ({
+        name: c.name || c.className || c,
+        roomNumber: c.roomNumber || c.room_number || ''
+      }));
+      setClasses(list);
+    }
+  }, [classData]);
 
   // Load subjects when class changes
   useEffect(() => {
@@ -204,9 +208,38 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
         .then(d => {
           if (d.success && d.data) {
             const s = d.data;
+
+            // Cleanup phone numbers for display (strip prefix)
+            let contact = s.contact || '';
+            let altContact = s.alternativeContact || '';
+            let phoneCode = form.addressPhoneCode || '+91';
+
+            // If it starts with '+', try to extract the code
+            if (contact.startsWith('+')) {
+              // Try common +91 first, or look for first 3 chars
+              if (contact.startsWith('+91')) {
+                phoneCode = '+91';
+                contact = contact.substring(3);
+              } else {
+                // Generic: first '+' until 10 digits remain (basic heuristic)
+                const digitsOnly = contact.replace(/\D/g, '');
+                if (digitsOnly.length > 10) {
+                  const prefixLen = digitsOnly.length - 10;
+                  // This is risky without a full country list, but let's assume +XX
+                  // For now, if it's +91 we are safe.
+                }
+              }
+            }
+            if (altContact.startsWith('+91')) {
+              altContact = altContact.substring(3);
+            }
+
             setForm(f => ({
               ...f,
               ...s,
+              contact,
+              alternativeContact: altContact,
+              addressPhoneCode: phoneCode,
               studentId: s.studentId || editStudentId,
               enrolledSubjects: s.enrolledSubjects || [],
               totalFees: parseFloat(s.totalFees) || 0,
@@ -341,7 +374,7 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
     if (validateSection(activeSection)) {
       const payload = {
         aadhaarNumber: form.aadhaarNumber,
-        contact: form.contact,
+        contact: `${form.addressPhoneCode}${form.contact}`,
         email: form.email,
       };
       const isValid = await validateBackend(payload);
@@ -386,6 +419,8 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
 
     const payload = {
       ...form,
+      contact: `${form.addressPhoneCode}${form.contact}`,
+      alternativeContact: form.alternativeContact ? `${form.addressPhoneCode}${form.alternativeContact}` : null,
       type: form.studentType,
       enrolledSubjects: form.enrolledSubjects,
       totalFee: finalFees,
@@ -732,11 +767,14 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
             onChange={e => handleClassChange(e.target.value)}
           >
             <option value="" disabled className="bg-slate-800 text-white">Select class</option>
-            {classes.map(name => (
-              <option key={name} value={name} className="bg-slate-800 text-white">
-                {name}
-              </option>
-            ))}
+            {classes.map(c => {
+              const name = typeof c === 'string' ? c : (c.name || c.className);
+              return (
+                <option key={name} value={name} className="bg-slate-800 text-white">
+                  {name}
+                </option>
+              );
+            })}
           </select>
         </Field>
         {/* Student Type — locked for Class ≤9, choosable for Class 10+ */}

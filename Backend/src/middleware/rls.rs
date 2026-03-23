@@ -30,17 +30,13 @@ pub async fn rls_middleware(
         .map(|s| s.to_string())
         .unwrap_or_else(|| "unknown_admin".to_string());
 
-    if let Some(sid) = school_id {
-        // Store in extensions so services can access it if needed
-        request.extensions_mut().insert(TenantContext { 
-            school_id: sid.clone(), 
-            is_super_admin,
-            admin_id
-        });
-    } else if !is_super_admin {
-        // If no school_id and not super admin, we might want to block
-        // but for now we'll allow it and let the DB RLS block it if needed
-    }
+    // 4. Always insert TenantContext to avoid "Missing request extension" errors in handlers
+    let sid = school_id.unwrap_or_else(|| "default_school".to_string());
+    request.extensions_mut().insert(TenantContext { 
+        school_id: sid, 
+        is_super_admin,
+        admin_id
+    });
 
     Ok(next.run(request).await)
 }

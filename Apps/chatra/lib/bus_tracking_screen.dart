@@ -6,7 +6,6 @@ import 'logic/transport/bus_tracking_bloc.dart';
 import 'logic/transport/bus_tracking_event.dart';
 import 'logic/transport/bus_tracking_state.dart';
 import 'widgets/glass_card.dart';
-import 'widgets/animated_gradient_bg.dart';
 import 'theme/app_theme.dart';
 import 'api_service.dart';
 
@@ -227,7 +226,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTicker
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.cyanBlue, size: 20),
+        Icon(icon, color: AppColors.accentTeal, size: 20),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

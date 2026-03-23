@@ -44,16 +44,3 @@ pub async fn list_classes(
             .into_response(),
     }
 }
-pub async fn list_class_ids(
-    State(state): State<AppState>,
-    Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state.services.academic.list_class_ids(&school_id).await {
-        Ok(ids) => Json(json!({"success": true, "classIds": ids})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}

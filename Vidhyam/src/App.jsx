@@ -28,12 +28,13 @@ const EmployeeFormPage = lazy(() => import("./features/employees/components/empl
 const EmployeeProfilePage = lazy(() => import("./features/employees/components/employeeprofile.jsx"));
 const PayrollPage = lazy(() => import("./features/employees/pages/payroll.jsx"));
 const LeaveManagementPage = lazy(() => import("./features/employees/components/LeaveManagement.jsx"));
-const AttendanceManager = lazy(() => import("./features/academics/pages/attendance.jsx"));
 const ReferralCouponsPage = lazy(() => import("./features/billing/pages/referralCoupons.jsx"));
 const AiStudioPage = lazy(() => import("./features/ai/pages/AiStudio.jsx"));
 const TimetableGeneratorPage = lazy(() => import("./features/academics/pages/timetable.jsx"));
 const RecoveryPage = lazy(() => import("./features/dashboard/pages/RecoveryPage.jsx"));
 const GeneralSettings = lazy(() => import("./features/dashboard/pages/GeneralSettings.jsx"));
+
+const AnnouncementsPage = lazy(() => import("./features/dashboard/pages/announcements.jsx"));
 
 // Lazy Loader
 const PageLoader = () => (
@@ -74,12 +75,11 @@ export default function App() {
           <Route path="student/addstudent" element={<Suspense fallback={<PageLoader />}><AddStudentPage /></Suspense>} />
           <Route path="subject" element={<Suspense fallback={<PageLoader />}><SubjectPage /></Suspense>} />
           <Route path="upload" element={<Suspense fallback={<PageLoader />}><DocumentUploadPage /></Suspense>} />
-          <Route path="announcements" element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
+          <Route path="announcements" element={<Suspense fallback={<PageLoader />}><AnnouncementsPage /></Suspense>} />
           <Route path="employeeform" element={<Suspense fallback={<PageLoader />}><EmployeeFormPage /></Suspense>} />
           <Route path="employeeprofile" element={<Suspense fallback={<PageLoader />}><EmployeeProfilePage /></Suspense>} />
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><PayrollPage /></Suspense>} />
           <Route path="leave-management" element={<Suspense fallback={<PageLoader />}><LeaveManagementPage /></Suspense>} />
-          <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendanceManager /></Suspense>} />
           <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
           <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
           <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />

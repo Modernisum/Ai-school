@@ -25,7 +25,7 @@ const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
 export default function FeesManagement() {
-    const schoolId = useSelector(selectSchoolId) || "622079";
+    const schoolId = useSelector(selectSchoolId) || "";
     const schoolLevel = localStorage.getItem('schoolLevel') || 10;
     const derivedClasses = getClassesByLevel(schoolLevel);
 

@@ -15,7 +15,7 @@ const FeeSection = lazy(() => import('./sections/FeeSection'));
 const DocumentsSection = lazy(() => import('./sections/DocumentsSection'));
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const getSchoolId = () => localStorage.getItem('schoolId') || '';
 
 const SectionLoader = () => (
   <div className="flex flex-col items-center justify-center py-16 animate-pulse">

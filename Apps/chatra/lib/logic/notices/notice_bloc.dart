@@ -24,8 +24,9 @@ class NoticeBloc extends Bloc<NoticeEvent, NoticeState> {
         return;
       }
 
-      final wsUrl = ApiService.baseUrl.replaceFirst('http', 'ws') + '/ws/';
+      final wsUrl = await apiService.getSocketUrl();
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+
 
       // Auth handshake — no vehicle_id, subscribe to user channel for notices
       _channel!.sink.add(jsonEncode({

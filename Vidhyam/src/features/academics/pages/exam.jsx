@@ -13,17 +13,18 @@ import {
   ChevronRight,
   Printer
 } from 'lucide-react';
-import {
+import { academicApi } from '../api/academicApi';
+const {
   useGetClassIdsQuery,
   useLazyGetSubjectIdsQuery,
   useLazyGetChapterNamesQuery,
   useGeneratePaperMutation,
   useApproveExamMutation
-} from '../api/academicApi';
+} = academicApi;
 
 const ExamManager = () => {
   // Get data from localStorage
-  const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+  const getSchoolId = () => localStorage.getItem('schoolId') || "";
   const getSchoolName = () => localStorage.getItem('schoolName') || 'Vidhyam';
   const getBoard = () => localStorage.getItem('boardName') || 'CBSE';
   const getMedium = () => localStorage.getItem('medium') || 'English';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../api_service.dart';
 import '../../blocs/attendance/attendance_bloc.dart';
 import '../../blocs/attendance/attendance_event.dart';
 import '../../blocs/attendance/attendance_state.dart';
@@ -24,7 +25,7 @@ class AttendanceScreen extends StatelessWidget {
     final today = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return BlocProvider(
-      create: (context) => AttendanceBloc()..add(LoadStudents(classId)),
+      create: (context) => AttendanceBloc(apiService: context.read<ApiService>())..add(LoadStudents(classId)),
       child: AnimatedGradientBg(
         child: Scaffold(
           backgroundColor: Colors.transparent,

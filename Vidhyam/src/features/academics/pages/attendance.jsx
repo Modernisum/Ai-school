@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { getSchoolIdFromStorage } from '../../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
@@ -15,7 +16,7 @@ import {
 } from '../api/academicApi';
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const getSchoolId = () => getSchoolIdFromStorage() || "";
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -35,7 +36,7 @@ function dateRange(from, to) {
   return dates;
 }
 
-export default function AnnouncementsPage() {
+export default function AttendancePage() {
   const location = useLocation();
   const schoolId = getSchoolId();
 
@@ -87,14 +88,21 @@ export default function AnnouncementsPage() {
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
   const fetchData = useCallback(async () => {
+    if (!schoolId) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem('accessToken');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
       const [cRes, eRes] = await Promise.allSettled([
-        fetch(`${API}/class/${schoolId}/classes`),
-        fetch(`${API}/employees/${schoolId}/employees`),
+        fetch(`${API}/class/${schoolId}/classes`, { headers }),
+        fetch(`${API}/employees/${schoolId}/employees`, { headers }),
       ]);
       if (cRes.status === 'fulfilled' && cRes.value.ok) {
-        const d = await cRes.value.json(); setClasses((d.data || d.classes || []).map(c => c.name || c.className || c));
+        const d = await cRes.value.json(); 
+        setClasses((d.data || d.classes || []).map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
       }
       if (eRes.status === 'fulfilled' && eRes.value.ok) {
         const d = await eRes.value.json(); setEmployees(d.data || d.employees || []);

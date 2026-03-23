@@ -1,0 +1,50 @@
+﻿cargo :     Checking modern_school_backend v0.1.0 
+(C:\Users\ok\modernisum\Ai-school\Backend)
+At line:1 char:1
++ cargo check --message-format=short 2>&1 | 
+out-file -encoding utf8 car ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (     
+   Checking mo...school\Backend):String) [], Rem  
+  oteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+src\repository\transaction_repo.rs:4:18: warning: 
+unused imports: `Value` and `json`
+src\repository\fee_repo.rs:190:38: warning: 
+unused variable: `school_id`: help: if this is 
+intentional, prefix it with an underscore: 
+`_school_id`
+src\repository\payroll_repo.rs:44:9: warning: 
+unused variable: `school_id`: help: if this is 
+intentional, prefix it with an underscore: 
+`_school_id`
+src\logic\pdf_generator.rs:6:12: warning: struct 
+`PdfGenerator` is never constructed
+src\logic\pdf_generator.rs:9:12: warning: 
+associated function `generate_report` is never 
+used
+src\middleware\rls.rs:46:9: warning: fields 
+`school_id` and `is_super_admin` are never read
+src\repository\base.rs:6:12: warning: struct 
+`PostgresBaseRepository` is never constructed
+src\repository\base.rs:11:12: warning: associated 
+items `new` and `with_tenant_tx` are never used
+src\routes\award.rs:26:14: warning: function 
+`create_award` is never used
+src\routes\mobile.rs:24:9: warning: field `role` 
+is never read
+src\routes\reminder.rs:23:14: warning: function 
+`create_reminder` is never used
+warning: `modern_school_backend` (bin 
+"modern_school_backend") generated 11 warnings 
+(run `cargo fix --bin "modern_school_backend" -p 
+modern_school_backend` to apply 3 suggestions)
+    Finished `dev` profile [unoptimized + 
+debuginfo] target(s) in 12.95s
+warning: the following packages contain code that 
+will be rejected by a future version of Rust: 
+redis v0.25.4, sqlx-postgres v0.7.4
+note: to see what the problems were, use the 
+option `--future-incompat-report`, or run `cargo 
+report future-incompatibilities --id 11`

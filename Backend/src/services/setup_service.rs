@@ -1,5 +1,6 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
+use crate::services::academic_utils;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -13,194 +14,8 @@ pub struct PostgresSetupService {
 
 // --- Logic Parity Constants ---
 
-static DEFAULT_MATERIALS: OnceLock<HashMap<&'static str, Vec<Value>>> = OnceLock::new();
-static SUBJECTS: OnceLock<HashMap<&'static str, Vec<&'static str>>> = OnceLock::new();
-
-fn get_default_materials() -> &'static HashMap<&'static str, Vec<Value>> {
-    DEFAULT_MATERIALS.get_or_init(|| {
-        let mut m = HashMap::new();
-        m.insert(
-            "classroom",
-            vec![
-                json!({"materialName": "table", "quantity": 1, "unitPrice": 2000}),
-                json!({"materialName": "chair", "quantity": 1, "unitPrice": 750}),
-                json!({"materialName": "board", "quantity": 1, "unitPrice": 2000}),
-                json!({"materialName": "marker", "quantity": 2, "unitPrice": 50}),
-                json!({"materialName": "board cleaner", "quantity": 1, "unitPrice": 150}),
-                json!({"materialName": "fan", "quantity": 4, "unitPrice": 1500}),
-                json!({"materialName": "bulb", "quantity": 4, "unitPrice": 100}),
-                json!({"materialName": "painting", "quantity": 2, "unitPrice": 500}),
-            ],
-        );
-        m.insert(
-            "kitchen",
-            vec![
-                json!({"materialName": "gas stove", "quantity": 1, "unitPrice": 3000}),
-                json!({"materialName": "sugar", "quantity": 5, "unitPrice": 50}),
-                json!({"materialName": "milk", "quantity": 5, "unitPrice": 60}),
-                json!({"materialName": "tea", "quantity": 1, "unitPrice": 500}),
-                json!({"materialName": "water tank", "quantity": 1, "unitPrice": 800}),
-            ],
-        );
-        m.insert(
-            "office",
-            vec![
-                json!({"materialName": "big wheel chair", "quantity": 1, "unitPrice": 5000}),
-                json!({"materialName": "big table", "quantity": 1, "unitPrice": 10000}),
-                json!({"materialName": "fan", "quantity": 4, "unitPrice": 200}),
-                json!({"materialName": "guest chair", "quantity": 6, "unitPrice": 2000}),
-            ],
-        );
-        m
-    })
-}
-
-fn get_subjects() -> &'static HashMap<&'static str, Vec<&'static str>> {
-    SUBJECTS.get_or_init(|| {
-        let mut s = HashMap::new();
-        s.insert(
-            "Pre-Nursery",
-            vec!["English", "Hindi", "Mathematics", "Art and Craft"],
-        );
-        s.insert(
-            "Nursery",
-            vec!["English", "Hindi", "Mathematics", "Environmental Studies"],
-        );
-        s.insert(
-            "Kindergarten",
-            vec!["English", "Hindi", "Mathematics", "Environmental Studies"],
-        );
-        s.insert(
-            "Class 1",
-            vec![
-                "English",
-                "Hindi",
-                "Mathematics",
-                "EVS",
-                "General Knowledge",
-            ],
-        );
-        s.insert(
-            "Class 2",
-            vec![
-                "English",
-                "Hindi",
-                "Mathematics",
-                "EVS",
-                "General Knowledge",
-            ],
-        );
-        s.insert(
-            "Class 3",
-            vec![
-                "English",
-                "Hindi",
-                "Mathematics",
-                "EVS",
-                "General Knowledge",
-            ],
-        );
-        s.insert(
-            "Class 4",
-            vec![
-                "English",
-                "Hindi",
-                "Mathematics",
-                "Science",
-                "Social Studies",
-            ],
-        );
-        s.insert(
-            "Class 5",
-            vec![
-                "English",
-                "Hindi",
-                "Mathematics",
-                "Science",
-                "Social Studies",
-            ],
-        );
-        s.insert(
-            "Class 6",
-            vec![
-                "English",
-                "Hindi",
-                "Maths",
-                "Science",
-                "History",
-                "Geography",
-            ],
-        );
-        s.insert(
-            "Class 7",
-            vec![
-                "English",
-                "Hindi",
-                "Maths",
-                "Science",
-                "History",
-                "Geography",
-            ],
-        );
-        s.insert(
-            "Class 8",
-            vec![
-                "English",
-                "Hindi",
-                "Maths",
-                "Science",
-                "History",
-                "Geography",
-            ],
-        );
-        s.insert(
-            "Class 9",
-            vec![
-                "English",
-                "Hindi",
-                "Maths",
-                "Physics",
-                "Chemistry",
-                "Biology",
-            ],
-        );
-        s.insert(
-            "Class 10",
-            vec![
-                "English",
-                "Hindi",
-                "Maths",
-                "Physics",
-                "Chemistry",
-                "Biology",
-            ],
-        );
-        s.insert(
-            "Class 11 Science",
-            vec!["Physics", "Chemistry", "Maths", "Biology", "English"],
-        );
-        s.insert(
-            "Class 11 Commerce",
-            vec!["Accountancy", "Business Studies", "Economics", "English"],
-        );
-        s.insert(
-            "Class 11 Humanities",
-            vec!["History", "Political Science", "Geography", "English"],
-        );
-        s.insert(
-            "Class 12 Science",
-            vec!["Physics", "Chemistry", "Maths", "Biology", "English"],
-        );
-        s.insert(
-            "Class 12 Commerce",
-            vec!["Accountancy", "Business Studies", "Economics", "English"],
-        );
-        s.insert(
-            "Class 12 Humanities",
-            vec!["History", "Political Science", "Geography", "English"],
-        );
-        s
-    })
+fn get_subjects() -> HashMap<&'static str, Vec<&'static str>> {
+    academic_utils::get_subjects_map()
 }
 
 #[async_trait]
@@ -210,18 +25,19 @@ impl SetupService for PostgresSetupService {
         let _school_address = data["schoolAddress"]
             .as_str()
             .ok_or("Missing schoolAddress")?;
-        let class_level_start = data["classLevelStart"].as_i64().unwrap_or(0);
-        let class_level = data["classLevel"].as_i64().unwrap_or(0);
+        let class_level_start = data["classLevelStart"].as_i64()
+            .or_else(|| data["classLevelStart"].as_str().and_then(|s| s.parse().ok()))
+            .unwrap_or(0);
+        let class_level = data["classLevel"].as_i64()
+            .or_else(|| data["classLevel"].as_str().and_then(|s| s.parse().ok()))
+            .unwrap_or(0);
         let password = data["password"].as_str().ok_or("Missing password")?;
         let _affiliated_board = data["affiliatedBoard"].as_str().unwrap_or("");
-        let mut default_students = data["defaultStudents"].as_i64().unwrap_or(30);
-        if default_students <= 0 {
-            default_students = 30; // Enforce sections generation
-        }
 
         // 1. Generate School Attributes
         let school_id = format!("{:06}", rand::random::<u32>() % 900000 + 100000);
         let school_code = self.repos.auth.generate_school_code().await?;
+        println!("Generating school_id: {} and school_code: {}", school_id, school_code);
         let hashed_password = bcrypt::hash(password, 10)?;
 
         // 2. Create School document
@@ -229,52 +45,83 @@ impl SetupService for PostgresSetupService {
         school_payload["id"] = json!(school_id);
         school_payload["schoolCode"] = json!(school_code);
 
-        self.repos.auth.create_school(school_payload).await?;
+        println!("Creating school record in global table...");
+        self.repos.auth.create_school(school_payload.clone()).await.map_err(|e| {
+            println!("create_school failed: {}", e);
+            e
+        })?;
 
         // 2.5 Ensure the school-specific schema exists and is initialized
+        println!("Ensuring tenant schema for school_id: {}", school_id);
         self.repos.db_client.ensure_tenant_schema(&school_id).await
+            .map_err(|e| {
+                println!("ensure_tenant_schema failed: {}", e);
+                Box::<dyn std::error::Error + Send + Sync>::from(e.to_string())
+            })?;
+
+        // 2.6 Populate local schools table in tenant schema
+        println!("Populating local schools table for school_id: {}", school_id);
+        let mut conn = self.repos.db_client.acquire_tenant_connection(&school_id).await
+            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e.to_string()))?;
+        
+        sqlx::query("INSERT INTO schools (school_id, school_name, data) VALUES ($1, $2, $3)")
+            .bind(&school_id)
+            .bind(school_payload["schoolName"].as_str().unwrap_or(""))
+            .bind(&school_payload)
+            .execute(&mut *conn)
+            .await
             .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e.to_string()))?;
 
         // 3. Create Auth record
+        println!("Creating auth record...");
         self.repos
             .auth
             .update_auth(
                 &school_id,
                 json!({
                     "password": hashed_password,
-                    "role": "school-admin"
+                    "password_temp": false
                 }),
             )
-            .await?;
+            .await.map_err(|e| {
+                println!("update_auth failed: {}", e);
+                e
+            })?;
 
         // 4. Initialize Infrastructure (Spaces & Items)
-        let spaces = vec![
-            (
-                "classroom",
-                self.generate_classes(class_level_start as i32, class_level as i32),
-            ),
-            ("kitchen", vec!["Kitchen 1".to_string()]),
-            ("storeroom", vec!["Storeroom 1".to_string()]),
-            (
-                "office",
-                vec!["Principal Office".to_string(), "Staff Office".to_string()],
-            ),
-            ("ground", vec!["Playground".to_string()]),
-            ("parking", vec!["Parking 1".to_string()]),
-        ];
+        let default_mats = academic_utils::get_default_materials();
+        let default_spaces = academic_utils::get_default_spaces();
 
-        let default_mats = get_default_materials();
-        for (space_type, items) in spaces {
+        println!("Initializing Infrastructure (Spaces & Items)...");
+        for space_type in default_spaces {
+            println!("Adding space: {}", space_type);
             self.repos
                 .resource
                 .add_space(&school_id, json!({"id": space_type, "name": space_type}))
                 .await?;
 
+            let mut items = Vec::new();
+            match space_type {
+                "classroom" => {
+                    items = academic_utils::generate_classes(class_level_start as i32, class_level as i32);
+                }
+                "kitchen" => items.push("Kitchen 1".to_string()),
+                "storeroom" => items.push("Storeroom 1".to_string()),
+                "office" => {
+                    items.push("Principal Office".to_string());
+                    items.push("Staff Office".to_string());
+                }
+                "ground" => items.push("Playground".to_string()),
+                "parking" => items.push("Parking 1".to_string()),
+                _ => {}
+            }
+
+            println!("Adding {} items to space {}", items.len(), space_type);
             for item in items {
                 let item_id = item.to_lowercase().replace(' ', "-");
                 self.repos.resource.add_item(&school_id, space_type, json!({
                     "id": item_id,
-                    "itemName": item,
+                    "itemName": item.clone(),
                     "roomNumber": if space_type == "classroom" { item.clone() } else { "".to_string() },
                     "classId": if space_type == "classroom" { Some(item_id.clone()) } else { None::<String> }
                 })).await?;
@@ -303,12 +150,14 @@ impl SetupService for PostgresSetupService {
         }
 
         // 5. Initialize Academic Structure
-        let class_names = self.generate_classes(class_level_start as i32, class_level as i32);
+        let class_names = academic_utils::generate_classes(class_level_start as i32, class_level as i32);
+        println!("Generated {} class names to initialize", class_names.len());
         let subjects_map = get_subjects();
         for class_name in class_names {
+            println!("Initialing class: {}", class_name);
             let class_id = class_name.to_lowercase().replace(' ', "-");
-            let fee = self.calculate_fee(&class_name) as f64;
-            let sections = self.generate_sections(default_students as i32);
+            let fee = academic_utils::calculate_fee(&class_name) as f64;
+            let sections = academic_utils::generate_sections(0);
 
             let mut streams = Vec::new();
             if class_name.starts_with("Class 11") || class_name.starts_with("Class 12") {
@@ -326,7 +175,7 @@ impl SetupService for PostgresSetupService {
                         "id": class_id,
                         "className": class_name,
                         "classFees": fee,
-                        "totalClassStudents": default_students,
+                        "totalClassStudents": 0,
                         "sections": sections,
                         "streams": streams,
                         "totalClassTeachers": 0,
@@ -384,76 +233,7 @@ impl SetupService for PostgresSetupService {
 }
 
 impl PostgresSetupService {
-    fn generate_classes(&self, start_level: i32, end_level: i32) -> Vec<String> {
-        let mut classes = Vec::new();
-        if start_level <= -2 && end_level >= -2 {
-            classes.push("Pre-Nursery".to_string());
-        }
-        if start_level <= -1 && end_level >= -1 {
-            classes.push("Nursery".to_string());
-        }
-        if start_level <= 0 && end_level >= 0 {
-            classes.push("Kindergarten".to_string());
-        }
-
-        let from = std::cmp::max(1, start_level);
-        let to = std::cmp::min(12, end_level);
-
-        if from <= to {
-            for i in from..=to {
-                if i <= 10 {
-                    classes.push(format!("Class {}", i));
-                } else if i == 11 {
-                    classes.push("Class 11 Science".to_string());
-                    classes.push("Class 11 Commerce".to_string());
-                    classes.push("Class 11 Humanities".to_string());
-                } else if i == 12 {
-                    classes.push("Class 12 Science".to_string());
-                    classes.push("Class 12 Commerce".to_string());
-                    classes.push("Class 12 Humanities".to_string());
-                }
-            }
-        }
-        classes
-    }
-
-    fn calculate_fee(&self, name: &str) -> i32 {
-        if name.contains("Nursery") || name == "Kindergarten" {
-            return 100;
-        }
-        if name.starts_with("Class ") {
-            let part = name.split_whitespace().nth(1).unwrap_or("0");
-            let num: i32 = part.parse().unwrap_or(0);
-            if num > 0 {
-                if num <= 5 {
-                    return 150;
-                }
-                if num <= 8 {
-                    return 200;
-                }
-                if num <= 10 {
-                    return 250;
-                }
-                return 300;
-            }
-        }
-        100
-    }
-
-    fn generate_sections(&self, total_students: i32) -> Vec<String> {
-        let mut sections = Vec::new();
-        if total_students <= 0 {
-            return sections;
-        }
-        let count = (total_students as f32 / 60.0).ceil() as usize;
-        let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        for i in 0..count {
-            if let Some(c) = alphabet.chars().nth(i) {
-                sections.push(c.to_string());
-            }
-        }
-        sections
-    }
+    // Removed redundant logic (moved to academic_utils.rs)
 
     #[allow(dead_code)]
     async fn get_next_sequence_val(

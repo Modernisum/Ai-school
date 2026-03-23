@@ -51,9 +51,6 @@ dependencies:
   lottie: ^3.1.2
   shared_preferences: ^2.2.3
 
-dependency_overrides:
-  path_provider_windows: "2.2.0"
-  path_provider_linux: "2.2.0"
 
 dev_dependencies:
   flutter_test:

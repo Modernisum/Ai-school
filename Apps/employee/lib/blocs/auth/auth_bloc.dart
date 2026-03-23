@@ -42,7 +42,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       // Step 1: Request OTP / Login (mock sending)
-      final loginSuccess = await apiService.login(event.identifier, 'employee');
+      final loginSuccess = await apiService.login(event.identifier);
       if (!loginSuccess) {
         emit(const AuthError('User not found or Invalid credentials.'));
         emit(AuthUnauthenticated());
@@ -50,7 +50,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
 
       // Step 2: Verify OTP
-      final profiles = await apiService.verifyOtp(event.identifier, 'employee', event.password);
+      final profiles = await apiService.verifyOtp(event.identifier, event.password);
       
       if (profiles != null) {
         emit(AuthProfileSelection(profiles: profiles, identifier: event.identifier));
@@ -69,9 +69,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final success = await apiService.selectProfile(
+        event.profile['schoolId'].toString(),
         event.identifier,
-        event.profile['id'].toString(),
-        event.profile['user_type'].toString()
+        event.profile['userId'].toString(),
+        event.profile['userType'].toString()
       );
 
       if (success) {

@@ -183,7 +183,7 @@ class _FeesScreenState extends State<FeesScreen> {
       borderRadius: 16,
       child: CheckboxListTile(
         value: isSelected,
-        activeColor: AppColors.cyanBlue,
+        activeColor: AppColors.accentTeal,
         checkColor: Colors.black,
         onChanged: (val) {
           final List<Map<String, dynamic>> newList = List.from(state.selectedFees);
@@ -230,7 +230,7 @@ class _FeesScreenState extends State<FeesScreen> {
                   ));
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cyanBlue,
+                  backgroundColor: AppColors.accentTeal,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -280,7 +280,7 @@ class _FeesScreenState extends State<FeesScreen> {
           ).animate().fadeIn(delay: 800.ms),
           TextButton(
             onPressed: () => context.read<FeesBloc>().add(FeesFetchStarted(_studentId)),
-            child: const Text("Back to Ledger", style: TextStyle(color: AppColors.cyanBlue)),
+            child: const Text("Back to Ledger", style: TextStyle(color: AppColors.accentTeal)),
           ),
         ],
       ),

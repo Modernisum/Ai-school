@@ -1,4 +1,5 @@
 pub mod academic_service;
+pub mod academic_utils;
 pub mod ai_service;
 pub mod auth_service;
 pub mod auxiliary_service;

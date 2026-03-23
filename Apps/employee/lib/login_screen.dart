@@ -14,14 +14,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
+  final _identController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
 
   void _sendOtp(BuildContext context) {
-    if (_phoneController.text.isEmpty) {
+    if (_identController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter mobile number')),
+        const SnackBar(content: Text('Please enter Mobile, Email or Aadhaar')),
       );
       return;
     }
@@ -40,8 +40,8 @@ class _LoginScreenState extends State<LoginScreen> {
     // Dispatch event to BLoC
     context.read<AuthBloc>().add(
       LoginRequested(
-        schoolId: '123456', // Optional/Dynamic later
-        identifier: _phoneController.text,
+        schoolId: '', // Discovered globally
+        identifier: _identController.text.trim(),
         password: _otpController.text,
       ),
     );
@@ -144,14 +144,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         
                         if (!_isOtpSent) ...[
                           TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
+                            controller: _identController,
+                            keyboardType: TextInputType.text,
                             style: const TextStyle(color: Colors.white),
                              decoration: const InputDecoration(
-                               labelText: "Mobile Number",
-                               prefixText: "+91 ",
-                               prefixStyle: TextStyle(color: Colors.white),
-                               prefixIcon: Icon(Icons.phone, color: Colors.white70),
+                               labelText: "Identifier",
+                               hintText: "Phone / Email / Aadhaar",
+                               prefixIcon: Icon(Icons.person, color: Colors.white70),
                              ),
                           ),
                           const SizedBox(height: 24),
@@ -181,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: isLoading ? null : () => setState(() => _isOtpSent = false),
-                            child: const Text("Use a different number", style: TextStyle(color: Colors.white)),
+                            child: const Text("Use a different identifier", style: TextStyle(color: Colors.white)),
                           )
                         ],
                       ],

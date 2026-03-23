@@ -37,7 +37,7 @@ const NAV_CONFIG = [
     ]
   },
   {
-    name: "Announcements",
+    name: "Announcements & Attendance",
     icon: Bell,
     path: "/dashboard/announcements"
   },

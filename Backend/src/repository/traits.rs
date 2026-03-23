@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 pub type AppError = Box<dyn std::error::Error + Send + Sync>;
+pub type JsonList = Vec<serde_json::Value>;
 
 #[async_trait]
 pub trait AuthRepository: Send + Sync {
@@ -21,7 +22,13 @@ pub trait AuthRepository: Send + Sync {
 #[async_trait]
 pub trait StudentRepository: Send + Sync {
     async fn add_student(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_students(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_students(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_students_by_class(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        section: Option<&str>,
+    ) -> Result<JsonList, AppError>;
     async fn get_student(
         &self,
         school_id: &str,
@@ -50,13 +57,14 @@ pub trait StudentRepository: Send + Sync {
     async fn add_history(&self, school_id: &str, student_id: &str, rev_no: i32, snapshot: Value, delta: Value) -> Result<(), AppError>;
     async fn get_next_rev_no(&self, school_id: &str, student_id: &str) -> Result<i32, AppError>;
     async fn get_history_by_id(&self, school_id: &str, id: i32) -> Result<Option<Value>, AppError>;
-    async fn get_all_student_history(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_all_student_history(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_student_profile(&self, school_id: &str, student_id: &str) -> Result<Option<Value>, AppError>;
 }
 
 #[async_trait]
 pub trait EmployeeRepository: Send + Sync {
     async fn add_employee(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_employees(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_employees(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_employee(
         &self,
         school_id: &str,
@@ -76,7 +84,7 @@ pub trait EmployeeRepository: Send + Sync {
 pub trait AcademicRepository: Send + Sync {
     // Classes
     async fn add_class(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_classes(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_classes(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_class(&self, school_id: &str, class_id: &str) -> Result<Option<Value>, AppError>;
     async fn get_class_by_name(&self, school_id: &str, name: &str) -> Result<Option<Value>, AppError>;
     async fn update_class(
@@ -100,7 +108,7 @@ pub trait AcademicRepository: Send + Sync {
     // Subjects
     async fn add_subject(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn generate_subject_id(&self, subject_name: &str) -> Result<String, AppError>;
-    async fn get_subjects(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_subjects(&self, school_id: &str) -> Result<JsonList, AppError>;
 
     // Exams
     async fn add_exam(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
@@ -108,7 +116,7 @@ pub trait AcademicRepository: Send + Sync {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn add_student_exam(
         &self,
         school_id: &str,
@@ -118,7 +126,7 @@ pub trait AcademicRepository: Send + Sync {
 
     // Topics
     async fn add_topic(&self, data: Value) -> Result<Value, AppError>;
-    async fn get_topics(&self) -> Result<Vec<Value>, AppError>;
+    async fn get_topics(&self) -> Result<JsonList, AppError>;
 
     // Periods
     async fn add_period(
@@ -147,8 +155,7 @@ pub trait AcademicRepository: Send + Sync {
 }
 
 #[async_trait]
-pub trait OperationsRepository: Send + Sync {
-    // Attendance
+pub trait AttendanceRepository: Send + Sync {
     async fn mark_attendance(
         &self,
         school_id: &str,
@@ -162,7 +169,7 @@ pub trait OperationsRepository: Send + Sync {
         school_id: &str,
         role: &str,
         user_id: &str,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn delete_attendance(
         &self,
         school_id: &str,
@@ -178,16 +185,18 @@ pub trait OperationsRepository: Send + Sync {
         action: &str,
         data: Value,
     ) -> Result<(), AppError>;
+}
 
-    // Fees (Global Fee Types)
+#[async_trait]
+pub trait FeeRepository: Send + Sync {
     async fn add_school_fee(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_school_fees(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_school_fees(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_pending_fees(
         &self,
         school_id: &str,
         min_percentage: f64,
         class_name: Option<String>,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn add_student_fee(
         &self,
         school_id: &str,
@@ -213,9 +222,8 @@ pub trait OperationsRepository: Send + Sync {
         data: Value,
     ) -> Result<(), AppError>;
 
-    // Custom Fees (ad-hoc: tour, paper, fines)
     async fn add_custom_fee(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_custom_fees(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_custom_fees(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn delete_custom_fee(&self, school_id: &str, fee_id: &str) -> Result<(), AppError>;
     async fn apply_custom_fee(&self, school_id: &str, fee_id: &str) -> Result<Value, AppError>;
     async fn get_student_custom_fees(
@@ -223,15 +231,12 @@ pub trait OperationsRepository: Send + Sync {
         school_id: &str,
         student_id: &str,
     ) -> Result<Vec<Value>, AppError>;
-    async fn get_student_profile(
-        &self,
-        school_id: &str,
-        student_id: &str,
-    ) -> Result<Option<Value>, AppError>;
+}
 
-    // Referral Coupons
+#[async_trait]
+pub trait CouponRepository: Send + Sync {
     async fn create_coupon(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_coupons(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_coupons(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn delete_coupon(&self, school_id: &str, coupon_id: &str) -> Result<(), AppError>;
     async fn block_coupon(
         &self,
@@ -251,8 +256,10 @@ pub trait OperationsRepository: Send + Sync {
         student_id: &str,
         discount: f64,
     ) -> Result<Value, AppError>;
+}
 
-    // Employee Payroll
+#[async_trait]
+pub trait PayrollRepository: Send + Sync {
     async fn update_employee_salary_params(
         &self,
         school_id: &str,
@@ -285,8 +292,10 @@ pub trait OperationsRepository: Send + Sync {
         action: &str,
         data: Value,
     ) -> Result<(), AppError>;
+}
 
-    // Online Payments
+#[async_trait]
+pub trait TransactionRepository: Send + Sync {
     async fn create_online_transaction(
         &self,
         school_id: &str,
@@ -305,6 +314,7 @@ pub trait OperationsRepository: Send + Sync {
         gateway_signature: &str,
     ) -> Result<Option<String>, AppError>;
 }
+
 
 #[async_trait]
 pub trait ResourceRepository: Send + Sync {
@@ -360,14 +370,14 @@ pub trait ResourceRepository: Send + Sync {
         school_id: &str,
         collection: &str,
         user_id: &str,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn get_announcement(&self, school_id: &str, announcement_id: i32) -> Result<Option<Value>, AppError>;
 
     // Events
     async fn add_event_summary(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_event(&self, school_id: &str, event_id: i32) -> Result<Option<Value>, AppError>;
-    async fn get_materials(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
-    async fn get_spaces(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_materials(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_spaces(&self, school_id: &str) -> Result<JsonList, AppError>;
 
     async fn get_space_details(
         &self,
@@ -375,7 +385,7 @@ pub trait ResourceRepository: Send + Sync {
         space_id: &str,
     ) -> Result<Option<Value>, AppError>;
 
-    async fn get_space_categories(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_space_categories(&self, school_id: &str) -> Result<JsonList, AppError>;
 
     async fn create_space_category(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn delete_space_category(
@@ -424,7 +434,7 @@ pub trait AwardRepository: Send + Sync {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn get_award(&self, school_id: &str, award_id: i32) -> Result<Option<Value>, AppError>;
     async fn delete_award(&self, school_id: &str, award_id: i32) -> Result<(), AppError>;
 }
@@ -436,7 +446,7 @@ pub trait ComplainRepository: Send + Sync {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn get_complain(&self, school_id: &str, complain_id: i32) -> Result<Option<Value>, AppError>;
     async fn delete_complain(&self, school_id: &str, complain_id: i32) -> Result<(), AppError>;
 }
@@ -444,7 +454,7 @@ pub trait ComplainRepository: Send + Sync {
 #[async_trait]
 pub trait ReminderRepository: Send + Sync {
     async fn add_reminder(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_reminders(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_reminders(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_reminder(&self, school_id: &str, reminder_id: i32) -> Result<Option<Value>, AppError>;
     async fn delete_reminder(&self, school_id: &str, reminder_id: i32) -> Result<(), AppError>;
 }
@@ -456,7 +466,7 @@ pub trait DocumentBoxRepository: Send + Sync {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn get_document(&self, school_id: &str, document_id: i32) -> Result<Option<Value>, AppError>;
     async fn delete_document(&self, school_id: &str, document_id: i32) -> Result<(), AppError>;
 }
@@ -468,7 +478,7 @@ pub trait SchoolRepository: Send + Sync {
 
 #[async_trait]
 pub trait ResponsibilityRepository: Send + Sync {
-    async fn get_responsibilities(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_responsibilities(&self, school_id: &str) -> Result<JsonList, AppError>;
 
     async fn add_responsibility(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
 
@@ -486,22 +496,27 @@ pub trait ResponsibilityRepository: Send + Sync {
         responsibility_id: &str,
     ) -> Result<(), AppError>;
 
+    async fn delete_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<(), AppError>;
     async fn get_employee_responsibilities(
         &self,
         school_id: &str,
         employee_id: &str,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
 }
 
 #[async_trait]
 pub trait TaskRepository: Send + Sync {
-    async fn get_tasks(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_tasks(&self, school_id: &str) -> Result<JsonList, AppError>;
 }
 
 #[async_trait]
 pub trait LeaveRepository: Send + Sync {
     async fn add_leave(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
-    async fn get_leaves(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_leaves(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_leave(&self, school_id: &str, leave_id: &str) -> Result<Option<Value>, AppError>;
     async fn update_leave_status(
         &self,
@@ -520,14 +535,14 @@ pub trait LeaveRepository: Send + Sync {
 }
 
 #[async_trait]
-pub trait ComprehensiveAnalyticsRepository: Send + Sync {
+pub trait AnalyticsRepository: Send + Sync {
     async fn get_school_stats(&self, school_id: &str) -> Result<Value, AppError>;
     async fn get_attendance_summary(&self, school_id: &str, date: &str) -> Result<Value, AppError>;
     async fn get_pending_fees_by_period(
         &self,
         school_id: &str,
         months_overdue: i32,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
     async fn get_fee_summary(&self, school_id: &str) -> Result<Value, AppError>;
     async fn query_staff_analytics(&self, school_id: &str) -> Result<Value, AppError>;
 }
@@ -543,17 +558,24 @@ pub trait AuditRepository: Send + Sync {
         action_type: &str,
         changed_data: Value,
     ) -> Result<(), AppError>;
-
     async fn get_logs(
         &self,
         school_id: &str,
         entity_type: Option<&str>,
         limit: i64,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<JsonList, AppError>;
 
     async fn get_log_by_id(
         &self,
         school_id: &str,
         log_id: i32,
     ) -> Result<Option<Value>, AppError>;
+}
+
+#[async_trait]
+pub trait GlobalUserRepository: Send + Sync {
+    async fn sync_user(&self, data: Value) -> Result<(), AppError>;
+    async fn find_by_identifier(&self, ident: &str) -> Result<JsonList, AppError>;
+    async fn sync_all_to_global(&self) -> Result<(), AppError>;
+    async fn delete_user(&self, school_id: &str, user_id: &str, user_type: &str) -> Result<(), AppError>;
 }

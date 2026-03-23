@@ -246,6 +246,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = app
         // Auth Routes
         .route("/api/auth/login", post(routes::auth::login_handler))
+        .route("/api/auth/verify-otp-global", post(routes::auth::verify_otp_global_handler))
+        .route("/api/auth/sync-all", post(routes::auth::sync_global_handler))
         .route("/api/search/global", get(routes::search::global_search))
         // Mobile Auth Routes
         .merge(routes::mobile::router())
@@ -358,6 +360,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     post(routes::students::bulk_import_students),
                 )
                 .route("/:schoolId", get(routes::students::list_students))
+                .route(
+                    "/:schoolId/class/:class_name",
+                    get(routes::students::list_students_by_class),
+                )
                 .route(
                     "/:schoolId/studentIds",
                     get(routes::students::list_student_ids),
@@ -491,10 +497,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(routes::class::list_classes),
         )
         .route(
-            "/api/class/:schoolId/classIds",
-            get(routes::class::list_class_ids),
-        )
-        .route(
             "/api/subjects/:schoolId",
             post(routes::subjects::create_subject),
         )
@@ -546,7 +548,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .route(
                     "/:schoolId/holidays/:holidayId",
-                    axum::routing::delete(routes::attendance::delete_school_holiday),
+                    axum::routing::get(routes::attendance::get_holiday_detail)
+                        .delete(routes::attendance::delete_school_holiday),
                 ),
         )
         // Legacy alias kept for backward compat

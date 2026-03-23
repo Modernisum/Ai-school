@@ -32,7 +32,7 @@ export default function HomePage() {
   const schoolProfile = useSelector(selectSchoolProfile);
   const themeColors = useSelector(selectTheme);
   const schoolName = schoolProfile?.name || "Vidhyam";
-  const schoolId = reduxSchoolId || "622079";
+  const schoolId = reduxSchoolId || "";
   
   const { messages: liveMessages } = useWebSockets(schoolId);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());

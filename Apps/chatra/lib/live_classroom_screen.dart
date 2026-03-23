@@ -122,7 +122,7 @@ class LiveClassroomScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: AppColors.primaryPurple.withOpacity(0.4),
+            backgroundColor: AppColors.primaryBrand.withOpacity(0.4),
             child: Text(
               state.teacherName.isNotEmpty ? state.teacherName[0].toUpperCase() : "T",
               style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
@@ -151,7 +151,7 @@ class LiveClassroomScreen extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: LinearGradient(
-              colors: [Colors.black87, AppColors.primaryPurple.withOpacity(0.4)],
+              colors: [Colors.black87, AppColors.primaryBrand.withOpacity(0.4)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

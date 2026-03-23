@@ -106,7 +106,7 @@ class AcademicVaultScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withOpacity(0.2),
+              color: AppColors.primaryBrand.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.assignment, color: Colors.white, size: 28),
@@ -115,7 +115,7 @@ class AcademicVaultScreen extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(exam['exam_name'] ?? 'Exam', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(exam['subject'] ?? 'All Subjects', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+              Text(exam['subject'] ?? 'All Subjects', style: TextStyle(color: Colors.white.withValues(alpha: 0.7))),
               const SizedBox(height: 4),
               Row(children: [
                 const Icon(Icons.calendar_today, color: Colors.white54, size: 12),
@@ -145,7 +145,7 @@ class AcademicVaultScreen extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(doc['title'] ?? 'Document', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-              Text(doc['uploaded_at'] ?? '', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+              Text(doc['uploaded_at'] ?? '', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
             ]),
           ),
           ElevatedButton.icon(
@@ -153,7 +153,7 @@ class AcademicVaultScreen extends StatelessWidget {
             icon: const Icon(Icons.download, size: 16),
             label: const Text("Download"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: hasUrl ? AppColors.cyanBlue : Colors.white12,
+              backgroundColor: hasUrl ? AppColors.accentTeal : Colors.white12,
               foregroundColor: hasUrl ? Colors.black : Colors.white38,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { getSchoolIdFromStorage } from '../../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Clock, Plus, Trash2, Trash, Settings, RefreshCw, Loader, AlertTriangle, Eye, CheckCircle, Database
 } from 'lucide-react';
+import { academicApi } from '../api/academicApi';
+const { useGetClassesQuery } = academicApi;
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const getSchoolId = () => getSchoolIdFromStorage() || "";
 
 const DAYS_MAP = {
   1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday'
@@ -36,25 +39,24 @@ export default function TimetableGeneratorPage() {
 
   useEffect(() => {
     fetchTimetables();
-    fetchClasses();
   }, []);
 
-  const fetchClasses = async () => {
-    try {
-      const res = await fetch(`${API}/class/${schoolId}/classes`);
-      const data = await res.json();
-      if (data.success || data.data) {
-        setClasses((data.data || data.classes || []).map(c => c.name || c.className || c));
-      }
-    } catch (e) {
-      console.error(e);
+  // Load classes using RTK Query
+  const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
+
+  useEffect(() => {
+    if (classData.length > 0) {
+      setClasses(classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
     }
-  };
+  }, [classData]);
 
   const fetchTimetables = async () => {
+    if (!schoolId) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API}/school/${schoolId}/timetable`);
+      const token = localStorage.getItem('accessToken');
+      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      const res = await fetch(`${API}/school/${schoolId}/timetable`, { headers });
       const data = await res.json();
       if (data.success) {
         setTimetables(data.data || []);
@@ -71,7 +73,9 @@ export default function TimetableGeneratorPage() {
   const handleDelete = async (configId) => {
     if (!window.confirm('Delete this timetable?')) return;
     try {
-      const res = await fetch(`${API}/school/${schoolId}/timetable/${configId}`, { method: 'DELETE' });
+      const token = localStorage.getItem('accessToken');
+      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      const res = await fetch(`${API}/school/${schoolId}/timetable/${configId}`, { method: 'DELETE', headers });
       const data = await res.json();
       if (data.success) {
         fetchTimetables();
@@ -133,9 +137,13 @@ export default function TimetableGeneratorPage() {
     };
 
     try {
+      const token = localStorage.getItem('accessToken');
       const res = await fetch(`${API}/school/${schoolId}/timetable/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -157,7 +165,9 @@ export default function TimetableGeneratorPage() {
 
   const viewTimetable = async (config) => {
     try {
-      const res = await fetch(`${API}/school/${schoolId}/timetable/${config.config_id}`);
+      const token = localStorage.getItem('accessToken');
+      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      const res = await fetch(`${API}/school/${schoolId}/timetable/${config.config_id}`, { headers });
       const data = await res.json();
       if (data.success) {
         setViewingTimetable(data.data);

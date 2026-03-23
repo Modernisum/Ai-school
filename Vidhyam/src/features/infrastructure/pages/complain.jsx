@@ -9,7 +9,7 @@ import {
 import { useGetComplaintsQuery } from '../infrastructureApi';
 import { useWebSockets } from '../../../hooks/useWebSockets';
 
-const getSchoolId = () => localStorage.getItem('schoolId') || "622079";
+const getSchoolId = () => localStorage.getItem('schoolId') || "";
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 

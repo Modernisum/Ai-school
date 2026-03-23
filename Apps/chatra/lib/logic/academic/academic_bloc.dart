@@ -14,8 +14,8 @@ class AcademicBloc extends Bloc<AcademicEvent, AcademicState> {
     emit(AcademicLoading());
     try {
       final results = await Future.wait([
-        apiService.getExams(event.schoolId),
-        apiService.getDocumentBox(event.schoolId, event.studentId),
+        apiService.getExams(),
+        apiService.getDocumentBox(event.studentId),
       ]);
 
       final examsData = results[0];

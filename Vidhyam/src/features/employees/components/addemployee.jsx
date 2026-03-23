@@ -15,7 +15,7 @@ const getSchoolId = () => {
         const v = localStorage.getItem(k);
         if (v && v !== 'undefined' && v !== 'null') return v;
     }
-    return '622079';
+    return "";
 };
 
 const genEmployeeId = () => {

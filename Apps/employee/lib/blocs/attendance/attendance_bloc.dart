@@ -7,9 +7,10 @@ import 'attendance_state.dart';
 import '../../api_service.dart'; // To reuse baseUrl
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
+  final ApiService apiService;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
-  AttendanceBloc() : super(AttendanceInitial()) {
+  AttendanceBloc({required this.apiService}) : super(AttendanceInitial()) {
     on<LoadStudents>(_onLoadStudents);
     on<ToggleStudentAttendance>(_onToggleStudentAttendance);
     on<SubmitAttendance>(_onSubmitAttendance);
@@ -67,9 +68,10 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     try {
       final token = await storage.read(key: 'jwt_token') ?? '';
       
-      // Real backend endpoint structure based on the PR constraints
+      // Real backend endpoint structure
+      final url = await apiService.buildMobileUrl('attendance');
       final res = await http.post(
-        Uri.parse('${ApiService.baseUrl}/operations/attendance/12345/teacher/user_id/present'), // Pseudo parameters
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer \$token'

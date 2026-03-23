@@ -177,4 +177,47 @@ impl AuthService for PostgresAuthService {
         self.repos.auth.change_school_id(old_id, new_id).await?;
         Ok(new_id.to_string())
     }
+
+    async fn login_global(&self, ident: &str, app_type: &str) -> Result<Value, AppError> {
+        let matches = self.repos.global_user.find_by_identifier(ident).await?;
+        if matches.is_empty() {
+            return Err("This identifier does not exist. Please contact your administrator.".into());
+        }
+
+        // Validate if the user has the required profile for the app type
+        let has_valid_profile = matches.iter().any(|m| m["userType"] == app_type);
+        if !has_valid_profile {
+            return Err(format!(
+                "This number belongs to a {} and cannot be used to login to the {} app.",
+                if app_type == "student" { "employee" } else { "student" },
+                app_type
+            ).into());
+        }
+
+        // Mock sending OTP to primary contact (always 1234 for now)
+        Ok(json!({
+            "success": true,
+            "message": "OTP sent to your primary contact information",
+            "otp_mock": "1234"
+        }))
+    }
+
+    async fn verify_otp_global(&self, ident: &str, otp: &str) -> Result<Value, AppError> {
+        if otp != "1234" {
+            return Err("Invalid OTP. Please try again or resend.".into());
+        }
+
+        let profiles = self.repos.global_user.find_by_identifier(ident).await?;
+        // Only return student profiles for the student app
+        let student_profiles: Vec<Value> = profiles.into_iter().filter(|p| p["userType"] == "student").collect();
+
+        Ok(json!({
+            "success": true,
+            "profiles": student_profiles
+        }))
+    }
+
+    async fn sync_all(&self) -> Result<(), AppError> {
+        self.repos.global_user.sync_all_to_global().await
+    }
 }

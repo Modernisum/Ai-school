@@ -232,35 +232,140 @@ pub async fn list_attendance_by_date(
 
 // ─── School-level Holiday CRUD ────────────────────────────────────────────────
 
-// GET /api/operations/attendance/:schoolId/holidays
+// GET /api/operations/attendance/:schoolId/holidays?month=3&year=2024
+#[derive(Deserialize)]
+pub struct HolidayQuery {
+    pub month: Option<i32>,
+    pub year: Option<i32>,
+}
+
 pub async fn list_school_holidays(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
+    Query(q): Query<HolidayQuery>,
 ) -> impl IntoResponse {
+    let now = Local::now();
+    let query_year = q.year.unwrap_or(now.year());
+    
+    // Academic Year: April 1 to March 31
+    // If we're in Jan-Mar, the academic year started in the previous year.
+    let (start_date, end_date) = if let Some(m) = q.month {
+        let year = q.year.unwrap_or(now.year());
+        let start = format!("{}-{:02}-01", year, m);
+        // Simplified end date for the month
+        let end = format!("{}-{:02}-31", year, m);
+        (start, end)
+    } else {
+        // Default to Academic Year (April to March)
+        let academic_start_year = if now.month() < 4 { query_year - 1 } else { query_year };
+        let start = format!("{}-04-01", academic_start_year);
+        let end = format!("{}-03-31", academic_start_year + 1);
+        (start, end)
+    };
+
     let _ = ensure_holidays_table(&state).await;
+    
     match sqlx::query(
-        "SELECT id,title,description,from_date,to_date,classes,exempt_employees,exempt_students,created_at \
-         FROM school_holidays WHERE school_id=$1 ORDER BY from_date ASC"
+        "SELECT id, title, description, from_date, to_date, classes, exempt_employees, exempt_students, created_at \
+         FROM school_holidays \
+         WHERE school_id = $1 AND (($2 <= to_date AND $3 >= from_date)) \
+         ORDER BY from_date ASC"
     )
     .bind(&school_id)
+    .bind(&start_date)
+    .bind(&end_date)
     .fetch_all(&state.db.pool)
     .await
     {
         Ok(rows) => {
-            let data: Vec<serde_json::Value> = rows.into_iter().map(|r| json!({
-                "id": r.try_get::<String,_>("id").unwrap_or_default(),
-                "title": r.try_get::<String,_>("title").unwrap_or_default(),
-                "description": r.try_get::<String,_>("description").unwrap_or_default(),
-                "fromDate": r.try_get::<String,_>("from_date").unwrap_or_default(),
-                "toDate": r.try_get::<String,_>("to_date").unwrap_or_default(),
-                "classes": r.try_get::<serde_json::Value,_>("classes").unwrap_or(json!([])),
-                "exemptEmployees": r.try_get::<serde_json::Value,_>("exempt_employees").unwrap_or(json!([])),
-                "exemptStudents": r.try_get::<serde_json::Value,_>("exempt_students").unwrap_or(json!([])),
-                "createdAt": r.try_get::<String,_>("created_at").unwrap_or_default(),
-            })).collect();
-            Json(json!({"success":true,"data":data})).into_response()
+            let mut data = Vec::new();
+            for r in rows {
+                let id = r.try_get::<String, _>("id").unwrap_or_default();
+                let title = r.try_get::<String, _>("title").unwrap_or_default();
+                let description = r.try_get::<String, _>("description").unwrap_or_default();
+                let from_str = r.try_get::<String, _>("from_date").unwrap_or_default();
+                let to_str = r.try_get::<String, _>("to_date").unwrap_or_default();
+                let classes = r.try_get::<serde_json::Value, _>("classes").unwrap_or(json!([]));
+                
+                // Expand range into individual days
+                if let (Ok(start), Ok(end)) = (
+                    chrono::NaiveDate::parse_from_str(&from_str, "%Y-%m-%d"),
+                    chrono::NaiveDate::parse_from_str(&to_str, "%Y-%m-%d"),
+                ) {
+                    let mut curr = start;
+                    while curr <= end {
+                        let curr_str = curr.format("%Y-%m-%d").to_string();
+                        // Only add if within the requested filter range
+                        if curr_str >= start_date && curr_str <= end_date {
+                            data.push(json!({
+                                "id": id,
+                                "date": curr_str,
+                                "title": title,
+                                "description": description,
+                                "classes": classes,
+                                "fullRange": { "from": from_str, "to": to_str }
+                            }));
+                        }
+                        if let Some(next) = curr.succ_opt() {
+                            curr = next;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            // Sort by date since expansion might have jumbled them if multiple ranges overlap
+            data.sort_by(|a, b| a["date"].as_str().cmp(&b["date"].as_str()));
+            Json(json!({"success": true, "data": data})).into_response()
         }
-        Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"success":false,"message":e.to_string()}))).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+// GET /api/operations/attendance/:schoolId/holidays/:holidayId
+pub async fn get_holiday_detail(
+    State(state): State<AppState>,
+    Path((school_id, holiday_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let _ = ensure_holidays_table(&state).await;
+    match sqlx::query(
+        "SELECT id, title, description, from_date, to_date, classes, exempt_employees, exempt_students, created_at \
+         FROM school_holidays WHERE id = $1 AND school_id = $2"
+    )
+    .bind(&holiday_id)
+    .bind(&school_id)
+    .fetch_optional(&state.db.pool)
+    .await
+    {
+        Ok(Some(r)) => Json(json!({
+            "success": true,
+            "data": {
+                "id": r.try_get::<String, _>("id").unwrap_or_default(),
+                "title": r.try_get::<String, _>("title").unwrap_or_default(),
+                "description": r.try_get::<String, _>("description").unwrap_or_default(),
+                "fromDate": r.try_get::<String, _>("from_date").unwrap_or_default(),
+                "toDate": r.try_get::<String, _>("to_date").unwrap_or_default(),
+                "classes": r.try_get::<serde_json::Value, _>("classes").unwrap_or(json!([])),
+                "exemptEmployees": r.try_get::<serde_json::Value, _>("exempt_employees").unwrap_or(json!([])),
+                "exemptStudents": r.try_get::<serde_json::Value, _>("exempt_students").unwrap_or(json!([])),
+                "createdAt": r.try_get::<String, _>("created_at").unwrap_or_default(),
+            }
+        }))
+        .into_response(),
+        Ok(None) => (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(json!({"success": false, "message": "Holiday not found"})),
+        )
+            .into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
     }
 }
 
@@ -334,15 +439,6 @@ pub async fn check_school_holiday(
     Path(school_id): Path<String>,
     Query(q): Query<DateQuery>,
 ) -> impl IntoResponse {
-    // Sunday is always a holiday
-    if let Ok(d) = chrono::NaiveDate::parse_from_str(&q.date, "%Y-%m-%d") {
-        if d.weekday() == chrono::Weekday::Sun {
-            return Json(
-                json!({"success":true,"isHoliday":true,"isSunday":true,"reason":"Sunday"}),
-            )
-            .into_response();
-        }
-    }
     let _ = ensure_holidays_table(&state).await;
     match sqlx::query(
         "SELECT id,title FROM school_holidays WHERE school_id=$1 AND from_date<=$2 AND to_date>=$2 LIMIT 1"
@@ -382,12 +478,6 @@ async fn is_holiday_check(
     user_id: &str,
     role: &str,
 ) -> Result<Option<String>, sqlx::Error> {
-    // 1. Sunday check
-    if let Ok(d) = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d") {
-        if d.weekday() == chrono::Weekday::Sun {
-            return Ok(Some("Sunday".to_string()));
-        }
-    }
 
     // 2. Database check
     let _ = ensure_holidays_table(state).await;

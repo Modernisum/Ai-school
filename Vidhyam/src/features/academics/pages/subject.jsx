@@ -18,7 +18,7 @@ import { getClassesByLevel } from '../../../utils/academicUtils';
 
 export default function SubjectManagement() {
   const location = useLocation();
-  const schoolId = getSchoolIdFromStorage() || "622079";
+  const schoolId = getSchoolIdFromStorage() || "";
   const schoolLevel = localStorage.getItem('schoolLevel') || 10;
   const pollingInterval = useSelector(selectPollingInterval);
 

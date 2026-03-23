@@ -56,7 +56,7 @@ const getSchoolIdFromStorage = () => {
   }
 };
 
-const DEFAULT_SCHOOL_ID = "622079";
+const DEFAULT_SCHOOL_ID = "";
 
 // Helper Functions
 const formatDate = (date) => {

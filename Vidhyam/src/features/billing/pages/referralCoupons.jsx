@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem('schoolId') || '622079';
+const getSchoolId = () => localStorage.getItem('schoolId') || "";
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
 export default function ReferralCoupons() {

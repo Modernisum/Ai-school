@@ -13,6 +13,12 @@ pub trait StudentService: Send + Sync {
         data: Vec<Value>,
     ) -> Result<Value, AppError>;
     async fn list_students(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn list_students_by_class(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        section: Option<&str>,
+    ) -> Result<Vec<Value>, AppError>;
     async fn get_student(
         &self,
         school_id: &str,
@@ -64,6 +70,8 @@ pub trait EmployeeService: Send + Sync {
 #[async_trait]
 pub trait AuthService: Send + Sync {
     async fn login(&self, data: Value) -> Result<Value, AppError>;
+    async fn login_global(&self, ident: &str, app_type: &str) -> Result<Value, AppError>;
+    async fn verify_otp_global(&self, ident: &str, otp: &str) -> Result<Value, AppError>;
     async fn verify_token(&self, token: &str) -> Result<Value, AppError>;
     async fn logout(&self, token: &str) -> Result<(), AppError>;
     async fn set_security(
@@ -80,6 +88,7 @@ pub trait AuthService: Send + Sync {
         new_pass: &str,
     ) -> Result<(), AppError>;
     async fn change_id(&self, old_id: &str, pass: &str, new_id: &str) -> Result<String, AppError>;
+    async fn sync_all(&self) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -124,10 +133,16 @@ pub trait AcademicService: Send + Sync {
 
     async fn list_topics(&self) -> Result<Vec<Value>, AppError>;
 
-    async fn list_class_ids(&self, school_id: &str) -> Result<Vec<String>, AppError>;
     async fn delete_class(&self, school_id: &str, admin_id: &str, class_id: &str) -> Result<(), AppError>;
     async fn delete_subject(&self, school_id: &str, admin_id: &str, subject_id: &str) -> Result<(), AppError>;
     async fn delete_exam(&self, school_id: &str, admin_id: &str, exam_id: &str) -> Result<(), AppError>;
+    async fn auto_generate_classes(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        start_level: i32,
+        end_level: i32,
+    ) -> Result<(), AppError>;
 }
 
 #[async_trait]

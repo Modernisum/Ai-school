@@ -1,7 +1,7 @@
 use crate::models::user::CreateStudentRequest;
 use crate::AppState;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, State, Query},
     response::IntoResponse,
     Json, Extension
 };
@@ -189,6 +189,37 @@ pub async fn list_students(
 ) -> impl IntoResponse {
     tracing::debug!("Fetching students for school_id: {}", school_id);
     match state.services.student.list_students(&school_id).await {
+        Ok(students) => Json(json!({"success": true, "data": students})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct StudentListQuery {
+    pub section: Option<String>,
+}
+
+pub async fn list_students_by_class(
+    State(state): State<AppState>,
+    Path((school_id, class_name)): Path<(String, String)>,
+    Query(q): Query<StudentListQuery>,
+) -> impl IntoResponse {
+    tracing::debug!(
+        "Fetching students for class: {} (section: {:?}) in school: {}",
+        class_name,
+        q.section,
+        school_id
+    );
+    match state
+        .services
+        .student
+        .list_students_by_class(&school_id, &class_name, q.section.as_deref())
+        .await
+    {
         Ok(students) => Json(json!({"success": true, "data": students})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
