@@ -1,4 +1,5 @@
 use crate::AppState;
+
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -6,19 +7,14 @@ use axum::{
 };
 use crate::middleware::rls::TenantContext;
 use serde_json::json;
+use crate::error::AppResult;
 
 pub async fn list_spaces(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state.services.resource.list_spaces(&school_id).await {
-        Ok(list) => Json(serde_json::json!({"success": true, "data": list})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+) -> AppResult<impl IntoResponse> {
+    let list = state.services.resource.list_spaces(&school_id).await?;
+    Ok(Json(json!({"success": true, "data": list})))
 }
 
 // POST /api/spaces/:schoolId/spaces/bulk
@@ -27,15 +23,11 @@ pub async fn bulk_import_spaces(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
+) -> AppResult<impl IntoResponse> {
     let rows = match payload["spaces"].as_array().or(payload.as_array()) {
         Some(r) => r.clone(),
         None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "Expected a 'spaces' array"})),
-            )
-                .into_response();
+            return Ok(Json(json!({"success": false, "message": "Expected a 'spaces' array"})).into_response());
         }
     };
 
@@ -70,33 +62,21 @@ pub async fn bulk_import_spaces(
         }
     }
 
-    Json(json!({
+    Ok(Json(json!({
         "success": true,
         "message": format!("{} spaces imported, {} failed", success_count, fail_count),
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    }))
-    .into_response()
+    })).into_response())
 }
 
 pub async fn get_space_categories(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state
-        .services
-        .resource
-        .get_space_categories(&school_id)
-        .await
-    {
-        Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+) -> AppResult<impl IntoResponse> {
+    let list = state.services.resource.get_space_categories(&school_id).await?;
+    Ok(Json(json!({"success": true, "data": list})))
 }
 
 pub async fn create_space_category(
@@ -104,41 +84,26 @@ pub async fn create_space_category(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
         .resource
         .create_space_category(&school_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
-        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "data": data})))
 }
 
 pub async fn delete_category(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, category_id)): Path<(String, i32)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .delete_space_category(&school_id, &tenant_ctx.admin_id, category_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Category deleted successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Category deleted successfully"})))
 }
 
 pub async fn create_space(
@@ -146,20 +111,13 @@ pub async fn create_space(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
         .resource
         .create_space(&school_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
-        Ok(data) => Json(json!({"success": true, "space": data})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "space": data})))
 }
 
 pub async fn update_space(
@@ -167,67 +125,41 @@ pub async fn update_space(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .update_space(&school_id, &tenant_ctx.admin_id, &space_id, payload)
-        .await
-    {
-        Ok(_) => {
-            Json(json!({"success": true, "message": "Space updated successfully"})).into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Space updated successfully"})))
 }
 
 pub async fn delete_space(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .delete_space(&school_id, &tenant_ctx.admin_id, &space_id)
-        .await
-    {
-        Ok(_) => {
-            Json(json!({"success": true, "message": "Space deleted successfully"})).into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Space deleted successfully"})))
 }
 
 pub async fn get_space_details(
     State(state): State<AppState>,
     Path((school_id, space_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
         .resource
         .get_space_details(&school_id, &space_id)
-        .await
-    {
-        Ok(Some(data)) => Json(json!({"success": true, "space": data})).into_response(),
-        Ok(None) => (
-            axum::http::StatusCode::NOT_FOUND,
-            Json(json!({"success": false, "message": "Space not found"})),
-        )
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        .await?;
+    
+    match data {
+        Some(d) => Ok(Json(json!({"success": true, "space": d})).into_response()),
+        None => Ok((axum::http::StatusCode::NOT_FOUND, Json(json!({"success": false, "message": "Space not found"}))).into_response())
     }
 }
 
@@ -236,21 +168,13 @@ pub async fn assign_space_materials(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<serde_json::Value>>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .assign_space_materials(&school_id, &tenant_ctx.admin_id, &space_id, payload)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Materials assigned successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Materials assigned successfully"})))
 }
 
 pub async fn assign_space_employees(
@@ -258,40 +182,24 @@ pub async fn assign_space_employees(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id)): Path<(String, String)>,
     Json(payload): Json<Vec<String>>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .assign_space_employees(&school_id, &tenant_ctx.admin_id, &space_id, payload)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Employees assigned successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Employees assigned successfully"})))
 }
 
 pub async fn remove_space_employee(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, space_id, employee_id)): Path<(String, String, String)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
         .resource
         .remove_space_employee(&school_id, &tenant_ctx.admin_id, &space_id, &employee_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Employee removed successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Employee removed successfully"})))
 }

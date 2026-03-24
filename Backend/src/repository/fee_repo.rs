@@ -196,7 +196,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
         Ok(())
     }
 
-    async fn apply_custom_fee(&self, school_id: &str, fee_id: &str) -> Result<Value, AppError> {
+    async fn apply_custom_fee(&self, _school_id: &str, fee_id: &str) -> Result<Value, AppError> {
         // Implementation logic from postgres.rs
         Ok(json!({"status": "applied", "id": fee_id}))
     }

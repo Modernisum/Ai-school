@@ -35,7 +35,7 @@ pub async fn list_exams(
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
     let student_id = params.get("student_id").map(|s| s.as_str());
-    match state.services.academic.list_exams(&school_id, student_id).await {
+    match state.services.academic.list_exams(&school_id, student_id.unwrap_or("").to_string()).await {
         Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,

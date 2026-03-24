@@ -1,1 +1,1510 @@
-[]
+[
+  {
+    "id": "class-1",
+    "school_id": "765331",
+    "name": "Class 1",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-2",
+    "school_id": "765331",
+    "name": "Class 2",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-3",
+    "school_id": "765331",
+    "name": "Class 3",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-4",
+    "school_id": "765331",
+    "name": "Class 4",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-5",
+    "school_id": "765331",
+    "name": "Class 5",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-6",
+    "school_id": "765331",
+    "name": "Class 6",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-7",
+    "school_id": "765331",
+    "name": "Class 7",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-8",
+    "school_id": "765331",
+    "name": "Class 8",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-9",
+    "school_id": "765331",
+    "name": "Class 9",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-10",
+    "school_id": "765331",
+    "name": "Class 10",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-science",
+    "school_id": "765331",
+    "name": "Class 11 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-commerce",
+    "school_id": "765331",
+    "name": "Class 11 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-humanities",
+    "school_id": "765331",
+    "name": "Class 11 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-science",
+    "school_id": "765331",
+    "name": "Class 12 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-commerce",
+    "school_id": "765331",
+    "name": "Class 12 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-humanities",
+    "school_id": "765331",
+    "name": "Class 12 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "pre-nursery",
+    "school_id": "572900",
+    "name": "Pre-Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "nursery",
+    "school_id": "572900",
+    "name": "Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "kindergarten",
+    "school_id": "572900",
+    "name": "Kindergarten",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-1",
+    "school_id": "572900",
+    "name": "Class 1",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-2",
+    "school_id": "572900",
+    "name": "Class 2",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-3",
+    "school_id": "572900",
+    "name": "Class 3",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-4",
+    "school_id": "572900",
+    "name": "Class 4",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-5",
+    "school_id": "572900",
+    "name": "Class 5",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-6",
+    "school_id": "572900",
+    "name": "Class 6",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-7",
+    "school_id": "572900",
+    "name": "Class 7",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-8",
+    "school_id": "572900",
+    "name": "Class 8",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-9",
+    "school_id": "572900",
+    "name": "Class 9",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-10",
+    "school_id": "572900",
+    "name": "Class 10",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-science",
+    "school_id": "572900",
+    "name": "Class 11 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-commerce",
+    "school_id": "572900",
+    "name": "Class 11 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-humanities",
+    "school_id": "572900",
+    "name": "Class 11 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-science",
+    "school_id": "572900",
+    "name": "Class 12 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-commerce",
+    "school_id": "572900",
+    "name": "Class 12 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-humanities",
+    "school_id": "572900",
+    "name": "Class 12 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "pre-nursery",
+    "school_id": "819232",
+    "name": "Pre-Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "nursery",
+    "school_id": "819232",
+    "name": "Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "kindergarten",
+    "school_id": "819232",
+    "name": "Kindergarten",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-1",
+    "school_id": "819232",
+    "name": "Class 1",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-2",
+    "school_id": "819232",
+    "name": "Class 2",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-3",
+    "school_id": "819232",
+    "name": "Class 3",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-4",
+    "school_id": "819232",
+    "name": "Class 4",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-5",
+    "school_id": "819232",
+    "name": "Class 5",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-6",
+    "school_id": "819232",
+    "name": "Class 6",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-9",
+    "school_id": "819232",
+    "name": "Class 9",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-science",
+    "school_id": "819232",
+    "name": "Class 12 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-commerce",
+    "school_id": "819232",
+    "name": "Class 12 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-7",
+    "school_id": "819232",
+    "name": "Class 7",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-10",
+    "school_id": "819232",
+    "name": "Class 10",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-humanities",
+    "school_id": "819232",
+    "name": "Class 11 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-8",
+    "school_id": "819232",
+    "name": "Class 8",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-science",
+    "school_id": "819232",
+    "name": "Class 11 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-commerce",
+    "school_id": "819232",
+    "name": "Class 11 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-humanities",
+    "school_id": "819232",
+    "name": "Class 12 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "pre-nursery",
+    "school_id": "519063",
+    "name": "Pre-Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "nursery",
+    "school_id": "519063",
+    "name": "Nursery",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "kindergarten",
+    "school_id": "519063",
+    "name": "Kindergarten",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 500.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-1",
+    "school_id": "519063",
+    "name": "Class 1",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-2",
+    "school_id": "519063",
+    "name": "Class 2",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-3",
+    "school_id": "519063",
+    "name": "Class 3",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-4",
+    "school_id": "519063",
+    "name": "Class 4",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-5",
+    "school_id": "519063",
+    "name": "Class 5",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-6",
+    "school_id": "519063",
+    "name": "Class 6",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-7",
+    "school_id": "519063",
+    "name": "Class 7",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-8",
+    "school_id": "519063",
+    "name": "Class 8",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-9",
+    "school_id": "519063",
+    "name": "Class 9",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-10",
+    "school_id": "519063",
+    "name": "Class 10",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 1000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-science",
+    "school_id": "519063",
+    "name": "Class 11 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-commerce",
+    "school_id": "519063",
+    "name": "Class 11 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-11-humanities",
+    "school_id": "519063",
+    "name": "Class 11 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-science",
+    "school_id": "519063",
+    "name": "Class 12 Science",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-commerce",
+    "school_id": "519063",
+    "name": "Class 12 Commerce",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "section_size": 60
+  },
+  {
+    "id": "class-12-humanities",
+    "school_id": "519063",
+    "name": "Class 12 Humanities",
+    "total_students": 0,
+    "total_teachers": 0,
+    "total_periods": 0,
+    "room_number": null,
+    "class_fees": 2000.0,
+    "sections": [
+      {
+        "name": "A",
+        "capacity": 30,
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Humanities"
+    ],
+    "section_size": 60
+  }
+]

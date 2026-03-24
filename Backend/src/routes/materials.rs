@@ -1,74 +1,54 @@
 use crate::AppState;
 use axum::{
     extract::{Path, State},
-    response::IntoResponse,
     Json, Extension,
 };
 use crate::middleware::rls::TenantContext;
-use serde_json::json;
+use serde_json::{json, Value};
+use crate::error::AppResult;
+
 
 pub async fn list_materials(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state.services.resource.list_materials(&school_id).await {
-        Ok(mut list) => {
-            // Generate signed URLs for attachments
-            for item in list.iter_mut() {
-                if let Some(path) = item["attachment_path"].as_str() {
-                    if let Ok(url) = state.storage.generate_download_url(path).await {
-                        item["attachmentUrl"] = json!(url);
-                    }
-                }
+) -> AppResult<Json<Value>> {
+    let mut list = state.services.resource.list_materials(&school_id).await?;
+    
+    // Generate signed URLs for attachments
+    for item in list.iter_mut() {
+        if let Some(path) = item["attachment_path"].as_str() {
+            if let Ok(url) = state.storage.generate_download_url(path).await {
+                item["attachmentUrl"] = json!(url);
             }
-            Json(json!({"success": true, "data": list})).into_response()
         }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
     }
+    Ok(Json(json!({"success": true, "data": list})))
 }
 
 pub async fn buy_material(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, material_id)): Path<(String, String)>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+    Json(payload): Json<Value>,
+) -> AppResult<Json<Value>> {
+    state
         .services
         .resource
         .update_material(&school_id, &tenant_ctx.admin_id, &material_id, payload)
-        .await
-    {
-        Ok(_) => {
-            Json(json!({"success": true, "message": "Material purchase recorded"})).into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Material purchase recorded"})))
 }
 
-// POST /api/materials/:schoolId/bulk
 pub async fn bulk_import_materials(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
+    Json(payload): Json<Value>,
+) -> AppResult<Json<Value>> {
     let rows = match payload["materials"].as_array().or(payload.as_array()) {
         Some(r) => r.clone(),
         None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "Expected a 'materials' array"})),
-            )
-                .into_response();
+            return Ok(Json(json!({"success": false, "message": "Expected a 'materials' array"})));
         }
     };
 
@@ -78,9 +58,9 @@ pub async fn bulk_import_materials(
 
     for (i, row) in rows.iter().enumerate() {
         let mat_data = json!({
-            "materialName": row.get("Material Name").or(row.get("materialName")).unwrap_or(&serde_json::Value::Null),
-            "quantity": row.get("Quantity").or(row.get("quantity")).unwrap_or(&serde_json::Value::Null),
-            "unitPrice": row.get("Unit Price").or(row.get("unitPrice")).unwrap_or(&serde_json::Value::Null),
+            "materialName": row.get("Material Name").or(row.get("materialName")).unwrap_or(&Value::Null),
+            "quantity": row.get("Quantity").or(row.get("quantity")).unwrap_or(&Value::Null),
+            "unitPrice": row.get("Unit Price").or(row.get("unitPrice")).unwrap_or(&Value::Null),
         });
 
         match state
@@ -100,12 +80,11 @@ pub async fn bulk_import_materials(
         }
     }
 
-    Json(json!({
+    Ok(Json(json!({
         "success": true,
         "message": format!("{} materials imported, {} failed", success_count, fail_count),
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    }))
-    .into_response()
+    })))
 }

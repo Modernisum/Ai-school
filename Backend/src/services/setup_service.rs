@@ -4,9 +4,7 @@ use crate::services::academic_utils;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
-use std::sync::OnceLock;
 
 pub struct PostgresSetupService {
     pub repos: Arc<Repositories>,
@@ -20,25 +18,24 @@ fn get_subjects() -> HashMap<&'static str, Vec<&'static str>> {
 
 #[async_trait]
 impl SetupService for PostgresSetupService {
-    async fn setup_school(&self, admin_id: &str, data: Value) -> Result<Value, AppError> {
-        let _school_name = data["schoolName"].as_str().ok_or("Missing schoolName")?;
+    async fn setup_school(&self, admin_id: &str, data: Value) -> AppResult<Value> {
+        let _school_name = data["schoolName"].as_str().ok_or_else(|| AppError::Validation("Missing schoolName".to_string()))?;
         let _school_address = data["schoolAddress"]
             .as_str()
-            .ok_or("Missing schoolAddress")?;
+            .ok_or_else(|| AppError::Validation("Missing schoolAddress".to_string()))?;
         let class_level_start = data["classLevelStart"].as_i64()
             .or_else(|| data["classLevelStart"].as_str().and_then(|s| s.parse().ok()))
             .unwrap_or(0);
         let class_level = data["classLevel"].as_i64()
             .or_else(|| data["classLevel"].as_str().and_then(|s| s.parse().ok()))
             .unwrap_or(0);
-        let password = data["password"].as_str().ok_or("Missing password")?;
-        let _affiliated_board = data["affiliatedBoard"].as_str().unwrap_or("");
+        let password = data["password"].as_str().ok_or_else(|| AppError::Validation("Missing password".to_string()))?;
 
         // 1. Generate School Attributes
         let school_id = format!("{:06}", rand::random::<u32>() % 900000 + 100000);
         let school_code = self.repos.auth.generate_school_code().await?;
         println!("Generating school_id: {} and school_code: {}", school_id, school_code);
-        let hashed_password = bcrypt::hash(password, 10)?;
+        let hashed_password = bcrypt::hash(password, 10).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))?;
 
         // 2. Create School document
         let mut school_payload = data.clone();
@@ -46,31 +43,12 @@ impl SetupService for PostgresSetupService {
         school_payload["schoolCode"] = json!(school_code);
 
         println!("Creating school record in global table...");
-        self.repos.auth.create_school(school_payload.clone()).await.map_err(|e| {
-            println!("create_school failed: {}", e);
-            e
-        })?;
+        self.repos.auth.create_school(school_payload.clone()).await?;
 
         // 2.5 Ensure the school-specific schema exists and is initialized
         println!("Ensuring tenant schema for school_id: {}", school_id);
         self.repos.db_client.ensure_tenant_schema(&school_id).await
-            .map_err(|e| {
-                println!("ensure_tenant_schema failed: {}", e);
-                Box::<dyn std::error::Error + Send + Sync>::from(e.to_string())
-            })?;
-
-        // 2.6 Populate local schools table in tenant schema
-        println!("Populating local schools table for school_id: {}", school_id);
-        let mut conn = self.repos.db_client.acquire_tenant_connection(&school_id).await
-            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e.to_string()))?;
-        
-        sqlx::query("INSERT INTO schools (school_id, school_name, data) VALUES ($1, $2, $3)")
-            .bind(&school_id)
-            .bind(school_payload["schoolName"].as_str().unwrap_or(""))
-            .bind(&school_payload)
-            .execute(&mut *conn)
-            .await
-            .map_err(|e| Box::<dyn std::error::Error + Send + Sync>::from(e.to_string()))?;
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
         // 3. Create Auth record
         println!("Creating auth record...");
@@ -83,10 +61,7 @@ impl SetupService for PostgresSetupService {
                     "password_temp": false
                 }),
             )
-            .await.map_err(|e| {
-                println!("update_auth failed: {}", e);
-                e
-            })?;
+            .await?;
 
         // 4. Initialize Infrastructure (Spaces & Items)
         let default_mats = academic_utils::get_default_materials();
@@ -224,22 +199,20 @@ impl SetupService for PostgresSetupService {
         }))
     }
 
-    async fn get_setup(&self, school_id: &str) -> Result<Value, AppError> {
+    async fn get_setup(&self, school_id: &str) -> AppResult<Value> {
         match self.repos.school.get_school(school_id).await? {
             Some(v) => Ok(v),
-            None => Err(Box::<dyn std::error::Error + Send + Sync>::from("School not found")),
+            None => Err(AppError::NotFound("School not found".to_string())),
         }
     }
 }
 
 impl PostgresSetupService {
-    // Removed redundant logic (moved to academic_utils.rs)
-
     #[allow(dead_code)]
     async fn get_next_sequence_val(
         &self,
         seq_name: &str,
-    ) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<i64> {
         use sqlx::Row;
         let query = format!("SELECT nextval('{}')", seq_name);
         let row: sqlx::postgres::PgRow = sqlx::query(&query)

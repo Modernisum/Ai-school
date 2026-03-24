@@ -1,124 +1,51 @@
 use crate::AppState;
 use axum::{
     extract::{Path, State},
-    http::HeaderMap,
-    response::IntoResponse,
     Json, Extension,
 };
 use crate::middleware::rls::TenantContext;
-use serde_json::json;
-
-/// Helper: extract Bearer token from Authorization header
-fn extract_token(headers: &HeaderMap) -> Option<String> {
-    headers
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer "))
-        .map(|s| s.to_string())
-}
+use serde_json::{json, Value};
+use crate::error::{AppResult, AppError};
 
 pub async fn get_school_details(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state.services.school.get_school_details(&school_id).await {
-        Ok(details) => Json(serde_json::json!({"success": true, "data": details})).into_response(),
-        Err(e) => {
-            let msg = e.to_string();
-            let status = if msg.contains("School not found") {
-                axum::http::StatusCode::NOT_FOUND
-            } else {
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR
-            };
-            (status, Json(serde_json::json!({"success": false, "message": msg}))).into_response()
-        }
-    }
+) -> AppResult<Json<Value>> {
+    let details = state.services.school.get_school_details(&school_id).await?;
+    Ok(Json(json!({"success": true, "data": details})))
 }
 
-/// School-level self-update endpoint.
-/// Schools update their own profile using their accessToken (JWT stored in the school auth table).
 pub async fn update_school_self(
     Extension(tenant_ctx): Extension<TenantContext>,
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let admin_id = tenant_ctx.admin_id.clone();
-
-    match state.services.school.update_school(&school_id, &admin_id, payload).await {
-        Ok(_) => Json(json!({"success": true, "message": "School profile updated successfully"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+    Json(payload): Json<Value>,
+) -> AppResult<Json<Value>> {
+    state.services.school.update_school(&school_id, &tenant_ctx.admin_id, payload).await?;
+    Ok(Json(json!({"success": true, "message": "School profile updated successfully"})))
 }
 
-/// School self-service password change (uses school's own accessToken)
 pub async fn change_password_self(
-    headers: HeaderMap,
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let _token = match extract_token(&headers) {
-        Some(t) => t,
-        None => {
-            return (
-                axum::http::StatusCode::UNAUTHORIZED,
-                Json(json!({"success": false, "message": "Authorization token required"})),
-            )
-                .into_response();
-        }
-    };
-
-    let new_password = match payload["newPassword"]
+    Json(payload): Json<Value>,
+) -> AppResult<Json<Value>> {
+    let new_password = payload["newPassword"]
         .as_str()
         .or(payload["password"].as_str())
-    {
-        Some(p) if p.len() >= 6 => p.to_string(),
-        Some(_) => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(
-                    json!({"success": false, "message": "Password must be at least 6 characters"}),
-                ),
-            )
-                .into_response();
-        }
-        None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "newPassword is required"})),
-            )
-                .into_response();
-        }
-    };
+        .ok_or_else(|| AppError::Validation("newPassword is required".into()))?;
 
-    let hashed = match bcrypt::hash(&new_password, 10) {
-        Ok(h) => h,
-        Err(e) => {
-            return (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"success": false, "message": e.to_string()})),
-            )
-                .into_response();
-        }
-    };
+    if new_password.len() < 6 {
+        return Err(AppError::Validation("Password must be at least 6 characters".into()));
+    }
 
-    match sqlx::query("UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2")
+    let hashed = bcrypt::hash(new_password, 10).map_err(|e| AppError::Internal(e.to_string()))?;
+
+    sqlx::query("UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2")
         .bind(&hashed)
         .bind(&school_id)
         .execute(&state.db.pool)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Password updated successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+
+    Ok(Json(json!({"success": true, "message": "Password updated successfully"})))
 }

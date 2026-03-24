@@ -17,8 +17,8 @@ impl AwardService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
-        let res = self.repos.award.add_award(school_id, data.clone()).await?;
+    ) -> AppResult<Value> {
+        let res = self.repos.award.add_award(school_id, data.clone()).await.map_err(AppError::from)?;
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -33,8 +33,8 @@ impl AwardService for PostgresAuxiliaryService {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError> {
-        Ok(self.repos.award.get_awards(school_id, student_id).await?)
+    ) -> AppResult<Vec<Value>> {
+        Ok(self.repos.award.get_awards(school_id, student_id).await.map_err(AppError::from)?)
     }
 
     async fn delete_award(
@@ -42,9 +42,9 @@ impl AwardService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         award_id: i32,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         let award = self.repos.award.get_award(school_id, award_id).await?
-            .ok_or("Award not found")?;
+            .ok_or_else(|| AppError::NotFound("Award not found".to_string()))?;
 
         self.repos.award.delete_award(school_id, award_id).await?;
 
@@ -68,7 +68,7 @@ impl ComplainService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.complain.add_complain(school_id, data.clone()).await?;
         let _ = self.repos.audit.log_action(
             school_id,
@@ -84,7 +84,7 @@ impl ComplainService for PostgresAuxiliaryService {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> AppResult<Vec<Value>> {
         Ok(self.repos.complain.get_complains(school_id, student_id).await?)
     }
 
@@ -93,9 +93,9 @@ impl ComplainService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         complain_id: i32,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         let complain = self.repos.complain.get_complain(school_id, complain_id).await?
-            .ok_or("Complain not found")?;
+            .ok_or_else(|| AppError::NotFound("Complain not found".to_string()))?;
 
         self.repos.complain.delete_complain(school_id, complain_id).await?;
 
@@ -119,7 +119,7 @@ impl ReminderService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.reminder.add_reminder(school_id, data.clone()).await?;
         let _ = self.repos.audit.log_action(
             school_id,
@@ -134,7 +134,7 @@ impl ReminderService for PostgresAuxiliaryService {
     async fn list_reminders(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> AppResult<Vec<Value>> {
         Ok(self.repos.reminder.get_reminders(school_id).await?)
     }
 
@@ -143,9 +143,9 @@ impl ReminderService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         reminder_id: i32,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         let reminder = self.repos.reminder.get_reminder(school_id, reminder_id).await?
-            .ok_or("Reminder not found")?;
+            .ok_or_else(|| AppError::NotFound("Reminder not found".to_string()))?;
 
         self.repos.reminder.delete_reminder(school_id, reminder_id).await?;
 
@@ -169,7 +169,7 @@ impl DocumentBoxService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.document_box.add_document(school_id, data.clone()).await?;
         let _ = self.repos.audit.log_action(
             school_id,
@@ -190,25 +190,25 @@ impl DocumentBoxService for PostgresAuxiliaryService {
             
             tokio::spawn(async move {
                 // 1. Perform OCR (if it's an image)
-                // Note: Simplified. Production would check file extension or mime type.
                 if file_url.ends_with(".png") || file_url.ends_with(".jpg") || file_url.ends_with(".jpeg") || file_url.contains("storage") {
                     if let Ok(ocr_res) = ocr.perform_ocr(&file_url).await {
                         let text = ocr_res["cleaned_text"].as_str().or(ocr_res["raw_text"].as_str()).unwrap_or("");
                         if !text.is_empty() {
-                            // 2. Chunking (Simplified: by character count/paragraphs)
+                            // 2. Chunking
                             let chunks = text.split("\n\n").collect::<Vec<&str>>();
                             for (i, chunk) in chunks.iter().enumerate() {
                                 if chunk.trim().is_empty() { continue; }
                                 // 3. Embed
                                 if let Ok(emb) = ai.generate_embedding(chunk).await {
                                     // 4. Save to document_embeddings
-                                    let mut conn = repos.db_client.acquire_tenant_connection(&school_id).await.expect("DB failure");
-                                    let _ = sqlx::query("INSERT INTO document_embeddings (school_id, content, embedding, metadata) VALUES ($1, $2, $3, $4)")
-                                        .bind(&school_id)
-                                        .bind(chunk)
-                                        .bind(&emb)
-                                        .bind(json!({"chunk": i, "file_url": file_url}))
-                                        .execute(&mut *conn).await;
+                                    if let Ok(mut conn) = repos.db_client.acquire_tenant_connection(&school_id).await {
+                                        let _ = sqlx::query("INSERT INTO document_embeddings (school_id, content, embedding, metadata) VALUES ($1, $2, $3, $4)")
+                                            .bind(&school_id)
+                                            .bind(chunk)
+                                            .bind(&emb)
+                                            .bind(json!({"chunk": i, "file_url": file_url}))
+                                            .execute(&mut *conn).await;
+                                    }
                                 }
                             }
                         }
@@ -223,7 +223,7 @@ impl DocumentBoxService for PostgresAuxiliaryService {
         &self,
         school_id: &str,
         student_id: Option<&str>,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> AppResult<Vec<Value>> {
         Ok(self.repos.document_box.get_documents(school_id, student_id).await?)
     }
 
@@ -232,9 +232,9 @@ impl DocumentBoxService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         document_id: i32,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         let document = self.repos.document_box.get_document(school_id, document_id).await?
-            .ok_or("Document not found")?;
+            .ok_or_else(|| AppError::NotFound("Document not found".to_string()))?;
 
         self.repos.document_box.delete_document(school_id, document_id).await?;
 
@@ -256,10 +256,10 @@ impl SchoolService for PostgresAuxiliaryService {
     async fn get_school_details(
         &self,
         school_id: &str,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         match self.repos.school.get_school(school_id).await? {
             Some(school) => Ok(school),
-            None => Err(Box::<dyn std::error::Error + Send + Sync>::from("School not found")),
+            None => Err(AppError::NotFound("School not found".to_string())),
         }
     }
 
@@ -268,7 +268,7 @@ impl SchoolService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         // 1. Fetch old data to check classLevel increase
         let old_school = self.get_school_details(school_id).await?;
         let old_level = old_school["data"]["classLevel"].as_i64()
@@ -280,7 +280,7 @@ impl SchoolService for PostgresAuxiliaryService {
             .unwrap_or(old_level);
 
         // 2. Update database
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await.map_err(AppError::Database)?;
         
         let update_data = data.clone();
         sqlx::query(
@@ -289,24 +289,24 @@ impl SchoolService for PostgresAuxiliaryService {
         .bind(&update_data)
         .bind(school_id)
         .execute(&mut *conn)
-        .await?;
+        .await
+        .map_err(AppError::Database)?;
 
         if let Some(name) = data["schoolName"].as_str() {
              sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
                 .bind(name)
                 .bind(school_id)
                 .execute(&mut *conn)
-                .await?;
+                .await
+                .map_err(AppError::Database)?;
         }
 
         // 3. Trigger auto-generation if level increased
         if new_level > old_level {
-            // We need an AcademicService instance. 
-            // PostgresAcademicService is just a wrapper around repos.
             let academic_svc = crate::services::academic_service::PostgresAcademicService {
                 repos: self.repos.clone(),
             };
-            academic_svc.auto_generate_classes(school_id, admin_id, (old_level + 1) as i32, new_level as i32).await?;
+            academic_svc.auto_generate_classes(school_id, admin_id).await?;
         }
 
         let _ = self.repos.audit.log_action(
@@ -327,7 +327,7 @@ impl ResponsibilityService for PostgresAuxiliaryService {
     async fn list_responsibilities(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> AppResult<Vec<Value>> {
         Ok(self.repos
             .responsibility
             .get_responsibilities(school_id)
@@ -339,7 +339,7 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.responsibility.add_responsibility(school_id, data.clone()).await?;
         let _ = self.repos.audit.log_action(
             school_id,
@@ -358,7 +358,7 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         employee_id: &str,
         responsibility_id: &str,
         admin_id: &str,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         self.repos
             .responsibility
             .assign_responsibility(school_id, employee_id, responsibility_id)
@@ -381,7 +381,7 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         employee_id: &str,
         responsibility_id: &str,
         admin_id: &str,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         self.repos
             .responsibility
             .remove_responsibility(school_id, employee_id, responsibility_id)
@@ -402,7 +402,7 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         &self,
         school_id: &str,
         employee_id: &str,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let responsibilities = self
             .repos
             .responsibility
@@ -443,7 +443,7 @@ impl TaskService for PostgresAuxiliaryService {
     async fn list_tasks(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> AppResult<Vec<Value>> {
         Ok(self.repos.task.get_tasks(school_id).await?)
     }
 }

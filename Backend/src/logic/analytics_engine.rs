@@ -1,10 +1,12 @@
 use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 
+#[allow(dead_code)]
 pub struct AnalyticsEngine {
     pub pool: Pool<Postgres>,
 }
 
+#[allow(dead_code)]
 impl AnalyticsEngine {
     pub fn new(pool: Pool<Postgres>) -> Self {
         Self { pool }

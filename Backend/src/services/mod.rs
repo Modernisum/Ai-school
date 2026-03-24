@@ -1,11 +1,14 @@
 pub mod academic_service;
 pub mod academic_utils;
 pub mod ai_service;
+pub mod attendance_service;
 pub mod auth_service;
 pub mod auxiliary_service;
 pub mod employee_service;
+pub mod fee_service;
 pub mod leave_service;
 pub mod operations_service;
+pub mod payroll_service;
 pub mod resource_service;
 pub mod setup_service;
 pub mod student_service;
@@ -15,10 +18,13 @@ pub mod traits;
 use crate::repository::Repositories;
 use crate::services::academic_service::PostgresAcademicService;
 use crate::services::ai_service::PostAiService;
+use crate::services::attendance_service::PostgresAttendanceService;
 use crate::services::auth_service::PostgresAuthService;
 use crate::services::employee_service::PostgresEmployeeService;
+use crate::services::fee_service::PostgresFeeService;
 use crate::services::leave_service::PostgresLeaveService;
 use crate::services::operations_service::PostgresOperationsService;
+use crate::services::payroll_service::PostgresPayrollService;
 use crate::services::resource_service::{PostgresOCRService, PostgresResourceService};
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
@@ -33,6 +39,10 @@ pub struct Services {
     pub employee: Arc<dyn EmployeeService>,
     pub academic: Arc<dyn AcademicService>,
     pub operations: Arc<dyn OperationsService>,
+    pub attendance: Arc<dyn AttendanceService>,
+    pub fee: Arc<dyn FeeService>,
+    pub payroll: Arc<dyn PayrollService>,
+    pub coupon: Arc<dyn CouponService>,
     pub resource: Arc<dyn ResourceService>,
     pub ocr: Arc<dyn OCRService>,
     pub award: Arc<dyn AwardService>,
@@ -64,6 +74,10 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         },
     );
 
+    let fee_service = Arc::new(PostgresFeeService {
+        repos: repos.clone(),
+    });
+
     Services {
         auth: Arc::new(PostgresAuthService {
             repos: repos.clone(),
@@ -83,6 +97,14 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         operations: Arc::new(PostgresOperationsService {
             repos: repos.clone(),
         }),
+        attendance: Arc::new(PostgresAttendanceService {
+            repos: repos.clone(),
+        }),
+        fee: fee_service.clone() as Arc<dyn FeeService>,
+        payroll: Arc::new(PostgresPayrollService {
+            repos: repos.clone(),
+        }),
+        coupon: fee_service as Arc<dyn CouponService>,
         resource: Arc::new(PostgresResourceService {
             repos: repos.clone(),
         }),

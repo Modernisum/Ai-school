@@ -17,13 +17,12 @@ impl ResourceService for PostgresResourceService {
         type_str: &str,
         user_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         self.repos
             .resource
             .add_announcement(school_id, type_str, user_id, data.clone())
             .await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -36,10 +35,49 @@ impl ResourceService for PostgresResourceService {
         Ok(data)
     }
 
-    async fn list_materials(
+    async fn delete_announcement(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
+        admin_id: &str,
+        announcement_id: i32,
+    ) -> AppResult<()> {
+        let announcement = self.repos.resource.get_announcement(school_id, announcement_id).await?
+            .ok_or_else(|| AppError::NotFound("Announcement not found".to_string()))?;
+
+        self.repos.resource.delete_announcement(school_id, announcement_id).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "ANNOUNCEMENT",
+            &announcement_id.to_string(),
+            "DELETE",
+            announcement
+        ).await;
+
+        Ok(())
+    }
+
+    async fn create_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        let res = self.repos.resource.add_material(school_id, data.clone()).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "MATERIAL",
+            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            "CREATE",
+            data.clone()
+        ).await;
+        Ok(res)
+    }
+
+    async fn list_materials(&self, school_id: &str) -> AppResult<Vec<Value>> {
         Ok(self.repos.resource.get_materials(school_id).await?)
     }
 
@@ -49,13 +87,12 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         material_id: &str,
         data: Value,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         self.repos
             .resource
             .update_material(school_id, material_id, data.clone())
             .await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -67,15 +104,37 @@ impl ResourceService for PostgresResourceService {
         Ok(())
     }
 
+    async fn delete_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_id: &str,
+    ) -> AppResult<()> {
+        let material = self.repos.resource.get_material(school_id, material_id).await?
+            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+
+        self.repos.resource.delete_material(school_id, material_id).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "MATERIAL",
+            material_id,
+            "DELETE",
+            material
+        ).await;
+
+        Ok(())
+    }
+
     async fn create_event(
         &self,
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.resource.add_event_summary(school_id, data.clone()).await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -87,11 +146,27 @@ impl ResourceService for PostgresResourceService {
         Ok(res)
     }
 
-    async fn list_spaces(
+    async fn delete_event(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
-        Ok(self.repos.resource.get_spaces(school_id).await?)
+        admin_id: &str,
+        event_id: i32,
+    ) -> AppResult<()> {
+        let event = self.repos.resource.get_event(school_id, event_id).await?
+            .ok_or_else(|| AppError::NotFound("Event not found".to_string()))?;
+
+        self.repos.resource.delete_event(school_id, event_id).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "EVENT",
+            &event_id.to_string(),
+            "DELETE",
+            event
+        ).await;
+
+        Ok(())
     }
 
     async fn create_space(
@@ -99,10 +174,9 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
+    ) -> AppResult<Value> {
         let res = self.repos.resource.create_space(school_id, data.clone()).await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -114,19 +188,22 @@ impl ResourceService for PostgresResourceService {
         Ok(res)
     }
 
+    async fn list_spaces(&self, school_id: &str) -> AppResult<Vec<Value>> {
+        Ok(self.repos.resource.get_spaces(school_id).await?)
+    }
+
     async fn update_space(
         &self,
         school_id: &str,
         admin_id: &str,
         space_id: &str,
         data: Value,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         self.repos
             .resource
             .update_space(school_id, space_id, data.clone())
             .await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -143,10 +220,9 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         admin_id: &str,
         space_id: &str,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         self.repos.resource.delete_space(school_id, space_id).await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -162,17 +238,11 @@ impl ResourceService for PostgresResourceService {
         &self,
         school_id: &str,
         space_id: &str,
-    ) -> Result<Option<Value>, AppError> {
-        Ok(self.repos
-            .resource
-            .get_space_details(school_id, space_id)
-            .await?)
+    ) -> AppResult<Option<Value>> {
+        Ok(self.repos.resource.get_space_details(school_id, space_id).await?)
     }
 
-    async fn get_space_categories(
-        &self,
-        school_id: &str,
-    ) -> Result<Vec<Value>, AppError> {
+    async fn get_space_categories(&self, school_id: &str) -> AppResult<Vec<Value>> {
         Ok(self.repos.resource.get_space_categories(school_id).await?)
     }
 
@@ -181,13 +251,9 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, AppError> {
-        let res = self.repos
-            .resource
-            .create_space_category(school_id, data.clone())
-            .await?;
+    ) -> AppResult<Value> {
+        let res = self.repos.resource.create_space_category(school_id, data.clone()).await?;
 
-        // System Audit Log
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
@@ -204,11 +270,8 @@ impl ResourceService for PostgresResourceService {
         school_id: &str,
         admin_id: &str,
         category_id: i32,
-    ) -> Result<(), AppError> {
-        self.repos
-            .resource
-            .delete_space_category(school_id, category_id)
-            .await?;
+    ) -> AppResult<()> {
+        self.repos.resource.delete_space_category(school_id, category_id).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
@@ -227,11 +290,8 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         space_id: &str,
         materials: Vec<Value>,
-    ) -> Result<(), AppError> {
-        self.repos
-            .resource
-            .assign_space_materials(school_id, space_id, materials.clone())
-            .await?;
+    ) -> AppResult<()> {
+        self.repos.resource.assign_space_materials(school_id, space_id, materials.clone()).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
@@ -250,11 +310,8 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         space_id: &str,
         employee_ids: Vec<String>,
-    ) -> Result<(), AppError> {
-        self.repos
-            .resource
-            .assign_space_employees(school_id, space_id, employee_ids.clone())
-            .await?;
+    ) -> AppResult<()> {
+        self.repos.resource.assign_space_employees(school_id, space_id, employee_ids.clone()).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
@@ -273,11 +330,8 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         space_id: &str,
         employee_id: &str,
-    ) -> Result<(), AppError> {
-        self.repos
-            .resource
-            .remove_space_employee(school_id, space_id, employee_id)
-            .await?;
+    ) -> AppResult<()> {
+        self.repos.resource.remove_space_employee(school_id, space_id, employee_id).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
@@ -289,98 +343,6 @@ impl ResourceService for PostgresResourceService {
         ).await;
         Ok(())
     }
-
-    async fn create_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        data: Value,
-    ) -> Result<Value, AppError> {
-        let res = self.repos
-            .resource
-            .add_material(school_id, data.clone())
-            .await?;
-
-        // System Audit Log
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
-            "CREATE",
-            data.clone()
-        ).await;
-        Ok(data)
-    }
-
-    async fn delete_announcement(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        announcement_id: i32,
-    ) -> Result<(), AppError> {
-        let announcement = self.repos.resource.get_announcement(school_id, announcement_id).await?
-            .ok_or("Announcement not found")?;
-
-        self.repos.resource.delete_announcement(school_id, announcement_id).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "ANNOUNCEMENT",
-            &announcement_id.to_string(),
-            "DELETE",
-            announcement
-        ).await;
-
-        Ok(())
-    }
-
-    async fn delete_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        material_id: &str,
-    ) -> Result<(), AppError> {
-        let material = self.repos.resource.get_material(school_id, material_id).await?
-            .ok_or("Material not found")?;
-
-        self.repos.resource.delete_material(school_id, material_id).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            material_id,
-            "DELETE",
-            material
-        ).await;
-
-        Ok(())
-    }
-
-    async fn delete_event(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        event_id: i32,
-    ) -> Result<(), AppError> {
-        let event = self.repos.resource.get_event(school_id, event_id).await?
-            .ok_or("Event not found")?;
-
-        self.repos.resource.delete_event(school_id, event_id).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "EVENT",
-            &event_id.to_string(),
-            "DELETE",
-            event
-        ).await;
-
-        Ok(())
-    }
 }
 
 pub struct PostgresOCRService {
@@ -389,7 +351,7 @@ pub struct PostgresOCRService {
 
 #[async_trait]
 impl OCRService for PostgresOCRService {
-    async fn perform_ocr(&self, file_path: &str) -> Result<Value, AppError> {
+    async fn perform_ocr(&self, file_path: &str) -> AppResult<Value> {
         Ok(self.repos.ocr.process_ocr(file_path, "tesseract").await?)
     }
 }

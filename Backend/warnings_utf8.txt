@@ -1,0 +1,621 @@
+﻿cargo : warning: 
+unused import: `tower_h
+ttp::trace::TraceLayer`
+At line:1 char:1
++ cargo check 2> 
+warnings.txt; cat 
+warnings.txt
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (warning: unus   
+ ed...ce::TraceLaye    
+r`:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+ --> src\main.rs:5:5
+  |
+5 | use tower_http::tra
+ce::TraceLayer;
+  |     ^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unuse
+d_imports)]` (part of 
+`#[warn(unused)]`) on 
+by default
+
+warning: unused 
+import: `State`
+ --> 
+src\extractors.rs:2:33
+  |
+2 | ...ts, State},
+  |        ^^^^^
+
+warning: unused 
+imports: `Value` and 
+`json`
+ --> src\repository\tra
+nsaction_repo.rs:4:18
+  |
+4 | ...::{json, Value};
+  |       ^^^^  ^^^^^
+
+warning: unused 
+import: 
+`http::HeaderMap`
+ --> src\routes\school.
+rs:4:5
+  |
+4 |     
+http::HeaderMap,
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `Value`
+ --> src\routes\student
+s.rs:9:24
+  |
+9 | ...on, Value};
+  |        ^^^^^
+
+warning: unused 
+import: `crate::service
+s::academic_utils`
+ --> src\services\acade
+mic_service.rs:3:5
+  |
+3 | use crate::services
+::academic_utils;
+  |     ^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\attenda
+nce.rs:3:5
+  |
+3 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\emppay.
+rs:2:5
+  |
+2 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> 
+src\routes\fees.rs:3:5
+  |
+3 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\materia
+ls.rs:9:5
+  |
+9 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\mobile.
+rs:5:5
+  |
+5 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\recover
+y.rs:7:5
+  |
+7 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+import: `crate::service
+s::traits`
+ --> src\routes\spaces.
+rs:2:5
+  |
+2 | use crate::services
+::traits::*;
+  |     
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused 
+variable: `school_id`
+  --> src\repository\pa
+yroll_repo.rs:44:9
+   |
+44 | ...   school_id: 
+&...
+   |       ^^^^^^^^^ 
+help: if this is 
+intentional, prefix it 
+with an underscore: 
+`_school_id`
+   |
+   = note: `#[warn(unus
+ed_variables)]` (part 
+of `#[warn(unused)]`) 
+on by default
+
+warning: unused 
+variable: `cors`
+   --> 
+src\main.rs:108:9
+    |
+108 | ...et cors = C...
+    |       ^^^^ help: 
+if this is 
+intentional, prefix it 
+with an underscore: 
+`_cors`
+
+warning: function `star
+t_background_workers` 
+is never used
+ --> src\background_job
+s.rs:6:14
+  |
+6 | ...fn start_backgro
+und_workers(st...
+  |       ^^^^^^^^^^^^^
+^^^^^^^^^^^
+  |
+  = note: 
+`#[warn(dead_code)]` 
+(part of 
+`#[warn(unused)]`) on 
+by default
+
+warning: struct 
+`TenantDb` is never 
+constructed
+ --> 
+src\extractors.rs:9:12
+  |
+9 | ...ct 
+TenantDb(pu...
+  |       ^^^^^^^^
+
+warning: struct 
+`SuperAdminDb` is 
+never constructed
+  --> 
+src\extractors.rs:33:12
+   |
+33 | ...ct 
+SuperAdminDb(pu...
+   |       ^^^^^^^^^^^^
+
+warning: struct 
+`AnalyticsEngine` is 
+never constructed
+ --> src\logic\analytic
+s_engine.rs:4:12
+  |
+4 | ...ct 
+AnalyticsEngine {
+  |       
+^^^^^^^^^^^^^^^
+
+warning: associated 
+items `new`, `analyze_s
+tudent_risks`, and 
+`analyze_school_churn` 
+are never used
+   --> src\logic\analyt
+ics_engine.rs:9:12
+    |
+  8 | impl 
+AnalyticsEngine {
+    | 
+-------------------- 
+associated items in 
+this implementation
+  9 |     pub fn 
+new(pool: 
+Pool<Postgres>) -> S...
+    |            ^^^
+...
+ 14 |     pub async fn 
+analyze_student_risks(&
+s...
+    |                  
+^^^^^^^^^^^^^^^^^^^^^
+...
+148 |     pub async fn 
+analyze_school_churn(&s
+e...
+    |                  
+^^^^^^^^^^^^^^^^^^^^
+
+warning: struct 
+`PdfGenerator` is 
+never constructed
+ --> src\logic\pdf_gene
+rator.rs:6:12
+  |
+6 | ...ct PdfGenerator;
+  |       ^^^^^^^^^^^^
+
+warning: associated 
+function 
+`generate_report` is 
+never used
+ --> src\logic\pdf_gene
+rator.rs:9:12
+  |
+8 | impl PdfGenerator {
+  | ----------------- 
+associated function in 
+this implementation
+9 |     pub fn 
+generate_report(ti...
+  |            
+^^^^^^^^^^^^^^^
+
+warning: type alias 
+`HmacSha256` is never 
+used
+  --> src\logic\webhook
+_engine.rs:10:6
+   |
+10 | type HmacSha256 = 
+...
+   |      ^^^^^^^^^^
+
+warning: field 
+`client` is never read
+  --> src\logic\webhook
+_engine.rs:14:5
+   |
+12 | pub struct 
+WebhookEngine {
+   |            
+------------- field in 
+this struct
+13 |     pool: 
+Pool<Postgres>,
+14 |     client: 
+Client,
+   |     ^^^^^^
+
+warning: methods 
+`process_pending`, 
+`send_webhook`, and `ha
+ndle_delivery_result` 
+are never used
+   --> src\logic\webhoo
+k_engine.rs:73:18
+    |
+ 17 | impl 
+WebhookEngine {
+    | 
+------------------ 
+methods in this 
+implementation
+...
+ 73 |     pub async fn 
+process_pending(&self..
+.
+    |                  
+^^^^^^^^^^^^^^^
+...
+ 99 |     async fn 
+send_webhook(&self, 
+url: ...
+    |              
+^^^^^^^^^^^^
+...
+119 |     async fn 
+handle_delivery_result(
+    |              
+^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields 
+`school_id` and 
+`is_super_admin` are 
+never read
+  --> src\middleware\rl
+s.rs:65:9
+   |
+64 | ...truct 
+TenantContext {
+   |          
+------------- fields 
+in this struct
+65 | ...ub school_id: 
+String,
+   |       ^^^^^^^^^
+66 | ...ub 
+is_super_admin: bool,
+   |       
+^^^^^^^^^^^^^^
+   |
+   = note: 
+`TenantContext` has 
+derived impls for the 
+traits `Debug` and 
+`Clone`, but these are 
+intentionally ignored 
+during dead code 
+analysis
+
+warning: struct `Postgr
+esBaseRepository` is 
+never constructed
+ --> src\repository\bas
+e.rs:6:12
+  |
+6 | ...ct 
+PostgresBaseRepository 
+{
+  |       
+^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated 
+items `new` and 
+`with_tenant_tx` are 
+never used
+  --> src\repository\ba
+se.rs:11:12
+   |
+10 | impl 
+PostgresBaseRepository 
+{
+   | ------------------
+--------- associated 
+items in this 
+implementation
+11 |     pub fn 
+new(client: 
+Arc<DbClien...
+   |            ^^^
+...
+15 |     pub async fn 
+with_tenant_tx<F,...
+   |                  
+^^^^^^^^^^^^^^
+
+warning: function 
+`create_award` is 
+never used
+  --> src\routes\award.
+rs:21:14
+   |
+21 | ...fn 
+create_award(
+   |       ^^^^^^^^^^^^
+
+warning: struct 
+`MobileLoginRequest` 
+is never constructed
+  --> src\routes\mobile
+.rs:15:12
+   |
+15 | ...ct 
+MobileLoginRequest {
+   |       
+^^^^^^^^^^^^^^^^^^
+
+warning: struct 
+`MobileVerifyRequest` 
+is never constructed
+  --> src\routes\mobile
+.rs:22:12
+   |
+22 | ...ct 
+MobileVerifyRequest {
+   |       
+^^^^^^^^^^^^^^^^^^^
+
+warning: struct 
+`MobileProfile` is 
+never constructed
+  --> src\routes\mobile
+.rs:29:12
+   |
+29 | ...ct 
+MobileProfile {
+   |       
+^^^^^^^^^^^^^
+
+warning: struct `Mobile
+SelectProfileRequest` 
+is never constructed
+  --> src\routes\mobile
+.rs:38:12
+   |
+38 | ...ct MobileSelect
+ProfileRequest {
+   |       ^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+
+warning: function `crea
+te_long_lived_token` 
+is never used
+  --> src\routes\mobile
+.rs:52:4
+   |
+52 | fn create_long_liv
+ed_token(id...
+   |    
+^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function 
+`mobile_login` is 
+never used
+  --> src\routes\mobile
+.rs:76:14
+   |
+76 | ...fn 
+mobile_login(
+   |       ^^^^^^^^^^^^
+
+warning: function 
+`mobile_verify` is 
+never used
+  --> src\routes\mobile
+.rs:89:14
+   |
+89 | ...fn 
+mobile_verify(
+   |       
+^^^^^^^^^^^^^
+
+warning: function `mobi
+le_select_profile` is 
+never used
+   --> src\routes\mobil
+e.rs:164:14
+    |
+164 | ...fn 
+mobile_select_profile(
+    |       
+^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `get_
+student_fee_mobile` is 
+never used
+   --> src\routes\mobil
+e.rs:221:14
+    |
+221 | ...fn 
+get_student_fee_mobile(
+    |       
+^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct 
+`MobileOrderRequest` 
+is never constructed
+   --> src\routes\mobil
+e.rs:231:12
+    |
+231 | ...ct 
+MobileOrderRequest {
+    |       
+^^^^^^^^^^^^^^^^^^
+
+warning: function 
+`create_mobile_order` 
+is never used
+   --> src\routes\mobil
+e.rs:238:14
+    |
+238 | ...fn 
+create_mobile_order(
+    |       
+^^^^^^^^^^^^^^^^^^^
+
+warning: field 
+`engine` is never read
+  --> 
+src\routes\ocr.rs:24:9
+   |
+23 | ...truct 
+OcrParams {
+   |          
+--------- field in 
+this struct
+24 | ...ub engine: 
+Option<...
+   |       ^^^^^^
+
+warning: fields 
+`module` and `limit` 
+are never read
+  --> src\routes\recove
+ry.rs:14:9
+   |
+13 | ...truct 
+AuditQuery {
+   |          
+---------- fields in 
+this struct
+14 | ...ub module: 
+Option<S...
+   |       ^^^^^^
+15 | ...ub limit: 
+Option<i64>,
+   |       ^^^^^
+
+warning: function 
+`create_reminder` is 
+never used
+  --> src\routes\remind
+er.rs:18:14
+   |
+18 | ...fn 
+create_reminder(
+   |       
+^^^^^^^^^^^^^^^
+
+warning: trait 
+`InfraService` is 
+never used
+   --> src\services\tra
+its.rs:121:11
+    |
+121 | ...it 
+InfraService: S...
+    |       
+^^^^^^^^^^^^
+
+warning: `modern_school
+_backend` (bin "modern_
+school_backend") 
+generated 44 warnings 
+(run `cargo fix --bin "
+modern_school_backend" 
+-p 
+modern_school_backend` 
+to apply 8 suggestions)
+    Finished `dev` 
+profile [unoptimized + 
+debuginfo] target(s) 
+in 1.99s
+warning: the following 
+packages contain code 
+that will be rejected 
+by a future version of 
+Rust: redis v0.25.4, 
+sqlx-postgres v0.7.4
+note: to see what the 
+problems were, use the 
+option `--future-incomp
+at-report`, or run 
+`cargo report future-in
+compatibilities --id 
+11`

@@ -1,49 +1,41 @@
 use axum::{
     extract::{Multipart, Query, State},
-    response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
-use serde_json;
+use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
+use crate::AppState;
+use crate::error::AppResult;
 
 #[derive(Serialize)]
 pub struct OcrResponse {
     pub success: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<serde_json::Value>,
+    pub data: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct OcrParams {
+    #[allow(dead_code)]
     pub engine: Option<String>,
 }
 
-use crate::AppState;
-
 pub async fn extract_text(
     State(state): State<AppState>,
-    Query(params): Query<OcrParams>,
+    Query(_params): Query<OcrParams>,
     mut multipart: Multipart,
-) -> impl IntoResponse {
-    let _ocr_repo = &state.repos.ocr;
-
-    // Save temp file (same as before or moved to repo)
-    // For now, keeping the multipart handling here but calling process_ocr
-    // Ideally the repo should handle the logic or we just wrap it.
-
-    let _engine = params.engine.unwrap_or("paddleocr".to_string());
+) -> AppResult<Json<OcrResponse>> {
     let mut file_path = String::new();
     let file_id = Uuid::new_v4().to_string();
 
-    while let Some(field) = multipart.next_field().await.unwrap_or(None) {
+    while let Some(field) = multipart.next_field().await.map_err(|e| crate::error::AppError::Internal(e.to_string()))? {
         let name = field.name().unwrap_or("").to_string();
         if name == "image" {
-            tracing::info!("OCR Route: Receiving image field...");
             let file_name = field.file_name().unwrap_or("upload.png").to_string();
             let ext = Path::new(&file_name)
                 .extension()
@@ -51,52 +43,37 @@ pub async fn extract_text(
                 .unwrap_or("png");
             let temp_path = format!("uploads/temp_{}.{}", file_id, ext);
             let _ = fs::create_dir_all("uploads");
-            let data = field.bytes().await.unwrap_or_default();
-            tracing::info!(
-                "OCR Route: Received {} bytes. Saving to {}...",
-                data.len(),
-                temp_path
-            );
-            if let Err(e) = fs::write(&temp_path, data) {
-                return Json(OcrResponse {
-                    success: false,
-                    error: Some(format!("File save error: {}", e)),
-                    data: None,
-                });
-            }
+            let data = field.bytes().await.map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
+            
+            fs::write(&temp_path, data).map_err(|e| crate::error::AppError::Internal(format!("File save error: {}", e)))?;
             file_path = temp_path;
             break;
         }
     }
 
     if file_path.is_empty() {
-        tracing::warn!("OCR Route: No image field found in multipart request.");
-        return Json(OcrResponse {
+        return Ok(Json(OcrResponse {
             success: false,
             error: Some("No image uploaded".into()),
             data: None,
-        });
+        }));
     }
-
-    tracing::info!("OCR Route: Calling OCR pipeline for {}...", file_path);
 
     let result = state.services.ocr.perform_ocr(&file_path).await;
     
     // Clean up temp file
-    if let Err(e) = fs::remove_file(&file_path) {
-        tracing::error!("Failed to remove OCR temp file {}: {}", file_path, e);
-    }
+    let _ = fs::remove_file(&file_path);
 
     match result {
-        Ok(json) => Json(OcrResponse {
+        Ok(json) => Ok(Json(OcrResponse {
             success: true,
             data: Some(json),
             error: None,
-        }),
-        Err(e) => Json(OcrResponse {
+        })),
+        Err(e) => Ok(Json(OcrResponse {
             success: false,
             error: Some(format!("OCR error: {}", e)),
             data: None,
-        }),
+        })),
     }
 }

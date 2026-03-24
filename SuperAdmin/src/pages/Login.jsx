@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Shield, LogIn, Eye, EyeOff, Loader } from 'lucide-react'
 import { adminLogin } from '../api.js'
@@ -17,9 +17,12 @@ export default function Login() {
         setLoading(true)
         try {
             const res = await adminLogin(form.username, form.password)
-            if (res.success) nav('/dashboard', { replace: true })
-            else setError(res.message || 'Login failed')
-        } catch {
+            if (res.success) {
+                nav('/dashboard', { replace: true })
+            } else {
+                setError(res.message || 'Login failed')
+            }
+        } catch (err) {
             setError('Connection failed — is the backend running?')
         } finally {
             setLoading(false)
@@ -86,6 +89,12 @@ export default function Login() {
                         {loading ? <Loader size={15} className="spin" /> : <LogIn size={15} />}
                         {loading ? 'Authenticating…' : 'Sign In'}
                     </button>
+
+                    <div style={{ marginTop: 20, textAlign: 'center' }}>
+                        <Link to="/update-credentials" style={{ fontSize: 13, color: 'var(--text3)', textDecoration: 'none', opacity: 0.8 }}>
+                            Forgot Password or Update Credentials?
+                        </Link>
+                    </div>
                 </form>
 
                 <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>

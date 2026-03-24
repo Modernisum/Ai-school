@@ -3,6 +3,14 @@ name = "modern_school_backend"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "modern_school_backend"
+path = "src/main.rs"
+
+[[bin]]
+name = "schema_check"
+path = "src/schema_check.rs"
+
 [features]
 default = []
 ocr = ["image", "candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub", "safetensors"]

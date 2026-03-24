@@ -1,4 +1,5 @@
 use crate::AppState;
+
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -6,47 +7,32 @@ use axum::{
 };
 use crate::middleware::rls::TenantContext;
 use serde_json::json;
+use crate::error::AppResult;
 
 pub async fn set_base_salary(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
-        .operations
+        .payroll
         .set_employee_salary_params(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
-        Ok(_) => {
-            Json(json!({"success": true, "message": "Salary parameters updated"})).into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Salary parameters updated"})))
 }
 
 pub async fn get_salary_breakdown(
     State(state): State<AppState>,
     Path((school_id, employee_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
-        .operations
+        .payroll
         .get_salary_breakdown(&school_id, &employee_id)
-        .await
-    {
-        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "data": data})))
 }
 
 pub async fn add_bonus(
@@ -54,20 +40,13 @@ pub async fn add_bonus(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
-        .operations
+        .payroll
         .add_bonus(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
-        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "data": data})))
 }
 
 pub async fn add_aid(
@@ -75,38 +54,24 @@ pub async fn add_aid(
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    let data = state
         .services
-        .operations
+        .payroll
         .add_aid(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
-        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "data": data})))
 }
 
 pub async fn auto_close_month(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    match state
+) -> AppResult<impl IntoResponse> {
+    state
         .services
-        .operations
+        .payroll
         .auto_close_month(&school_id, &employee_id, &tenant_ctx.admin_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Month closed successfully"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Month closed successfully"})))
 }

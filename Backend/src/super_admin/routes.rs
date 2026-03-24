@@ -111,6 +111,42 @@ pub async fn admin_login(
     }
 }
 
+pub async fn update_admin_credentials(
+    State(state): State<AppState>,
+    Json(payload): Json<Value>,
+) -> impl IntoResponse {
+    let current_username = payload["currentUsername"].as_str().unwrap_or("");
+    let current_password = payload["currentPassword"].as_str().unwrap_or("");
+    let new_username = payload["newUsername"].as_str().unwrap_or("");
+    let new_password = payload["newPassword"].as_str().unwrap_or("");
+
+    if new_username.is_empty() || new_password.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"success":false,"message":"newUsername and newPassword are required"})),
+        )
+            .into_response();
+    }
+
+    let svc = make_admin_service(&state);
+    match svc
+        .update_admin_credentials(
+            current_username,
+            current_password,
+            new_username,
+            new_password,
+        )
+        .await
+    {
+        Ok(_) => ok_json!("Super admin credentials updated successfully"),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
 // ─── List All Schools ─────────────────────────────────────────────────────────
 
 pub async fn list_all_schools(

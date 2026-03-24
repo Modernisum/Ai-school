@@ -3,8 +3,10 @@ use printpdf::*;
 use serde_json::Value;
 use std::io::BufWriter;
 
+#[allow(dead_code)]
 pub struct PdfGenerator;
 
+#[allow(dead_code)]
 impl PdfGenerator {
     pub fn generate_report(title: &str, data: &Value) -> Result<Vec<u8>> {
         let (doc, page1, layer1) = PdfDocument::new(title, Mm(210.0), Mm(297.0), "Layer 1");

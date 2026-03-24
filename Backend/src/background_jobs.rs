@@ -3,6 +3,7 @@ use crate::AppState;
 use std::time::Duration;
 use tokio::time::sleep;
 
+#[allow(dead_code)]
 pub async fn start_background_workers(state: AppState) {
     let analytics = AnalyticsEngine::new(state.db.pool.clone());
 

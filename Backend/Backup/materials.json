@@ -1,1 +1,842 @@
-[]
+[
+  {
+    "id": "board cleaner",
+    "school_id": "519063",
+    "name": "board cleaner",
+    "quantity": 19,
+    "unit_price": 150.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bulb",
+    "school_id": "519063",
+    "name": "bulb",
+    "quantity": 76,
+    "unit_price": 100.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "painting",
+    "school_id": "519063",
+    "name": "painting",
+    "quantity": 38,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gas stove",
+    "school_id": "519063",
+    "name": "gas stove",
+    "quantity": 1,
+    "unit_price": 3000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "sugar",
+    "school_id": "519063",
+    "name": "sugar",
+    "quantity": 5,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "milk",
+    "school_id": "519063",
+    "name": "milk",
+    "quantity": 5,
+    "unit_price": 60.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "tea",
+    "school_id": "519063",
+    "name": "tea",
+    "quantity": 1,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "water tank",
+    "school_id": "519063",
+    "name": "water tank",
+    "quantity": 1,
+    "unit_price": 800.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "chair",
+    "school_id": "519063",
+    "name": "chair",
+    "quantity": 24,
+    "unit_price": 750.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "generator",
+    "school_id": "519063",
+    "name": "generator",
+    "quantity": 1,
+    "unit_price": 20000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big wheel chair",
+    "school_id": "519063",
+    "name": "big wheel chair",
+    "quantity": 2,
+    "unit_price": 5000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big table",
+    "school_id": "519063",
+    "name": "big table",
+    "quantity": 2,
+    "unit_price": 10000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "table",
+    "school_id": "765331",
+    "name": "table",
+    "quantity": 16,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "fan",
+    "school_id": "519063",
+    "name": "fan",
+    "quantity": 84,
+    "unit_price": 1500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board",
+    "school_id": "765331",
+    "name": "board",
+    "quantity": 16,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "marker",
+    "school_id": "765331",
+    "name": "marker",
+    "quantity": 32,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board cleaner",
+    "school_id": "765331",
+    "name": "board cleaner",
+    "quantity": 16,
+    "unit_price": 150.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "guest chair",
+    "school_id": "519063",
+    "name": "guest chair",
+    "quantity": 12,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bulb",
+    "school_id": "765331",
+    "name": "bulb",
+    "quantity": 64,
+    "unit_price": 100.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "painting",
+    "school_id": "765331",
+    "name": "painting",
+    "quantity": 32,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gas stove",
+    "school_id": "765331",
+    "name": "gas stove",
+    "quantity": 1,
+    "unit_price": 3000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "sugar",
+    "school_id": "765331",
+    "name": "sugar",
+    "quantity": 5,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "milk",
+    "school_id": "765331",
+    "name": "milk",
+    "quantity": 5,
+    "unit_price": 60.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "tea",
+    "school_id": "765331",
+    "name": "tea",
+    "quantity": 1,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "water tank",
+    "school_id": "765331",
+    "name": "water tank",
+    "quantity": 1,
+    "unit_price": 800.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "chair",
+    "school_id": "765331",
+    "name": "chair",
+    "quantity": 21,
+    "unit_price": 750.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "generator",
+    "school_id": "765331",
+    "name": "generator",
+    "quantity": 1,
+    "unit_price": 20000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gamla",
+    "school_id": "519063",
+    "name": "gamla",
+    "quantity": 10,
+    "unit_price": 400.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big wheel chair",
+    "school_id": "765331",
+    "name": "big wheel chair",
+    "quantity": 2,
+    "unit_price": 5000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big table",
+    "school_id": "765331",
+    "name": "big table",
+    "quantity": 2,
+    "unit_price": 10000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "fan",
+    "school_id": "765331",
+    "name": "fan",
+    "quantity": 72,
+    "unit_price": 1500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "guest chair",
+    "school_id": "765331",
+    "name": "guest chair",
+    "quantity": 12,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gamla",
+    "school_id": "765331",
+    "name": "gamla",
+    "quantity": 10,
+    "unit_price": 400.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big plant",
+    "school_id": "765331",
+    "name": "big plant",
+    "quantity": 10,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bus",
+    "school_id": "765331",
+    "name": "bus",
+    "quantity": 1,
+    "unit_price": 2000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "car",
+    "school_id": "765331",
+    "name": "car",
+    "quantity": 1,
+    "unit_price": 1000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "table",
+    "school_id": "572900",
+    "name": "table",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "table",
+    "school_id": "819232",
+    "name": "table",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board",
+    "school_id": "572900",
+    "name": "board",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "marker",
+    "school_id": "572900",
+    "name": "marker",
+    "quantity": 38,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board cleaner",
+    "school_id": "572900",
+    "name": "board cleaner",
+    "quantity": 19,
+    "unit_price": 150.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bulb",
+    "school_id": "572900",
+    "name": "bulb",
+    "quantity": 76,
+    "unit_price": 100.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "painting",
+    "school_id": "572900",
+    "name": "painting",
+    "quantity": 38,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gas stove",
+    "school_id": "572900",
+    "name": "gas stove",
+    "quantity": 1,
+    "unit_price": 3000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "sugar",
+    "school_id": "572900",
+    "name": "sugar",
+    "quantity": 5,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "milk",
+    "school_id": "572900",
+    "name": "milk",
+    "quantity": 5,
+    "unit_price": 60.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "tea",
+    "school_id": "572900",
+    "name": "tea",
+    "quantity": 1,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "water tank",
+    "school_id": "572900",
+    "name": "water tank",
+    "quantity": 1,
+    "unit_price": 800.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "chair",
+    "school_id": "572900",
+    "name": "chair",
+    "quantity": 24,
+    "unit_price": 750.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "generator",
+    "school_id": "572900",
+    "name": "generator",
+    "quantity": 1,
+    "unit_price": 20000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board",
+    "school_id": "819232",
+    "name": "board",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big wheel chair",
+    "school_id": "572900",
+    "name": "big wheel chair",
+    "quantity": 2,
+    "unit_price": 5000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big table",
+    "school_id": "572900",
+    "name": "big table",
+    "quantity": 2,
+    "unit_price": 10000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "fan",
+    "school_id": "572900",
+    "name": "fan",
+    "quantity": 84,
+    "unit_price": 1500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "guest chair",
+    "school_id": "572900",
+    "name": "guest chair",
+    "quantity": 12,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gamla",
+    "school_id": "572900",
+    "name": "gamla",
+    "quantity": 10,
+    "unit_price": 400.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big plant",
+    "school_id": "572900",
+    "name": "big plant",
+    "quantity": 10,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bus",
+    "school_id": "572900",
+    "name": "bus",
+    "quantity": 1,
+    "unit_price": 2000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "car",
+    "school_id": "572900",
+    "name": "car",
+    "quantity": 1,
+    "unit_price": 1000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "marker",
+    "school_id": "819232",
+    "name": "marker",
+    "quantity": 38,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board cleaner",
+    "school_id": "819232",
+    "name": "board cleaner",
+    "quantity": 19,
+    "unit_price": 150.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "table",
+    "school_id": "519063",
+    "name": "table",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bulb",
+    "school_id": "819232",
+    "name": "bulb",
+    "quantity": 76,
+    "unit_price": 100.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "painting",
+    "school_id": "819232",
+    "name": "painting",
+    "quantity": 38,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gas stove",
+    "school_id": "819232",
+    "name": "gas stove",
+    "quantity": 1,
+    "unit_price": 3000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "sugar",
+    "school_id": "819232",
+    "name": "sugar",
+    "quantity": 5,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "milk",
+    "school_id": "819232",
+    "name": "milk",
+    "quantity": 5,
+    "unit_price": 60.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "tea",
+    "school_id": "819232",
+    "name": "tea",
+    "quantity": 1,
+    "unit_price": 500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "water tank",
+    "school_id": "819232",
+    "name": "water tank",
+    "quantity": 1,
+    "unit_price": 800.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "chair",
+    "school_id": "819232",
+    "name": "chair",
+    "quantity": 24,
+    "unit_price": 750.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "generator",
+    "school_id": "819232",
+    "name": "generator",
+    "quantity": 1,
+    "unit_price": 20000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "board",
+    "school_id": "519063",
+    "name": "board",
+    "quantity": 19,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "marker",
+    "school_id": "519063",
+    "name": "marker",
+    "quantity": 38,
+    "unit_price": 50.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big plant",
+    "school_id": "519063",
+    "name": "big plant",
+    "quantity": 10,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bus",
+    "school_id": "519063",
+    "name": "bus",
+    "quantity": 1,
+    "unit_price": 2000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "car",
+    "school_id": "519063",
+    "name": "car",
+    "quantity": 1,
+    "unit_price": 1000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big wheel chair",
+    "school_id": "819232",
+    "name": "big wheel chair",
+    "quantity": 2,
+    "unit_price": 5000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big table",
+    "school_id": "819232",
+    "name": "big table",
+    "quantity": 2,
+    "unit_price": 10000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "fan",
+    "school_id": "819232",
+    "name": "fan",
+    "quantity": 84,
+    "unit_price": 1500.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "guest chair",
+    "school_id": "819232",
+    "name": "guest chair",
+    "quantity": 12,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "gamla",
+    "school_id": "819232",
+    "name": "gamla",
+    "quantity": 10,
+    "unit_price": 400.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "big plant",
+    "school_id": "819232",
+    "name": "big plant",
+    "quantity": 10,
+    "unit_price": 2000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "bus",
+    "school_id": "819232",
+    "name": "bus",
+    "quantity": 1,
+    "unit_price": 2000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  },
+  {
+    "id": "car",
+    "school_id": "819232",
+    "name": "car",
+    "quantity": 1,
+    "unit_price": 1000000.0,
+    "extra_unit": 0,
+    "need_unit": 0,
+    "attachment_path": null
+  }
+]

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { isLoggedIn, logout } from './api.js'
 import Login from './pages/Login.jsx'
+import UpdateCredentials from './pages/UpdateCredentials.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import SchoolsList from './pages/SchoolsList.jsx'
 import SchoolDetail from './pages/SchoolDetail.jsx'
@@ -107,7 +108,9 @@ function PrivateLayout() {
 }
 
 function RequireAuth({ children }) {
-    if (!isLoggedIn()) return <Navigate to="/login" replace />
+    if (!isLoggedIn()) {
+        return <Navigate to="/login" replace />
+    }
     return children
 }
 
@@ -116,6 +119,7 @@ export default function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/update-credentials" element={<UpdateCredentials />} />
                 <Route path="/*" element={<RequireAuth><PrivateLayout /></RequireAuth>} />
             </Routes>
         </BrowserRouter>

@@ -7,51 +7,52 @@ use axum::{
 };
 use crate::middleware::rls::TenantContext;
 use serde_json::json;
+use crate::error::{AppResult, AppError};
 
 /* ════════════ VALIDATION HELPERS ════════════ */
 
-fn validate_create_student(payload: &CreateStudentRequest) -> Result<(), String> {
+fn validate_create_student(payload: &CreateStudentRequest) -> AppResult<()> {
     // className validation (required)
     if payload.class_name.trim().is_empty() {
-        return Err("className is required and cannot be empty".to_string());
+        return Err(AppError::Validation("className is required and cannot be empty".to_string()));
     }
     if payload.class_name.len() > 50 {
-        return Err("className cannot exceed 50 characters".to_string());
+        return Err(AppError::Validation("className cannot exceed 50 characters".to_string()));
     }
 
     // name validation (optional)
     if let Some(name) = &payload.name {
         if !name.trim().is_empty() && name.len() > 100 {
-            return Err("name cannot exceed 100 characters".to_string());
+            return Err(AppError::Validation("name cannot exceed 100 characters".to_string()));
         }
     }
 
     // contact validation (optional)
     if let Some(contact) = &payload.contact {
         if !contact.trim().is_empty() && contact.len() > 20 {
-            return Err("contact cannot exceed 20 characters".to_string());
+            return Err(AppError::Validation("contact cannot exceed 20 characters".to_string()));
         }
     }
 
     // parentContact validation (optional)
     if let Some(parent_contact) = &payload.parent_contact {
         if !parent_contact.trim().is_empty() && parent_contact.len() > 20 {
-            return Err("parentContact cannot exceed 20 characters".to_string());
+            return Err(AppError::Validation("parentContact cannot exceed 20 characters".to_string()));
         }
     }
 
     Ok(())
 }
 
-fn validate_update_student(payload: &serde_json::Value) -> Result<(), String> {
+fn validate_update_student(payload: &serde_json::Value) -> AppResult<()> {
     // className validation if present
     if let Some(class_name) = payload.get("className").or(payload.get("class_name")) {
         if let Some(class_str) = class_name.as_str() {
             if class_str.trim().is_empty() {
-                return Err("className cannot be empty".to_string());
+                return Err(AppError::Validation("className cannot be empty".to_string()));
             }
             if class_str.len() > 50 {
-                return Err("className cannot exceed 50 characters".to_string());
+                return Err(AppError::Validation("className cannot exceed 50 characters".to_string()));
             }
         }
     }
@@ -60,7 +61,7 @@ fn validate_update_student(payload: &serde_json::Value) -> Result<(), String> {
     if let Some(name) = payload.get("name") {
         if let Some(name_str) = name.as_str() {
             if !name_str.trim().is_empty() && name_str.len() > 100 {
-                return Err("name cannot exceed 100 characters".to_string());
+                return Err(AppError::Validation("name cannot exceed 100 characters".to_string()));
             }
         }
     }
@@ -69,7 +70,7 @@ fn validate_update_student(payload: &serde_json::Value) -> Result<(), String> {
     if let Some(contact) = payload.get("contact") {
         if let Some(contact_str) = contact.as_str() {
             if contact_str.len() > 20 {
-                return Err("contact cannot exceed 20 characters".to_string());
+                return Err(AppError::Validation("contact cannot exceed 20 characters".to_string()));
             }
         }
     }
@@ -84,16 +85,9 @@ pub async fn create_student(
     Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<CreateStudentRequest>,
-) -> impl IntoResponse {
-    // Validate request payload against user.rs model
-    if let Err(validation_error) = validate_create_student(&payload) {
-        tracing::warn!("Student creation validation failed: {}", validation_error);
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": validation_error})),
-        )
-            .into_response();
-    }
+) -> AppResult<impl IntoResponse> {
+    // Validate request payload
+    validate_create_student(&payload)?;
 
     let student_data = json!({
         "className": payload.class_name,
@@ -126,36 +120,27 @@ pub async fn create_student(
         "selectedSubjects": payload.selected_subjects,
     });
 
-    match state
-        .services
-        .student
+    let data = state.services.student
         .create_student(&school_id, &t_ctx.admin_id, student_data)
-        .await
-    {
-        Ok(data) => {
-            let webhook_engine =
-                crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
-            let _ = webhook_engine
-                .trigger(
-                    &school_id,
-                    "student.enrolled",
-                    json!({
-                        "student_id": data["studentId"],
-                        "name": payload.name,
-                        "class": payload.class_name
-                    }),
-                )
-                .await;
+        .await?;
 
-            Json(json!({"success": true, "message": "Student added successfully", "data": data}))
-                .into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
+    let webhook_engine = crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
+    let _ = webhook_engine
+        .trigger(
+            &school_id,
+            "student.enrolled",
+            json!({
+                "student_id": data["studentId"],
+                "name": payload.name,
+                "class": payload.class_name
+            }),
         )
-            .into_response(),
-    }
+        .await;
+
+    Ok((
+        axum::http::StatusCode::CREATED,
+        Json(json!({"success": true, "message": "Student added successfully", "data": data}))
+    ))
 }
 
 #[allow(dead_code)]
@@ -164,38 +149,21 @@ pub async fn bulk_create_students(
     Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<Vec<serde_json::Value>>,
-) -> impl IntoResponse {
-    match state
-        .services
-        .student
+) -> AppResult<impl IntoResponse> {
+    let data = state.services.student
         .bulk_create_students(&school_id, &t_ctx.admin_id, payload)
-        .await
-    {
-        Ok(data) => {
-            Json(json!({"success": true, "message": "Bulk import completed", "data": data}))
-                .into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+        
+    Ok(Json(json!({"success": true, "message": "Bulk import completed", "data": data})))
 }
 
 pub async fn list_students(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
+) -> AppResult<impl IntoResponse> {
     tracing::debug!("Fetching students for school_id: {}", school_id);
-    match state.services.student.list_students(&school_id).await {
-        Ok(students) => Json(json!({"success": true, "data": students})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+    let students = state.services.student.list_students(&school_id).await?;
+    Ok(Json(json!({"success": true, "data": students})))
 }
 
 #[derive(serde::Deserialize)]
@@ -207,63 +175,33 @@ pub async fn list_students_by_class(
     State(state): State<AppState>,
     Path((school_id, class_name)): Path<(String, String)>,
     Query(q): Query<StudentListQuery>,
-) -> impl IntoResponse {
+) -> AppResult<impl IntoResponse> {
     tracing::debug!(
         "Fetching students for class: {} (section: {:?}) in school: {}",
         class_name,
         q.section,
         school_id
     );
-    match state
-        .services
-        .student
+    let students = state.services.student
         .list_students_by_class(&school_id, &class_name, q.section.as_deref())
-        .await
-    {
-        Ok(students) => Json(json!({"success": true, "data": students})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+    Ok(Json(json!({"success": true, "data": students})))
 }
 
 pub async fn get_student(
     State(state): State<AppState>,
     Path((school_id, student_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    // Validate student_id
+) -> AppResult<impl IntoResponse> {
     if student_id.trim().is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "student_id cannot be empty"})),
-        )
-            .into_response();
+        return Err(AppError::Validation("student_id cannot be empty".to_string()));
     }
 
-    tracing::debug!(
-        "Fetching student: {} from school: {}",
-        student_id,
-        school_id
-    );
-    match state
-        .services
-        .student
-        .get_student(&school_id, &student_id)
-        .await
-    {
-        Ok(Some(student)) => Json(json!({"success": true, "data": student})).into_response(),
-        Ok(None) => (
-            axum::http::StatusCode::NOT_FOUND,
-            Json(json!({"success": false, "message": "Student not found"})),
-        )
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+    tracing::debug!("Fetching student: {} from school: {}", student_id, school_id);
+    let student = state.services.student.get_student(&school_id, &student_id).await?;
+    
+    match student {
+        Some(s) => Ok(Json(json!({"success": true, "data": s}))),
+        None => Err(AppError::NotFound("Student not found".to_string())),
     }
 }
 
@@ -272,89 +210,42 @@ pub async fn update_student(
     Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    // Validate student_id
+) -> AppResult<impl IntoResponse> {
     if student_id.trim().is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "student_id cannot be empty"})),
-        )
-            .into_response();
+        return Err(AppError::Validation("student_id cannot be empty".to_string()));
     }
 
-    // Validate request payload against user.rs model
-    if let Err(validation_error) = validate_update_student(&payload) {
-        tracing::warn!("Student update validation failed: {}", validation_error);
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": validation_error})),
-        )
-            .into_response();
-    }
+    validate_update_student(&payload)?;
 
     tracing::debug!("Updating student: {} in school: {}", student_id, school_id);
-    match state
-        .services
-        .student
+    state.services.student
         .update_student(&school_id, &student_id, &t_ctx.admin_id, payload)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Student updated successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+        .await?;
+        
+    Ok(Json(json!({"success": true, "message": "Student updated successfully"})))
 }
 
 pub async fn delete_student(
     State(state): State<AppState>,
     Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, student_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    // Validate student_id
+) -> AppResult<impl IntoResponse> {
     if student_id.trim().is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "student_id cannot be empty"})),
-        )
-            .into_response();
+        return Err(AppError::Validation("student_id cannot be empty".to_string()));
     }
 
-    tracing::warn!(
-        "Deleting student: {} from school: {}",
-        student_id,
-        school_id
-    );
-    match state
-        .services
-        .student
-        .delete_student(&school_id, &student_id, &t_ctx.admin_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Student deleted successfully"}))
-            .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+    tracing::warn!("Deleting student: {} from school: {}", student_id, school_id);
+    state.services.student.delete_student(&school_id, &student_id, &t_ctx.admin_id).await?;
+    
+    Ok(Json(json!({"success": true, "message": "Student deleted successfully"})))
 }
+
 pub async fn list_student_ids(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state.services.student.list_student_ids(&school_id).await {
-        Ok(ids) => Json(json!({"success": true, "studentIds": ids})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+) -> AppResult<impl IntoResponse> {
+    let ids = state.services.student.list_student_ids(&school_id).await?;
+    Ok(Json(json!({"success": true, "studentIds": ids})))
 }
 
 // POST /api/students/:schoolId/bulk
@@ -363,16 +254,10 @@ pub async fn bulk_import_students(
     Extension(t_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
+) -> AppResult<impl IntoResponse> {
     let rows = match payload["students"].as_array().or(payload.as_array()) {
         Some(r) => r.clone(),
-        None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "Expected a 'students' array"})),
-            )
-                .into_response();
-        }
+        None => return Err(AppError::Validation("Expected a 'students' array".to_string())),
     };
 
     let mut results = Vec::new();
@@ -388,17 +273,10 @@ pub async fn bulk_import_students(
             "address": row.get("Address").or(row.get("address")).unwrap_or(&serde_json::Value::Null),
         });
 
-        match state
-            .services
-            .student
-            .create_student(&school_id, &t_ctx.admin_id, student_data)
-            .await
-        {
+        match state.services.student.create_student(&school_id, &t_ctx.admin_id, student_data).await {
             Ok(created) => {
                 success_count += 1;
-                results.push(
-                    json!({"row": i + 1, "status": "success", "studentId": created["studentId"]}),
-                );
+                results.push(json!({"row": i + 1, "status": "success", "studentId": created["studentId"]}));
             }
             Err(e) => {
                 fail_count += 1;
@@ -407,27 +285,20 @@ pub async fn bulk_import_students(
         }
     }
 
-    Json(json!({
+    Ok(Json(json!({
         "success": true,
         "message": format!("{} students imported, {} failed", success_count, fail_count),
         "results": results,
         "successCount": success_count,
         "failCount": fail_count,
-    }))
-    .into_response()
+    })))
 }
 
 pub async fn validate_student(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    match state.services.student.validate_student_data(&school_id, payload).await {
-        Ok(_) => Json(json!({"success": true, "message": "Data is valid"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
+) -> AppResult<impl IntoResponse> {
+    state.services.student.validate_student_data(&school_id, payload).await?;
+    Ok(Json(json!({"success": true, "message": "Data is valid"})))
 }

@@ -16,6 +16,7 @@ impl AdminService {
         username: &str,
         password: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        println!("[DEBUG] Login attempt for username: '{}'", username);
         let mut conn = self.db.acquire_super_admin_connection().await?;
         let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
             .bind(username)
@@ -24,17 +25,88 @@ impl AdminService {
 
         if let Some(r) = row {
             let hash: String = r.try_get("password_hash")?;
-            if bcrypt::verify(password, &hash)? {
-                let secret = std::env::var("SUPER_ADMIN_SECRET")
+            println!("[DEBUG] Found hash for user: '{}'", hash);
+            match bcrypt::verify(password, &hash) {
+                Ok(true) => {
+                    println!("[DEBUG] Password verified SUCCESSFULLY");
+                    let secret = std::env::var("SUPER_ADMIN_SECRET")
                     .unwrap_or_else(|_| "superadminsecret2024".to_string());
                 let ts = chrono::Utc::now().timestamp();
                 let raw = format!("{}:{}:{}", username, ts, secret);
                 use base64::{engine::general_purpose, Engine as _};
                 let token = general_purpose::STANDARD.encode(raw.as_bytes());
                 return Ok(token);
+                },
+                Ok(false) => println!("[DEBUG] Password verification FAILED (mismatch)"),
+                Err(e) => println!("[DEBUG] bcrypt error: {:?}", e),
             }
+        } else {
+            println!("[DEBUG] User '{}' NOT FOUND in super_admin table", username);
         }
         Err("Invalid super admin credentials".into())
+    }
+
+    pub async fn update_admin_credentials(
+        &self,
+        current_username: &str,
+        current_password: &str,
+        new_username: &str,
+        new_password: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Verify access via current password
+        let mut authorized = false;
+
+        println!("[DEBUG] Updating credentials for current_username: '{}'", current_username);
+
+        let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
+            .bind(current_username)
+            .fetch_optional(&mut *tx)
+            .await?;
+
+        if let Some(r) = row {
+            let hash: String = r.try_get("password_hash")?;
+            println!("[DEBUG] Found hash in DB: '{}'", hash);
+            match bcrypt::verify(current_password, &hash) {
+                Ok(true) => {
+                    println!("[DEBUG] Current password VERIFIED");
+                    authorized = true;
+                },
+                Ok(false) => println!("[DEBUG] Current password verification FAILED (mismatch)"),
+                Err(e) => println!("[DEBUG] bcrypt error during verification: {:?}", e),
+            }
+        } else {
+            println!("[DEBUG] User '{}' NOT FOUND in super_admin table", current_username);
+        }
+
+        if !authorized {
+            return Err("Authorization failed: Invalid current credentials".into());
+        }
+
+        // 2. Perform Update
+        let hashed_pwd = bcrypt::hash(new_password, 10)?;
+        
+        // Delete old one if username changed
+        if current_username != new_username {
+            sqlx::query("DELETE FROM super_admin WHERE username = $1")
+                .bind(current_username)
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        sqlx::query(
+            "INSERT INTO super_admin (username, password_hash) VALUES ($1, $2)
+             ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash"
+        )
+        .bind(new_username)
+        .bind(hashed_pwd)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(())
     }
 
     pub fn verify_admin_token(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {

@@ -19,7 +19,7 @@ impl ResourceRepository for PostgresResourceRepository {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let space_id = format!("{}-{}", school_id, data["id"].as_str().unwrap_or(""));
         sqlx::query(
-            "INSERT INTO spaces (space_id, school_id, space_name, space_category) VALUES ($1, $2, $3, $4) ON CONFLICT (space_id) DO NOTHING",
+            "INSERT INTO spaces (space_id, school_id, space_name, space_category) VALUES ($1, $2, $3, $4) ON CONFLICT (school_id, space_id) DO NOTHING",
         )
         .bind(&space_id)
         .bind(school_id)
@@ -43,7 +43,7 @@ impl ResourceRepository for PostgresResourceRepository {
             space_id,
             data["id"].as_str().unwrap_or("")
         );
-        sqlx::query("INSERT INTO items (item_id, school_id, space_id, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (space_id, item_id) DO NOTHING")
+        sqlx::query("INSERT INTO items (item_id, school_id, space_id, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_id, item_id) DO NOTHING")
             .bind(&item_id)
             .bind(school_id)
             .bind(space_id)
@@ -61,7 +61,7 @@ impl ResourceRepository for PostgresResourceRepository {
     ) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let material_id = data["materialName"].as_str().map(|s| s.to_lowercase()).unwrap_or_else(|| "unknown".to_string());
-        sqlx::query("INSERT INTO materials (id, school_id, name, quantity, unit_price, attachment_path) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO UPDATE SET quantity = materials.quantity + EXCLUDED.quantity, attachment_path = EXCLUDED.attachment_path")
+        sqlx::query("INSERT INTO materials (id, school_id, name, quantity, unit_price, attachment_path) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, id) DO UPDATE SET quantity = materials.quantity + EXCLUDED.quantity, attachment_path = EXCLUDED.attachment_path")
             .bind(&material_id)
             .bind(school_id)
             .bind(data["materialName"].as_str())

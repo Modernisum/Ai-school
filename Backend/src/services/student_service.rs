@@ -2,7 +2,6 @@ use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::error::Error;
 use std::sync::Arc;
 
 // Pagination struct
@@ -30,12 +29,12 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Value> {
         // Security checks (Aadhaar, Phone, Email)
         self.validate_student_data(school_id, data.clone()).await?;
 
         // Validate required fields
-        let class_name = data["className"].as_str().ok_or("Missing className")?;
+        let class_name = data["className"].as_str().ok_or_else(|| AppError::Validation("Missing className".to_string()))?;
 
         // 1. Get next roll number
         let roll_number = self
@@ -106,7 +105,7 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
         admin_id: &str,
         data: Vec<Value>,
-    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Value> {
         let mut successful = 0;
         let mut failed = 0;
         let mut errors = Vec::new();
@@ -229,8 +228,8 @@ impl StudentService for PostgresStudentService {
     async fn list_students(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.student.get_students(school_id).await
+    ) -> AppResult<Vec<Value>> {
+        self.repos.student.get_students(school_id).await.map_err(AppError::from)
     }
 
     async fn list_students_by_class(
@@ -238,19 +237,20 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
         class_name: &str,
         section: Option<&str>,
-    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Vec<Value>> {
         self.repos
             .student
             .get_students_by_class(school_id, class_name, section)
             .await
+            .map_err(AppError::from)
     }
 
     async fn get_student(
         &self,
         school_id: &str,
         student_id: &str,
-    ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.student.get_student(school_id, student_id).await
+    ) -> AppResult<Option<Value>> {
+        self.repos.student.get_student(school_id, student_id).await.map_err(AppError::from)
     }
 
     async fn update_student(
@@ -259,13 +259,13 @@ impl StudentService for PostgresStudentService {
         student_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<(), AppError> {
+    ) -> AppResult<()> {
         let old_student = self
             .repos
             .student
             .get_student(school_id, student_id)
             .await?
-            .ok_or("Student not found")?;
+            .ok_or_else(|| AppError::NotFound("Student not found".to_string()))?;
 
         let old_class = old_student["className"].as_str().unwrap_or("");
         let new_class = data["className"].as_str();
@@ -345,7 +345,7 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
         student_id: &str,
         admin_id: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<()> {
         let student = self
             .repos
             .student
@@ -382,7 +382,7 @@ impl StudentService for PostgresStudentService {
         &self,
         school_id: &str,
         class_name: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<()> {
         let students = self.repos.student.get_students(school_id).await?;
         let mut class_students: Vec<Value> = students
             .into_iter()
@@ -417,7 +417,7 @@ impl StudentService for PostgresStudentService {
     async fn list_student_ids(
         &self,
         school_id: &str,
-    ) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Vec<String>> {
         let students = self.repos.student.get_students(school_id).await?;
         Ok(students
             .into_iter()
@@ -425,14 +425,14 @@ impl StudentService for PostgresStudentService {
             .collect())
     }
 
-    async fn validate_student_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
+    async fn validate_student_data(&self, school_id: &str, data: Value) -> AppResult<()> {
         let exclude_sid = data["studentId"].as_str();
 
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
                 if self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid).await? {
-                    return Err("Aadhaar Number already exists for another student or staff member".into());
+                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member".to_string()));
                 }
             }
         }
@@ -442,7 +442,7 @@ impl StudentService for PostgresStudentService {
             if !phone.trim().is_empty() {
                 let count = self.repos.student.count_phone_usage(school_id, phone, exclude_sid).await?;
                 if count >= 3 {
-                    return Err("This Contact Number is already used by 3 or more student accounts".into());
+                    return Err(AppError::Validation("This Contact Number is already used by 3 or more student accounts".to_string()));
                 }
             }
         }
@@ -452,7 +452,7 @@ impl StudentService for PostgresStudentService {
             if !email.trim().is_empty() {
                 let count = self.repos.student.count_email_usage(school_id, email, exclude_sid).await?;
                 if count >= 3 {
-                    return Err("This Email Address is already used by 3 or more student accounts".into());
+                    return Err(AppError::Validation("This Email Address is already used by 3 or more student accounts".to_string()));
                 }
             }
         }

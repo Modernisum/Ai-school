@@ -20,7 +20,7 @@ pub async fn query_ai(
             .into_response();
     }
 
-    match state.services.ai.post_query(&school_id, query).await {
+    match state.services.ai.post_query(&school_id, payload).await {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,

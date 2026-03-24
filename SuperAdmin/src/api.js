@@ -1,7 +1,9 @@
 const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
 const API = `http://${HOST}:8080/api/admin`;
 
-const getToken = () => localStorage.getItem("sa_token");
+const getToken = () => {
+    return localStorage.getItem("sa_token");
+};
 
 export const isLoggedIn = () => !!getToken();
 
@@ -114,4 +116,13 @@ export const getWalletLedger = (schoolId) =>
 
 export const getChurnRadar = () => authFetch("/churn-radar");
 export const manualBackup = () => authFetch("/backup", { method: "POST" });
+
+export const updateAdminCredentials = async (body) => {
+    const res = await fetch(`${API}/update-credentials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    return res.json();
+};
 

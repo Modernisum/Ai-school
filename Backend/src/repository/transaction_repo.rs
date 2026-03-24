@@ -1,7 +1,6 @@
 use crate::db::DbClient;
 use crate::repository::traits::*;
 use async_trait::async_trait;
-use serde_json::{json, Value};
 use sqlx::Row;
 use std::sync::Arc;
 

@@ -3,10 +3,12 @@ use crate::repository::traits::AppError;
 use sqlx::{Postgres, Transaction, Connection};
 use std::sync::Arc;
 
+#[allow(dead_code)]
 pub struct PostgresBaseRepository {
     pub client: Arc<DbClient>,
 }
 
+#[allow(dead_code)]
 impl PostgresBaseRepository {
     pub fn new(client: Arc<DbClient>) -> Self {
         Self { client }

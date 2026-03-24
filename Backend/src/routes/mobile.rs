@@ -1,15 +1,16 @@
+#![allow(dead_code)]
 use axum::{
     extract::{Path, State},
-    routing::{get, post},
-    Json, Router,
-    http::StatusCode,
+    Json,
 };
+
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;
+use crate::error::{AppResult, AppError};
 
 #[derive(Deserialize)]
 pub struct MobileLoginRequest {
@@ -77,14 +78,7 @@ pub async fn mobile_login(
     Path(_school_id): Path<String>,
     State(_state): State<AppState>,
     Json(payload): Json<MobileLoginRequest>,
-) -> Result<Json<Value>, axum::http::StatusCode> {
-    // In a real scenario, we'd check if the ident exists in the DB for this school_id.
-    // For now, we just pretend we sent an OTP "1234".
-
-    // NOTE: A real implementation would query:
-    // For role="teacher": SELECT * FROM employees WHERE phone = payload.ident OR alt_phone = payload.ident
-    // For role="student": SELECT * FROM students WHERE student_id = payload.ident
-
+) -> AppResult<Json<Value>> {
     Ok(Json(json!({
         "success": true,
         "message": "OTP sent successfully. (Use 1234 for testing)",
@@ -97,7 +91,7 @@ pub async fn mobile_verify(
     Path(school_id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<MobileVerifyRequest>,
-) -> Result<Json<Value>, axum::http::StatusCode> {
+) -> AppResult<Json<Value>> {
     if payload.otp != "1234" && payload.otp != "123456" {
         return Ok(Json(json!({
             "success": false,
@@ -118,8 +112,7 @@ pub async fn mobile_verify(
     .bind(&school_id)
     .bind(&payload.ident)
     .fetch_all(&state.repos.db_client.pool)
-    .await
-    .unwrap_or_default();
+    .await?;
 
     for row in student_rows {
         let id: String = sqlx::Row::try_get(&row, "student_id").unwrap_or_else(|_| "".to_string());
@@ -146,8 +139,7 @@ pub async fn mobile_verify(
     .bind(&school_id)
     .bind(&payload.ident)
     .fetch_all(&state.repos.db_client.pool)
-    .await
-    .unwrap_or_default();
+    .await?;
 
     for row in employee_rows {
         let id: String = sqlx::Row::try_get(&row, "employee_id").unwrap_or_else(|_| "".to_string());
@@ -174,7 +166,7 @@ pub async fn mobile_select_profile(
     Path(school_id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<MobileSelectProfileRequest>,
-) -> Result<Json<Value>, axum::http::StatusCode> {
+) -> AppResult<Json<Value>> {
     // Generate WhatsApp-style 10-year token
     let token = create_long_lived_token(&payload.ident, &payload.user_type, &school_id);
 
@@ -186,24 +178,26 @@ pub async fn mobile_select_profile(
     };
 
     if payload.user_type == "student" {
-        if let Ok(row) = sqlx::query("SELECT name FROM students WHERE student_id = $1 AND school_id = $2")
+        let row = sqlx::query("SELECT name FROM students WHERE student_id = $1 AND school_id = $2")
             .bind(&payload.user_id)
             .bind(&school_id)
-            .fetch_one(&state.repos.db_client.pool)
-            .await 
-        {
-            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&row, "name").unwrap_or(None) {
+            .fetch_optional(&state.repos.db_client.pool)
+            .await?;
+        
+        if let Some(r) = row {
+            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&r, "name").unwrap_or(None) {
                 name = n;
             }
         }
     } else {
-        if let Ok(row) = sqlx::query("SELECT data->>'name' as name FROM employees WHERE employee_id = $1 AND school_id = $2")
+        let row = sqlx::query("SELECT data->>'name' as name FROM employees WHERE employee_id = $1 AND school_id = $2")
             .bind(&payload.user_id)
             .bind(&school_id)
-            .fetch_one(&state.repos.db_client.pool)
-            .await 
-        {
-            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&row, "name").unwrap_or(None) {
+            .fetch_optional(&state.repos.db_client.pool)
+            .await?;
+        
+        if let Some(r) = row {
+            if let Some(n) = sqlx::Row::try_get::<Option<String>, _>(&r, "name").unwrap_or(None) {
                 name = n;
             }
         }
@@ -228,14 +222,9 @@ pub async fn mobile_select_profile(
 pub async fn get_student_fee_mobile(
     State(state): State<AppState>,
     Path((school_id, student_id)): Path<(String, String)>,
-) -> Result<Json<Value>, StatusCode> {
-    match state.services.operations.get_student_fee(&school_id, &student_id).await {
-        Ok(data) => Ok(Json(json!({"success": true, "data": data}))),
-        Err(e) => {
-            eprintln!("Error fetching mobile fees: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+) -> AppResult<Json<Value>> {
+    let data = state.services.fee.get_student_fee(&school_id, &student_id).await?;
+    Ok(Json(json!({"success": true, "data": data})))
 }
 
 // ─── PAYMENT (Create Razorpay Order) ────────────────────────────────────
@@ -251,12 +240,12 @@ pub async fn create_mobile_order(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
     Json(payload): Json<MobileOrderRequest>,
-) -> Result<Json<Value>, StatusCode> {
+) -> AppResult<Json<Value>> {
     let key_id = std::env::var("RAZORPAY_KEY_ID").unwrap_or_default();
     let key_secret = std::env::var("RAZORPAY_KEY_SECRET").unwrap_or_default();
 
     if key_id.is_empty() {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(AppError::Internal("Razorpay keys not configured".to_string()));
     }
 
     let amount_paise = (payload.amount * 100.0) as u64;
@@ -270,53 +259,37 @@ pub async fn create_mobile_order(
             "receipt": payload.fee_id,
         }))
         .send()
-        .await;
+        .await
+        .map_err(|e| AppError::Internal(format!("Razorpay request failed: {}", e)))?;
 
-    match res {
-        Ok(response) => {
-            if response.status().is_success() {
-                if let Ok(order_data) = response.json::<Value>().await {
-                    let order_id = order_data["id"].as_str().unwrap_or("").to_string();
-
-                    // Save to db
-                    match state
-                        .repos
-                        .transaction
-                        .create_online_transaction(
-                            &school_id,
-                            &payload.student_id,
-                            &payload.fee_type,
-                            &payload.fee_id,
-                            payload.amount,
-                            "INR",
-                            &order_id,
-                        )
-                        .await
-                    {
-                        Ok(_) => Ok(Json(json!({
-                            "success": true,
-                            "orderId": order_id,
-                            "amount": payload.amount,
-                            "key": key_id
-                        }))),
-                        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-                    }
-                } else {
-                    Err(StatusCode::INTERNAL_SERVER_ERROR)
-                }
-            } else {
-                Err(StatusCode::BAD_REQUEST)
-            }
-        }
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    if !res.status().is_success() {
+        return Err(AppError::Internal("Razorpay order creation failed".to_string()));
     }
-}
 
-pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/:school_id/mobile/login", post(mobile_login))
-        .route("/:school_id/mobile/verify", post(mobile_verify))
-        .route("/:school_id/mobile/select-profile", post(mobile_select_profile))
-        .route("/:school_id/mobile/fees/:student_id", get(get_student_fee_mobile))
-        .route("/:school_id/mobile/order", post(create_mobile_order))
+    let order_data = res.json::<Value>().await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Razorpay response: {}", e)))?;
+    
+    let order_id = order_data["id"].as_str().unwrap_or("").to_string();
+
+    // Save to db
+    state
+        .repos
+        .transaction
+        .create_online_transaction(
+            &school_id,
+            &payload.student_id,
+            &payload.fee_type,
+            &payload.fee_id,
+            payload.amount,
+            "INR",
+            &order_id,
+        )
+        .await?;
+
+    Ok(Json(json!({
+        "success": true,
+        "orderId": order_id,
+        "amount": payload.amount,
+        "key": key_id
+    })))
 }

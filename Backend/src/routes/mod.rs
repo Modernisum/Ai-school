@@ -38,3 +38,4 @@ pub mod topic;
 pub mod transport;
 pub mod webhook;
 pub mod ws;
+pub mod router;

@@ -2,7 +2,6 @@ use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::error::Error;
 use std::sync::Arc;
 
 pub struct PostgresAuthService {
@@ -11,14 +10,14 @@ pub struct PostgresAuthService {
 
 #[async_trait]
 impl AuthService for PostgresAuthService {
-    async fn login(&self, data: Value) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let school_id = data["schoolId"].as_str().ok_or("Missing schoolId")?;
-        let password = data["password"].as_str().ok_or("Missing password")?;
+    async fn login(&self, data: Value) -> AppResult<Value> {
+        let school_id = data["schoolId"].as_str().ok_or_else(|| AppError::Validation("Missing schoolId".to_string()))?;
+        let password = data["password"].as_str().ok_or_else(|| AppError::Validation("Missing password".to_string()))?;
 
         let auth = self.repos.auth.get_auth_by_id(school_id).await?;
         if let Some(a) = auth {
             let hashed = a["password"].as_str().unwrap_or("");
-            if bcrypt::verify(password, hashed)? {
+            if bcrypt::verify(password, hashed).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))? {
                 // Check if school is blocked due to billing (SaaS)
                 let school_row = sqlx::query("SELECT billing_status, trial_ends_at, wallet_balance, per_student_rate FROM schools WHERE school_id = $1")
                     .bind(school_id)
@@ -42,15 +41,15 @@ impl AuthService for PostgresAuthService {
                     use std::str::FromStr;
 
                     let students_bd = BigDecimal::from_i64(active_students)
-                        .unwrap_or(BigDecimal::from_str("0").unwrap());
+                        .unwrap_or_else(|| BigDecimal::from_str("0").unwrap());
                     let required_balance = per_student_rate * students_bd;
 
                     if wallet_balance < required_balance {
-                        return Err(format!("Insufficient wallet balance to support {} active students. Please contact the Super Admin to recharge.", active_students).into());
+                        return Err(AppError::Forbidden(format!("Insufficient wallet balance to support {} active students. Please contact the Super Admin to recharge.", active_students)));
                     }
 
                     if billing_status == "suspended" && wallet_balance < required_balance {
-                        return Err("Your account is suspended due to insufficient balance. Please contact the Super Admin to recharge your wallet.".into());
+                        return Err(AppError::Forbidden("Your account is suspended due to insufficient balance. Please contact the Super Admin to recharge your wallet.".to_string()));
                     }
                 }
 
@@ -78,19 +77,20 @@ impl AuthService for PostgresAuthService {
                 }));
             }
         }
-        Err("Invalid credentials".into())
+        Err(AppError::Unauthorized("Invalid credentials".to_string()))
     }
 
-    async fn verify_token(&self, token: &str) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    async fn verify_token(&self, token: &str) -> AppResult<Value> {
         let token_data = self.repos.auth.get_token(token).await?;
         match token_data {
             Some(t) => Ok(t),
-            None => Err("Invalid token".into()),
+            None => Err(AppError::Unauthorized("Invalid token".to_string())),
         }
     }
 
-    async fn logout(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.repos.auth.revoke_token(token).await
+    async fn logout(&self, token: &str) -> AppResult<()> {
+        self.repos.auth.revoke_token(token).await?;
+        Ok(())
     }
 
     async fn set_security(
@@ -98,8 +98,8 @@ impl AuthService for PostgresAuthService {
         school_id: &str,
         question: &str,
         answer: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let hashed_answer = bcrypt::hash(answer.trim().to_lowercase(), 10)?;
+    ) -> AppResult<()> {
+        let hashed_answer = bcrypt::hash(answer.trim().to_lowercase(), 10).map_err(|e| AppError::Internal(format!("Bcrypt hashing error: {}", e)))?;
         let data = json!({
             "securityQuestion": question,
             "securityAnswerHash": hashed_answer
@@ -108,20 +108,21 @@ impl AuthService for PostgresAuthService {
         self.repos
             .auth
             .add_auth_log(school_id, "set-security", json!({"question": question}))
-            .await
+            .await?;
+        Ok(())
     }
 
     async fn forgot_password(
         &self,
         school_id: &str,
         answer: &str,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<String> {
         let auth = self.repos.auth.get_auth_by_id(school_id).await?;
         if let Some(a) = auth {
             let hashed_answer = a["securityAnswerHash"].as_str().unwrap_or("");
-            if bcrypt::verify(answer.trim().to_lowercase(), hashed_answer)? {
+            if bcrypt::verify(answer.trim().to_lowercase(), hashed_answer).map_err(|e| AppError::Internal(format!("Bcrypt verification error: {}", e)))? {
                 let temp_pass = format!("{:08}", rand::random::<u32>() % 100000000);
-                let hashed_temp = bcrypt::hash(&temp_pass, 10)?;
+                let hashed_temp = bcrypt::hash(&temp_pass, 10).map_err(|e| AppError::Internal(format!("Bcrypt hashing error: {}", e)))?;
                 self.repos
                     .auth
                     .update_auth(
@@ -136,7 +137,7 @@ impl AuthService for PostgresAuthService {
                 return Ok(temp_pass);
             }
         }
-        Err("Incorrect security answer".into())
+        Err(AppError::Unauthorized("Incorrect security answer".to_string()))
     }
 
     async fn change_password(
@@ -144,12 +145,12 @@ impl AuthService for PostgresAuthService {
         school_id: &str,
         old_pass: &str,
         new_pass: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<()> {
         let auth = self.repos.auth.get_auth_by_id(school_id).await?;
         if let Some(a) = auth {
             let hashed = a["password"].as_str().unwrap_or("");
-            if bcrypt::verify(old_pass, hashed)? {
-                let hashed_new = bcrypt::hash(new_pass, 10)?;
+            if bcrypt::verify(old_pass, hashed).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))? {
+                let hashed_new = bcrypt::hash(new_pass, 10).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))?;
                 self.repos
                     .auth
                     .update_auth(
@@ -164,7 +165,7 @@ impl AuthService for PostgresAuthService {
                 return Ok(());
             }
         }
-        Err("Invalid old password".into())
+        Err(AppError::Unauthorized("Invalid old password".to_string()))
     }
 
     async fn change_id(
@@ -172,26 +173,26 @@ impl AuthService for PostgresAuthService {
         old_id: &str,
         _pass: &str,
         new_id: &str,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<String> {
         // Complex logic parity: rename record and move logs
         self.repos.auth.change_school_id(old_id, new_id).await?;
         Ok(new_id.to_string())
     }
 
-    async fn login_global(&self, ident: &str, app_type: &str) -> Result<Value, AppError> {
+    async fn login_global(&self, ident: &str, app_type: &str) -> AppResult<Value> {
         let matches = self.repos.global_user.find_by_identifier(ident).await?;
         if matches.is_empty() {
-            return Err("This identifier does not exist. Please contact your administrator.".into());
+            return Err(AppError::NotFound("This identifier does not exist. Please contact your administrator.".to_string()));
         }
 
         // Validate if the user has the required profile for the app type
         let has_valid_profile = matches.iter().any(|m| m["userType"] == app_type);
         if !has_valid_profile {
-            return Err(format!(
+            return Err(AppError::Forbidden(format!(
                 "This number belongs to a {} and cannot be used to login to the {} app.",
                 if app_type == "student" { "employee" } else { "student" },
                 app_type
-            ).into());
+            )));
         }
 
         // Mock sending OTP to primary contact (always 1234 for now)
@@ -202,9 +203,9 @@ impl AuthService for PostgresAuthService {
         }))
     }
 
-    async fn verify_otp_global(&self, ident: &str, otp: &str) -> Result<Value, AppError> {
+    async fn verify_otp_global(&self, ident: &str, otp: &str) -> AppResult<Value> {
         if otp != "1234" {
-            return Err("Invalid OTP. Please try again or resend.".into());
+            return Err(AppError::Unauthorized("Invalid OTP. Please try again or resend.".to_string()));
         }
 
         let profiles = self.repos.global_user.find_by_identifier(ident).await?;
@@ -217,7 +218,7 @@ impl AuthService for PostgresAuthService {
         }))
     }
 
-    async fn sync_all(&self) -> Result<(), AppError> {
-        self.repos.global_user.sync_all_to_global().await
+    async fn sync_all(&self) -> AppResult<()> {
+        self.repos.global_user.sync_all_to_global().await.map_err(AppError::from)
     }
 }

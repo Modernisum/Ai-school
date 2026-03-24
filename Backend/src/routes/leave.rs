@@ -271,11 +271,11 @@ pub async fn get_proxy_suggestions(
     Path(school_id): Path<String>,
     axum::extract::Query(params): axum::extract::Query<serde_json::Value>,
 ) -> impl IntoResponse {
-    let day = params["day"].as_str().and_then(|s| s.parse::<usize>().ok()).unwrap_or(1);
-    let period = params["period"].as_str().and_then(|s| s.parse::<usize>().ok()).unwrap_or(1);
+    let date = params["date"].as_str().unwrap_or("");
+    let period = params["period"].as_str().unwrap_or("1");
     let subject = params["subject"].as_str();
 
-    match state.services.leave.get_proxy_suggestions(&school_id, day, period, subject).await {
+    match state.services.leave.get_proxy_suggestions(&school_id, date, period, subject).await {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,

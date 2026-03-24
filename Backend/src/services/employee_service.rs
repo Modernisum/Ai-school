@@ -2,7 +2,6 @@ use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::error::Error;
 use std::sync::Arc;
 
 pub struct PostgresEmployeeService {
@@ -16,7 +15,7 @@ impl EmployeeService for PostgresEmployeeService {
         school_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Value> {
         // Security checks (Aadhaar uniqueness)
         self.validate_employee_data(school_id, data.clone()).await?;
 
@@ -62,7 +61,7 @@ impl EmployeeService for PostgresEmployeeService {
         school_id: &str,
         admin_id: &str,
         data: Vec<Value>,
-    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Value> {
         let mut successful = 0;
         let mut failed = 0;
         let mut errors = Vec::new();
@@ -144,19 +143,20 @@ impl EmployeeService for PostgresEmployeeService {
     async fn list_employees(
         &self,
         school_id: &str,
-    ) -> Result<Vec<Value>, Box<dyn Error + Send + Sync>> {
-        self.repos.employee.get_employees(school_id).await
+    ) -> AppResult<Vec<Value>> {
+        self.repos.employee.get_employees(school_id).await.map_err(AppError::from)
     }
 
     async fn get_employee(
         &self,
         school_id: &str,
         employee_id: &str,
-    ) -> Result<Option<Value>, Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<Option<Value>> {
         self.repos
             .employee
             .get_employee(school_id, employee_id)
             .await
+            .map_err(AppError::from)
     }
 
     async fn update_employee(
@@ -165,9 +165,9 @@ impl EmployeeService for PostgresEmployeeService {
         employee_id: &str,
         admin_id: &str,
         data: Value,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<()> {
         let old_emp = self.repos.employee.get_employee(school_id, employee_id).await?
-            .ok_or("Employee not found")?;
+            .ok_or_else(|| AppError::NotFound("Employee not found".to_string()))?;
 
         self.repos
             .employee
@@ -211,7 +211,7 @@ impl EmployeeService for PostgresEmployeeService {
         school_id: &str,
         employee_id: &str,
         admin_id: &str,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> AppResult<()> {
         let emp = self.repos.employee.get_employee(school_id, employee_id).await?;
         
         self.repos
@@ -237,13 +237,13 @@ impl EmployeeService for PostgresEmployeeService {
         Ok(())
     }
 
-    async fn validate_employee_data(&self, school_id: &str, data: Value) -> Result<(), AppError> {
+    async fn validate_employee_data(&self, school_id: &str, data: Value) -> AppResult<()> {
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
                 // Reuse the check_aadhaar_exists from student repo as it's cross-table
                 if self.repos.student.check_aadhaar_exists(school_id, aadhaar, None).await? {
-                    return Err("Aadhaar Number already exists for another student or staff member".into());
+                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member".to_string()));
                 }
             }
         }

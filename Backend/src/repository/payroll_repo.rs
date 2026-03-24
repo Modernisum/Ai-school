@@ -41,7 +41,7 @@ impl crate::repository::traits::PayrollRepository for PostgresPayrollRepository 
 
     async fn add_payroll_salary(
         &self,
-        school_id: &str,
+        _school_id: &str,
         _employee_id: &str,
         _data: Value,
     ) -> Result<(), AppError> {

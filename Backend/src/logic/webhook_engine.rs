@@ -7,13 +7,16 @@ use sha2::Sha256;
 use sqlx::{Pool, Postgres, Row};
 use std::time::Duration;
 
+#[allow(dead_code)]
 type HmacSha256 = Hmac<Sha256>;
 
+#[allow(dead_code)]
 pub struct WebhookEngine {
     pool: Pool<Postgres>,
     client: Client,
 }
 
+#[allow(dead_code)]
 impl WebhookEngine {
     pub fn new(pool: Pool<Postgres>) -> Self {
         let client = Client::builder()
