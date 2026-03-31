@@ -12,17 +12,6 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  debugPrint("[Main] Checking network connectivity to backend (10.0.2.2:8080)...");
-  try {
-    final client = HttpClient();
-    client.connectionTimeout = const Duration(seconds: 5);
-    final request = await client.getUrl(Uri.parse('http://10.0.2.2:8080/'));
-    final response = await request.close();
-    debugPrint("[Main] Network OK: ${response.statusCode}");
-  } catch (e) {
-    debugPrint("[Main] Network Error: $e");
-  }
-
   debugPrint("[Main] Initializing Firebase...");
   // 🔥 Firebase — required before firebase_messaging can function
   await Firebase.initializeApp();

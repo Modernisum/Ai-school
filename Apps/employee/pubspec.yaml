@@ -45,6 +45,7 @@ dependencies:
   intl: ^0.20.2
   fl_chart: ^0.70.2
   flutter_dotenv: ^5.1.0
+  image_picker: ^1.2.1
 
 dependency_overrides:
   path_provider_windows: "2.2.0"

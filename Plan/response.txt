@@ -1,0 +1,225 @@
+{
+    "success": true,
+    "data": [
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_CLASS_3",
+            "name": "Art & Craft Teacher - Class 3"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_LKG",
+            "name": "Art & Craft Teacher - LKG"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_UKG",
+            "name": "Art & Craft Teacher - UKG"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_NURSERY",
+            "name": "Art & Craft Teacher - Nursery"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_CLASS_5",
+            "name": "Art & Craft Teacher - Class 5"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_CLASS_4",
+            "name": "Art & Craft Teacher - Class 4"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_CLASS_2",
+            "name": "Art & Craft Teacher - Class 2"
+        },
+        {
+            "responsibilityId": "ROLE_ART__CRAFT_CLASS_1",
+            "name": "Art & Craft Teacher - Class 1"
+        },
+        {
+            "responsibilityId": "ROLE_BASIC_COMMUNICATION_PRENURSERY",
+            "name": "Basic Communication Teacher - Pre-Nursery"
+        },
+        {
+            "responsibilityId": "ROLE_BIOLOGY_CLASS_12_SCIENCE_PCB",
+            "name": "Biology Teacher - Class 12 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_BIOLOGY_CLASS_11_SCIENCE_PCB",
+            "name": "Biology Teacher - Class 11 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_CHEMISTRY_CLASS_12_SCIENCE_PCB",
+            "name": "Chemistry Teacher - Class 12 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_CHEMISTRY_CLASS_12_SCIENCE_PCM",
+            "name": "Chemistry Teacher - Class 12 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_CHEMISTRY_CLASS_11_SCIENCE_PCM",
+            "name": "Chemistry Teacher - Class 11 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_CHEMISTRY_CLASS_11_SCIENCE_PCB",
+            "name": "Chemistry Teacher - Class 11 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_COMPUTER_SCIENCE__PHYSICAL_EDUCATION_CLASS_11_SCIENCE_PCM",
+            "name": "Computer Science / Physical Education Teacher - Class 11 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_COMPUTER_SCIENCE__PHYSICAL_EDUCATION_CLASS_12_SCIENCE_PCM",
+            "name": "Computer Science / Physical Education Teacher - Class 12 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_ECONOMICS__SOCIOLOGY_CLASS_11_ARTS__HUMANITIES",
+            "name": "Economics / Sociology Teacher - Class 11 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_ECONOMICS__SOCIOLOGY_CLASS_12_ARTS__HUMANITIES",
+            "name": "Economics / Sociology Teacher - Class 12 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_11_SCIENCE_PCM",
+            "name": "English Teacher - Class 11 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_11_SCIENCE_PCB",
+            "name": "English Teacher - Class 11 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_12_SCIENCE_PCM",
+            "name": "English Teacher - Class 12 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_11_ARTS__HUMANITIES",
+            "name": "English Teacher - Class 11 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_12_SCIENCE_PCB",
+            "name": "English Teacher - Class 12 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_ENGLISH_CLASS_12_ARTS__HUMANITIES",
+            "name": "English Teacher - Class 12 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_ENVIRONMENTAL_STUDIES_EVS_CLASS_1",
+            "name": "Environmental Studies (EVS) Teacher - Class 1"
+        },
+        {
+            "responsibilityId": "ROLE_ENVIRONMENTAL_STUDIES_EVS_CLASS_2",
+            "name": "Environmental Studies (EVS) Teacher - Class 2"
+        },
+        {
+            "responsibilityId": "ROLE_ENVIRONMENTAL_STUDIES_EVS_CLASS_5",
+            "name": "Environmental Studies (EVS) Teacher - Class 5"
+        },
+        {
+            "responsibilityId": "ROLE_ENVIRONMENTAL_STUDIES_EVS_CLASS_3",
+            "name": "Environmental Studies (EVS) Teacher - Class 3"
+        },
+        {
+            "responsibilityId": "ROLE_ENVIRONMENTAL_STUDIES_EVS_CLASS_4",
+            "name": "Environmental Studies (EVS) Teacher - Class 4"
+        },
+        {
+            "responsibilityId": "ROLE_GEOGRAPHY_CLASS_11_ARTS__HUMANITIES",
+            "name": "Geography Teacher - Class 11 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_GEOGRAPHY_CLASS_12_ARTS__HUMANITIES",
+            "name": "Geography Teacher - Class 12 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_HINDI__SECOND_LANGUAGE_CLASS_9",
+            "name": "Hindi / Second Language Teacher - Class 9"
+        },
+        {
+            "responsibilityId": "ROLE_HINDI__SECOND_LANGUAGE_CLASS_10",
+            "name": "Hindi / Second Language Teacher - Class 10"
+        },
+        {
+            "responsibilityId": "ROLE_HINDI__REGIONAL_LANGUAGE_LKG",
+            "name": "Hindi / Regional Language Teacher - LKG"
+        },
+        {
+            "responsibilityId": "ROLE_HINDI__REGIONAL_LANGUAGE_UKG",
+            "name": "Hindi / Regional Language Teacher - UKG"
+        },
+        {
+            "responsibilityId": "ROLE_HISTORY_CLASS_11_ARTS__HUMANITIES",
+            "name": "History Teacher - Class 11 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_HISTORY_CLASS_12_ARTS__HUMANITIES",
+            "name": "History Teacher - Class 12 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_INFORMATION_TECHNOLOGY_IT_CLASS_9",
+            "name": "Information Technology (IT) Teacher - Class 9"
+        },
+        {
+            "responsibilityId": "ROLE_INFORMATION_TECHNOLOGY_IT_CLASS_10",
+            "name": "Information Technology (IT) Teacher - Class 10"
+        },
+        {
+            "responsibilityId": "ROLE_MATHEMATICS_CLASS_11_SCIENCE_PCM",
+            "name": "Mathematics Teacher - Class 11 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_MATHEMATICS__INFORMATICS_PRACTICES_CLASS_12_COMMERCE",
+            "name": "Mathematics / Informatics Practices Teacher - Class 12 Commerce"
+        },
+        {
+            "responsibilityId": "ROLE_MATHEMATICS_CLASS_12_SCIENCE_PCM",
+            "name": "Mathematics Teacher - Class 12 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_MATHEMATICS__INFORMATICS_PRACTICES_CLASS_11_COMMERCE",
+            "name": "Mathematics / Informatics Practices Teacher - Class 11 Commerce"
+        },
+        {
+            "responsibilityId": "ROLE_MOTOR_SKILLS_PRENURSERY",
+            "name": "Motor Skills Teacher - Pre-Nursery"
+        },
+        {
+            "responsibilityId": "ROLE_PHYSICS_CLASS_11_SCIENCE_PCB",
+            "name": "Physics Teacher - Class 11 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_PHYSICS_CLASS_11_SCIENCE_PCM",
+            "name": "Physics Teacher - Class 11 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_PHYSICS_CLASS_12_SCIENCE_PCB",
+            "name": "Physics Teacher - Class 12 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_PHYSICS_CLASS_12_SCIENCE_PCM",
+            "name": "Physics Teacher - Class 12 Science (PCM)"
+        },
+        {
+            "responsibilityId": "ROLE_POLITICAL_SCIENCE_CLASS_11_ARTS__HUMANITIES",
+            "name": "Political Science Teacher - Class 11 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_POLITICAL_SCIENCE_CLASS_12_ARTS__HUMANITIES",
+            "name": "Political Science Teacher - Class 12 Arts / Humanities"
+        },
+        {
+            "responsibilityId": "ROLE_PSYCHOLOGY__PHYSICAL_EDUCATION_CLASS_12_SCIENCE_PCB",
+            "name": "Psychology / Physical Education Teacher - Class 12 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_PSYCHOLOGY__PHYSICAL_EDUCATION_CLASS_11_SCIENCE_PCB",
+            "name": "Psychology / Physical Education Teacher - Class 11 Science (PCB)"
+        },
+        {
+            "responsibilityId": "ROLE_RHYMES__STORYTELLING_PRENURSERY",
+            "name": "Rhymes & Storytelling Teacher - Pre-Nursery"
+        },
+        {
+            "responsibilityId": "ROLE_SENSORY_ACTIVITIES_PRENURSERY",
+            "name": "Sensory Activities Teacher - Pre-Nursery"
+        }
+    ]
+}

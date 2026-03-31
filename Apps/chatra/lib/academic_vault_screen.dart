@@ -67,17 +67,12 @@ class AcademicVaultScreen extends StatelessWidget {
                 );
               }
               if (state is AcademicError) {
-                // Show demo data so UI is visible
-                return SafeArea(child: ListView(padding: const EdgeInsets.all(16), children: [
-                  _buildSectionHeader("📅  Upcoming Exams"),
-                  const SizedBox(height: 8),
-                  _buildExamCard({'exam_name': 'Mid-Term Exam', 'date': '2026-03-25', 'subject': 'All Subjects', 'duration': '3 Hours'}),
-                  _buildExamCard({'exam_name': 'Science Practical', 'date': '2026-04-01', 'subject': 'Science', 'duration': '2 Hours'}),
-                  const SizedBox(height: 24),
-                  _buildSectionHeader("📂  Report Cards"),
-                  const SizedBox(height: 8),
-                  _buildDocCard(context, {'title': 'Half-Yearly Report Card', 'document_url': '', 'uploaded_at': '2025-12-15'}),
-                ]));
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(state.message, style: const TextStyle(color: Colors.redAccent), textAlign: TextAlign.center),
+                  ),
+                );
               }
               return const Center(child: CircularProgressIndicator(color: Colors.white));
             },

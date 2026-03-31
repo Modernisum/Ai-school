@@ -41,13 +41,7 @@ class AttendanceHistoryBloc extends Bloc<AttendanceHistoryEvent, AttendanceHisto
           totalDays: total,
         ));
       } else {
-        // Demo data for offline testing
-        emit(const AttendanceHistoryLoaded(
-          records: {},
-          percentage: 85.0,
-          totalPresent: 170,
-          totalDays: 200,
-        ));
+        emit(const AttendanceHistoryError("No attendance data found for this student."));
       }
     } catch (e) {
       emit(AttendanceHistoryError("$e"));

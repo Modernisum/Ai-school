@@ -19,7 +19,7 @@ class FeesScreen extends StatefulWidget {
 
 class _FeesScreenState extends State<FeesScreen> {
   late Razorpay _razorpay;
-  String _studentId = "STU12345";
+  String _studentId = "";
 
   @override
   void initState() {
@@ -34,8 +34,12 @@ class _FeesScreenState extends State<FeesScreen> {
   Future<void> _loadStudentId() async {
     final apiService = context.read<ApiService>();
     final id = await apiService.storage.read(key: 'student_id');
-    if (id != null) {
-      if (mounted) setState(() => _studentId = id);
+    if (id != null && id.isNotEmpty) {
+      if (mounted) {
+        setState(() => _studentId = id);
+        // Safely fetch fees once the ID is ready
+        context.read<FeesBloc>().add(FeesFetchStarted(id));
+      }
     }
   }
 
@@ -78,9 +82,15 @@ class _FeesScreenState extends State<FeesScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => FeesBloc(apiService: context.read<ApiService>())
-        ..add(FeesFetchStarted(_studentId)),
-      child: BlocListener<FeesBloc, FeesState>(
+      create: (context) => FeesBloc(apiService: context.read<ApiService>()),
+      child: Builder(
+        builder: (context) {
+          // Initialize load after the bloc is available in the tree
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_studentId.isEmpty) _loadStudentId();
+          });
+          
+          return BlocListener<FeesBloc, FeesState>(
         listener: (context, state) {
           if (state is FeesPaymentProcessing) {
             _openRazorpay(state);
@@ -117,8 +127,10 @@ class _FeesScreenState extends State<FeesScreen> {
           ),
           bottomNavigationBar: _buildBottomAction(),
         ),
-      ),
-    );
+      );
+     },
+    ),
+   );
   }
 
   Widget _buildFeesList(BuildContext context, FeesLoaded state) {
@@ -148,7 +160,7 @@ class _FeesScreenState extends State<FeesScreen> {
 
   Widget _buildSummaryCard(double totalToPay) {
     return GlassCard(
-      blur: 20,
+      blur: 8,
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [

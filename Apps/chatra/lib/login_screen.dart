@@ -262,8 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Lottie.network(
-                    'https://assets9.lottiefiles.com/packages/lf20_mr6l9jjt.json',
+                  Lottie.asset(
+                    'assets/lottie/teaching.lottie',
                     height: 150,
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, size: 80, color: AppColors.accentTeal),
                   ),

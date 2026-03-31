@@ -97,4 +97,63 @@ class ApiService {
   Future<void> logout() async {
     await storage.deleteAll();
   }
+
+  // Support for deferred image uploads
+  Future<String?> uploadFile(http.ByteStream fileStream, int length, String filename, String schoolId, String userType) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final uri = Uri.parse('$apiBase/storage/upload');
+      
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..fields['school_id'] = schoolId
+        ..fields['user_type'] = userType
+        ..files.add(http.MultipartFile(
+          'file',
+          fileStream,
+          length,
+          filename: filename,
+        ));
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data']['public_url'];
+        }
+      }
+      debugPrint("Upload Error: ${response.statusCode} - $responseBody");
+      return null;
+    } catch (e) {
+      debugPrint("Upload Exception: $e");
+      return null;
+    }
+  }
+
+  Future<bool> markAsPermanent(String fileUrl) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      final uri = Uri.parse('$apiBase/storage/mark-permanent');
+      
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'school_id': sid,
+          'file_url': fileUrl,
+        }),
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("Mark Permanent Exception: $e");
+      return false;
+    }
+  }
 }

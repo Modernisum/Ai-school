@@ -14,6 +14,8 @@ const { useGetClassesQuery } = academicApi;
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
+const SERVER_ROOT = API_BASE.replace(/\/api\/?$/, '');
+
 const getSchoolId = () => getSchoolIdFromStorage() || "";
 
 
@@ -62,6 +64,7 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
 
   // Form state
   const [form, setForm] = useState({
+    profileImageUrl: '',
     studentId: 'Auto-generated',
     rollNumber: '',
     admissionDate: today(),
@@ -104,6 +107,8 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [errors, setErrors] = useState({});
+  const [pendingProfileFile, setPendingProfileFile] = useState(null);
+  const [localProfilePreview, setLocalProfilePreview] = useState('');
 
   // Geo state
   const [countries, setCountries] = useState([]);
@@ -411,6 +416,77 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
   ) : 0;
   const finalFees = Math.max(0, form.totalFees - couponDiscount);
 
+  const [uploading, setUploading] = useState(false);
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // --- Cleanup Previous Orphaned Image (if any) ---
+    if (form.profileImageUrl && form.profileImageUrl.startsWith('/uploads')) {
+      try {
+        await fetch(`${API_BASE}/storage/file-by-url?url=${encodeURIComponent(form.profileImageUrl)}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.warn('[Cleanup] Failed to delete previous orphaned image:', err.message);
+      }
+    }
+
+    // Clear old preview and show spinner
+    set('profileImageUrl', '');
+    setLocalProfilePreview('');
+    setUploading(true);
+
+    try {
+      // Upload directly to backend — preview will use the returned server URL
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('school_id', schoolId);
+      formData.append('user_type', 'student');
+
+      const uploadRes = await fetch(`${API_BASE}/storage/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok || !uploadData.url) {
+        throw new Error(uploadData.message || 'Upload failed');
+      }
+
+      // Set the relative URL from backend (e.g. /uploads/ab/cd/hash.jpg)
+      set('profileImageUrl', uploadData.url);
+    } catch (err) {
+      setToast({ type: 'error', msg: `Image upload failed: ${err.message}` });
+      console.error('[Upload] Failed:', err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!form.profileImageUrl) return;
+
+    // If it's a backend URL, delete it from the server
+    if (form.profileImageUrl.startsWith('/uploads')) {
+      try {
+        console.info('[Cleanup] Manual removal of orphaned image:', form.profileImageUrl);
+        await fetch(`${API_BASE}/storage/file-by-url?url=${encodeURIComponent(form.profileImageUrl)}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.warn('[Cleanup] Failed to delete orphaned image:', err.message);
+      }
+    }
+
+    set('profileImageUrl', '');
+    if (localProfilePreview) {
+      URL.revokeObjectURL(localProfilePreview);
+      setLocalProfilePreview('');
+    }
+    setPendingProfileFile(null);
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       setToast({ type: 'error', msg: 'Please fix the highlighted errors' });
@@ -448,6 +524,29 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
 
     setSaving(true);
     try {
+      let finalProfileUrl = form.profileImageUrl;
+
+      // Fallback: if immediate upload failed, try uploading now
+      if (pendingProfileFile && !finalProfileUrl?.startsWith('/uploads')) {
+        const formData = new FormData();
+        formData.append('file', pendingProfileFile);
+        formData.append('school_id', schoolId);
+        formData.append('user_type', 'student');
+        const uploadRes = await fetch(`${API_BASE}/storage/upload`, {
+          method: 'POST', body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.url) {
+          throw new Error(uploadData.message || 'Profile image upload failed');
+        }
+        finalProfileUrl = uploadData.url;
+      }
+
+      const submissionPayload = {
+        ...cleanPayload,
+        profileImageUrl: finalProfileUrl,
+      };
+
       const url = mode === 'edit'
         ? `${API_BASE}/students/${schoolId}/${editStudentId}`
         : `${API_BASE}/students/${schoolId}`;
@@ -456,7 +555,7 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanPayload),
+        body: JSON.stringify(submissionPayload),
       });
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.message || 'Failed to create student');
@@ -569,7 +668,44 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
   /* ───────────── Section renderers ───────────── */
 
   const renderPersonalSection = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Profile Image Upload */}
+      <div className="flex flex-col items-center gap-4 py-4 bg-white/5 rounded-2xl border border-white/5 mb-2">
+        <div className="relative group">
+          <div className="w-24 h-24 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden bg-slate-900 group-hover:border-primary/50 transition-all">
+            {form.profileImageUrl ? (
+              <img src={`${SERVER_ROOT}${form.profileImageUrl}`} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User size={32} className="text-slate-600 group-hover:text-primary/50 transition-all" />
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <Loader size={20} className="animate-spin text-white" />
+              </div>
+            )}
+          </div>
+          <div className="absolute -bottom-1 -right-1 flex gap-1">
+            {form.profileImageUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="w-7 h-7 rounded-full bg-red-500/80 hover:bg-red-600 flex items-center justify-center cursor-pointer shadow-lg transition-all border-2 border-slate-900"
+              >
+                <X size={14} className="text-white" />
+              </button>
+            )}
+            <label className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary-hover transition-all border-2 border-slate-900">
+              <Plus size={16} className="text-white" />
+              <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+            </label>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-white">Student Photograph</p>
+          <p className="text-[10px] text-slate-500 mt-1">PNG, JPG or WebP (Max 5MB)</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Full Name *" error={errors.name}>
           <input className={inp(errors.name)} placeholder="e.g. Rahul Sharma"

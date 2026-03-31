@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 
@@ -63,10 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
     
     try {
       final studentId = await apiService.storage.read(key: 'student_id');
-      if (studentId != null) {
+      if (studentId != null && studentId.isNotEmpty) {
         bloc.add(DashboardFetchStarted(studentId: studentId));
       } else {
-        bloc.add(const DashboardFetchStarted(studentId: "STU12345"));
+        debugPrint("No student_id found in secure storage. Skipping dashboard fetch.");
       }
     } catch (e) {
       debugPrint("Error in _refreshDashboard: $e");
@@ -149,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: RepaintBoundary(
         child: ClipRRect(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
             child: Container(
               height: 110,
               padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
@@ -180,10 +179,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                    ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.1, end: 0),
+                    ).animate().fadeIn(duration: 400.ms),
                   ),
                   const SizedBox(width: 15),
-                  _buildActionButton(Icons.logout_rounded, () => context.read<AuthBloc>().add(LoggedOut())).animate().fadeIn(duration: 600.ms).scale(),
+                  _buildActionButton(Icons.logout_rounded, () => context.read<AuthBloc>().add(LoggedOut())).animate().fadeIn(duration: 400.ms),
                 ],
               ),
             ),
@@ -202,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Positioned.fill(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: GestureDetector(
           onTap: () => setState(() => _isSearchOpen = false),
           child: Container(
@@ -234,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: AppColors.accentTeal)),
                   ),
-                ).animate().scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 200.ms).fadeIn(),
+                  ).animate().fadeIn(duration: 200.ms),
                 
                 const SizedBox(height: 20),
 
@@ -255,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context.push(item['route']);
                           },
                         ),
-                      ).animate().fadeIn(delay: (50 * index).ms).slideY(begin: 0.1, end: 0);
+                      ).animate().fadeIn(delay: (30 * index).ms);
                     },
                   ),
                 ),
@@ -343,6 +342,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTimetableWidget(Map<String, dynamic> timetable) {
+    final classes = (timetable['data'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [];
+
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -357,21 +358,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(color: AppColors.accentSage.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.accentSage.withValues(alpha: 0.2))),
                 child: Row(
                   children: [
-                    const Icon(Icons.circle, color: AppColors.accentSage, size: 8).animate(onPlay: (c) => c.repeat()).scale(duration: 1.seconds, begin: const Offset(1, 1), end: const Offset(1.5, 1.5)).fadeOut(),
+                    const Icon(Icons.circle, color: AppColors.accentSage, size: 8).animate(onPlay: (c) => c.repeat()).scale(duration: 2.seconds, begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2)).fadeOut(),
                     const SizedBox(width: 6),
-                    Text("ONGOING", style: GoogleFonts.outfit(color: AppColors.accentSage, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text("LIVE TIMETABLE", style: GoogleFonts.outfit(color: AppColors.accentSage, fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _buildTimelineItem("09:00 AM", "Mathematics", "Dr. Sharma", true),
-          _buildTimelineItem("10:30 AM", "Physics", "Prof. Verma", false),
-          _buildTimelineItem("12:00 PM", "History", "Ms. Anita", false),
+          if (classes.isEmpty)
+            Text("No classes scheduled for today.", style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
+          for (var c in classes.take(4))
+            _buildTimelineItem(
+              "${c['start_time'] ?? ''} - ${c['end_time'] ?? ''}",
+              c['subject_name']?.toString() ?? "Unknown Subject",
+              c['teacher_name']?.toString() ?? "Teacher",
+              false,
+            ),
         ],
       ),
-    ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn(duration: 400.ms);
   }
 
   Widget _buildTimelineItem(String time, String subject, String teacher, bool isActive) {
@@ -401,6 +408,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAttendanceRadar(Map<String, dynamic> attendance) {
+    final data = attendance['data'] as List? ?? [];
+    int present = 0;
+    for (var r in data) {
+      if (r['status']?.toString().toLowerCase() == 'present') present++;
+    }
+    double pct = data.isEmpty ? 0 : (present / data.length) * 100;
+
     return GlassCard(
       height: 180,
       padding: const EdgeInsets.all(16),
@@ -409,38 +423,44 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text("Attendance", style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
           const Spacer(),
-          SizedBox(
-            height: 100,
-            child: RadarChart(
-              RadarChartData(
-                dataSets: [
-                  RadarDataSet(
-                    dataEntries: [
-                      const RadarEntry(value: 80),
-                      const RadarEntry(value: 90),
-                      const RadarEntry(value: 70),
-                      const RadarEntry(value: 85),
-                      const RadarEntry(value: 95),
-                    ],
-                    fillColor: AppColors.accentTeal.withValues(alpha: 0.3),
-                    borderColor: AppColors.accentTeal,
-                    entryRadius: 2,
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: CircularProgressIndicator(
+                    value: data.isEmpty ? 0 : present / data.length,
+                    strokeWidth: 8,
+                    backgroundColor: Colors.white10,
+                    color: AppColors.accentTeal,
                   ),
-                ],
-                radarBorderData: const BorderSide(color: Colors.white10),
-                tickBorderData: const BorderSide(color: Colors.white24),
-                gridBorderData: const BorderSide(color: Colors.white24),
-                titleTextStyle: GoogleFonts.outfit(color: Colors.white24, fontSize: 8),
-              ),
+                ),
+                Text("${pct.toStringAsFixed(0)}%", style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
             ),
           ),
           const Spacer(),
+          Center(
+            child: Text("${data.length} total days", style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12)),
+          ),
         ],
       ),
-    ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1, end: 0);
+    ).animate().fadeIn(delay: 100.ms);
   }
 
   Widget _buildFeesWidget(Map<String, dynamic> fees) {
+    final data = fees['data'];
+    double pending = 0;
+    if (data is List) {
+      for (var f in data) {
+        if (f['status'] != 'paid') pending += (f['amount'] as num?)?.toDouble() ?? 0;
+      }
+    } else if (data is Map) {
+      pending = (data['pending_amount'] as num?)?.toDouble() ?? 0;
+    }
+
     return GlassCard(
       height: 180,
       padding: const EdgeInsets.all(16),
@@ -449,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text("Wallet/Fees", style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
           const Spacer(),
-          Text("₹12,500", style: GoogleFonts.outfit(color: AppColors.accentCream, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -1)),
+          Text("₹${pending.toStringAsFixed(0)}", style: GoogleFonts.outfit(color: AppColors.accentCream, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -1)),
           Text("Pending Balance", style: GoogleFonts.outfit(color: Colors.redAccent.withValues(alpha: 0.6), fontSize: 11)),
           const Spacer(),
           Container(
@@ -466,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1, end: 0);
+    ).animate().fadeIn(delay: 150.ms);
   }
 
   Widget _buildQuickActionGrid() {
@@ -496,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(label, style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
-    ).animate().scale(delay: 400.ms);
+    ).animate().fadeIn(delay: 200.ms);
   }
 
   Widget _buildLoadingState() {
