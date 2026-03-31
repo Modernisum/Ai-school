@@ -57,4 +57,37 @@ pub async fn start_background_workers(state: AppState) {
             sleep(Duration::from_secs(60)).await;
         }
     });
+
+    // Background loop for Orphaned File Cleanup (every 15 minutes)
+    let state_clone = state.clone();
+    tokio::spawn(async move {
+        loop {
+            // Wait first, then clean - so we don't delete files on startup
+            sleep(Duration::from_secs(15 * 60)).await;
+
+            println!("[Background Worker] Starting orphaned file cleanup...");
+            // get_orphaned_files takes hours, so pass fractional hours as minutes/60
+            // We use a custom query with minutes below via a separate approach
+            match state_clone.repos.storage.get_orphaned_files_minutes(15).await {
+                Ok(orphans) => {
+                    let count = orphans.len();
+                    for orphan in orphans {
+                        let id = orphan["id"].as_i64().unwrap_or(0) as i32;
+                        let path = orphan["file_path"].as_str().unwrap_or("");
+                        
+                        if !path.is_empty() {
+                            println!("[Cleanup] Deleting orphaned file: {}", path);
+                            let _ = std::fs::remove_file(path);
+                        }
+                        
+                        let _ = state_clone.repos.storage.delete_file_metadata(id).await;
+                    }
+                    if count > 0 {
+                        println!("[Background Worker] Cleanup completed. Cleared {} orphans.", count);
+                    }
+                }
+                Err(e) => eprintln!("[Background Worker] Error fetching orphaned files: {}", e),
+            }
+        }
+    });
 }

@@ -29,6 +29,32 @@ impl EmployeeService for PostgresEmployeeService {
             .add_employee(school_id, emp_data.clone())
             .await?;
 
+        // Roles and spaces assignment
+        if let Some(roles_array) = data["roles"].as_array() {
+            let mut role_to_spaces: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+            
+            for item in roles_array {
+                if let Some(space_id) = item["spaceId"].as_str() {
+                    if let Some(role_ids) = item["roleIds"].as_array() {
+                        for role_id_val in role_ids {
+                            if let Some(role_id) = role_id_val.as_str() {
+                                role_to_spaces.entry(role_id.to_string()).or_default().push(space_id.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+            
+            for (role_id, space_ids) in role_to_spaces {
+                let _ = self.repos.responsibility.bulk_assign_responsibilities(
+                    school_id,
+                    vec![employee_id.clone()],
+                    vec![role_id],
+                    space_ids,
+                ).await;
+            }
+        }
+
         // Audit Log
         self.repos.audit.log_action(
             school_id,
@@ -169,6 +195,8 @@ impl EmployeeService for PostgresEmployeeService {
         let old_emp = self.repos.employee.get_employee(school_id, employee_id).await?
             .ok_or_else(|| AppError::NotFound("Employee not found".to_string()))?;
 
+        self.validate_employee_data(school_id, data.clone()).await?;
+
         self.repos
             .employee
             .update_employee(school_id, employee_id, data.clone())
@@ -238,12 +266,14 @@ impl EmployeeService for PostgresEmployeeService {
     }
 
     async fn validate_employee_data(&self, school_id: &str, data: Value) -> AppResult<()> {
+        let exclude_eid = data["employeeId"].as_str();
+
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
                 // Reuse the check_aadhaar_exists from student repo as it's cross-table
-                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, None).await? {
-                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member".to_string()));
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, None, exclude_eid).await? {
+                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member in this or another school".to_string()));
                 }
             }
         }

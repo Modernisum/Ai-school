@@ -1,74 +1,291 @@
 use crate::AppState;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State, Multipart},
     response::IntoResponse,
     Json,
 };
 use serde::Deserialize;
 use serde_json::json;
-use uuid::Uuid;
+use tracing::{error, info};
+use crate::middleware::rls::TenantContext;
+use axum::Extension;
+
+const ALLOWED_MIME_TYPES: &[&str] = &[
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "application/pdf",
+    "video/mp4",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/zip",
+    "text/csv",
+    "text/plain",
+];
+
 
 #[derive(Deserialize)]
-pub struct SignedUrlRequest {
-    pub file_name: String,
-    pub content_type: String,
-    pub folder: Option<String>, // e.g. "materials", "complains"
+pub struct FileListQuery {
+    pub school_id: Option<String>,
+    pub user_id: Option<String>,
 }
 
-/// GET /api/storage/upload-url
-/// Returns a signed URL for direct client upload to GCS.
-pub async fn get_upload_url(
+/// POST /api/storage/upload
+/// Uploads a file via multipart form data.
+pub async fn upload_file(
     State(state): State<AppState>,
-    Query(payload): Query<SignedUrlRequest>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    mut multipart: Multipart,
 ) -> impl IntoResponse {
-    let folder = payload.folder.unwrap_or_else(|| "uploads".to_string());
-    let object_name = format!("{}/{}-{}", folder, Uuid::new_v4(), payload.file_name);
+    let mut uploaded_files = Vec::new();
 
-    match state
-        .storage
-        .generate_upload_url(&object_name, &payload.content_type)
-        .await
-    {
-        Ok(url) => Json(json!({
-            "success": true,
-            "uploadUrl": url,
-            "objectPath": object_name
-        }))
-        .into_response(),
+    while let Some(field) = multipart.next_field().await.unwrap_or(None) {
+        let field_name = field.name().unwrap_or("unknown").to_string();
+        
+        // We only process "file" fields, or fields that actually have a file_name
+        let file_name = field.file_name().unwrap_or("uploaded_file").to_string();
+        if file_name.is_empty() {
+            continue;
+        }
+
+        let content_type = field.content_type().unwrap_or("application/octet-stream").to_string();
+        
+        // Strict Security Validation: Mime Type Whitelist
+        if !ALLOWED_MIME_TYPES.contains(&content_type.as_str()) {
+            uploaded_files.push(json!({
+                "success": false,
+                "file_name": file_name,
+                "message": format!("File type '{}' is not allowed for security reasons.", content_type)
+            }));
+            continue;
+        }
+
+        // Default folder generic categorization
+        let folder = if field_name.contains("profile") { "profiles" } 
+        else if field_name.contains("material") { "materials" }
+        else if field_name.contains("complain") { "complains" }
+        else { "misc" };
+
+        match state.storage.process_upload(field, folder).await {
+            Ok((hash, relative_path, public_url, size, content_type)) => {
+                // --- Duplicate Detection: Redis-first, then DB ---
+                // 1. Check Redis cache (sub-millisecond)
+                let redis_key = format!("file:{}", hash);
+                let cached_url: Option<String> = if let Ok(mut redis_conn) = state.db.redis.get().await {
+                    deadpool_redis::redis::cmd("GET")
+                        .arg(&redis_key)
+                        .query_async(&mut redis_conn)
+                        .await
+                        .ok()
+                        .flatten()
+                } else {
+                    None
+                };
+
+                if let Some(existing_url) = cached_url {
+                    // Cache hit: file already exists, return cached URL instantly
+                    // DO NOT delete the file here. The relative_path is the permanent hashed path.
+                    uploaded_files.push(json!({
+                        "success": true,
+                        "url": existing_url,
+                        "file_name": file_name,
+                        "duplicate": true
+                    }));
+                    continue;
+                }
+
+                // 2. Fallback: Check DB (for first-time or cache-miss)
+                if let Ok(Some(existing_meta)) = state.repos.storage.get_file_by_hash(&hash).await {
+                    info!("File duplicate detected via DB. Using existing object.");
+                    // DO NOT delete the file here. The relative_path is the permanent hashed path.
+                    
+                    // Warm the Redis cache for future lookups
+                    let existing_url = existing_meta["public_url"].as_str().unwrap_or("").to_string();
+                    if let Ok(mut redis_conn) = state.db.redis.get().await {
+                        let _ = deadpool_redis::redis::cmd("SET")
+                            .arg(&redis_key)
+                            .arg(&existing_url)
+                            .arg("EX").arg(7 * 24 * 3600u64)
+                            .query_async::<_, ()>(&mut redis_conn).await;
+                    }
+
+                    uploaded_files.push(json!({
+                        "success": true,
+                        "file_id": existing_meta["id"],
+                        "url": existing_url,
+                        "file_name": file_name,
+                        "duplicate": true
+                    }));
+                    continue;
+                }
+
+                // Link directly to the TenantContext that invoked the upload
+                let db_payload = json!({
+                    "file_hash": hash,
+                    "school_id": tenant_ctx._school_id, 
+                    "user_id": tenant_ctx.admin_id,
+                    "user_type": if tenant_ctx._is_super_admin { "super_admin" } else { "user" },
+                    "file_name": file_name,
+                    "content_type": content_type,
+                    "file_size": size,
+                    "file_path": relative_path,
+                    "public_url": public_url
+                });
+
+                match state.repos.storage.save_file_metadata(db_payload).await {
+                    Ok(meta) => {
+                        let file_url = meta["public_url"].as_str().unwrap_or("").to_string();
+                        
+                        // Cache hash → url in Redis for sub-millisecond future lookups (7-day TTL)
+                        let redis_key = format!("file:{}", hash);
+                        if let Ok(mut redis_conn) = state.db.redis.get().await {
+                            let _ = deadpool_redis::redis::cmd("SET")
+                                .arg(&redis_key)
+                                .arg(&file_url)
+                                .arg("EX")
+                                .arg(7 * 24 * 3600u64)
+                                .query_async::<_, ()>(&mut redis_conn)
+                                .await;
+                        }
+
+                        uploaded_files.push(json!({
+                            "success": true,
+                            "file_id": meta["id"],
+                            "url": file_url,
+                            "file_name": file_name
+                        }));
+                    }
+                    Err(e) => {
+                        error!("Failed to save file metadata: {}", e);
+                        // cleanup the stranded file
+                        let _ = state.storage.delete_file(&relative_path).await;
+                        uploaded_files.push(json!({
+                            "success": false,
+                            "file_name": file_name,
+                            "message": "Database insert failed"
+                        }));
+                    }
+                }
+            }
+            Err(e) => {
+                error!("Storage engine failed to process upload: {}", e);
+                uploaded_files.push(json!({
+                    "success": false,
+                    "file_name": file_name,
+                    "message": e.to_string()
+                }));
+            }
+        }
+    }
+
+    if let Some(first_file) = uploaded_files.iter().find(|f| f["success"] == true) {
+        return Json(json!({
+            "url": first_file["url"]
+        })).into_response();
+    }
+
+    if uploaded_files.is_empty() {
+        return (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(json!({"success": false, "message": "No valid files found in request"})),
+        ).into_response();
+    }
+
+    (
+        axum::http::StatusCode::BAD_REQUEST,
+        Json(json!({
+            "success": false,
+            "results": uploaded_files
+        })),
+    ).into_response()
+}
+
+/// GET /api/storage/files
+pub async fn list_files(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Query(params): Query<FileListQuery>,
+) -> impl IntoResponse {
+    // If they aren't a super admin, strictly lock listing strictly to their school or their user ID
+    let school_filter = if tenant_ctx._is_super_admin { params.school_id.as_deref() } else { Some(tenant_ctx._school_id.as_str()) };
+    let user_filter = if tenant_ctx._is_super_admin { params.user_id.as_deref() } else { Some(tenant_ctx.admin_id.as_str()) };
+
+    match state.repos.storage.list_files(school_filter, user_filter).await {
+        Ok(files) => Json(json!({"success": true, "files": files})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        ).into_response(),
     }
 }
 
-/// GET /api/storage/download-url?path=folder/file
-pub async fn get_download_url(
+/// DELETE /api/storage/files/:id
+pub async fn delete_file(
     State(state): State<AppState>,
-    Query(params): Query<serde_json::Value>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(id): Path<i32>,
 ) -> impl IntoResponse {
-    let path = match params["path"].as_str() {
-        Some(p) => p,
-        None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                "Missing path parameter",
-            )
-                .into_response()
-        }
-    };
+    // Check ownership first
+    match state.repos.storage.get_file_metadata(id).await {
+        Ok(Some(meta)) => {
+            // Enforce Tenant Isolation for deletes
+            let file_school_id = meta["school_id"].as_str().unwrap_or("");
+            if !tenant_ctx._is_super_admin && file_school_id != tenant_ctx._school_id {
+                return (
+                    axum::http::StatusCode::FORBIDDEN,
+                    Json(json!({"success": false, "message": "Access Denied: You do not own this file"})),
+                ).into_response();
+            }
 
-    match state.storage.generate_download_url(path).await {
-        Ok(url) => Json(json!({
-            "success": true,
-            "downloadUrl": url
-        }))
-        .into_response(),
+            if let Some(file_path) = meta["file_path"].as_str() {
+                // Delete from disk
+                if let Err(e) = state.storage.delete_file(file_path).await {
+                    error!("Failed to delete file from disk: {}", e);
+                    // we still delete DB metadata or wait? Let's delete DB anyway to hide it.
+                }
+            }
+            
+            // Delete from DB
+            if let Err(e) = state.repos.storage.delete_file_metadata(id).await {
+                return (
+                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"success": false, "message": e.to_string()})),
+                ).into_response();
+            }
+
+            Json(json!({"success": true, "message": "File deleted"})).into_response()
+        }
+        Ok(None) => (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(json!({"success": false, "message": "File not found"})),
+        ).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        ).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct DeleteByUrlQuery {
+    pub url: String,
+}
+
+/// DELETE /api/storage/file-by-url
+pub async fn delete_file_by_url(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Query(params): Query<DeleteByUrlQuery>,
+) -> impl IntoResponse {
+    // Enforce Tenant Isolation: Only allow deletion if the file belongs to this school
+    match state.repos.storage.delete_file_by_url(&params.url, &tenant_ctx._school_id).await {
+        Ok(_) => Json(json!({"success": true, "message": "File reference removed"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
     }
 }

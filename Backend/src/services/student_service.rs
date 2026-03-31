@@ -431,8 +431,8 @@ impl StudentService for PostgresStudentService {
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
             if !aadhaar.trim().is_empty() {
-                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid).await? {
-                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member".to_string()));
+                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid, None).await? {
+                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member in this or another school".to_string()));
                 }
             }
         }
@@ -440,7 +440,7 @@ impl StudentService for PostgresStudentService {
         // 2. Phone Limit (Max 3 students)
         if let Some(phone) = data["contact"].as_str() {
             if !phone.trim().is_empty() {
-                let count = self.repos.student.count_phone_usage(school_id, phone, exclude_sid).await?;
+                let count = self.repos.student.count_phone_usage(school_id, phone, exclude_sid, None).await?;
                 if count >= 3 {
                     return Err(AppError::Validation("This Contact Number is already used by 3 or more student accounts".to_string()));
                 }
@@ -450,7 +450,7 @@ impl StudentService for PostgresStudentService {
         // 3. Email Limit (Max 3 students)
         if let Some(email) = data["email"].as_str() {
             if !email.trim().is_empty() {
-                let count = self.repos.student.count_email_usage(school_id, email, exclude_sid).await?;
+                let count = self.repos.student.count_email_usage(school_id, email, exclude_sid, None).await?;
                 if count >= 3 {
                     return Err(AppError::Validation("This Email Address is already used by 3 or more student accounts".to_string()));
                 }

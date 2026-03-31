@@ -150,7 +150,7 @@ impl RecoveryService for PostgresRecoveryService {
                         if !rollback.as_object().unwrap().is_empty() {
                             match entity_type.as_str() {
                                 "SPACE" => self.repos.resource.update_space(school_id, entity_id, rollback).await?,
-                                "MATERIAL" => self.repos.resource.update_material(school_id, entity_id, rollback).await?,
+                                "MATERIAL" => self.repos.resource.update_material(school_id, "SYSTEM_RECOVERY", entity_id, rollback).await?,
                                 "LEAVE" => {
                                    if let Some(status) = rollback["status"].as_str() {
                                        self.repos.leave.update_leave_status(school_id, entity_id, status).await?;

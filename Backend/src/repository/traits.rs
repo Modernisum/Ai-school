@@ -49,9 +49,9 @@ pub trait StudentRepository: Send + Sync {
     async fn generate_student_id(&self, school_id: &str) -> Result<String, AppError>;
     
     // Security & Validation
-    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str, exclude_sid: Option<&str>) -> Result<bool, AppError>;
-    async fn count_phone_usage(&self, school_id: &str, phone: &str, exclude_sid: Option<&str>) -> Result<i32, AppError>;
-    async fn count_email_usage(&self, school_id: &str, email: &str, exclude_sid: Option<&str>) -> Result<i32, AppError>;
+    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<bool, AppError>;
+    async fn count_phone_usage(&self, school_id: &str, phone: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<i32, AppError>;
+    async fn count_email_usage(&self, school_id: &str, email: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<i32, AppError>;
 
     // History & Rollback
     async fn add_history(&self, school_id: &str, student_id: &str, rev_no: i32, snapshot: Value, delta: Value) -> Result<(), AppError>;
@@ -338,6 +338,7 @@ pub trait ResourceRepository: Send + Sync {
     async fn update_material(
         &self,
         school_id: &str,
+        admin_id: &str,
         material_id: &str,
         data: Value,
     ) -> Result<(), AppError>;
@@ -377,7 +378,7 @@ pub trait ResourceRepository: Send + Sync {
     async fn add_event_summary(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_event(&self, school_id: &str, event_id: i32) -> Result<Option<Value>, AppError>;
     async fn get_materials(&self, school_id: &str) -> Result<JsonList, AppError>;
-    async fn get_spaces(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_spaces(&self, school_id: &str, category_id: Option<i32>) -> Result<JsonList, AppError>;
 
     async fn get_space_details(
         &self,
@@ -415,9 +416,26 @@ pub trait ResourceRepository: Send + Sync {
         employee_id: &str,
     ) -> Result<(), AppError>;
 
+    async fn remove_space_material(
+        &self,
+        school_id: &str,
+        space_id: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> Result<(), AppError>;
+
     async fn delete_announcement(&self, school_id: &str, announcement_id: i32) -> Result<(), AppError>;
+
     async fn delete_material(&self, school_id: &str, material_id: &str) -> Result<(), AppError>;
     async fn delete_event(&self, school_id: &str, event_id: i32) -> Result<(), AppError>;
+
+    async fn get_material_history(
+        &self,
+        school_id: &str,
+        material_id: &str,
+    ) -> Result<JsonList, AppError>;
+
+    async fn get_materials_dashboard(&self, school_id: &str) -> Result<Value, AppError>;
 }
 
 #[async_trait]
@@ -478,15 +496,30 @@ pub trait SchoolRepository: Send + Sync {
 
 #[async_trait]
 pub trait ResponsibilityRepository: Send + Sync {
-    async fn get_responsibilities(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_responsibilities(&self, school_id: &str, employee_type: Option<String>) -> Result<JsonList, AppError>;
 
     async fn add_responsibility(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
+
+    async fn assign_employees_with_spaces(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        assignments: Vec<(String, Vec<String>)>,
+    ) -> Result<(), AppError>;
 
     async fn assign_responsibility(
         &self,
         school_id: &str,
         employee_id: &str,
         responsibility_id: &str,
+    ) -> Result<(), AppError>;
+
+    async fn bulk_assign_responsibilities(
+        &self,
+        school_id: &str,
+        employee_ids: Vec<String>,
+        responsibility_ids: Vec<String>,
+        space_ids: Vec<String>,
     ) -> Result<(), AppError>;
 
     async fn remove_responsibility(
@@ -506,6 +539,8 @@ pub trait ResponsibilityRepository: Send + Sync {
         school_id: &str,
         employee_id: &str,
     ) -> Result<JsonList, AppError>;
+
+    async fn sync_subject_roles(&self, school_id: &str) -> Result<(), AppError>;
 }
 
 #[async_trait]
@@ -578,4 +613,17 @@ pub trait GlobalUserRepository: Send + Sync {
     async fn find_by_identifier(&self, ident: &str) -> Result<JsonList, AppError>;
     async fn sync_all_to_global(&self) -> Result<(), AppError>;
     async fn delete_user(&self, school_id: &str, user_id: &str, user_type: &str) -> Result<(), AppError>;
+}
+
+#[async_trait]
+pub trait StorageRepository: Send + Sync {
+    async fn save_file_metadata(&self, data: Value) -> Result<Value, AppError>;
+    async fn get_file_metadata(&self, id: i32) -> Result<Option<Value>, AppError>;
+    async fn get_file_by_hash(&self, file_hash: &str) -> Result<Option<Value>, AppError>;
+    async fn delete_file_metadata(&self, id: i32) -> Result<(), AppError>;
+    async fn delete_file_by_url(&self, url: &str, school_id: &str) -> Result<(), AppError>;
+    async fn mark_as_permanent(&self, url: &str) -> Result<(), AppError>;
+    async fn list_files(&self, school_id: Option<&str>, user_id: Option<&str>) -> Result<JsonList, AppError>;
+    async fn get_orphaned_files(&self, older_than_hours: i32) -> Result<JsonList, AppError>;
+    async fn get_orphaned_files_minutes(&self, older_than_minutes: i32) -> Result<JsonList, AppError>;
 }

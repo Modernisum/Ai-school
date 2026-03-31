@@ -15,7 +15,6 @@ pub async fn create_employee(
     Json(payload): Json<CreateEmployeeRequest>,
 ) -> impl IntoResponse {
     let emp_data = json!({
-        "employeeId": payload.employee_id,
         "name": payload.name,
         "fatherName": payload.father_name,
         "motherName": payload.mother_name,
@@ -31,12 +30,12 @@ pub async fn create_employee(
         "phone": payload.phone,
         "emergencyContact": payload.emergency_contact,
         "subject": payload.subject,
-        "department": payload.department,
         "address": payload.address,
         "temporaryAddress": payload.temporary_address,
         "experience": payload.experience,
         "education": payload.education,
         "aadhaarNumber": payload.aadhaar_number,
+        "roles": payload.roles,
     });
 
     match state

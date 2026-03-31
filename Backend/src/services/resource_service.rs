@@ -81,6 +81,10 @@ impl ResourceService for PostgresResourceService {
         Ok(self.repos.resource.get_materials(school_id).await?)
     }
 
+    async fn get_material(&self, school_id: &str, material_id: &str) -> AppResult<Option<Value>> {
+        Ok(self.repos.resource.get_material(school_id, material_id).await?)
+    }
+
     async fn update_material(
         &self,
         school_id: &str,
@@ -90,7 +94,7 @@ impl ResourceService for PostgresResourceService {
     ) -> AppResult<()> {
         self.repos
             .resource
-            .update_material(school_id, material_id, data.clone())
+            .update_material(school_id, admin_id, material_id, data.clone())
             .await?;
 
         let _ = self.repos.audit.log_action(
@@ -188,8 +192,8 @@ impl ResourceService for PostgresResourceService {
         Ok(res)
     }
 
-    async fn list_spaces(&self, school_id: &str) -> AppResult<Vec<Value>> {
-        Ok(self.repos.resource.get_spaces(school_id).await?)
+    async fn list_spaces(&self, school_id: &str, category_id: Option<i32>) -> AppResult<Vec<Value>> {
+        Ok(self.repos.resource.get_spaces(school_id, category_id).await?)
     }
 
     async fn update_space(
@@ -342,6 +346,14 @@ impl ResourceService for PostgresResourceService {
             serde_json::json!({ "employee_id": employee_id })
         ).await;
         Ok(())
+    }
+
+    async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value> {
+        Ok(self.repos.resource.get_materials_dashboard(school_id).await?)
+    }
+
+    async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>> {
+        Ok(self.repos.resource.get_material_history(school_id, material_id).await?)
     }
 }
 

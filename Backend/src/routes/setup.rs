@@ -54,10 +54,14 @@ pub async fn setup_school_handler(
                 }
             }
         }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = e.to_string();
+            println!("School setup failed: {}", msg);
+            (
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"success": false, "message": msg})),
+            )
+                .into_response()
+        }
     }
 }

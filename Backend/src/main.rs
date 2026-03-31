@@ -103,6 +103,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         backup_clone.run_auto_backup().await;
     });
 
+    // Start combined background workers (Analytics, Webhooks, Cleanup)
+    crate::background_jobs::start_background_workers(state.clone()).await;
+
     let app = routes::router::create_router(state);
 
 

@@ -26,7 +26,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
                 tc_number, contact, alternative_contact, email,
                 transport_enabled, transport_radius,
                 additional_subjects, admission_date, room_number,
-                enrolled_subjects, total_fees, student_type
+                enrolled_subjects, total_fees, student_type, profile_image_url
             ) VALUES (
                 $1,$2,$3,$4,$5,$6,'active',
                 $7,$8,$9,$10,$11,
@@ -34,7 +34,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
                 $16,$17,$18,$19,
                 $20,$21,
                 $22,$23,$24,
-                $25, $26, $27
+                $25, $26, $27, $28
             )",
         )
         .bind(data["studentId"].as_str())
@@ -64,11 +64,17 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         .bind(data["enrolledSubjects"].clone())
         .bind(data["totalFees"].as_f64().unwrap_or(0.0))
         .bind(data["studentType"].as_str())
+        .bind(data["profileImageUrl"].as_str())
         .execute(&mut *conn)
         .await?;
 
-        // Add initial history (Revision 1)
-        let _ = self.add_history(school_id, data["studentId"].as_str().unwrap_or(""), 1, data.clone(), serde_json::json!({"action": "created"})).await;
+        // Mark profile image as permanent if exists
+        if let Some(url) = data["profileImageUrl"].as_str() {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&mut *conn)
+                .await?;
+        }
 
         Ok(data)
     }
@@ -76,7 +82,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
     async fn get_students(&self, school_id: &str) -> Result<JsonList, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
-            "SELECT student_id, name, class_name, roll_number, section, status, created_at, student_type 
+            "SELECT student_id, name, class_name, roll_number, section, status, created_at, student_type, profile_image_url
              FROM students WHERE school_id = $1"
         )
             .bind(school_id)
@@ -92,6 +98,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
                 "status": r.get::<String, _>("status"),
                 "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
                 "studentType": r.get::<Option<String>, _>("student_type"),
+                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
             })
         }).collect())
     }
@@ -153,6 +160,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
                 "studentType": r.get::<Option<String>, _>("student_type"),
                 "enrolledSubjects": r.get::<Option<Value>, _>("enrolled_subjects").unwrap_or(json!([])),
                 "totalFees": r.get::<Option<bigdecimal::BigDecimal>, _>("total_fees").map(|d| d.to_string()).unwrap_or_else(|| "0.00".to_string()),
+                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
             })
         }))
     }
@@ -164,6 +172,15 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        // 1. Get current profile_image_url for cleanup
+        let old_photo: Option<String> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
+            .bind(school_id)
+            .bind(student_id)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        // 2. Perform the update
         sqlx::query(
             "UPDATE students SET 
                 name = COALESCE($1, name), 
@@ -190,8 +207,9 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
                 room_number = COALESCE($22, room_number),
                 enrolled_subjects = COALESCE($23, enrolled_subjects),
                 total_fees = COALESCE($24, total_fees),
-                student_type = COALESCE($25, student_type)
-            WHERE school_id = $26 AND student_id = $27",
+                student_type = COALESCE($25, student_type),
+                profile_image_url = COALESCE($26, profile_image_url)
+            WHERE school_id = $27 AND student_id = $28",
         )
         .bind(data["name"].as_str())
         .bind(data["rollNumber"].as_i64().map(|v| v as i32))
@@ -218,17 +236,61 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         .bind(data["enrolledSubjects"].clone())
         .bind(data["totalFees"].as_f64())
         .bind(data["studentType"].as_str())
+        .bind(data["profileImageUrl"].as_str())
         .bind(school_id)
         .bind(student_id)
         .execute(&mut *conn)
         .await?;
+
+        // 3. Handle photo transitions
+        let new_photo = data["profileImageUrl"].as_str();
+        
+        // Mark new photo as permanent
+        if let Some(url) = new_photo {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&mut *conn)
+                .await?;
+        }
+
+        // Mark old photo as orphaned if it was changed
+        if let Some(old_url) = old_photo {
+            if let Some(new_url) = new_photo {
+                if old_url != new_url {
+                    sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                        .bind(old_url)
+                        .execute(&mut *conn)
+                        .await?;
+                }
+            } else if data["profileImageUrl"].is_null() {
+                 // explicitly set to null (removal)
+                 sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                    .bind(old_url)
+                    .execute(&mut *conn)
+                    .await?;
+            }
+        }
+        
         Ok(())
     }
 
     async fn delete_student(&self, school_id: &str, student_id: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // 1. Get photo for cleanup
+        let photo: Option<String> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
+            .bind(school_id).bind(student_id).fetch_optional(&mut *conn).await?;
+
+        // 2. Delete student
         sqlx::query("DELETE FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id).bind(student_id).execute(&mut *conn).await?;
+
+        // 3. Orphan the photo
+        if let Some(url) = photo {
+             sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                .bind(url).execute(&mut *conn).await?;
+        }
+        
         Ok(())
     }
 
@@ -252,47 +314,47 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         Ok(format!("S{:06}", next_val))
     }
 
-    async fn check_aadhaar_exists(&self, school_id: &str, aadhaar: &str, exclude_sid: Option<&str>) -> Result<bool, AppError> {
-        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+    async fn check_aadhaar_exists(&self, _school_id: &str, aadhaar: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<bool, AppError> {
+        let mut conn = self.client.acquire_tenant_connection("public").await?;
         let row = sqlx::query(
-            "SELECT EXISTS (SELECT 1 FROM students WHERE school_id = $1 AND aadhaar_number = $2 AND student_id != COALESCE($3, '')) OR 
-                    EXISTS (SELECT 1 FROM employees WHERE school_id = $1 AND aadhaar_number = $2)"
+            "SELECT EXISTS (SELECT 1 FROM students WHERE REPLACE(aadhaar_number, ' ', '') = REPLACE($1, ' ', '') AND student_id != COALESCE($2, '')) OR 
+                    EXISTS (SELECT 1 FROM employees WHERE REPLACE(aadhaar_number, ' ', '') = REPLACE($1, ' ', '') AND employee_id != COALESCE($3, ''))"
         )
-        .bind(school_id)
         .bind(aadhaar)
         .bind(exclude_sid)
+        .bind(exclude_eid)
         .fetch_one(&mut *conn)
         .await?;
         Ok(row.get(0))
     }
 
-    async fn count_phone_usage(&self, school_id: &str, phone: &str, exclude_sid: Option<&str>) -> Result<i32, AppError> {
-        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+    async fn count_phone_usage(&self, _school_id: &str, phone: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<i32, AppError> {
+        let mut conn = self.client.acquire_tenant_connection("public").await?;
         let row = sqlx::query(
             "SELECT (
-                (SELECT COUNT(*) FROM students WHERE school_id = $1 AND (contact = $2 OR alternative_contact = $2) AND student_id != COALESCE($3, '')) +
-                (SELECT COUNT(*) FROM employees WHERE school_id = $1 AND contact = $2)
+                (SELECT COUNT(*) FROM students WHERE REPLACE(REPLACE(contact, ' ', ''), '-', '') = REPLACE(REPLACE($1, ' ', ''), '-', '') AND student_id != COALESCE($2, '')) +
+                (SELECT COUNT(*) FROM employees WHERE REPLACE(REPLACE(contact, ' ', ''), '-', '') = REPLACE(REPLACE($1, ' ', ''), '-', '') AND employee_id != COALESCE($3, ''))
              )"
         )
-        .bind(school_id)
         .bind(phone)
         .bind(exclude_sid)
+        .bind(exclude_eid)
         .fetch_one(&mut *conn)
         .await?;
         Ok(row.get::<i64, _>(0) as i32)
     }
 
-    async fn count_email_usage(&self, school_id: &str, email: &str, exclude_sid: Option<&str>) -> Result<i32, AppError> {
-        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+    async fn count_email_usage(&self, _school_id: &str, email: &str, exclude_sid: Option<&str>, exclude_eid: Option<&str>) -> Result<i32, AppError> {
+        let mut conn = self.client.acquire_tenant_connection("public").await?;
         let row = sqlx::query(
             "SELECT (
-                (SELECT COUNT(*) FROM students WHERE school_id = $1 AND email = $2 AND student_id != COALESCE($3, '')) +
-                (SELECT COUNT(*) FROM employees WHERE school_id = $1 AND email = $2)
+                (SELECT COUNT(*) FROM students WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND student_id != COALESCE($2, '')) +
+                (SELECT COUNT(*) FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND employee_id != COALESCE($3, ''))
              )"
         )
-        .bind(school_id)
         .bind(email)
         .bind(exclude_sid)
+        .bind(exclude_eid)
         .fetch_one(&mut *conn)
         .await?;
         Ok(row.get::<i64, _>(0) as i32)

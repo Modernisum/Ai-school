@@ -31,7 +31,6 @@ pub mod spaces;
 pub mod storage;
 pub mod students;
 pub mod search;
-pub mod subjects;
 pub mod task;
 pub mod timetable;
 pub mod topic;

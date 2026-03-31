@@ -364,11 +364,17 @@ impl DbClient {
         sqlx::query(
             "ALTER TABLE spaces 
              ADD COLUMN IF NOT EXISTS space_id TEXT,
+             ADD COLUMN IF NOT EXISTS name TEXT,
              ADD COLUMN IF NOT EXISTS space_name TEXT,
              ADD COLUMN IF NOT EXISTS space_category TEXT,
              ADD COLUMN IF NOT EXISTS space_number TEXT,
              ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'"
+        ).execute(&pool).await?;
+
+        // Ensure category + number is unique per school
+        sqlx::query(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_spaces_category_number_unique ON spaces (school_id, space_category, space_number)"
         ).execute(&pool).await?;
         
         // Ensure id has a default if it was created as null-violating VARCHAR
@@ -443,22 +449,49 @@ impl DbClient {
         // 3. Materials Table
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS materials (
-                id TEXT PRIMARY KEY,
+                id TEXT NOT NULL,
                 school_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 quantity INTEGER DEFAULT 0,
                 unit_price NUMERIC(15, 2) DEFAULT 0.00,
+                unit TEXT,
                 attachment_path TEXT,
                 extra_unit INTEGER DEFAULT 0,
                 need_unit INTEGER DEFAULT 0,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (school_id, id)
             )"
         ).execute(&pool).await?;
 
         sqlx::query(
+            "DO $$ 
+             BEGIN 
+                -- If it was created as a single-column primary key, drop it and recreate as composite
+                IF EXISTS (
+                    SELECT 1 FROM pg_constraint 
+                    WHERE conname = 'materials_pkey' 
+                    AND (SELECT count(*) FROM pg_attribute WHERE attrelid = 'materials'::regclass AND attnum = ANY(conkey)) = 1
+                ) THEN
+                    ALTER TABLE materials DROP CONSTRAINT materials_pkey CASCADE;
+                    ALTER TABLE materials ADD PRIMARY KEY (school_id, id);
+                END IF;
+             END $$;"
+        ).execute(&pool).await?;
+
+        sqlx::query(
             "ALTER TABLE materials
+             ADD COLUMN IF NOT EXISTS description TEXT,
+             ADD COLUMN IF NOT EXISTS unit TEXT,
              ADD COLUMN IF NOT EXISTS extra_unit INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS need_unit INTEGER DEFAULT 0"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "DROP INDEX IF EXISTS idx_materials_name_unique"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_materials_school_name_unique ON materials (school_id, name)"
         ).execute(&pool).await?;
 
         // 4. Space Materials (Assignments)
@@ -467,11 +500,24 @@ impl DbClient {
                 id SERIAL PRIMARY KEY,
                 school_id TEXT NOT NULL,
                 space_id TEXT NOT NULL,
+                material_id TEXT,
                 material_name TEXT NOT NULL,
                 quantity INTEGER DEFAULT 0,
                 unit TEXT,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                unit_price NUMERIC(15, 2) DEFAULT 0.00,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, space_id, material_name)
             )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE space_materials
+             ADD COLUMN IF NOT EXISTS material_id TEXT,
+             ADD COLUMN IF NOT EXISTS unit_price NUMERIC(15, 2) DEFAULT 0.00"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_space_materials_composite_unique ON space_materials (school_id, space_id, material_name)"
         ).execute(&pool).await?;
 
         // 5. Space Employees (Assignments)
@@ -500,6 +546,28 @@ impl DbClient {
             )"
         ).execute(&pool).await?;
 
+        // 6a. Material History (Audit Trail for purchases, sales, borrows)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS material_history (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                material_id TEXT NOT NULL,
+                action_type TEXT NOT NULL, -- PURCHASE, SALE, BORROW, RETURN
+                quantity INTEGER NOT NULL,
+                unit_price NUMERIC(15, 2),
+                total_amount NUMERIC(15, 2),
+                actor_id TEXT, -- Admin or user who performed the action
+                space_id TEXT, -- Relevant for BORROW/RETURN
+                notes TEXT,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_material_history_composite ON material_history (school_id, material_id, created_at DESC)")
+            .execute(&pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_material_history_action ON material_history (school_id, action_type)")
+            .execute(&pool).await?;
+
         // 7. Space Categories
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS space_categories (
@@ -518,6 +586,59 @@ impl DbClient {
         sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_space_categories_school_name ON space_categories (school_id, name)")
             .execute(&pool).await?;
 
+        println!("Ensuring space requirement tracking tables exist...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS space_requirements (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                responsibility_id VARCHAR(255) NOT NULL,
+                required_count INT NOT NULL DEFAULT 1,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, space_id, responsibility_id)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_req_lookup ON space_requirements (school_id, space_id)")
+            .execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS space_material_requirements (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                space_id VARCHAR(255) NOT NULL,
+                material_name VARCHAR(255) NOT NULL,
+                required_count INTEGER DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, space_id, material_name)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_mat_req_lookup ON space_material_requirements(school_id, space_id)")
+            .execute(&pool).await?;
+
+        println!("Expanding responsibilities table with metadata support...");
+        sqlx::query(
+            "ALTER TABLE responsibilities
+             ADD COLUMN IF NOT EXISTS space_id VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS employee_type VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS monthly_price DECIMAL(12, 2) DEFAULT 0.00,
+             ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}',
+             ADD COLUMN IF NOT EXISTS per_day_price DECIMAL(12, 2) DEFAULT 0.00,
+             ADD COLUMN IF NOT EXISTS time_period INTEGER DEFAULT 0"
+        ).execute(&pool).await?;
+
+        println!("Expanding employee_responsibilities table with space_ids support...");
+        sqlx::query(
+            "ALTER TABLE employee_responsibilities
+             ADD COLUMN IF NOT EXISTS space_ids JSONB DEFAULT '[]'::jsonb"
+        ).execute(&pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_responsibilities_space_id ON responsibilities(space_id)")
+            .execute(&pool).await?;
+        
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_responsibilities_school_id ON responsibilities(school_id)")
+            .execute(&pool).await?;
 
         // 8. Announcements (RLS optimized)
         sqlx::query(
@@ -693,8 +814,53 @@ impl DbClient {
              END $$;"
         ).execute(&pool).await?;
 
+        println!("Creating app_files table for local storage tracking...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS app_files (
+                id SERIAL PRIMARY KEY,
+                file_hash VARCHAR(64) UNIQUE NOT NULL,
+                school_id VARCHAR(50),
+                user_id VARCHAR(50),
+                user_type VARCHAR(20),
+                file_name VARCHAR(255) NOT NULL,
+                content_type VARCHAR(100),
+                file_size BIGINT,
+                file_path TEXT NOT NULL,
+                public_url TEXT NOT NULL,
+                is_permanent BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )"
+        ).execute(&pool).await?;
+
+        // Migration: Ensure is_permanent column exists
+        sqlx::query("ALTER TABLE app_files ADD COLUMN IF NOT EXISTS is_permanent BOOLEAN DEFAULT FALSE")
+            .execute(&pool).await?;
+
+        // Add index for cleanup performance
+        sqlx::query("CREATE INDEX IF NOT EXISTS app_files_permanent_idx ON app_files (is_permanent, created_at)")
+            .execute(&pool).await?;
+        
+        // Add indexes for quick lookups
+        sqlx::query("CREATE INDEX IF NOT EXISTS app_files_school_idx ON app_files (school_id)").execute(&pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS app_files_user_idx ON app_files (user_id)").execute(&pool).await?;
 
 
+        println!("Updating students and employees tables with profile image support...");
+        sqlx::query("ALTER TABLE students ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
+            .execute(&pool)
+            .await?;
+        sqlx::query("ALTER TABLE employees ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
+            .execute(&pool)
+            .await?;
+
+        println!("Updating schools and super_admin tables with image support...");
+        sqlx::query("ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_logo_url TEXT")
+            .execute(&pool)
+            .await?;
+        sqlx::query("ALTER TABLE super_admin ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
+            .execute(&pool)
+            .await?;
 
         println!("Connecting to Redis...");
 

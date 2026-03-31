@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use serde_json::{json, Value};
 use sqlx::Row;
 use std::sync::Arc;
+use rand;
 
 pub struct PostgresAcademicRepository {
     pub client: Arc<DbClient>,
@@ -171,8 +172,8 @@ impl crate::repository::traits::AcademicRepository for PostgresAcademicRepositor
     async fn generate_subject_id(&self, subject_name: &str) -> Result<String, AppError> {
         let clean = subject_name.replace(' ', "");
         let prefix = clean[..std::cmp::min(4, clean.len())].to_uppercase();
-        let random = rand::random::<u32>() % 1000;
-        Ok(format!("{}{:03}", prefix, random))
+        let random = rand::random::<u32>() % 90000 + 10000;
+        Ok(format!("{}{:05}", prefix, random))
     }
 
     async fn get_subjects(&self, school_id: &str) -> Result<JsonList, AppError> {

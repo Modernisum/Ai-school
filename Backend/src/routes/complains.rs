@@ -19,9 +19,8 @@ pub async fn list_complains(
     // Generate signed URLs for attachments
     for item in list.iter_mut() {
         if let Some(path) = item["attachment_path"].as_str() {
-            if let Ok(url) = state.storage.generate_download_url(path).await {
-                item["attachmentUrl"] = json!(url);
-            }
+            let url = state.storage.get_public_url(path);
+            item["attachmentUrl"] = json!(url);
         }
     }
     Ok(Json(json!({"success": true, "data": list})))

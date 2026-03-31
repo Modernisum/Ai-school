@@ -1,20 +1,45 @@
+use crate::middleware;
+use crate::routes;
+use crate::AppState;
 use axum::{
     extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
     Router,
 };
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use std::env;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
-use crate::AppState;
-use crate::routes;
-use crate::middleware;
+
+async fn upload_auth_middleware(request: Request, next: Next) -> Result<Response, StatusCode> {
+    // Allow if UPLOAD_TOKEN environment variable is not set (development)
+    if let Ok(expected_token) = env::var("UPLOAD_TOKEN") {
+        // Extract token from query parameter "token"
+        let token = request
+            .uri()
+            .query()
+            .and_then(|q| {
+                q.split('&')
+                    .find(|pair| pair.starts_with("token="))
+                    .map(|pair| pair.trim_start_matches("token="))
+            })
+            .unwrap_or("");
+        if token != expected_token {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    }
+    Ok(next.run(request).await)
+}
 
 pub fn create_router(state: AppState) -> Router {
-    // CORS Layer
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    // CORS Layer — created as a factory so we can use it for both the main app and static routes
+    let make_cors = || {
+        CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods(Any)
+            .allow_headers(Any)
+    };
 
     let app = Router::new()
         .route(
@@ -36,12 +61,28 @@ pub fn create_router(state: AppState) -> Router {
             Router::new()
                 // Auth
                 .route("/login", post(crate::super_admin::routes::admin_login))
-                .route("/update-credentials", post(crate::super_admin::routes::update_admin_credentials))
+                .route(
+                    "/profile",
+                    get(crate::super_admin::routes::get_admin_profile),
+                )
+                .route(
+                    "/update-credentials",
+                    post(crate::super_admin::routes::update_admin_credentials),
+                )
                 // Dashboard Stats
-                .route("/stats", get(crate::super_admin::routes::get_admin_dashboard_stats))
-                .route("/stats/advanced", get(crate::super_admin::routes::get_admin_stats_advanced))
+                .route(
+                    "/stats",
+                    get(crate::super_admin::routes::get_admin_dashboard_stats),
+                )
+                .route(
+                    "/stats/advanced",
+                    get(crate::super_admin::routes::get_admin_stats_advanced),
+                )
                 // Churn Radar
-                .route("/churn-radar", get(crate::super_admin::routes::get_churn_radar))
+                .route(
+                    "/churn-radar",
+                    get(crate::super_admin::routes::get_churn_radar),
+                )
                 // Promos
                 .route(
                     "/promos",
@@ -125,7 +166,13 @@ pub fn create_router(state: AppState) -> Router {
                     axum::routing::patch(crate::super_admin::routes::resolve_support_request),
                 )
                 // Global Backup
-                .route("/backup", post(crate::super_admin::routes::manual_backup)),
+                .route("/backup", post(crate::super_admin::routes::manual_backup))
+                // Global Notifications
+                .route(
+                    "/notify/global",
+                    post(crate::super_admin::routes::send_global_notification)
+                        .delete(crate::super_admin::routes::clear_global_notification),
+                ),
         )
         // ── Geo Data Routes ────────────────────────────────────────────────────
         .nest(
@@ -142,14 +189,45 @@ pub fn create_router(state: AppState) -> Router {
             "/api/school/:schoolId/notification",
             get(crate::super_admin::routes::get_school_notification)
                 .delete(crate::super_admin::routes::clear_school_notification),
+        )
+        .route(
+            "/api/global/notification",
+            get(crate::super_admin::routes::get_global_notification),
         );
 
-    app
+    let app = app
         // Auth Routes
         .route("/api/auth/login", post(routes::auth::login_handler))
-        .route("/api/auth/verify-otp-global", post(routes::auth::verify_otp_global_handler))
-        .route("/api/auth/sync-all", post(routes::auth::sync_global_handler))
+        .route(
+            "/api/auth/verify-otp-global",
+            post(routes::auth::verify_otp_global_handler),
+        )
+        .route(
+            "/api/auth/sync-all",
+            post(routes::auth::sync_global_handler),
+        )
         .route("/api/search/global", get(routes::search::global_search))
+        // ── Mobile App API ────────────────────────────────────────────────────
+        .route(
+            "/api/:schoolId/mobile/login",
+            post(routes::mobile::mobile_login),
+        )
+        .route(
+            "/api/:schoolId/mobile/verify",
+            post(routes::mobile::mobile_verify),
+        )
+        .route(
+            "/api/:schoolId/mobile/select-profile",
+            post(routes::mobile::mobile_select_profile),
+        )
+        .route(
+            "/api/:schoolId/mobile/fees/:studentId",
+            get(routes::mobile::get_student_fee_mobile),
+        )
+        .route(
+            "/api/:schoolId/mobile/order",
+            post(routes::mobile::create_mobile_order),
+        )
         // Mobile Auth Routes
         .nest(
             "/api/complains",
@@ -240,17 +318,16 @@ pub fn create_router(state: AppState) -> Router {
         .nest(
             "/api/storage",
             Router::new()
-                .route("/upload-url", get(routes::storage::get_upload_url))
-                .route("/download-url", get(routes::storage::get_download_url)),
+                .route("/upload", post(routes::storage::upload_file))
+                .route("/files", get(routes::storage::list_files))
+                .route("/files/:id", delete(routes::storage::delete_file))
+                .route("/file-by-url", delete(routes::storage::delete_file_by_url)),
         )
         // User Routes
         .nest(
             "/api/students",
             Router::new()
-                .route(
-                    "/:schoolId",
-                    post(routes::students::create_student),
-                )
+                .route("/:schoolId", post(routes::students::create_student))
                 .route(
                     "/:schoolId/validate",
                     post(routes::students::validate_student),
@@ -268,10 +345,7 @@ pub fn create_router(state: AppState) -> Router {
                     "/:schoolId/studentIds",
                     get(routes::students::list_student_ids),
                 )
-                .route(
-                    "/:schoolId/:studentId",
-                    get(routes::students::get_student),
-                )
+                .route("/:schoolId/:studentId", get(routes::students::get_student))
                 .route(
                     "/:schoolId/:studentId",
                     put(routes::students::update_student),
@@ -300,10 +374,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest(
             "/api/employees",
             Router::new()
-                .route(
-                    "/:schoolId",
-                    post(routes::employees::create_employee),
-                )
+                .route("/:schoolId", post(routes::employees::create_employee))
                 .route(
                     "/:schoolId/validate",
                     post(routes::employees::validate_employee),
@@ -312,10 +383,7 @@ pub fn create_router(state: AppState) -> Router {
                     "/:schoolId/bulk",
                     post(routes::employees::bulk_import_employees),
                 )
-                .route(
-                    "/:schoolId",
-                    get(routes::employees::list_employees),
-                )
+                .route("/:schoolId", get(routes::employees::list_employees))
                 .route(
                     "/:schoolId/:employeeId",
                     get(routes::employees::get_employee),
@@ -337,10 +405,20 @@ pub fn create_router(state: AppState) -> Router {
                     post(routes::emppay::add_bonus),
                 )
                 .route("/:schoolId/:employeeId/aid", post(routes::emppay::add_aid))
-                .route("/:schoolId/:employeeId/close-month", post(routes::emppay::auto_close_month))
-                .route("/:schoolId/employees/:employeeId/salary", post(routes::emppay::set_base_salary)),
+                .route(
+                    "/:schoolId/:employeeId/close-month",
+                    post(routes::emppay::auto_close_month),
+                )
+                .route(
+                    "/:schoolId/employees/:employeeId/salary",
+                    post(routes::emppay::set_base_salary),
+                ),
         )
         // Space/Material Routes
+        .route(
+            "/api/spaces/:schoolId/spaces",
+            get(routes::spaces::list_spaces).post(routes::spaces::create_space),
+        )
         .route(
             "/api/spaces/:schoolId/spaces/bulk",
             axum::routing::post(routes::spaces::bulk_import_spaces),
@@ -393,14 +471,6 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/api/class/:schoolId/classes",
             get(routes::class::list_classes),
-        )
-        .route(
-            "/api/subjects/:schoolId",
-            post(routes::subjects::create_subject),
-        )
-        .route(
-            "/api/subjects/:schoolId",
-            get(routes::subjects::list_subjects),
         )
         .route(
             "/api/exams/:schoolId",
@@ -527,11 +597,25 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/events/:schoolId", post(routes::events::create_event))
         .route(
             "/api/materials/:schoolId",
-            get(routes::materials::list_materials),
+            get(routes::materials::list_materials).post(routes::materials::create_material),
+        )
+        .route(
+            "/api/materials/:schoolId/:materialId",
+            get(routes::materials::get_material)
+                .patch(routes::materials::update_material)
+                .delete(routes::materials::delete_material),
+        )
+        .route(
+            "/api/materials/:schoolId/dashboard",
+            get(routes::materials::materials_dashboard),
         )
         .route(
             "/api/materials/:schoolId/:materialId/buy",
             post(routes::materials::buy_material),
+        )
+        .route(
+            "/api/materials/:schoolId/:materialId/history",
+            get(routes::materials::get_material_history),
         )
         .route("/api/award/:schoolId", get(routes::award::list_awards))
         .route(
@@ -557,6 +641,14 @@ pub fn create_router(state: AppState) -> Router {
                     "/:schoolId",
                     get(routes::responsibility::list_responsibilities)
                         .post(routes::responsibility::create_responsibility),
+                )
+                .route(
+                    "/:schoolId/sync",
+                    post(routes::responsibility::sync_subject_roles),
+                )
+                .route(
+                    "/:schoolId/bulk-assign",
+                    post(routes::responsibility::bulk_assign_responsibility),
                 )
                 .route(
                     "/:schoolId/employees/:employeeId/responsibilities",
@@ -620,10 +712,6 @@ pub fn create_router(state: AppState) -> Router {
             "/api/setup/school",
             post(routes::setup::setup_school_handler),
         )
-        .route(
-            "/api/spaces/:schoolId/spaces",
-            get(routes::spaces::list_spaces).post(routes::spaces::create_space),
-        )
         .route("/api/task/:schoolId", get(routes::task::list_tasks))
         .nest(
             "/api/ai",
@@ -633,7 +721,10 @@ pub fn create_router(state: AppState) -> Router {
             "/api/ocr-routes",
             Router::new().route("/extract", post(routes::ocr::extract_text)),
         )
-        .layer(axum::middleware::from_fn_with_state(state.clone(), middleware::rls::rls_middleware))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::rls::rls_middleware,
+        ))
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024)) // 50MB limit for uploads
         .layer(
             TraceLayer::new_for_http()
@@ -647,8 +738,18 @@ pub fn create_router(state: AppState) -> Router {
                         uri = %request.uri(),
                     )
                 })
-                .on_response(tower_http::trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
+                .on_response(
+                    tower_http::trace::DefaultOnResponse::new().level(tracing::Level::INFO),
+                ),
         )
-        .layer(cors)
-        .with_state(state)
+        .layer(make_cors());
+
+    // Merge public static file serving for /uploads — no auth required
+    let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
+    let static_router = Router::new()
+        .nest_service("/uploads", ServeDir::new(upload_dir))
+        .layer(axum::middleware::from_fn(upload_auth_middleware))
+        .layer(make_cors());
+
+    app.merge(static_router).with_state(state)
 }

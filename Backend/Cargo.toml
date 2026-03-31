@@ -13,7 +13,7 @@ path = "src/schema_check.rs"
 
 [features]
 default = []
-ocr = ["image", "candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub", "safetensors"]
+ocr = ["candle-core", "candle-nn", "candle-transformers", "tokenizers", "hf-hub", "safetensors"]
 
 [dependencies]
 tokio = { version = "1.32", features = ["full"] }
@@ -33,7 +33,7 @@ async-trait = "0.1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls"] }
 getrandom = { version = "0.2", features = ["js"] } # Pin to 0.2 to avoid 0.3+ issues
 base64 = "0.21"
-image = { version = "0.24", optional = true }
+image = "0.24"
 candle-core = { version = "0.8.4", optional = true }
 candle-nn = { version = "0.8.4", optional = true }
 candle-transformers = { version = "0.8.4", optional = true }
@@ -55,8 +55,6 @@ hmac = "0.12.1"
 sha2 = "0.10.9"
 tokio-stream = "0.1.18"
 futures-util = "0.3.32"
-google-cloud-storage = "0.22.0"
-google-cloud-auth = "0.16.0"
 itertools = "0.14.0"
 async-stream = "0.3"
 thiserror = "2.0.18"

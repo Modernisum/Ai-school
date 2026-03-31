@@ -15,13 +15,22 @@ impl AuthRepository for PostgresAuthRepository {
     async fn create_school(&self, data: Value) -> Result<(), Box<dyn Error + Send + Sync>> {
         let id_str = data["id"].as_str().unwrap_or("").to_string();
         let name_str = data["schoolName"].as_str().unwrap_or("").to_string();
+        let logo_url = data["schoolLogoUrl"].as_str().map(|s| s.to_string());
 
-        sqlx::query("INSERT INTO schools (school_id, school_name, data) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO schools (school_id, school_name, school_logo_url, data) VALUES ($1, $2, $3, $4)")
             .bind(id_str)
             .bind(name_str)
+            .bind(&logo_url)
             .bind(data)
             .execute(&self.client.pool)
             .await?;
+        
+        if let Some(url) = logo_url {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&self.client.pool)
+                .await?;
+        }
         Ok(())
     }
 
@@ -135,7 +144,7 @@ impl AuthRepository for PostgresAuthRepository {
     async fn generate_school_code(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         loop {
             let code = format!("SCH{:04}", rand::random::<u32>() % 10000);
-            let exists: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM schools WHERE school_id = $1)")
+            let exists: (bool,) = sqlx::query_as("SELECT EXISTS(SELECT 1 FROM schools WHERE data->>'schoolCode' = $1)")
                 .bind(&code)
                 .fetch_one(&self.client.pool)
                 .await?;

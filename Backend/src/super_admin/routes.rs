@@ -2,13 +2,14 @@ use crate::super_admin::service::AdminService;
 use crate::AppState;
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::{Path, State, Query},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
 use sqlx::Row;
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 // ─── Helper: extract and verify admin token ───────────────────────────────────
@@ -66,6 +67,27 @@ macro_rules! err_json {
         )
             .into_response()
     };
+}
+
+pub async fn get_admin_profile(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    let username = match extract_admin_token(&headers) {
+        Some(token) => {
+             use base64::{engine::general_purpose, Engine as _};
+             let decoded = general_purpose::STANDARD.decode(token).unwrap_or_default();
+             let s = String::from_utf8(decoded).unwrap_or_default();
+             s.split(':').next().unwrap_or("").to_string()
+        }
+        None => "".to_string(),
+    };
+    
+    match svc.get_admin_profile(&username).await {
+        Ok(data) => ok_json!(data),
+        Err(e) => err_json!(e),
+    }
 }
 
 // ─── Admin Login ──────────────────────────────────────────────────────────────
@@ -135,6 +157,7 @@ pub async fn update_admin_credentials(
             current_password,
             new_username,
             new_password,
+            payload["profileImageUrl"].as_str().map(|s| s.to_string()),
         )
         .await
     {
@@ -152,11 +175,30 @@ pub async fn update_admin_credentials(
 pub async fn list_all_schools(
     headers: HeaderMap,
     State(state): State<AppState>,
+    Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
     let svc = require_admin!(headers, state);
+    let simple = params.get("simple").map(|v| v == "true").unwrap_or(false);
+
     match svc.list_all_schools().await {
-        Ok(data) => ok_json!(data),
-        Err(e) => err_json!(e),
+        Ok(data) => {
+            if simple {
+                if let Some(list) = data.as_array() {
+                    let simple_list: Vec<Value> = list
+                        .iter()
+                        .map(|s| {
+                            json!({
+                                "schoolId": s["schoolId"],
+                                "schoolName": s["schoolName"]
+                            })
+                        })
+                        .collect();
+                    return ok_json!(simple_list).into_response();
+                }
+            }
+            ok_json!(data).into_response()
+        }
+        Err(e) => err_json!(e).into_response(),
     }
 }
 
@@ -348,6 +390,46 @@ pub async fn get_school_notification(
 ) -> impl IntoResponse {
     let svc = make_admin_service(&state);
     match svc.get_notification(&school_id).await {
+        Ok(data) => ok_json!(data),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn send_global_notification(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(payload): Json<Value>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    let notif = json!({
+        "title": payload["title"].as_str().unwrap_or("Global Message"),
+        "message": payload["message"].as_str().unwrap_or(""),
+        "type": payload["type"].as_str().unwrap_or("info"),
+        "sentAt": chrono::Utc::now().to_rfc3339(),
+        "dismissible": true,
+    });
+    match svc.set_global_notification(notif).await {
+        Ok(_) => ok_json!("Global update sent"),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn clear_global_notification(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    match svc.clear_global_notification().await {
+        Ok(_) => ok_json!("Global notifications cleared"),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn get_global_notification(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = make_admin_service(&state);
+    match svc.get_global_notification().await {
         Ok(data) => ok_json!(data),
         Err(e) => err_json!(e),
     }

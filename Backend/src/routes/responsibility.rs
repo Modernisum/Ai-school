@@ -10,14 +10,24 @@ use serde_json::json;
 pub async fn list_responsibilities(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> impl IntoResponse {
-    match state
-        .services
-        .responsibility
-        .list_responsibilities(&school_id)
-        .await
-    {
-        Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
+    let emp_type = params.get("employeeType").cloned();
+    let simple = params.get("simple").map(|v| v == "true").unwrap_or(false);
+    
+    match state.services.responsibility.list_responsibilities(&school_id, emp_type).await {
+        Ok(list) => {
+            if simple {
+                let simple_list: Vec<serde_json::Value> = list.into_iter().map(|r| {
+                    json!({
+                        "responsibilityId": r["responsibilityId"],
+                        "name": r["name"]
+                    })
+                }).collect();
+                return Json(json!({"success": true, "data": simple_list})).into_response();
+            }
+            Json(json!({"success": true, "data": list})).into_response()
+        },
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -99,6 +109,26 @@ pub async fn remove_responsibility(
     }
 }
 
+pub async fn sync_subject_roles(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .responsibility
+        .sync_subject_roles(&school_id, &tenant_ctx.admin_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Roles synced with subjects successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn list_employee_responsibilities(
     State(state): State<AppState>,
     Path((school_id, employee_id)): Path<(String, String)>,
@@ -115,6 +145,41 @@ pub async fn list_employee_responsibilities(
             }
             Json(enriched).into_response()
         }
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn bulk_assign_responsibility(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let employee_ids = match payload["employeeIds"].as_array() {
+        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>(),
+        None => return (axum::http::StatusCode::BAD_REQUEST, Json(json!({"success": false, "message": "employeeIds array is required"}))).into_response(),
+    };
+    
+    let responsibility_ids = match payload["responsibilityIds"].as_array() {
+        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>(),
+        None => return (axum::http::StatusCode::BAD_REQUEST, Json(json!({"success": false, "message": "responsibilityIds array is required"}))).into_response(),
+    };
+
+    let space_ids = payload["spaceIds"].as_array()
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>())
+        .unwrap_or_default();
+
+    match state
+        .services
+        .responsibility
+        .bulk_assign_responsibilities(&school_id, employee_ids, responsibility_ids, space_ids, &tenant_ctx.admin_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Responsibilities assigned in bulk successfully"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

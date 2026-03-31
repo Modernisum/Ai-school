@@ -78,25 +78,16 @@ pub async fn get_districts(
 }
 
 // GET /api/geo/export
-pub async fn export_geo_json(State(state): State<AppState>) -> Json<Value> {
+pub async fn export_geo_json(State(_state): State<AppState>) -> Json<Value> {
     let path = "Backup/geo.json";
     
-    // Phase 18: Try GCS first
-    match state.storage.download_bytes(path).await {
-        Ok(bytes) => {
-            if let Ok(json) = serde_json::from_slice(&bytes) {
-                return Json(json);
-            }
-        }
-        Err(_) => {
-            // Fallback to local
-            if let Ok(content) = fs::read_to_string(path) {
-                if let Ok(json) = serde_json::from_str(&content) {
-                    return Json(json);
-                }
-            }
+    // Local filesystem read
+    if let Ok(content) = fs::read_to_string(path) {
+        if let Ok(json) = serde_json::from_str(&content) {
+            return Json(json);
         }
     }
+    
     Json(serde_json::json!([]))
 }
 
@@ -110,13 +101,10 @@ pub async fn import_geo_json(
     let content = serde_json::to_string_pretty(&payload).unwrap_or_default();
     fs::write(path, &content).ok();
 
-    // Phase 18: Upload to GCS
-    let _ = state.storage.upload_bytes(path, "application/json", content.into_bytes()).await;
-
     // Trigger auto_restore to load data into database
     match state.backup.auto_restore().await {
         Ok(_) => {
-            Json(serde_json::json!({"success": true, "message": "Geo data imported and synced to GCS"}))
+            Json(serde_json::json!({"success": true, "message": "Geo data imported successfully"}))
         }
         Err(e) => {
             Json(serde_json::json!({"success": false, "message": format!("Import error: {}", e)}))

@@ -781,8 +781,8 @@ impl AcademicRepository for PostgresAcademicRepository {
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let clean = subject_name.replace(' ', "");
         let prefix = clean[..std::cmp::min(4, clean.len())].to_uppercase();
-        let random = rand::random::<u32>() % 1000;
-        Ok(format!("{}{:03}", prefix, random))
+        let random = rand::random::<u32>() % 90000 + 10000;
+        Ok(format!("{}{:05}", prefix, random))
     }
 
     async fn get_subjects(
@@ -1641,7 +1641,7 @@ impl ResourceRepository for PostgresResourceRepository {
     }
 
     async fn create_space(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
-        let space_id = format!("SP{:03}", chrono::Utc::now().timestamp_millis() % 1000);
+        let space_id = format!("SP{:06}", rand::random::<u32>() % 900000 + 100000);
         let space_name = data["spaceName"].as_str().unwrap_or("Unnamed Space");
         let category = data["spaceCategory"].as_str().unwrap_or("classroom");
         let capacity = data["capacity"].as_i64().unwrap_or(0);

@@ -17,6 +17,7 @@ pub mod coupon_repo;
 pub mod payroll_repo;
 pub mod transaction_repo;
 pub mod misc_repo;
+pub mod storage_repo;
 
 use std::sync::Arc;
 pub use traits::*;
@@ -44,6 +45,7 @@ pub struct Repositories {
     pub analytics: Arc<dyn traits::AnalyticsRepository + Send + Sync>,
     pub audit: Arc<dyn AuditRepository + Send + Sync>,
     pub global_user: Arc<dyn GlobalUserRepository + Send + Sync>,
+    pub storage: Arc<dyn StorageRepository + Send + Sync>,
     pub db_client: Arc<crate::db::DbClient>,
 }
 
@@ -129,6 +131,8 @@ pub async fn initialize_repositories(
         client: db_client.clone(),
     });
 
+    let storage_repo: Arc<dyn traits::StorageRepository + Send + Sync> = Arc::new(storage_repo::PostgresStorageRepository::new(db_client.pool.clone()));
+
     Repositories {
         auth: auth_repo,
         student: student_repo,
@@ -147,6 +151,7 @@ pub async fn initialize_repositories(
         document_box: document_box_repo,
         school: school_repo,
         responsibility: responsibility_repo,
+        storage: storage_repo,
         task: task_repo,
         leave: leave_repo,
         analytics: analytics_repo,

@@ -1,178 +1,174 @@
-use google_cloud_storage::client::{Client, ClientConfig};
-use google_cloud_storage::http::objects::delete::DeleteObjectRequest;
-use google_cloud_storage::http::objects::upload::{Media, UploadObjectRequest, UploadType};
-use google_cloud_storage::sign::{SignedURLMethod, SignedURLOptions};
-// Note: SignBy variants in 0.22.0 are: PrivateKey, SignByGrantAccount, or None (via Option)
-// Do NOT use SignBy::DUMMY as it does not exist.
 use anyhow::{anyhow, Result};
-use std::time::Duration;
-use tracing::{error, info, warn};
+use std::path::{Path, PathBuf};
+use tracing::{error, info};
+use sha2::{Sha256, Digest};
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+use futures_util::StreamExt;
+use axum::extract::multipart::Field;
+use image::GenericImageView;
+use std::io::Cursor;
 
+/// High-performance StorageEngine using content-addressed, hash-sharded storage.
+///
+/// File Path Structure:
+///   uploads/{hash[0:2]}/{hash[2:4]}/{hash}.webp
+///
+/// This provides O(1) lookup at any scale:
+/// - 256 × 256 = 65,536 filesystem buckets
+/// - Even with 100M files, each bucket has ~1,500 files
+/// - Hash = filename, so deduplication is implicit
 pub struct StorageEngine {
-    client: Option<Client>,
-    bucket_name: String,
+    pub upload_dir: String,
+    pub base_url: String,
 }
 
 impl StorageEngine {
     pub async fn new() -> Self {
-        let bucket_name =
-            std::env::var("GCS_BUCKET_NAME").unwrap_or_else(|_| "vidhyam-files".to_string());
-
-        match ClientConfig::default().with_auth().await {
-            Ok(config) => {
-                info!(
-                    "GCS StorageEngine initialized successfully for bucket: {}",
-                    bucket_name
-                );
-                Self {
-                    client: Some(Client::new(config)),
-                    bucket_name,
-                }
-            }
-            Err(e) => {
-                warn!("[Storage Warning] GCS Authentication failed: {}. Cloud storage features will be unavailable.", e);
-                Self {
-                    client: None,
-                    bucket_name,
-                }
-            }
-        }
-    }
-
-    fn check_client(&self) -> Result<&Client> {
-        self.client.as_ref().ok_or_else(|| {
-            error!("GCS client access attempted but not initialized.");
-            anyhow!("GCS client not initialized. Check your credentials.")
-        })
-    }
-
-    /// Generates a signed URL for uploading a file directly to GCS from the client.
-    /// Uses method PUT and expires in 1 hour.
-    pub async fn generate_upload_url(
-        &self,
-        object_name: &str,
-        content_type: &str,
-    ) -> Result<String> {
-        let client = self.check_client()?;
-        let options = SignedURLOptions {
-            method: SignedURLMethod::PUT,
-            expires: Duration::from_secs(3600), // 1 hour
-            content_type: Some(content_type.to_string()),
-            ..Default::default()
-        };
-
-        // We pass None for sign_by to use the default signer from the authenticated client.
-        // Valid variants for SignBy (if needed) are: SignBy::PrivateKey(vec![...])
-        match client
-            .signed_url(&self.bucket_name, object_name, None, None, options)
-            .await
-        {
-            Ok(url) => Ok(url),
-            Err(e) => {
-                error!(
-                    "Failed to generate GCS upload URL for {}: {}",
-                    object_name, e
-                );
-                Err(anyhow!("Failed to generate upload URL: {}", e))
-            }
-        }
-    }
-
-    /// Generates a signed URL for viewing/downloading a private file.
-    /// Uses method GET and expires in 1 hour.
-    pub async fn generate_download_url(&self, object_name: &str) -> Result<String> {
-        let client = self.check_client()?;
-        let options = SignedURLOptions {
-            method: SignedURLMethod::GET,
-            expires: Duration::from_secs(3600), // 1 hour
-            ..Default::default()
-        };
-
-        match client
-            .signed_url(&self.bucket_name, object_name, None, None, options)
-            .await
-        {
-            Ok(url) => Ok(url),
-            Err(e) => {
-                error!(
-                    "Failed to generate GCS download URL for {}: {}",
-                    object_name, e
-                );
-                Err(anyhow!("Failed to generate download URL: {}", e))
-            }
-        }
-    }
-
-    /// Deletes an object from GCS.
-    pub async fn delete_file(&self, object_name: &str) -> Result<()> {
-        let client = self.check_client()?;
-        client
-            .delete_object(&DeleteObjectRequest {
-                bucket: self.bucket_name.clone(),
-                object: object_name.to_string(),
-                ..Default::default()
-            })
-            .await
-            .map_err(|e| {
-                error!("Failed to delete GCS object {}: {}", object_name, e);
-                anyhow!("Failed to delete GCS file: {}", e)
-            })?;
-
-        info!("Successfully deleted GCS object: {}", object_name);
-        Ok(())
-    }
-
-    /// Uploads raw bytes to GCS.
-    pub async fn upload_bytes(
-        &self,
-        object_name: &str,
-        content_type: &str,
-        data: Vec<u8>,
-    ) -> Result<()> {
-        let client = self.check_client()?;
-        let upload_type = UploadType::Simple(Media {
-            name: object_name.to_string().into(),
-            content_type: content_type.to_string().into(),
-            content_length: Some(data.len() as u64),
-        });
-
-        client
-            .upload_object(
-                &UploadObjectRequest {
-                    bucket: self.bucket_name.clone(),
-                    ..Default::default()
-                },
-                data,
-                &upload_type,
-            )
-            .await
-            .map_err(|e| {
-                error!("Failed to upload bytes to GCS {}: {}", object_name, e);
-                anyhow!("Failed to upload bytes to GCS: {}", e)
-            })?;
-
-        info!("Successfully uploaded bytes to GCS: {}", object_name);
-        Ok(())
-    }
-
-    /// Downloads raw bytes from GCS using a temporary signed URL.
-    pub async fn download_bytes(&self, object_name: &str) -> Result<Vec<u8>> {
-        let url = self.generate_download_url(object_name).await?;
+        let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
+        // Force the base URL to 8080 to override any stale environment variables that might be set system-wide to 3000.
+        let base_url = "http://localhost:8080".to_string();
         
-        let response = reqwest::get(url).await.map_err(|e| {
-            error!("Failed to fetch GCS object via signed URL: {}", e);
-            anyhow!("Failed to fetch GCS object: {}", e)
-        })?;
-
-        if !response.status().is_success() {
-            return Err(anyhow!("GCS download failed with status: {}", response.status()));
+        if let Err(e) = std::fs::create_dir_all(&upload_dir) {
+            error!("Failed to create upload directory {}: {}", upload_dir, e);
+        } else {
+            info!("StorageEngine initialized: hash-sharded layout at '{}'", upload_dir);
         }
 
-        let bytes = response.bytes().await.map_err(|e| {
-            error!("Failed to read GCS response bytes: {}", e);
-            anyhow!("Failed to read GCS bytes: {}", e)
-        })?;
+        Self { upload_dir, base_url }
+    }
 
-        Ok(bytes.to_vec())
+    /// Generates the O(1) hash-sharded path for a given content hash.
+    /// e.g.: hash = "abcdef1234..." → "uploads/ab/cd/abcdef1234....webp"
+    fn sharded_path(&self, hash: &str, extension: &str) -> (PathBuf, String) {
+        let shard1 = &hash[0..2];
+        let shard2 = &hash[2..4];
+        let dir = Path::new(&self.upload_dir).join(shard1).join(shard2);
+        let filename = format!("{}.{}", hash, extension);
+        let full_path = dir.join(&filename);
+        let relative_path = format!("uploads/{}/{}/{}", shard1, shard2, filename);
+        (full_path, relative_path)
+    }
+
+    /// Generates a public URL for a given relative path
+    pub fn get_public_url(&self, relative_path: &str) -> String {
+        format!("/{}", relative_path.trim_start_matches('/'))
+    }
+
+    /// Process a multipart upload field.
+    /// - Streams upload to disk, computing SHA-256 hash in flight.
+    /// - If it's an image: resizes to ≤1080px and converts to JPEG (quality 80).
+    /// - Files are stored at the hash-sharded path: `uploads/ab/cd/{hash}.jpg`
+    /// - If the exact file already exists on disk (same hash), skips writing.
+    /// - Enforces a strict 50MB upload size limit.
+    ///
+    /// Returns (file_hash, relative_path, public_url, file_size, content_type)
+    pub async fn process_upload(&self, mut field: Field<'_>, _folder: &str) -> Result<(String, String, String, i64, String)> {
+        let content_type = field.content_type().unwrap_or("application/octet-stream").to_string();
+        let is_image = content_type.starts_with("image/") && !content_type.contains("svg");
+
+        // Stream multipart chunks, compute hash, and buffer for potential image processing
+        let mut hasher = Sha256::new();
+        let mut file_data: Vec<u8> = Vec::new();
+        let mut file_size: i64 = 0;
+        const MAX_UPLOAD_BYTES: i64 = 50 * 1024 * 1024; // 50MB hard limit
+
+        while let Some(chunk_result) = field.next().await {
+            let chunk = chunk_result.map_err(|e| anyhow!("Failed to read multipart chunk: {}", e))?;
+            hasher.update(&chunk);
+            file_size += chunk.len() as i64;
+
+            // Enforce 50MB limit during streaming
+            if file_size > MAX_UPLOAD_BYTES {
+                return Err(anyhow!("File size exceeds the 50MB limit. Please upload a smaller file."));
+            }
+
+            file_data.extend_from_slice(&chunk);
+        }
+
+        let hash = format!("{:x}", hasher.finalize());
+
+        // --- Image path: Resize + Compress to JPEG (WhatsApp-style) ---
+        if is_image && !file_data.is_empty() {
+            let (sharded_full_path, relative_path) = self.sharded_path(&hash, "jpg");
+
+            // If file already exists on disk (dedup hit), skip writing entirely
+            if sharded_full_path.exists() {
+                let actual_size = tokio::fs::metadata(&sharded_full_path).await.map(|m| m.len() as i64).unwrap_or(file_size);
+                return Ok((hash, relative_path.clone(), self.get_public_url(&relative_path), actual_size, "image/jpeg".to_string()));
+            }
+
+            // Create the 2-level shard directory
+            if let Some(parent) = sharded_full_path.parent() {
+                tokio::fs::create_dir_all(parent).await?;
+            }
+
+            let data_for_processing = file_data.clone();
+            let final_path = sharded_full_path.clone();
+
+            // Compress on a blocking thread to avoid blocking the async runtime
+            let (compressed_data, final_size) = tokio::task::spawn_blocking(move || -> Result<(Vec<u8>, i64)> {
+                let img = image::load_from_memory(&data_for_processing)?;
+
+                // Resize to max 1080px (WhatsApp standard)
+                let (w, h) = img.dimensions();
+                let img = if w > 1080 || h > 1080 {
+                    img.resize(1080, 1080, image::imageops::FilterType::Lanczos3)
+                } else {
+                    img
+                };
+
+                // Encode as JPEG with quality 80 (best size/quality tradeoff)
+                let mut output = Vec::new();
+                let mut cursor = Cursor::new(&mut output);
+                let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 80);
+                img.write_with_encoder(encoder)?;
+                let size = output.len() as i64;
+                Ok((output, size))
+            }).await??;
+
+            // Write compressed JPEG to the sharded path
+            let mut file = File::create(&final_path).await?;
+            file.write_all(&compressed_data).await?;
+            file.flush().await?;
+
+            return Ok((hash, relative_path.clone(), self.get_public_url(&relative_path), final_size, "image/jpeg".to_string()));
+        }
+
+        // --- Non-image path: Preserve original format ---
+        let extension = match content_type.as_str() {
+            "application/pdf" => "pdf",
+            "video/mp4" => "mp4",
+            "text/csv" => "csv",
+            "text/plain" => "txt",
+            _ => "bin",
+        };
+
+        let (sharded_full_path, relative_path) = self.sharded_path(&hash, extension);
+
+        // Dedup: file already exists on disk
+        if sharded_full_path.exists() {
+            let actual_size = tokio::fs::metadata(&sharded_full_path).await.map(|m| m.len() as i64).unwrap_or(file_size);
+            return Ok((hash, relative_path.clone(), self.get_public_url(&relative_path), actual_size, content_type));
+        }
+
+        if let Some(parent) = sharded_full_path.parent() {
+            tokio::fs::create_dir_all(parent).await?;
+        }
+
+        let mut file = File::create(&sharded_full_path).await?;
+        file.write_all(&file_data).await?;
+        file.flush().await?;
+
+        Ok((hash, relative_path.clone(), self.get_public_url(&relative_path), file_size, content_type))
+    }
+
+    /// Deletes a local file by its relative path.
+    pub async fn delete_file(&self, relative_path: &str) -> Result<()> {
+        let local_path = Path::new(".").join(relative_path);
+        if local_path.exists() {
+            tokio::fs::remove_file(local_path).await.map_err(|e| anyhow!("Failed to delete: {}", e))?;
+        }
+        Ok(())
     }
 }

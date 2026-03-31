@@ -118,6 +118,7 @@ pub async fn create_student(
         "enrolledSubjects": payload.enrolled_subjects,
         "totalFees": payload.total_fee,
         "selectedSubjects": payload.selected_subjects,
+        "profileImageUrl": payload.profile_image_url,
     });
 
     let data = state.services.student

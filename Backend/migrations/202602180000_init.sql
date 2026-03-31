@@ -124,15 +124,20 @@ CREATE TABLE IF NOT EXISTS schools (
 
 -- Classes
 CREATE TABLE IF NOT EXISTS classes (
-    id SERIAL PRIMARY KEY,
-    class_name VARCHAR(100) NOT NULL,
+    id VARCHAR(255) NOT NULL,
     school_id VARCHAR(255) NOT NULL,
-    section VARCHAR(50),
-    class_teacher VARCHAR(255),
+    name VARCHAR(100) NOT NULL,
+    total_students INT DEFAULT 0,
+    total_teachers INT DEFAULT 0,
+    total_periods INT DEFAULT 0,
     room_number VARCHAR(50),
+    class_fees DECIMAL(12, 2) DEFAULT 0,
+    sections JSONB DEFAULT '[]',
+    streams JSONB DEFAULT '[]',
+    section_size INT DEFAULT 30,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(school_id, class_name)
+    PRIMARY KEY(school_id, id)
 );
 
 -- Communication (Announcements and Complaints)
@@ -147,14 +152,21 @@ CREATE TABLE IF NOT EXISTS communication (
 
 -- Subjects
 CREATE TABLE IF NOT EXISTS subjects (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(255) NOT NULL,
     school_id VARCHAR(255) NOT NULL,
-    class_name VARCHAR(100) NOT NULL,
-    subject_name VARCHAR(100) NOT NULL,
-    data JSONB NOT NULL DEFAULT '{}',
+    name VARCHAR(100) NOT NULL,
+    class_id VARCHAR(255),
+    class_name VARCHAR(100),
+    fees DECIMAL(12, 2) DEFAULT 0,
+    is_compulsory BOOLEAN DEFAULT TRUE,
+    category VARCHAR(100),
+    fee_type VARCHAR(50) DEFAULT 'monthly',
+    fee_interval INT DEFAULT 1,
+    schedule_type VARCHAR(50) DEFAULT 'daily',
+    schedule_data JSONB DEFAULT '[]',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(school_id, class_name, subject_name)
+    PRIMARY KEY(school_id, id)
 );
 
 -- Chapters
@@ -284,6 +296,12 @@ CREATE TABLE IF NOT EXISTS responsibilities (
     school_id VARCHAR(255) NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
+    per_day_price DECIMAL(12, 2) DEFAULT 0,
+    monthly_price DECIMAL(12, 2) DEFAULT 0,
+    time_period INT DEFAULT 0,
+    space_id VARCHAR(255),
+    employee_type VARCHAR(50),
+    data JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -332,6 +350,8 @@ CREATE TABLE IF NOT EXISTS reminders (
     reminder_id VARCHAR(255) UNIQUE NOT NULL,
     school_id VARCHAR(255) NOT NULL,
     title TEXT NOT NULL,
+    description TEXT,
+    remind_at TIMESTAMP WITH TIME ZONE,
     items JSONB DEFAULT '[]',
     status VARCHAR(50) DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

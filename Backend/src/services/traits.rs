@@ -167,11 +167,13 @@ pub trait SchoolService: Send + Sync {
 
 #[async_trait]
 pub trait ResponsibilityService: Send + Sync {
-    async fn list_responsibilities(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn list_responsibilities(&self, school_id: &str, employee_type: Option<String>) -> AppResult<Vec<Value>>;
     async fn create_responsibility(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
     async fn assign_responsibility(&self, school_id: &str, employee_id: &str, responsibility_id: &str, admin_id: &str) -> AppResult<()>;
+    async fn bulk_assign_responsibilities(&self, school_id: &str, employee_ids: Vec<String>, responsibility_ids: Vec<String>, space_ids: Vec<String>, admin_id: &str) -> AppResult<()>;
     async fn remove_responsibility(&self, school_id: &str, employee_id: &str, responsibility_id: &str, admin_id: &str) -> AppResult<()>;
     async fn list_employee_responsibilities(&self, school_id: &str, employee_id: &str) -> AppResult<Value>;
+    async fn sync_subject_roles(&self, school_id: &str, admin_id: &str) -> AppResult<()>;
 }
 
 #[async_trait]
@@ -269,6 +271,7 @@ pub trait ResourceService: Send + Sync {
     // Materials
     async fn create_material(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
     async fn list_materials(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn get_material(&self, school_id: &str, material_id: &str) -> AppResult<Option<Value>>;
     async fn update_material(&self, school_id: &str, admin_id: &str, material_id: &str, data: Value) -> AppResult<()>;
     async fn delete_material(&self, school_id: &str, admin_id: &str, material_id: &str) -> AppResult<()>;
     
@@ -278,7 +281,7 @@ pub trait ResourceService: Send + Sync {
     
     // Spaces
     async fn create_space(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn list_spaces(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn list_spaces(&self, school_id: &str, category_id: Option<i32>) -> AppResult<Vec<Value>>;
     async fn update_space(&self, school_id: &str, admin_id: &str, space_id: &str, data: Value) -> AppResult<()>;
     async fn delete_space(&self, school_id: &str, admin_id: &str, space_id: &str) -> AppResult<()>;
     async fn get_space_details(&self, school_id: &str, space_id: &str) -> AppResult<Option<Value>>;
@@ -292,4 +295,7 @@ pub trait ResourceService: Send + Sync {
     async fn assign_space_materials(&self, school_id: &str, admin_id: &str, space_id: &str, materials: Vec<Value>) -> AppResult<()>;
     async fn assign_space_employees(&self, school_id: &str, admin_id: &str, space_id: &str, employee_ids: Vec<String>) -> AppResult<()>;
     async fn remove_space_employee(&self, school_id: &str, admin_id: &str, space_id: &str, employee_id: &str) -> AppResult<()>;
+
+    async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value>;
+    async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>>;
 }

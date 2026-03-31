@@ -42,6 +42,8 @@ pub async fn rls_middleware(
     span.record("admin_id", &admin_id);
     span.record("request_id", &request_id);
 
+    println!("[Request] {} {}", request.method(), request.uri());
+
     // 6. Always insert TenantContext
     let sid = school_id.clone().unwrap_or_else(|| "default_school".to_string());
     request.extensions_mut().insert(TenantContext { 

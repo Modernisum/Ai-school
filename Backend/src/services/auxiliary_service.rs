@@ -327,10 +327,11 @@ impl ResponsibilityService for PostgresAuxiliaryService {
     async fn list_responsibilities(
         &self,
         school_id: &str,
+        employee_type: Option<String>,
     ) -> AppResult<Vec<Value>> {
         Ok(self.repos
             .responsibility
-            .get_responsibilities(school_id)
+            .get_responsibilities(school_id, employee_type)
             .await?)
     }
 
@@ -341,11 +342,35 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         data: Value,
     ) -> AppResult<Value> {
         let res = self.repos.responsibility.add_responsibility(school_id, data.clone()).await?;
+        
+        if let Some(responsibility_id) = res["responsibilityId"].as_str() {
+            if let Some(employees) = data["employees"].as_array() {
+                let mut assignments = Vec::new();
+                for emp in employees {
+                    if let Some(emp_id) = emp["employeeId"].as_str() {
+                        let space_ids: Vec<String> = emp["spaceIds"]
+                            .as_array()
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                            .unwrap_or_default();
+                        assignments.push((emp_id.to_string(), space_ids));
+                    }
+                }
+                
+                if !assignments.is_empty() {
+                    let _ = self.repos.responsibility.assign_employees_with_spaces(
+                        school_id,
+                        responsibility_id,
+                        assignments,
+                    ).await;
+                }
+            }
+        }
+
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "RESPONSIBILITY",
-            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            &res["responsibilityId"].as_str().unwrap_or("0").to_string(),
             "CREATE",
             data
         ).await;
@@ -371,6 +396,34 @@ impl ResponsibilityService for PostgresAuxiliaryService {
             "0",
             "ASSIGN",
             json!({"employeeId": employee_id, "responsibilityId": responsibility_id})
+        ).await;
+        Ok(())
+    }
+
+    async fn bulk_assign_responsibilities(
+        &self,
+        school_id: &str,
+        employee_ids: Vec<String>,
+        responsibility_ids: Vec<String>,
+        space_ids: Vec<String>,
+        admin_id: &str,
+    ) -> AppResult<()> {
+        self.repos
+            .responsibility
+            .bulk_assign_responsibilities(school_id, employee_ids.clone(), responsibility_ids.clone(), space_ids.clone())
+            .await?;
+            
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "RESPONSIBILITY_BULK_ASSIGN",
+            "0",
+            "ASSIGN",
+            json!({
+                "employeeIds": employee_ids,
+                "responsibilityIds": responsibility_ids,
+                "spaceIds": space_ids
+            })
         ).await;
         Ok(())
     }
@@ -409,10 +462,15 @@ impl ResponsibilityService for PostgresAuxiliaryService {
             .get_employee_responsibilities(school_id, employee_id)
             .await?;
 
-        // Calculate total per day price
+        // Calculate totals
         let total_per_day_price: f64 = responsibilities
             .iter()
             .map(|r| r["perDayPrice"].as_f64().unwrap_or(0.0))
+            .sum();
+            
+        let total_monthly_price: f64 = responsibilities
+            .iter()
+            .map(|r| r["monthlyPrice"].as_f64().unwrap_or(0.0))
             .sum();
 
         // Fetch employee base salary
@@ -432,9 +490,23 @@ impl ResponsibilityService for PostgresAuxiliaryService {
                 "employeeId": employee_id,
                 "responsibilities": responsibilities,
                 "totalPerDayPrice": total_per_day_price,
+                "totalMonthlyPrice": total_monthly_price,
                 "baseSalary": base_salary
             }
         }))
+    }
+
+    async fn sync_subject_roles(&self, school_id: &str, admin_id: &str) -> AppResult<()> {
+        self.repos.responsibility.sync_subject_roles(school_id).await?;
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "RESPONSIBILITY_SYNC",
+            "0",
+            "SYNC",
+            json!({"action": "automated_role_generation_from_subjects"})
+        ).await;
+        Ok(())
     }
 }
 

@@ -39,6 +39,14 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
         .execute(&mut *conn)
         .await?;
 
+        // Mark profile image as permanent if exists
+        if let Some(url) = data["profileImageUrl"].as_str() {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&mut *conn)
+                .await?;
+        }
+
         // Save Experience
         if let Some(experience_arr) = data["experience"].as_array() {
             for exp in experience_arr {
@@ -257,9 +265,15 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
-        // Extract employee type if updating
-        let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
+        // 1. Get current photo for cleanup (from the JSONB data column)
+        let old_photo: Option<String> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
+            .bind(school_id)
+            .bind(employee_id)
+            .fetch_optional(&mut *conn)
+            .await?;
 
+        // 2. Perform the update
+        let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
         let aadhaar_number = data["aadhaarNumber"].as_str().or(data["aadhaar_number"].as_str());
         let contact = data["contact"].as_str();
         let email = data["email"].as_str();
@@ -292,16 +306,56 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
             .execute(&mut *conn)
             .await?;
         }
+
+        // 3. Handle photo transitions
+        let new_photo = data["profileImageUrl"].as_str();
+        
+        // Mark new photo as permanent
+        if let Some(url) = new_photo {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&mut *conn)
+                .await?;
+        }
+
+        // Mark old photo as orphaned if it was changed
+        if let Some(old_url) = old_photo {
+            if let Some(new_url) = new_photo {
+                if old_url != new_url {
+                    sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                        .bind(old_url)
+                        .execute(&mut *conn)
+                        .await?;
+                }
+            } else if data["profileImageUrl"].is_null() {
+                 sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                    .bind(old_url)
+                    .execute(&mut *conn)
+                    .await?;
+            }
+        }
         Ok(())
     }
 
     async fn delete_employee(&self, school_id: &str, employee_id: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        // 1. Get photo for cleanup
+        let photo: Option<String> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
+            .bind(school_id).bind(employee_id).fetch_optional(&mut *conn).await?;
+
+        // 2. Delete
         sqlx::query("DELETE FROM employees WHERE school_id = $1 AND employee_id = $2")
             .bind(school_id)
             .bind(employee_id)
             .execute(&mut *conn)
             .await?;
+
+        // 3. Orphan the photo
+        if let Some(url) = photo {
+             sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                .bind(url).execute(&mut *conn).await?;
+        }
         Ok(())
     }
 

@@ -12,8 +12,23 @@ use crate::error::AppResult;
 pub async fn list_spaces(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> AppResult<impl IntoResponse> {
-    let list = state.services.resource.list_spaces(&school_id).await?;
+    let category_id = params.get("categoryId").and_then(|id| id.parse::<i32>().ok());
+    let simple = params.get("simple").map(|v| v == "true").unwrap_or(false);
+    
+    let list = state.services.resource.list_spaces(&school_id, category_id).await?;
+    
+    if simple {
+        let simple_list: Vec<serde_json::Value> = list.into_iter().map(|s| {
+            json!({
+                "spaceId": s["spaceId"],
+                "name": s["name"]
+            })
+        }).collect();
+        return Ok(Json(json!({"success": true, "data": simple_list})));
+    }
+    
     Ok(Json(json!({"success": true, "data": list})))
 }
 

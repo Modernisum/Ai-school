@@ -7,6 +7,7 @@ use std::fs;
 use std::time::Duration;
 use tokio::time::sleep;
 
+#[allow(dead_code)]
 pub struct BackupService {
     pool: PgPool,
     backup_dir: String,
@@ -162,30 +163,18 @@ impl BackupService {
         let local_path = format!("{}/{}.json", self.backup_dir, table_name);
         fs::write(&local_path, &content)?;
 
-        // Phase 18: Upload to GCS
-        if let Some(storage) = &self.storage {
-            let object_name = format!("backups/{}_{}.json", Utc::now().format("%Y%m%d"), table_name);
-            let bytes = content.into_bytes();
-            let _ = storage.upload_bytes(&object_name, "application/json", bytes).await;
-        }
+        // Removed Phase 18: Upload to GCS (Local Storage Only)
 
         Ok(())
     }
 
     pub async fn auto_restore(&self) -> Result<bool, Box<dyn Error + Send + Sync>> {
         // Restore essential geo data from single geo.json backup
-        let geo_filename = "Backup/geo.json";
+        let _geo_filename = "Backup/geo.json";
         let local_geo_path = format!("{}/geo.json", self.backup_dir);
         
-        // Phase 18: Try GCS first
-        let content = if let Some(storage) = &self.storage {
-            match storage.download_bytes(geo_filename).await {
-                Ok(bytes) => String::from_utf8(bytes).ok(),
-                Err(_) => fs::read_to_string(&local_geo_path).ok(),
-            }
-        } else {
-            fs::read_to_string(&local_geo_path).ok()
-        };
+        // Load geo data exclusively from local backup file
+        let content = fs::read_to_string(&local_geo_path).ok();
 
         if let Some(content) = content {
             if let Ok(countries) = serde_json::from_str::<Vec<Value>>(&content) {

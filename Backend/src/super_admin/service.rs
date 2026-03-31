@@ -52,33 +52,27 @@ impl AdminService {
         current_password: &str,
         new_username: &str,
         new_password: &str,
+        profile_image_url: Option<String>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut conn = self.db.acquire_super_admin_connection().await?;
         let mut tx = conn.begin().await?;
 
         // 1. Verify access via current password
         let mut authorized = false;
+        let mut old_photo: Option<String> = None;
 
-        println!("[DEBUG] Updating credentials for current_username: '{}'", current_username);
-
-        let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
+        let row = sqlx::query("SELECT password_hash, profile_image_url FROM super_admin WHERE username = $1")
             .bind(current_username)
             .fetch_optional(&mut *tx)
             .await?;
 
         if let Some(r) = row {
             let hash: String = r.try_get("password_hash")?;
-            println!("[DEBUG] Found hash in DB: '{}'", hash);
+            old_photo = r.try_get("profile_image_url").ok();
             match bcrypt::verify(current_password, &hash) {
-                Ok(true) => {
-                    println!("[DEBUG] Current password VERIFIED");
-                    authorized = true;
-                },
-                Ok(false) => println!("[DEBUG] Current password verification FAILED (mismatch)"),
-                Err(e) => println!("[DEBUG] bcrypt error during verification: {:?}", e),
+                Ok(true) => { authorized = true; },
+                _ => {}
             }
-        } else {
-            println!("[DEBUG] User '{}' NOT FOUND in super_admin table", current_username);
         }
 
         if !authorized {
@@ -88,7 +82,6 @@ impl AdminService {
         // 2. Perform Update
         let hashed_pwd = bcrypt::hash(new_password, 10)?;
         
-        // Delete old one if username changed
         if current_username != new_username {
             sqlx::query("DELETE FROM super_admin WHERE username = $1")
                 .bind(current_username)
@@ -97,16 +90,60 @@ impl AdminService {
         }
 
         sqlx::query(
-            "INSERT INTO super_admin (username, password_hash) VALUES ($1, $2)
-             ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash"
+            "INSERT INTO super_admin (username, password_hash, profile_image_url) VALUES ($1, $2, $3)
+             ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, profile_image_url = EXCLUDED.profile_image_url"
         )
         .bind(new_username)
         .bind(hashed_pwd)
+        .bind(&profile_image_url)
         .execute(&mut *tx)
         .await?;
 
+        // 3. Handle photo transitions
+        if let Some(url) = &profile_image_url {
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(url)
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        if let Some(old_url) = old_photo {
+            if let Some(new_url) = &profile_image_url {
+                if old_url != *new_url {
+                    sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                        .bind(old_url)
+                        .execute(&mut *tx)
+                        .await?;
+                }
+            } else {
+                 sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                    .bind(old_url)
+                    .execute(&mut *tx)
+                    .await?;
+            }
+        }
+
         tx.commit().await?;
         Ok(())
+    }
+
+    pub async fn get_admin_profile(
+        &self,
+        username: &str,
+    ) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let row = sqlx::query("SELECT username, profile_image_url FROM super_admin WHERE username = $1")
+            .bind(username)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        match row {
+            Some(r) => Ok(json!({
+                "username": r.get::<String, _>("username"),
+                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url")
+            })),
+            None => Err("Admin not found".into()),
+        }
     }
 
     pub fn verify_admin_token(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -139,7 +176,7 @@ impl AdminService {
                 s.school_id, s.school_name, s.status, s.is_blocked,
                 s.session_duration_hours, s.notification, s.created_at,
                 s.updated_at, s.data, s.per_student_rate, s.wallet_balance,
-                s.billing_status, s.last_billing_date,
+                s.billing_status, s.last_billing_date, s.school_logo_url,
                 (SELECT COUNT(*) FROM students st WHERE st.school_id = s.school_id AND st.status = 'active') as active_student_count
             FROM schools s
             ORDER BY s.created_at DESC
@@ -167,6 +204,7 @@ impl AdminService {
                     "billingStatus":        r.try_get::<String, _>("billing_status").unwrap_or_else(|_| "active".to_string()),
                     "lastBillingDate":      r.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("last_billing_date").ok().flatten().map(|t| t.to_rfc3339()),
                     "activeStudentCount":   r.try_get::<i64, _>("active_student_count").unwrap_or(0),
+                    "schoolLogoUrl":        r.try_get::<Option<String>, _>("school_logo_url").unwrap_or_default(),
                     "data":                 r.try_get::<Value, _>("data").unwrap_or(json!({})),
                 })
             })
@@ -212,6 +250,7 @@ impl AdminService {
                 "activeStudentCount":   r.try_get::<i64, _>("active_student_count").unwrap_or(0),
                 "activePromoId":        r.try_get::<Option<i32>, _>("active_promo_id").ok().flatten(),
                 "promoExpiresAt":       r.try_get::<Option<chrono::DateTime<chrono::Utc>>, _>("promo_expires_at").ok().flatten().map(|t| t.to_rfc3339()),
+                "schoolLogoUrl":        r.try_get::<Option<String>, _>("school_logo_url").unwrap_or_default(),
                 "data":                 r.try_get::<Value, _>("data").unwrap_or(json!({})),
             })),
         }
@@ -232,6 +271,37 @@ impl AdminService {
                 .bind(school_id)
                 .execute(&mut *conn)
                 .await?;
+        }
+
+        if let Some(logo) = data["schoolLogoUrl"].as_str() {
+            // 1. Get old logo
+            let old_logo: Option<String> = sqlx::query_scalar("SELECT school_logo_url FROM schools WHERE school_id = $1")
+                .bind(school_id)
+                .fetch_optional(&mut *conn)
+                .await?;
+
+            // 2. Update
+            sqlx::query("UPDATE schools SET school_logo_url = $1 WHERE school_id = $2")
+                .bind(logo)
+                .bind(school_id)
+                .execute(&mut *conn)
+                .await?;
+            
+            // 3. Mark new logo as permanent
+            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
+                .bind(logo)
+                .execute(&mut *conn)
+                .await?;
+
+            // 4. Orphan old logo
+            if let Some(old_url) = old_logo {
+                if old_url != logo {
+                    sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
+                        .bind(old_url)
+                        .execute(&mut *conn)
+                        .await?;
+                }
+            }
         }
 
         if let Some(rate_val) = data["perStudentRate"].as_str() {
@@ -372,52 +442,96 @@ impl AdminService {
     }
 
     pub async fn delete_school(&self, school_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let mut tx = self.db.pool.begin().await?;
+        
+        // Comprehensive list of tables with school_id partitioning
+        // Ordered roughly from leaf to root to avoid FK violations
         let tables = [
-            "students",
-            "employees",
-            "classes",
-            "subjects",
-            "fees",
-            "student_fees",
-            "fee_templates",
-            "attendance",
-            "spaces",
-            "items",
-            "materials",
-            "material_locations",
-            "tokens",
-            "auth_logs",
+            "ocr_logs",
+            "system_audit_logs",
             "audit_logs",
-            "announcements",
-            "events",
+            "auth_logs",
+            "billing_ledger",
+            "webhook_endpoints",
+            "messages",
+            "api_keys",
+            "tokens",
+            "student_coupons",
+            "coupons",
+            "student_custom_fees",
+            "custom_fee_records",
+            "custom_fees",
+            "student_fees",
+            "fees",
+            "student_history",
+            "class_periods",
+            "class_streams",
+            "chapters",
+            "topics",
+            "subjects",
+            "exams",
+            "classes",
+            "leave_applications",
+            "awards",
             "complains",
             "reminders",
-            "document_box",
-            "tasks",
-            "awards",
-            "responsibilities",
-            "salaries",
-            "employee_salaries",
-            "employee_payments",
+            "documents",
             "employee_responsibilities",
-            "exams",
-            "topics",
-            "chapters",
-            "class_streams",
-            "class_periods",
+            "responsibilities",
+            "employee_payments",
+            "employee_salaries",
+            "employee_experience",
+            "employee_education",
+            "attendance",
+            "school_holidays",
+            "material_locations",
+            "space_materials",
+            "space_employees",
+            "items",
+            "materials",
+            "spaces",
+            "space_categories",
+            "announcements",
+            "events",
+            "document_embeddings",
+            "school_promo_codes",
+            "global_users",
+            "students",
+            "employees",
             "auth",
         ];
+
+        println!("[SuperAdmin] Deleting school data for: {}", school_id);
+
         for table in &tables {
-            let _ = sqlx::query(&format!("DELETE FROM {} WHERE school_id = $1", table))
+            let sp_name = format!("sp_{}", table);
+            // Create a savepoint before attempting the deletion
+            if let Err(e) = sqlx::query(&format!("SAVEPOINT {}", sp_name)).execute(&mut *tx).await {
+                println!("[Delete Error] Failed to create savepoint for {}: {:?}", table, e);
+                continue;
+            }
+
+            if let Err(e) = sqlx::query(&format!("DELETE FROM {} WHERE school_id = $1", table))
                 .bind(school_id)
-                .execute(&mut *conn)
-                .await;
+                .execute(&mut *tx)
+                .await {
+                    println!("[Delete Error] Table {}: {:?}", table, e);
+                    // Rollback to the savepoint so the main transaction is not aborted
+                    let _ = sqlx::query(&format!("ROLLBACK TO SAVEPOINT {}", sp_name)).execute(&mut *tx).await;
+                } else {
+                    // Release the savepoint on success
+                    let _ = sqlx::query(&format!("RELEASE SAVEPOINT {}", sp_name)).execute(&mut *tx).await;
+                }
         }
+
+        // Finally delete the school record itself
         sqlx::query("DELETE FROM schools WHERE school_id = $1")
             .bind(school_id)
-            .execute(&mut *conn)
+            .execute(&mut *tx)
             .await?;
+
+        tx.commit().await?;
+        println!("[SuperAdmin] School {} and all associated data deleted.", school_id);
         Ok(())
     }
 
@@ -569,6 +683,50 @@ impl AdminService {
                 .flatten()
                 .unwrap_or(json!(null))),
             None => Err(format!("School {} not found", school_id).into()),
+        }
+    }
+
+    // ───── Global Notifications ─────
+
+    pub async fn set_global_notification(
+        &self,
+        notification: Value,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Deactivate existing global notifications
+        sqlx::query("UPDATE global_notifications SET active = FALSE WHERE active = TRUE")
+            .execute(&mut *tx)
+            .await?;
+
+        // 2. Insert new one
+        sqlx::query("INSERT INTO global_notifications (notification, active) VALUES ($1, TRUE)")
+            .bind(notification)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
+
+    pub async fn clear_global_notification(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        sqlx::query("UPDATE global_notifications SET active = FALSE WHERE active = TRUE")
+            .execute(&mut *conn)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_global_notification(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let row = sqlx::query("SELECT notification FROM global_notifications WHERE active = TRUE ORDER BY created_at DESC LIMIT 1")
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        match row {
+            Some(r) => Ok(r.try_get::<Value, _>("notification")?),
+            None => Ok(json!(null)),
         }
     }
 

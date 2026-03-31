@@ -41,7 +41,8 @@
     "additional_subjects": null,
     "admission_date": "2026-03-20",
     "room_number": null,
-    "student_type": null
+    "student_type": null,
+    "profile_image_url": null
   },
   {
     "id": 2,
@@ -74,7 +75,8 @@
     "additional_subjects": null,
     "admission_date": null,
     "room_number": null,
-    "student_type": null
+    "student_type": null,
+    "profile_image_url": null
   },
   {
     "id": 4,
@@ -107,7 +109,8 @@
     "additional_subjects": null,
     "admission_date": "2026-03-20",
     "room_number": null,
-    "student_type": "Regular"
+    "student_type": "Regular",
+    "profile_image_url": null
   },
   {
     "id": 6,
@@ -140,7 +143,8 @@
     "additional_subjects": null,
     "admission_date": "2026-03-21",
     "room_number": null,
-    "student_type": "Regular"
+    "student_type": "Regular",
+    "profile_image_url": null
   },
   {
     "id": 7,
@@ -173,6 +177,187 @@
     "additional_subjects": null,
     "admission_date": "2026-03-21",
     "room_number": null,
-    "student_type": "Regular"
+    "student_type": "Regular",
+    "profile_image_url": null
+  },
+  {
+    "id": 8,
+    "student_id": "S000001",
+    "school_id": "519063",
+    "class_name": "Class 1",
+    "name": "Test Student",
+    "roll_number": 1,
+    "section": "A",
+    "status": "active",
+    "enrolled_subjects": [
+      {
+        "id": "ENGL739",
+        "fee": 1000,
+        "name": "English"
+      },
+      {
+        "id": "HIND261",
+        "fee": 1000,
+        "name": "Hindi"
+      },
+      {
+        "id": "MATH580",
+        "fee": 1000,
+        "name": "Mathematics"
+      },
+      {
+        "id": "EVS991",
+        "fee": 1000,
+        "name": "EVS"
+      },
+      {
+        "id": "GENE129",
+        "fee": 1000,
+        "name": "General Knowledge"
+      }
+    ],
+    "total_fees": "5000",
+    "created_at": "2026-03-24T09:47:22.397240+00:00",
+    "updated_at": "2026-03-24T09:47:22.397240+00:00",
+    "dob": "2000-01-01",
+    "gender": "Male",
+    "father_name": null,
+    "mother_name": null,
+    "aadhaar_number": null,
+    "address_line1": null,
+    "address_city": null,
+    "address_state": null,
+    "address_pincode": null,
+    "tc_number": null,
+    "contact": "+919999999999",
+    "alternative_contact": null,
+    "email": null,
+    "transport_enabled": false,
+    "transport_radius": null,
+    "additional_subjects": null,
+    "admission_date": "2026-03-24",
+    "room_number": null,
+    "student_type": "Regular",
+    "profile_image_url": null
+  },
+  {
+    "id": 9,
+    "student_id": "S000002",
+    "school_id": "519063",
+    "class_name": "Class 3",
+    "name": "shivank bhati",
+    "roll_number": 1,
+    "section": "A",
+    "status": "active",
+    "enrolled_subjects": [
+      {
+        "id": "ENGL772",
+        "fee": 1000,
+        "name": "English"
+      },
+      {
+        "id": "HIND056",
+        "fee": 1000,
+        "name": "Hindi"
+      },
+      {
+        "id": "MATH333",
+        "fee": 1000,
+        "name": "Mathematics"
+      },
+      {
+        "id": "EVS046",
+        "fee": 1000,
+        "name": "EVS"
+      },
+      {
+        "id": "GENE637",
+        "fee": 1000,
+        "name": "General Knowledge"
+      }
+    ],
+    "total_fees": "5000",
+    "created_at": "2026-03-24T09:47:59.897885+00:00",
+    "updated_at": "2026-03-24T09:47:59.897885+00:00",
+    "dob": "2013-03-24",
+    "gender": "Male",
+    "father_name": "bablu singh",
+    "mother_name": "bimlesh",
+    "aadhaar_number": "914768144564",
+    "address_line1": "dayalpur",
+    "address_city": "dayalpur",
+    "address_state": "Delhi",
+    "address_pincode": "250406",
+    "tc_number": null,
+    "contact": "+919368671007",
+    "alternative_contact": null,
+    "email": "modernisum@gmail.com",
+    "transport_enabled": true,
+    "transport_radius": null,
+    "additional_subjects": null,
+    "admission_date": "2026-03-24",
+    "room_number": null,
+    "student_type": "Regular",
+    "profile_image_url": null
+  },
+  {
+    "id": 10,
+    "student_id": "S000003",
+    "school_id": "519063",
+    "class_name": "Class 3",
+    "name": "shivank Bhati",
+    "roll_number": 2,
+    "section": "A",
+    "status": "active",
+    "enrolled_subjects": [
+      {
+        "id": "ENGL772",
+        "fee": 1000,
+        "name": "English"
+      },
+      {
+        "id": "HIND056",
+        "fee": 1000,
+        "name": "Hindi"
+      },
+      {
+        "id": "MATH333",
+        "fee": 1000,
+        "name": "Mathematics"
+      },
+      {
+        "id": "EVS046",
+        "fee": 1000,
+        "name": "EVS"
+      },
+      {
+        "id": "GENE637",
+        "fee": 1000,
+        "name": "General Knowledge"
+      }
+    ],
+    "total_fees": "5000",
+    "created_at": "2026-03-25T04:39:47.155512+00:00",
+    "updated_at": "2026-03-25T04:39:47.155512+00:00",
+    "dob": "2021-11-25",
+    "gender": "Male",
+    "father_name": "bablu bhati",
+    "mother_name": "bimlesh",
+    "aadhaar_number": "914768144563",
+    "address_line1": "dayalpur",
+    "address_city": "meerut",
+    "address_state": "Delhi",
+    "address_pincode": "250406",
+    "tc_number": null,
+    "contact": "+918273514447",
+    "alternative_contact": null,
+    "email": "moderniusum@gmail.com",
+    "transport_enabled": true,
+    "transport_radius": null,
+    "additional_subjects": null,
+    "admission_date": "2026-03-25",
+    "room_number": null,
+    "student_type": "Regular",
+    "profile_image_url": "/uploads/91/80/9180e6621f9662855a730b727f9cee93e59298beba369abedfe308c633fbf339.jpg"
   }
 ]
