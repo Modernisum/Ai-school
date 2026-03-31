@@ -43,7 +43,14 @@ impl PayrollService for PostgresPayrollService {
             .await
             .unwrap_or_default();
         for r in responsibilities {
-            spaces_component += r["totalPrice"].as_f64().unwrap_or(0.0);
+            let monthly_price = r["monthlyPrice"].as_f64().unwrap_or(0.0);
+            let spaces_count = r["assignedSpaceIds"].as_array().map(|arr| arr.len()).unwrap_or(1) as f64;
+            let current_comp = if monthly_price > 0.0 {
+                monthly_price * spaces_count
+            } else {
+                r["totalPrice"].as_f64().unwrap_or(0.0)
+            };
+            spaces_component += current_comp;
         }
 
         let gross_salary = spaces_component + exp_component + tenure_component + bonus + aid;

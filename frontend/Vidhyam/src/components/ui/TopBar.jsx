@@ -18,6 +18,10 @@ export default function TopBar() {
     if (path.includes('/dashboard/finance')) return 'Finance';
     if (path.includes('/dashboard/academic')) return 'Academic';
     if (path.includes('/dashboard/exam')) return 'Exams';
+    if (path.includes('/dashboard/events')) return 'Events';
+    if (path.includes('/dashboard/attendance')) return 'Attendance';
+    if (path.includes('/dashboard/timetable')) return 'Timetable';
+    if (path.includes('/dashboard/academic/materials')) return 'Academic Materials';
     if (path.includes('/dashboard/announcements')) return 'Announcements';
     if (path.includes('/dashboard/settings')) return 'Settings';
     if (path.includes('/dashboard/infra')) return 'Infrastructure';

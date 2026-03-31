@@ -322,6 +322,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
                 "employeeType": r.try_get::<Option<String>, _>("employee_type").ok().flatten(),
                 "monthlyPrice": r.try_get::<bigdecimal::BigDecimal, _>("monthly_price").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
                 "perDayPrice": r.try_get::<bigdecimal::BigDecimal, _>("per_day_price").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
+                "studentFee": r.try_get::<bigdecimal::BigDecimal, _>("student_fee").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
                 "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at").ok(),
             })
         }).collect())
@@ -331,7 +332,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let responsibility_id = format!("RESP{}", chrono::Utc::now().timestamp_millis());
 
-        sqlx::query("INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, employee_type, monthly_price, data, space_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL)")
+        sqlx::query("INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, employee_type, monthly_price, data, space_id, student_fee) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, $10)")
             .bind(&responsibility_id)
             .bind(school_id)
             .bind(data["name"].as_str())
@@ -341,6 +342,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             .bind(data["employeeType"].as_str())
             .bind(data["monthlyPrice"].as_f64().unwrap_or(0.0))
             .bind(json!({})) // Empty JSON for now
+            .bind(data["studentFee"].as_f64().unwrap_or(0.0))
             .execute(&mut *conn).await?;
 
         let mut ret = data.clone();
@@ -431,6 +433,21 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         Ok(())
     }
 
+    async fn get_student_fee_sum_for_space(&self, school_id: &str, space_id: &str) -> Result<f64, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let result: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
+            "SELECT SUM(r.student_fee) FROM responsibilities r 
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id 
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+
+        Ok(result.map(|val| val.to_f64().unwrap_or(0.0)).unwrap_or(0.0))
+    }
+
     async fn delete_responsibility(
         &self,
         school_id: &str,
@@ -470,7 +487,8 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             "assignedSpaceIds": r.get::<Option<Value>, _>("assigned_space_ids").unwrap_or_else(|| json!([])), // Specific spaces for this assignment
             "employeeType": r.get::<Option<String>, _>("employee_type"),
             "monthlyPrice": r.get::<bigdecimal::BigDecimal, _>("monthly_price").to_f64().unwrap_or(0.0),
-            "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0)
+            "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0),
+            "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0)
         })).collect())
     }
 

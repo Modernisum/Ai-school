@@ -3275,6 +3275,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
                 "workPeriod": r.get::<Option<String>, _>("work_period").unwrap_or_default(),
                 "customDates": r.get::<Option<Value>, _>("custom_dates").unwrap_or(json!([])),
                 "totalPrice": r.try_get::<bigdecimal::BigDecimal, _>("total_price").unwrap_or_default().to_f64().unwrap_or(0.0),
+                "studentFee": r.try_get::<bigdecimal::BigDecimal, _>("student_fee").unwrap_or_default().to_f64().unwrap_or(0.0),
                 "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
             }))
             .collect())
@@ -3296,11 +3297,12 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         let work_period = data["workPeriod"].as_str();
         let custom_dates = data["customDates"].clone();
         let total_price = data["totalPrice"].as_f64().unwrap_or(0.0);
+        let student_fee = data["studentFee"].as_f64().unwrap_or(0.0);
 
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
-            "INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, space_category, responsibility_field, space_id, work_level, work_amount, work_period, custom_dates, total_price)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"
+            "INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, space_category, responsibility_field, space_id, work_level, work_amount, work_period, custom_dates, total_price, student_fee)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"
         )
         .bind(&res_id)
         .bind(school_id)
@@ -3316,6 +3318,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         .bind(work_period)
         .bind(if custom_dates.is_null() { json!([]) } else { custom_dates })
         .bind(bigdecimal::BigDecimal::from_f64(total_price).unwrap_or_default())
+        .bind(bigdecimal::BigDecimal::from_f64(student_fee).unwrap_or_default())
         .execute(&mut *conn)
         .await?;
 
@@ -3370,6 +3373,21 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         Ok(())
     }
 
+    async fn get_student_fee_sum_for_space(&self, school_id: &str, space_id: &str) -> Result<f64, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let result: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
+            "SELECT SUM(r.student_fee) FROM responsibilities r 
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id 
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+
+        Ok(result.map(|val| val.to_f64().unwrap_or(0.0)).unwrap_or(0.0))
+    }
+
     async fn get_employee_responsibilities(
         &self,
         school_id: &str,
@@ -3401,6 +3419,7 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
                 "workPeriod": r.get::<Option<String>, _>("work_period").unwrap_or_default(),
                 "customDates": r.get::<Option<Value>, _>("custom_dates").unwrap_or(json!([])),
                 "totalPrice": r.try_get::<bigdecimal::BigDecimal, _>("total_price").unwrap_or_default().to_f64().unwrap_or(0.0),
+                "studentFee": r.try_get::<bigdecimal::BigDecimal, _>("student_fee").unwrap_or_default().to_f64().unwrap_or(0.0),
                 "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
             }))
             .collect())

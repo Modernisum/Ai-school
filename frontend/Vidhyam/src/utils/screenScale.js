@@ -4,24 +4,38 @@
  */
 
 /**
- * Initialize font scale from stored value
+ * Initialize font scale based on screen width
  */
 export const initializeScreenScale = () => {
   try {
-    // Get stored scale from localStorage or use default
-    const storedScale = localStorage.getItem('screenScale');
-    const scale = storedScale ? parseFloat(storedScale) : 1.0;
-    const validScale = Math.min(Math.max(scale, 0.5), 2.0);
-    
-    // Update CSS custom properties
-    const root = document.documentElement;
-    root.style.setProperty('--scale-factor', validScale.toString());
-    
-    console.log('Font scale initialized to:', validScale);
-    return validScale;
+    const calculateScale = () => {
+      const screenWidth = window.innerWidth;
+      // Define breakpoints and corresponding scales
+      if (screenWidth < 640) return 0.85; // Small mobile
+      if (screenWidth < 768) return 0.9;  // Large mobile / Small tablet
+      if (screenWidth < 1024) return 0.95; // Tablet
+      if (screenWidth < 1280) return 1.0;  // Small laptop
+      if (screenWidth < 1536) return 1.05; // Standard laptop
+      return 1.1; // Large screens
+    };
+
+    const updateScale = () => {
+      const scale = calculateScale();
+      const root = document.documentElement;
+      root.style.setProperty('--scale-factor', scale.toString());
+    };
+
+    updateScale(); // Initial call
+
+    window.addEventListener('resize', updateScale);
+
+    console.log('Responsive font scaling initialized.');
+
+    // Return a cleanup function for React's useEffect
+    return () => window.removeEventListener('resize', updateScale);
+
   } catch (error) {
-    console.error('Failed to initialize font scale:', error);
-    return 1.0;
+    console.error('Failed to initialize responsive font scale:', error);
   }
 };
 

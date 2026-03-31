@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Menu, Home,
   Users, UserCheck, CreditCard, School, Box, Layers,
-  AlertCircle, FileText, CalendarCheck,
+  AlertCircle, FileText, CalendarCheck, CalendarDays,
   Plus, ChevronRight, UserPlus, ClipboardList,
-  Bell, Sparkles, Search, History, Settings, DollarSign
+  Bell, Sparkles, Search, History, Settings, DollarSign, IndianRupee
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,8 +16,8 @@ const NAV_CONFIG = [
     icon: Users,
     path: "/dashboard/student",
     subLinks: [
-      { label: "All Students", path: "/dashboard/student", icon: Users },
-      { label: "Admission", path: "/dashboard/student?add=1", icon: UserPlus },
+      { label: "All Students", path: "/dashboard/student/all", icon: Users },
+      { label: "Admission", path: "/dashboard/student/add", icon: UserPlus },
     ]
   },
   {
@@ -25,10 +25,10 @@ const NAV_CONFIG = [
     icon: UserCheck,
     path: "/dashboard/employee",
     subLinks: [
-      { label: "All Employees", path: "/dashboard/employee", icon: UserCheck },
-      { label: "Add Employee", path: "/dashboard/employee?add=1", icon: UserPlus },
-      { label: "Payroll & Salary", path: "/dashboard/payroll", icon: CreditCard },
-      { label: "Leave Management", path: "/dashboard/leave-management", icon: CalendarCheck },
+      { label: "All Employees", path: "/dashboard/employee/all", icon: UserCheck },
+      { label: "Add Employee", path: "/dashboard/employee/add", icon: UserPlus },
+      { label: "Payroll", path: "/dashboard/employee/payroll", icon: CreditCard },
+      { label: "Leave", path: "/dashboard/employee/leave", icon: CalendarCheck },
     ]
   },
   {
@@ -45,9 +45,9 @@ const NAV_CONFIG = [
     icon: CreditCard,
     path: "/dashboard/finance",
     subLinks: [
-      { label: "Fees Management", path: "/dashboard/finance?tab=fees", icon: CreditCard },
-      { label: "Salary & Payroll", path: "/dashboard/finance?tab=salary", icon: DollarSign },
-      { label: "Record Fee", path: "/dashboard/finance?tab=fees&add=1", icon: Plus },
+      { label: "Income", path: "/dashboard/finance/income/overview", icon: IndianRupee },
+      { label: "Expense", path: "/dashboard/finance/expense/overview", icon: DollarSign },
+      { label: "Fees Registry", path: "/dashboard/fees", icon: CreditCard },
       { label: "Referral Coupons", path: "/dashboard/referral-coupons", icon: ClipboardList },
     ]
   },
@@ -57,8 +57,11 @@ const NAV_CONFIG = [
     icon: School,
     path: "/dashboard/academic",
     subLinks: [
-      { label: "Exams", path: "/dashboard/exam", icon: FileText },
-      { label: "Events", path: "/dashboard/events", icon: CalendarCheck },
+      { label: "Exams", path: "/dashboard/academic/exam", icon: FileText },
+      { label: "Events", path: "/dashboard/academic/events", icon: CalendarCheck },
+      { label: "Attendance", path: "/dashboard/academic/attendance", icon: CalendarDays },
+      { label: "Timetable", path: "/dashboard/academic/timetable", icon: History },
+      { label: "Materials", path: "/dashboard/academic/materials", icon: FileText },
     ]
   },
   {
@@ -66,9 +69,9 @@ const NAV_CONFIG = [
     icon: Box,
     path: "/dashboard/infra",
     subLinks: [
-      { label: "Manifest", path: "/dashboard/infra", icon: Box },
-      { label: "Materials", path: "/dashboard/infra?tab=materials", icon: Layers },
-      { label: "Protocols", path: "/dashboard/infra?tab=roles", icon: ClipboardList },
+      { label: "Manifest", path: "/dashboard/infra/manifest", icon: Box },
+      { label: "Materials", path: "/dashboard/infra/materials", icon: Layers },
+      { label: "Protocols", path: "/dashboard/infra/protocols", icon: ClipboardList },
     ]
   },
   {
@@ -86,6 +89,32 @@ const NAV_CONFIG = [
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Dynamic width calculation based on screen size
+  const getSidebarWidths = () => {
+    if (windowWidth >= 1536) return { expanded: 240, collapsed: 64 }; // 2xl
+    if (windowWidth >= 1280) return { expanded: 210, collapsed: 60 }; // xl
+    if (windowWidth >= 1024) return { expanded: 190, collapsed: 56 }; // lg
+    return { expanded: 180, collapsed: 60 }; // md and below
+  };
+
+  const { expanded, collapsed } = getSidebarWidths();
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      
+      // Auto-collapse on smaller screens
+      if (width < 1024 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen, setSidebarOpen]);
 
   // Robust active state detection
   const isPathActive = (path) => {
@@ -121,7 +150,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarOpen ? 210 : 60 }}
+      animate={{ width: sidebarOpen ? expanded : collapsed }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="relative z-50 h-screen backdrop-blur-[32px] border-r border-white/5 flex flex-col flex-shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)] overflow-hidden transition-colors duration-500"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
@@ -180,29 +209,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           )}
         </AnimatePresence>
 
-        {sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all group"
-          >
-            <Menu size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-          </button>
-        )}
+        {/* Sidebar toggle button removed per user request */}
       </div>
 
-      {!sidebarOpen && (
-        <div className="flex justify-center py-4 border-b border-white/[0.03]">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"
-          >
-            <Menu size={18} />
-          </button>
-        </div>
-      )}
+      {/* Sidebar toggle button removed per user request */}
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-0.5 custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-0.5 no-scrollbar">
         {NAV_CONFIG.map((item) => {
           const { name, icon: Icon, path, subLinks } = item;
           const sectionActive = isSectionActive(path);
@@ -289,7 +302,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                   {/* Tooltip for collapsed state */}
                   {!sidebarOpen && (
-                    <div className="absolute left-16 px-2 py-1 bg-slate-800 text-white text-[11px] font-medium rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl border border-white/10">
+                    <div className="absolute left-[calc(100%+12px)] px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-bold rounded-lg opacity-0 group-hover:opacity-100 group-hover:translate-x-1 pointer-events-none transition-all duration-200 whitespace-nowrap z-[100] shadow-[0_4px_12px_rgba(0,0,0,0.5)] border border-white/10 flex items-center gap-2">
+                      <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 border-l border-b border-white/10 rotate-45" />
                       {name}
                     </div>
                   )}

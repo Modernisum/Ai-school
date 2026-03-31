@@ -56,6 +56,16 @@ impl StudentService for PostgresStudentService {
         let student_id = self.repos.student.generate_student_id(school_id).await?;
 
         let mut student_data = data.clone();
+        
+        // Auto-calculate Base Fees from Responsibilities
+        if let Some(room) = student_data["roomNumber"].as_str() {
+            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, room).await {
+                if fee > 0.0 {
+                    student_data["totalFees"] = json!(fee);
+                }
+            }
+        }
+
         student_data["studentId"] = json!(student_id);
         student_data["rollNumber"] = json!(roll_number);
         student_data["section"] = json!(section);
@@ -287,6 +297,18 @@ impl StudentService for PostgresStudentService {
 
                 final_data["rollNumber"] = json!(next_roll);
                 final_data["section"] = json!(self.get_section_for_roll(next_roll, section_size));
+            }
+        }
+
+        // Auto-calculate Base Fees from Responsibilities if space changed or fee doesn't exist
+        let old_room = old_student["roomNumber"].as_str().unwrap_or("");
+        let new_room = data["roomNumber"].as_str().unwrap_or("");
+        
+        if (!new_room.is_empty() && new_room != old_room) || (final_data["totalFees"].is_null() && !new_room.is_empty()) {
+            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, new_room).await {
+                if fee > 0.0 {
+                    final_data["totalFees"] = json!(fee);
+                }
             }
         }
 

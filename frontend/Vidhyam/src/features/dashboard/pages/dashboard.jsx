@@ -1,13 +1,14 @@
 import React, { useState, Suspense, lazy } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../../../components/ui/Sidebar";
+import TopBar from "../../../components/ui/TopBar";
 import SessionHandler from "../../auth/components/SessionHandler";
 
 const SchoolNotifier = lazy(() => import("../../../components/ui/SchoolNotifier"));
 const SpotlightSearch = lazy(() => import("../../../components/ui/SpotlightSearch"));
 
 export default function DashboardLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <SessionHandler>

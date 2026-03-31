@@ -522,6 +522,8 @@ pub trait ResponsibilityRepository: Send + Sync {
         space_ids: Vec<String>,
     ) -> Result<(), AppError>;
 
+    async fn get_student_fee_sum_for_space(&self, school_id: &str, space_id: &str) -> Result<f64, AppError>;
+
     async fn remove_responsibility(
         &self,
         school_id: &str,
