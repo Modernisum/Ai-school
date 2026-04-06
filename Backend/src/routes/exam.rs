@@ -44,3 +44,18 @@ pub async fn list_exams(
             .into_response(),
     }
 }
+
+pub async fn ai_generate_exam(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state.services.ai.generate_exam_questions(&school_id, &payload).await {
+        Ok(result) => Json(result).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}

@@ -2,29 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Cotton candy skies palette
-  static const Color purple = Color(0xFFB298E7);
-  static const Color cyan = Color(0xFFB8E3E9);
-  static const Color darkPink = Color(0xFFF5B8D5);
-  static const Color lightPink = Color(0xFFF9BEDD);
-  static const Color whiteGlass = Color(0x26FFFFFF); // 15% opacity white
-  static const Color darkGlass = Color(0x1A000000); // 10% opacity black
-  static const Color solidText = Color(0xFF2D3748); // Dark slate for contrast
+  // Deep professional palette - darker, richer colors
+  static const Color deepPurple = Color(0xFF7E57C2);
+  static const Color darkBlue = Color(0xFF283593);
+  static const Color teal = Color(0xFF00695C);
+  static const Color darkGray = Color(0xFF37474F);
+  static const Color lightGray = Color(0xFFECEFF1);
+  static const Color whiteGlass = Color(0x33FFFFFF); // 20% opacity white
+  static const Color darkGlass = Color(0x26000000); // 15% opacity black
+  static const Color lightText = Color(0xFFECEFF1); // Light text for dark backgrounds
+  static const Color darkText = Color(0xFF263238); // Dark text for light elements
 
   static ThemeData get theme {
     return ThemeData(
-      primaryColor: purple,
+      primaryColor: deepPurple,
       scaffoldBackgroundColor: Colors.transparent, // Background will be handled by AnimatedGradient
       textTheme: GoogleFonts.outfitTextTheme().apply(
-        bodyColor: solidText,
-        displayColor: solidText,
+        bodyColor: lightText,
+        displayColor: lightText,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: purple,
+          backgroundColor: deepPurple,
           foregroundColor: Colors.white,
           elevation: 8,
-          shadowColor: purple.withValues(alpha: 0.5),
+          shadowColor: darkBlue.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -38,29 +40,29 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.4),
+        fillColor: darkGlass,
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: whiteGlass),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: whiteGlass),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: purple, width: 2),
+          borderSide: const BorderSide(color: deepPurple, width: 2),
         ),
-        hintStyle: TextStyle(color: solidText.withValues(alpha: 0.5)),
+        hintStyle: TextStyle(color: lightText.withValues(alpha: 0.7)),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: solidText),
+        iconTheme: const IconThemeData(color: lightText),
         titleTextStyle: GoogleFonts.outfit(
-          color: solidText,
+          color: lightText,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),

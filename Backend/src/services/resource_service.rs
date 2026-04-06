@@ -70,38 +70,53 @@ impl ResourceService for PostgresResourceService {
             school_id,
             admin_id,
             "MATERIAL",
-            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            res["materialName"].as_str().unwrap_or("unknown"),
             "CREATE",
             data.clone()
         ).await;
         Ok(res)
     }
 
-    async fn list_materials(&self, school_id: &str) -> AppResult<Vec<Value>> {
-        Ok(self.repos.resource.get_materials(school_id).await?)
+    async fn list_materials(
+        &self,
+        school_id: &str,
+        search: Option<String>,
+        filter: Option<String>,
+        page: i64,
+        limit: i64,
+    ) -> AppResult<Value> {
+        let response = self.repos.resource.get_materials(school_id, search, filter, page, limit).await?;
+        let dashboard = self.repos.resource.get_materials_dashboard(school_id).await?;
+        
+        Ok(serde_json::json!({
+            "success": true,
+            "data": response["materials"],
+            "metadata": response["metadata"],
+            "dashboard": dashboard["data"]
+        }))
     }
 
-    async fn get_material(&self, school_id: &str, material_id: &str) -> AppResult<Option<Value>> {
-        Ok(self.repos.resource.get_material(school_id, material_id).await?)
+    async fn get_material(&self, school_id: &str, material_name: &str) -> AppResult<Option<Value>> {
+        Ok(self.repos.resource.get_material(school_id, material_name).await?)
     }
 
     async fn update_material(
         &self,
         school_id: &str,
         admin_id: &str,
-        material_id: &str,
+        material_name: &str,
         data: Value,
     ) -> AppResult<()> {
         self.repos
             .resource
-            .update_material(school_id, admin_id, material_id, data.clone())
+            .update_material(school_id, admin_id, material_name, data.clone())
             .await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "MATERIAL",
-            material_id,
+            material_name,
             "UPDATE",
             data
         ).await;
@@ -112,22 +127,33 @@ impl ResourceService for PostgresResourceService {
         &self,
         school_id: &str,
         admin_id: &str,
-        material_id: &str,
+        material_name: &str,
     ) -> AppResult<()> {
-        let material = self.repos.resource.get_material(school_id, material_id).await?
+        let material = self.repos.resource.get_material(school_id, material_name).await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        self.repos.resource.delete_material(school_id, material_id).await?;
+        self.repos.resource.delete_material(school_id, material_name).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "MATERIAL",
-            material_id,
+            material_name,
             "DELETE",
             material
         ).await;
 
+        Ok(())
+    }
+
+    async fn sell_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_name: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.repos.resource.sell_material(school_id, admin_id, material_name, data).await?;
         Ok(())
     }
 
@@ -173,46 +199,51 @@ impl ResourceService for PostgresResourceService {
         Ok(())
     }
 
-    async fn create_space(
+    async fn create_space_by_category(
         &self,
         school_id: &str,
         admin_id: &str,
-        data: Value,
+        category: &str,
+        name: String,
     ) -> AppResult<Value> {
-        let res = self.repos.resource.create_space(school_id, data.clone()).await?;
+        let res = self.repos.resource.create_space(school_id, category, name).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "SPACE",
-            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
+            res["spaceId"].as_str().unwrap_or("0"),
             "CREATE",
-            data
+            serde_json::json!({"name": res["spaceName"], "category": category})
         ).await;
         Ok(res)
     }
 
-    async fn list_spaces(&self, school_id: &str, category_id: Option<i32>) -> AppResult<Vec<Value>> {
-        Ok(self.repos.resource.get_spaces(school_id, category_id).await?)
+    async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>> {
+        Ok(self.repos.resource.get_spaces(school_id, category).await?)
+    }
+
+    async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>> {
+        Ok(self.repos.resource.get_space_categories(school_id).await?)
     }
 
     async fn update_space(
         &self,
         school_id: &str,
         admin_id: &str,
-        space_id: &str,
+        space_name: &str,
         data: Value,
     ) -> AppResult<()> {
         self.repos
             .resource
-            .update_space(school_id, space_id, data.clone())
+            .update_space(school_id, space_name, data.clone())
             .await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "SPACE",
-            space_id,
+            space_name,
             "UPDATE",
             data
         ).await;
@@ -223,15 +254,15 @@ impl ResourceService for PostgresResourceService {
         &self,
         school_id: &str,
         admin_id: &str,
-        space_id: &str,
+        space_name: &str,
     ) -> AppResult<()> {
-        self.repos.resource.delete_space(school_id, space_id).await?;
+        self.repos.resource.delete_space(school_id, space_name).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "SPACE",
-            space_id,
+            space_name,
             "DELETE",
             serde_json::json!({})
         ).await;
@@ -241,109 +272,27 @@ impl ResourceService for PostgresResourceService {
     async fn get_space_details(
         &self,
         school_id: &str,
-        space_id: &str,
+        space_name: &str,
     ) -> AppResult<Option<Value>> {
-        Ok(self.repos.resource.get_space_details(school_id, space_id).await?)
-    }
-
-    async fn get_space_categories(&self, school_id: &str) -> AppResult<Vec<Value>> {
-        Ok(self.repos.resource.get_space_categories(school_id).await?)
-    }
-
-    async fn create_space_category(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        data: Value,
-    ) -> AppResult<Value> {
-        let res = self.repos.resource.create_space_category(school_id, data.clone()).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "SPACE_CATEGORY",
-            &res["id"].as_i64().map(|id| id.to_string()).unwrap_or_else(|| "0".to_string()),
-            "CREATE",
-            data
-        ).await;
-        Ok(res)
-    }
-
-    async fn delete_space_category(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        category_id: i32,
-    ) -> AppResult<()> {
-        self.repos.resource.delete_space_category(school_id, category_id).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "SPACE_CATEGORY",
-            &category_id.to_string(),
-            "DELETE",
-            serde_json::json!({})
-        ).await;
-        Ok(())
+        Ok(self.repos.resource.get_space_details(school_id, space_name).await?)
     }
 
     async fn assign_space_materials(
         &self,
         school_id: &str,
         admin_id: &str,
-        space_id: &str,
+        space_name: &str,
         materials: Vec<Value>,
     ) -> AppResult<()> {
-        self.repos.resource.assign_space_materials(school_id, space_id, materials.clone()).await?;
+        self.repos.resource.assign_space_materials(school_id, space_name, materials.clone()).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
             "SPACE_MATERIALS",
-            space_id,
+            space_name,
             "ASSIGN",
             serde_json::json!({ "materials": materials })
-        ).await;
-        Ok(())
-    }
-
-    async fn assign_space_employees(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        space_id: &str,
-        employee_ids: Vec<String>,
-    ) -> AppResult<()> {
-        self.repos.resource.assign_space_employees(school_id, space_id, employee_ids.clone()).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "SPACE_EMPLOYEES",
-            space_id,
-            "ASSIGN",
-            serde_json::json!({ "employee_ids": employee_ids })
-        ).await;
-        Ok(())
-    }
-
-    async fn remove_space_employee(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        space_id: &str,
-        employee_id: &str,
-    ) -> AppResult<()> {
-        self.repos.resource.remove_space_employee(school_id, space_id, employee_id).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "SPACE_EMPLOYEES",
-            space_id,
-            "REMOVE",
-            serde_json::json!({ "employee_id": employee_id })
         ).await;
         Ok(())
     }

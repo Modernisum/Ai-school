@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Settings, Clock, Save, RefreshCw, Palette, History, Maximize2, Minimize2 } from 'lucide-react';
+import { Settings, Clock, Save, RefreshCw, Palette, History, Maximize2, Minimize2, Globe, Shield, Loader } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -10,6 +10,7 @@ import {
 } from '../../settings/settingsSlice';
 import { THEME_PRESETS } from '../../../utils/theme';
 import { updateScreenScale } from '../../../utils/screenScale';
+import { API_BASE_URL, getSchoolIdFromStorage, callApiWithBackoff } from '../../../utils/api';
 
 export default function GeneralSettings() {
   const dispatch = useDispatch();
@@ -17,6 +18,55 @@ export default function GeneralSettings() {
   const pollingInterval = useSelector(selectPollingInterval);
   const theme = useSelector(selectTheme);
   const screenScale = useSelector(selectScreenScale);
+
+  const [sessionDuration, setSessionDuration] = useState(24);
+  const [loadingSession, setLoadingSession] = useState(false);
+  const [updatingSession, setUpdatingSession] = useState(false);
+  const [sessionError, setSessionError] = useState(null);
+
+  const schoolId = getSchoolIdFromStorage();
+
+  useEffect(() => {
+    if (schoolId) {
+      fetchSessionSettings();
+    }
+  }, [schoolId]);
+
+  const fetchSessionSettings = async () => {
+    setLoadingSession(true);
+    setSessionError(null);
+    try {
+      const response = await callApiWithBackoff(`${API_BASE_URL}/school/${schoolId}?filter=session`);
+      if (response.success && response.data?.sessionDurationHours) {
+        setSessionDuration(response.data.sessionDurationHours);
+      }
+    } catch (err) {
+      console.error('Error fetching session settings:', err);
+      setSessionError('Failed to load session settings');
+    } finally {
+      setLoadingSession(false);
+    }
+  };
+
+  const handleSessionChange = async (newDuration) => {
+    const duration = parseInt(newDuration);
+    setSessionDuration(duration);
+    setUpdatingSession(true);
+    try {
+      const response = await callApiWithBackoff(`${API_BASE_URL}/school/${schoolId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionDurationHours: duration })
+      });
+      if (!response.success) throw new Error(response.message || 'Update failed');
+    } catch (err) {
+      console.error('Error updating session settings:', err);
+      setSessionError('Update failed. Reverting...');
+      fetchSessionSettings(); // Revert on error
+    } finally {
+      setUpdatingSession(false);
+    }
+  };
 
   const handleIntervalChange = (e) => {
     dispatch(setPollingInterval(parseInt(e.target.value)));
@@ -37,6 +87,47 @@ export default function GeneralSettings() {
       </header>
 
       <div className="grid grid-cols-1 gap-6">
+        <section className="glass-card p-5 md:px-6 md:py-4 border border-white/5 bg-slate-900/40 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+          
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+              <Globe size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white leading-tight">Session Persistence</h3>
+              <p className="text-slate-500 text-xs font-medium mt-0.5">Control how long online sessions remain active.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
+            {updatingSession ? (
+              <Loader size={16} className="text-primary animate-spin" />
+            ) : (
+              <Shield size={16} className={`${sessionError ? 'text-rose-500' : 'text-emerald-500'}`} />
+            )}
+            <select 
+              value={sessionDuration} 
+              onChange={(e) => handleSessionChange(e.target.value)}
+              disabled={loadingSession || updatingSession}
+              className="bg-slate-950/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-primary/50 transition-all outline-none appearance-none cursor-pointer text-sm w-full md:w-48 disabled:opacity-50"
+            >
+              <option value={1}>1 Hour</option>
+              <option value={4}>4 Hours</option>
+              <option value={8}>8 Hours</option>
+              <option value={12}>12 Hours</option>
+              <option value={24}>24 Hours (Default)</option>
+              <option value={48}>48 Hours</option>
+              <option value={168}>1 Week</option>
+            </select>
+          </div>
+          {sessionError && (
+            <p className="absolute bottom-1 right-6 text-[9px] font-bold text-rose-500 uppercase tracking-tighter animate-pulse">
+              {sessionError}
+            </p>
+          )}
+        </section>
+
         <section className="glass-card p-5 md:px-6 md:py-4 border border-white/5 bg-slate-900/40 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
           

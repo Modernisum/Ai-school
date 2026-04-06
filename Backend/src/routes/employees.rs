@@ -7,6 +7,7 @@ use axum::{
 };
 use crate::middleware::rls::TenantContext;
 use serde_json::json;
+use chrono::Datelike;
 
 pub async fn create_employee(
     State(state): State<AppState>,
@@ -14,27 +15,43 @@ pub async fn create_employee(
     Path(school_id): Path<String>,
     Json(payload): Json<CreateEmployeeRequest>,
 ) -> impl IntoResponse {
+    let dob_str = payload.dob.clone();
+    let calculated_age = if payload.age.is_none() {
+        if let Ok(dob) = chrono::NaiveDate::parse_from_str(&dob_str, "%Y-%m-%d") {
+            let now = chrono::Utc::now().naive_utc().date();
+            let mut age = now.year() - dob.year();
+            if now.ordinal() < dob.ordinal() {
+                age -= 1;
+            }
+            Some(age)
+        } else {
+            None
+        }
+    } else {
+        payload.age
+    };
+
     let emp_data = json!({
         "name": payload.name,
         "fatherName": payload.father_name,
         "motherName": payload.mother_name,
-        "dob": payload.dob,
-        "age": payload.age,
+        "dob": dob_str,
+        "age": calculated_age,
         "gender": payload.gender,
         "category": payload.category,
-        "bloodGroup": payload.blood_group,
-        "type": payload.employee_type.clone(),
         "employeeType": payload.employee_type,
         "baseSalary": payload.base_salary,
         "email": payload.email,
         "phone": payload.phone,
-        "emergencyContact": payload.emergency_contact,
-        "subject": payload.subject,
-        "address": payload.address,
+        "alternativeContact": payload.alternative_contact,
+        "permanent address": payload.permanent_address,
         "temporaryAddress": payload.temporary_address,
         "experience": payload.experience,
         "education": payload.education,
         "aadhaarNumber": payload.aadhaar_number,
+        "responsibilities": payload.responsibilities,
+        "bankDetails": payload.bank_details,
+        "profileImageUrl": payload.profile_image_url,
         "roles": payload.roles,
     });
 
@@ -120,12 +137,52 @@ pub async fn update_employee(
     State(state): State<AppState>,
     Extension(t_ctx): Extension<TenantContext>,
     Path((school_id, employee_id)): Path<(String, String)>,
-    Json(payload): Json<serde_json::Value>,
+    Json(payload): Json<CreateEmployeeRequest>,
 ) -> impl IntoResponse {
+    let dob_str = payload.dob.clone();
+    let calculated_age = if payload.age.is_none() {
+        if let Ok(dob) = chrono::NaiveDate::parse_from_str(&dob_str, "%Y-%m-%d") {
+            let now = chrono::Utc::now().naive_utc().date();
+            let mut age = now.year() - dob.year();
+            if now.ordinal() < dob.ordinal() {
+                age -= 1;
+            }
+            Some(age)
+        } else {
+            None
+        }
+    } else {
+        payload.age
+    };
+
+    let emp_data = json!({
+        "name": payload.name,
+        "fatherName": payload.father_name,
+        "motherName": payload.mother_name,
+        "dob": dob_str,
+        "age": calculated_age,
+        "gender": payload.gender,
+        "category": payload.category,
+        "employeeType": payload.employee_type,
+        "baseSalary": payload.base_salary,
+        "email": payload.email,
+        "phone": payload.phone,
+        "alternativeContact": payload.alternative_contact,
+        "permanent address": payload.permanent_address,
+        "temporaryAddress": payload.temporary_address,
+        "experience": payload.experience,
+        "education": payload.education,
+        "aadhaarNumber": payload.aadhaar_number,
+        "responsibilities": payload.responsibilities,
+        "bankDetails": payload.bank_details,
+        "profileImageUrl": payload.profile_image_url,
+        "roles": payload.roles,
+    });
+
     match state
         .services
         .employee
-        .update_employee(&school_id, &employee_id, &t_ctx.admin_id, payload)
+        .update_employee(&school_id, &employee_id, &t_ctx.admin_id, emp_data)
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Employee updated successfully"}))

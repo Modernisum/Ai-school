@@ -83,9 +83,10 @@ impl ComplainService for PostgresAuxiliaryService {
     async fn list_complains(
         &self,
         school_id: &str,
-        student_id: Option<&str>,
+        user_id: Option<&str>,
+        user_role: Option<&str>,
     ) -> AppResult<Vec<Value>> {
-        Ok(self.repos.complain.get_complains(school_id, student_id).await?)
+        Ok(self.repos.complain.get_complains(school_id, user_id, user_role).await?)
     }
 
     async fn delete_complain(
@@ -256,7 +257,23 @@ impl SchoolService for PostgresAuxiliaryService {
     async fn get_school_details(
         &self,
         school_id: &str,
+        filter: Option<String>,
     ) -> AppResult<Value> {
+        if let Some(f) = filter {
+            if f == "session" {
+                let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+                let row = sqlx::query("SELECT session_duration_hours FROM schools WHERE school_id = $1")
+                    .bind(school_id)
+                    .fetch_optional(&mut *conn)
+                    .await?;
+                
+                return match row {
+                    Some(r) => Ok(json!({ "sessionDurationHours": sqlx::Row::get::<i32, _>(&r, "session_duration_hours") })),
+                    None => Err(AppError::NotFound("School not found".to_string())),
+                };
+            }
+        }
+
         match self.repos.school.get_school(school_id).await? {
             Some(school) => Ok(school),
             None => Err(AppError::NotFound("School not found".to_string())),
@@ -270,7 +287,7 @@ impl SchoolService for PostgresAuxiliaryService {
         data: Value,
     ) -> AppResult<()> {
         // 1. Fetch old data to check classLevel increase
-        let old_school = self.get_school_details(school_id).await?;
+        let old_school = self.get_school_details(school_id, None).await?;
         let old_level = old_school["data"]["classLevel"].as_i64()
             .or_else(|| old_school["data"]["classLevel"].as_str().and_then(|s| s.parse().ok()))
             .unwrap_or(0);
@@ -292,9 +309,18 @@ impl SchoolService for PostgresAuxiliaryService {
         .await
         .map_err(AppError::Database)?;
 
-        if let Some(name) = data["schoolName"].as_str() {
-             sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
-                .bind(name)
+        // if let Some(name) = data["schoolName"].as_str() {
+        //      sqlx::query("UPDATE schools SET school_name = $1 WHERE school_id = $2")
+        //         .bind(name)
+        //         .bind(school_id)
+        //         .execute(&mut *conn)
+        //         .await
+        //         .map_err(AppError::Database)?;
+        // }
+
+        if let Some(hours) = data["sessionDurationHours"].as_i64() {
+             sqlx::query("UPDATE schools SET session_duration_hours = $1 WHERE school_id = $2")
+                .bind(hours as i32)
                 .bind(school_id)
                 .execute(&mut *conn)
                 .await
@@ -303,10 +329,7 @@ impl SchoolService for PostgresAuxiliaryService {
 
         // 3. Trigger auto-generation if level increased
         if new_level > old_level {
-            let academic_svc = crate::services::academic_service::PostgresAcademicService {
-                repos: self.repos.clone(),
-            };
-            academic_svc.auto_generate_classes(school_id, admin_id).await?;
+            let _ = self.repos.audit.log_action(school_id, admin_id, "CLASS", "AUTO_GENERATE", "CREATE", json!({})).await;
         }
 
         let _ = self.repos.audit.log_action(
@@ -341,18 +364,47 @@ impl ResponsibilityService for PostgresAuxiliaryService {
         admin_id: &str,
         data: Value,
     ) -> AppResult<Value> {
+        // --- Validation ---
+        let _name = data["name"].as_str().filter(|s| !s.trim().is_empty())
+            .ok_or_else(|| AppError::from("Responsibility 'name' is required and cannot be empty"))?;
+        
+        let _ = data["spaceCategory"].as_str()
+            .ok_or_else(|| AppError::from("'spaceCategory' is required"))?;
+        
+        let _ = data["employeeType"].as_str()
+            .ok_or_else(|| AppError::from("'employeeType' is required"))?;
+
+        let space_ids = data["spaceIds"].as_array()
+            .ok_or_else(|| AppError::from("'spaceIds' array is required"))?;
+        
+        if space_ids.is_empty() {
+             return Err(AppError::from("At least one 'spaceId' is required in 'spaceIds' array"));
+        }
+
+        // --- Space Verification ---
+        for sid_val in space_ids {
+            let sid = sid_val.as_str().ok_or_else(|| AppError::from("Invalid spaceId in array"))?;
+            let space_exists = self.repos.resource.get_space_details(school_id, sid).await?;
+            if space_exists.is_none() {
+                return Err(AppError::from(format!("Space ID '{}' does not exist in infrastructure records", sid)));
+            }
+        }
+
         let res = self.repos.responsibility.add_responsibility(school_id, data.clone()).await?;
         
         if let Some(responsibility_id) = res["responsibilityId"].as_str() {
+            // Also assign the spaceIds to the responsibility root if needed or to the employees
+            // In the user request, they provided spaceIds at the root. 
+            // If they also provide employees, the existing logic handles it.
             if let Some(employees) = data["employees"].as_array() {
                 let mut assignments = Vec::new();
                 for emp in employees {
                     if let Some(emp_id) = emp["employeeId"].as_str() {
-                        let space_ids: Vec<String> = emp["spaceIds"]
+                        let e_space_ids: Vec<String> = emp["spaceIds"]
                             .as_array()
                             .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-                            .unwrap_or_default();
-                        assignments.push((emp_id.to_string(), space_ids));
+                            .unwrap_or_else(|| space_ids.iter().filter_map(|v| v.as_str().map(String::from)).collect()); // Default to root space_ids if not per-employee
+                        assignments.push((emp_id.to_string(), e_space_ids));
                     }
                 }
                 
@@ -363,6 +415,9 @@ impl ResponsibilityService for PostgresAuxiliaryService {
                         assignments,
                     ).await;
                 }
+            } else {
+                // If no employees provided yet, we just created the definition. 
+                // The spaceIds are stored in the 'data' blob anyway by default repository logic.
             }
         }
 
@@ -370,152 +425,88 @@ impl ResponsibilityService for PostgresAuxiliaryService {
             school_id,
             admin_id,
             "RESPONSIBILITY",
-            &res["responsibilityId"].as_str().unwrap_or("0").to_string(),
+            res["responsibilityId"].as_str().unwrap_or("0"),
             "CREATE",
             data
         ).await;
         Ok(res)
     }
 
-    async fn assign_responsibility(
-        &self,
-        school_id: &str,
-        employee_id: &str,
-        responsibility_id: &str,
-        admin_id: &str,
-    ) -> AppResult<()> {
-        self.repos
-            .responsibility
-            .assign_responsibility(school_id, employee_id, responsibility_id)
-            .await?;
-        
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "RESPONSIBILITY_ASSIGN",
-            "0",
-            "ASSIGN",
-            json!({"employeeId": employee_id, "responsibilityId": responsibility_id})
-        ).await;
-        Ok(())
+
+    async fn get_responsibility(&self, school_id: &str, responsibility_id: &str) -> AppResult<Option<Value>> {
+        Ok(self.repos.responsibility.get_responsibility(school_id, responsibility_id).await?)
     }
 
-    async fn bulk_assign_responsibilities(
-        &self,
-        school_id: &str,
-        employee_ids: Vec<String>,
-        responsibility_ids: Vec<String>,
-        space_ids: Vec<String>,
-        admin_id: &str,
-    ) -> AppResult<()> {
-        self.repos
-            .responsibility
-            .bulk_assign_responsibilities(school_id, employee_ids.clone(), responsibility_ids.clone(), space_ids.clone())
-            .await?;
-            
+
+
+
+
+    async fn get_responsibility_analytics(&self, school_id: &str, responsibility_id: &str) -> AppResult<Value> {
+        let analytics = self.repos.responsibility.get_responsibility_analytics(school_id, responsibility_id).await?;
+        Ok(analytics)
+    }
+
+    async fn list_student_responsibilities(&self, school_id: &str, student_id: &str) -> AppResult<Vec<Value>> {
+        let responsibilities = self.repos.responsibility.get_student_responsibilities(school_id, student_id).await?;
+        Ok(responsibilities)
+    }
+
+    async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, admin_id: &str, data: Value) -> AppResult<()> {
+        // 1. Fetch Old Data for Audit/Recovery
+        let old_data = self.repos.responsibility.get_responsibility(school_id, responsibility_id).await?
+            .ok_or_else(|| AppError::from("Responsibility not found"))?;
+
+        // 2. Validation (Optional fields but if provided must be valid)
+        if let Some(space_ids) = data["spaceIds"].as_array() {
+            if space_ids.is_empty() {
+                return Err(AppError::from("At least one 'spaceId' is required if 'spaceIds' array is provided"));
+            }
+            for sid_val in space_ids {
+                let sid = sid_val.as_str().ok_or_else(|| AppError::from("Invalid spaceId in array"))?;
+                let space_exists = self.repos.resource.get_space_details(school_id, sid).await?;
+                if space_exists.is_none() {
+                    return Err(AppError::from(format!("Space ID '{}' does not exist in infrastructure records", sid)));
+                }
+            }
+        }
+
+        // 3. Perform update
+        self.repos.responsibility.update_responsibility(school_id, responsibility_id, data.clone()).await?;
+
+        // 4. Log Update Action for Recovery (Old vs New)
         let _ = self.repos.audit.log_action(
             school_id,
             admin_id,
-            "RESPONSIBILITY_BULK_ASSIGN",
-            "0",
-            "ASSIGN",
+            "RESPONSIBILITY_UPDATE",
+            responsibility_id,
+            "UPDATE",
             json!({
-                "employeeIds": employee_ids,
-                "responsibilityIds": responsibility_ids,
-                "spaceIds": space_ids
+                "old": old_data,
+                "new": data
             })
         ).await;
-        Ok(())
-    }
 
-    async fn remove_responsibility(
-        &self,
-        school_id: &str,
-        employee_id: &str,
-        responsibility_id: &str,
-        admin_id: &str,
-    ) -> AppResult<()> {
-        self.repos
-            .responsibility
-            .remove_responsibility(school_id, employee_id, responsibility_id)
-            .await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "RESPONSIBILITY_REMOVE",
-            "0",
-            "REMOVE",
-            json!({"employeeId": employee_id, "responsibilityId": responsibility_id})
-        ).await;
-        Ok(())
-    }
-
-    async fn list_employee_responsibilities(
-        &self,
-        school_id: &str,
-        employee_id: &str,
-    ) -> AppResult<Value> {
-        let responsibilities = self
-            .repos
-            .responsibility
-            .get_employee_responsibilities(school_id, employee_id)
-            .await?;
-
-        // Calculate totals
-        let total_per_day_price: f64 = responsibilities
-            .iter()
-            .map(|r| r["perDayPrice"].as_f64().unwrap_or(0.0))
-            .sum();
-            
-        let total_monthly_price: f64 = responsibilities
-            .iter()
-            .map(|r| r["monthlyPrice"].as_f64().unwrap_or(0.0))
-            .sum();
-
-        // Fetch employee base salary
-        let employee = self
-            .repos
-            .employee
-            .get_employee(school_id, employee_id)
-            .await?;
-        let base_salary = employee
-            .as_ref()
-            .and_then(|e| e["baseSalary"].as_str())
-            .and_then(|s| s.parse::<f64>().ok())
-            .unwrap_or(0.0);
-
-        Ok(json!({
-            "employee": {
-                "employeeId": employee_id,
-                "responsibilities": responsibilities,
-                "totalPerDayPrice": total_per_day_price,
-                "totalMonthlyPrice": total_monthly_price,
-                "baseSalary": base_salary
-            }
-        }))
-    }
-
-    async fn sync_subject_roles(&self, school_id: &str, admin_id: &str) -> AppResult<()> {
-        self.repos.responsibility.sync_subject_roles(school_id).await?;
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "RESPONSIBILITY_SYNC",
-            "0",
-            "SYNC",
-            json!({"action": "automated_role_generation_from_subjects"})
-        ).await;
         Ok(())
     }
 }
 
+
 #[async_trait]
 impl TaskService for PostgresAuxiliaryService {
+    async fn add_task(&self, school_id: &str, data: Value) -> AppResult<Value> {
+        Ok(self.repos.task.add_task(school_id, data).await?)
+    }
+
     async fn list_tasks(
         &self,
         school_id: &str,
+        start_date: Option<&str>,
+        end_date: Option<&str>
     ) -> AppResult<Vec<Value>> {
-        Ok(self.repos.task.get_tasks(school_id).await?)
+        Ok(self.repos.task.get_tasks(school_id, start_date, end_date).await?)
+    }
+
+    async fn update_task_status(&self, school_id: &str, task_id: &str, status: &str) -> AppResult<()> {
+        Ok(self.repos.task.update_task_status(school_id, task_id, status).await?)
     }
 }

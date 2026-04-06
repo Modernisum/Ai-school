@@ -37,4 +37,25 @@ impl AiService for PostAiService {
             .await
             .map_err(|e| AppError::Internal(format!("Embedding generation error: {}", e)))
     }
+
+    async fn generate_employee_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value> {
+        self.orchestrator
+            .generate_weekly_tasks_for_employee(school_id, employee_id)
+            .await
+            .map_err(|e| AppError::Internal(format!("Task generation error: {}", e)))
+    }
+
+    async fn reorganize_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value> {
+        self.orchestrator
+            .reorganize_tasks(school_id, employee_id)
+            .await
+            .map_err(|e| AppError::Internal(format!("Task reorganization error: {}", e)))
+    }
+
+    async fn generate_exam_questions(&self, school_id: &str, payload: &Value) -> AppResult<Value> {
+        self.orchestrator
+            .generate_exam_questions(school_id, payload)
+            .await
+            .map_err(|e| AppError::Internal(format!("Exam generation error: {}", e)))
+    }
 }

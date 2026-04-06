@@ -6,37 +6,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiService {
-  static const String serverUrl = 'http://10.0.2.2:8080';
+  static const String serverUrl = 'http://localhost:8080';
   static const String apiBase = '$serverUrl/api';
   
   final storage = const FlutterSecureStorage();
 
-  // Unified global login - returns success if existence is confirmed and OTP sent
-  Future<bool> login(String ident) async {
+  // Fetches profiles from the backend after Firebase OTP validation
+  Future<List<dynamic>?> getProfiles(String ident) async {
     try {
       final response = await http.post(
-        Uri.parse('$apiBase/auth/login'),
+        Uri.parse('$apiBase/auth/employee/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ident': ident, 'userType': 'employee'}),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'] == true;
-      }
-      return false;
-    } catch (e) {
-      debugPrint("Login Error: $e");
-      return false;
-    }
-  }
-
-  // Unified global OTP verify - returns matched profiles across all schools
-  Future<List<dynamic>?> verifyOtp(String ident, String otp) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$apiBase/auth/verify-otp-global'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ident': ident, 'otp': otp}),
+        body: jsonEncode({'ident': ident}),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -46,7 +27,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      debugPrint("Verify OTP Error: $e");
+      debugPrint("Get Profiles Error: $e");
       return null;
     }
   }
@@ -154,6 +135,61 @@ class ApiService {
     } catch (e) {
       debugPrint("Mark Permanent Exception: $e");
       return false;
+    }
+  }
+
+  Future<bool> createComplain(Map<String, dynamic> payload) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      final url = '$apiBase/complains/$sid';
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("Create Complain Error: $e");
+      return false;
+    }
+  }
+
+  Future<List<dynamic>?> getComplains({String? userId, String? userRole}) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      String url = '$apiBase/complains/$sid';
+      
+      List<String> queryParams = [];
+      if (userId != null) queryParams.add('user_id=$userId');
+      if (userRole != null) queryParams.add('user_role=$userRole');
+      
+      if (queryParams.isNotEmpty) {
+        url += '?' + queryParams.join('&');
+      }
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as List<dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get Complains Error: $e");
+      return null;
     }
   }
 }

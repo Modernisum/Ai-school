@@ -15,8 +15,25 @@ pub async fn list_responsibilities(
     let emp_type = params.get("employeeType").cloned();
     let simple = params.get("simple").map(|v| v == "true").unwrap_or(false);
     
-    match state.services.responsibility.list_responsibilities(&school_id, emp_type).await {
-        Ok(list) => {
+    match state.services.responsibility.list_responsibilities(&school_id, emp_type.clone()).await {
+        Ok(mut list) => {
+            // Priority Sort: If teacher is requested, put them first
+            if let Some(ref et) = emp_type {
+                if et == "teacher" {
+                    list.sort_by(|a, b| {
+                        let a_is_match = a["employeeType"].as_str() == Some("teacher");
+                        let b_is_match = b["employeeType"].as_str() == Some("teacher");
+                        b_is_match.cmp(&a_is_match)
+                    });
+                }
+            }
+
+            let ids_only = params.get("idsOnly").map(|v| v == "true").unwrap_or(false);
+            if ids_only {
+                let id_list: Vec<serde_json::Value> = list.into_iter().map(|r| r["responsibilityId"].clone()).collect();
+                return Json(json!({"success": true, "data": id_list})).into_response();
+            }
+
             if simple {
                 let simple_list: Vec<serde_json::Value> = list.into_iter().map(|r| {
                     json!({
@@ -57,30 +74,59 @@ pub async fn create_responsibility(
     }
 }
 
-pub async fn assign_responsibility(
+
+
+pub async fn responsibility_analytics(
+    State(state): State<AppState>,
+    Path((school_id, responsibility_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .responsibility
+        .get_responsibility_analytics(&school_id, &responsibility_id)
+        .await
+    {
+        Ok(analytics) => Json(json!({"success": true, "data": analytics})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn list_student_responsibilities(
+    State(state): State<AppState>,
+    Path((school_id, student_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .responsibility
+        .list_student_responsibilities(&school_id, &student_id)
+        .await
+    {
+        Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn update_responsibility(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, employee_id)): Path<(String, String)>,
+    Path((school_id, responsibility_id)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    let responsibility_id = match payload["responsibilityId"].as_str() {
-        Some(id) => id,
-        None => {
-            return (
-                axum::http::StatusCode::BAD_REQUEST,
-                Json(json!({"success": false, "message": "responsibilityId is required"})),
-            )
-                .into_response()
-        }
-    };
-
     match state
         .services
         .responsibility
-        .assign_responsibility(&school_id, &employee_id, responsibility_id, &tenant_ctx.admin_id)
+        .update_responsibility(&school_id, &responsibility_id, &tenant_ctx.admin_id, payload)
         .await
     {
-        Ok(_) => Json(json!({"success": true})).into_response(),
+        Ok(_) => Json(json!({"success": true, "message": "Responsibility updated successfully"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -89,101 +135,24 @@ pub async fn assign_responsibility(
     }
 }
 
-pub async fn remove_responsibility(
+pub async fn get_responsibility_definition(
     State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, employee_id, responsibility_id)): Path<(String, String, String)>,
+    Path((school_id, responsibility_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     match state
         .services
         .responsibility
-        .remove_responsibility(&school_id, &employee_id, &responsibility_id, &tenant_ctx.admin_id)
+        .get_responsibility(&school_id, &responsibility_id)
         .await
     {
-        Ok(_) => Json(json!({"success": true})).into_response(),
+        Ok(Some(res)) => Json(json!({"success": true, "data": res})).into_response(),
+        Ok(None) => (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(json!({"success": false, "message": "Responsibility not found"})),
+        ).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-pub async fn sync_subject_roles(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path(school_id): Path<String>,
-) -> impl IntoResponse {
-    match state
-        .services
-        .responsibility
-        .sync_subject_roles(&school_id, &tenant_ctx.admin_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Roles synced with subjects successfully"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-pub async fn list_employee_responsibilities(
-    State(state): State<AppState>,
-    Path((school_id, employee_id)): Path<(String, String)>,
-) -> impl IntoResponse {
-    match state
-        .services
-        .responsibility
-        .list_employee_responsibilities(&school_id, &employee_id)
-        .await
-    {
-        Ok(mut enriched) => {
-            if let Some(obj) = enriched.as_object_mut() {
-                obj.insert("success".to_string(), json!(true));
-            }
-            Json(enriched).into_response()
-        }
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-pub async fn bulk_assign_responsibility(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let employee_ids = match payload["employeeIds"].as_array() {
-        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>(),
-        None => return (axum::http::StatusCode::BAD_REQUEST, Json(json!({"success": false, "message": "employeeIds array is required"}))).into_response(),
-    };
-    
-    let responsibility_ids = match payload["responsibilityIds"].as_array() {
-        Some(arr) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>(),
-        None => return (axum::http::StatusCode::BAD_REQUEST, Json(json!({"success": false, "message": "responsibilityIds array is required"}))).into_response(),
-    };
-
-    let space_ids = payload["spaceIds"].as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<String>>())
-        .unwrap_or_default();
-
-    match state
-        .services
-        .responsibility
-        .bulk_assign_responsibilities(&school_id, employee_ids, responsibility_ids, space_ids, &tenant_ctx.admin_id)
-        .await
-    {
-        Ok(_) => Json(json!({"success": true, "message": "Responsibilities assigned in bulk successfully"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        ).into_response(),
     }
 }

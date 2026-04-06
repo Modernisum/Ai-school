@@ -1,5 +1,5 @@
-#![allow(dead_code)]
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -12,20 +12,19 @@ pub struct SchoolLoginRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct VerifyOtpGlobalRequest {
-    pub ident: String,
-    pub otp: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
     pub success: bool,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub school_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub password_temp: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<Vec<Value>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

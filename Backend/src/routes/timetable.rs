@@ -21,6 +21,11 @@ pub struct GenerateTimetableRequest {
     pub working_days: Option<Vec<usize>>,
     /// Subject assignments that must be scheduled
     pub requirements: Vec<SubjectRequirement>,
+    pub season: Option<String>,
+    pub start_time: Option<String>, // HH:MM
+    pub end_time: Option<String>,   // HH:MM
+    pub period_duration_minutes: Option<i32>,
+    pub break_duration_minutes: Option<i32>,
 }
 
 /// POST /api/school/:schoolId/timetable/generate
@@ -35,6 +40,11 @@ pub async fn generate_timetable(
     let periods = payload.periods_per_day.unwrap_or(8);
     let days = payload.working_days.unwrap_or_else(|| vec![1, 2, 3, 4, 5]);
 
+    let start_time = payload.start_time.and_then(|s| chrono::NaiveTime::parse_from_str(&s, "%H:%M").ok());
+    let end_time = payload.end_time.and_then(|s| chrono::NaiveTime::parse_from_str(&s, "%H:%M").ok());
+    let period_dur = payload.period_duration_minutes.unwrap_or(40);
+    let break_dur = payload.break_duration_minutes.unwrap_or(10);
+
     match engine
         .generate_timetable(
             &school_id,
@@ -43,6 +53,11 @@ pub async fn generate_timetable(
             periods,
             days,
             payload.requirements,
+            payload.season,
+            start_time,
+            end_time,
+            period_dur,
+            break_dur,
         )
         .await
     {
@@ -112,6 +127,24 @@ pub async fn delete_timetable(
         .await
     {
         Ok(_) => Json(json!({"success": true, "message": "Timetable deleted"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+/// POST /api/school/:schoolId/timetable/:configId/approve
+pub async fn approve_timetable(
+    State(state): State<AppState>,
+    Path((school_id, config_id)): Path<(String, String)>,
+    // In a real app, we'd get the admin_id from the claims
+) -> impl IntoResponse {
+    let engine = TimetableEngine::new(state.db.pool.clone());
+    // Using a placeholder admin_id for now
+    match engine.approve_timetable(&school_id, &config_id, "admin").await {
+        Ok(_) => Json(json!({"success": true, "message": "Timetable approved and notifications sent"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

@@ -121,7 +121,11 @@ impl RecoveryService for PostgresRecoveryService {
                 match action_type.as_str() {
                     "DELETE" => {
                         match entity_type.as_str() {
-                            "SPACE" => self.repos.resource.add_space(school_id, changed_data.clone()).await?,
+                            "SPACE" => {
+                                let category = changed_data["spaceCategory"].as_str().unwrap_or("General");
+                                let name = changed_data["spaceName"].as_str().unwrap_or("Restored Space");
+                                self.repos.resource.create_space(school_id, category, name.to_string()).await?;
+                            },
                             "LEAVE" => { self.repos.leave.add_leave(school_id, changed_data.clone()).await?; },
                             "AWARD" => { self.repos.award.add_award(school_id, changed_data.clone()).await?; },
                             "COMPLAIN" => { self.repos.complain.add_complain(school_id, changed_data.clone()).await?; },

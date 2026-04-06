@@ -40,71 +40,95 @@ async fn verify_password(stored: &str, candidate: &str) -> bool {
 
 pub async fn login_handler(
     State(state): State<AppState>,
+    axum::extract::Path(user_type): axum::extract::Path<String>,
     Json(payload): Json<SchoolLoginRequest>,
 ) -> impl IntoResponse {
-    if let Some(ident) = payload.ident {
-        let app_type = payload.user_type.as_deref().unwrap_or("student");
-        match state.services.auth.login_global(&ident, app_type).await {
-            Ok(res) => return Json(res).into_response(),
-            Err(e) => return (
-                axum::http::StatusCode::UNAUTHORIZED,
-                Json(json!({"success": false, "message": e.to_string()})),
-            ).into_response(),
-        }
-    }
+    match user_type.as_str() {
+        "student" | "employee" => {
+            let ident = match payload.ident {
+                Some(id) => id,
+                None => return (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(json!({"success": false, "message": "Missing ident (phone/email)"})),
+                ).into_response(),
+            };
 
-    // 2. Existing School-based Login (Admin/Staff)
-    let school_id = match payload.school_id {
-        Some(id) => id,
-        None => return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "Missing school_id or ident"})),
+            match state.services.auth.login_global(&ident, &user_type).await {
+                Ok(res) => {
+                    let profiles = res["profiles"].as_array().cloned().unwrap_or_default();
+                    let access_token = res["accessToken"].as_str().map(|s| s.to_string());
+                    let expires_in = res["expiresIn"].as_str().map(|s| s.to_string());
+                    
+                    return Json(LoginResponse {
+                        success: true,
+                        message: "Login successful".to_string(),
+                        school_id: None,
+                        password_temp: None,
+                        access_token,
+                        expires_in,
+                        profiles: Some(profiles),
+                    })
+                    .into_response();
+                }
+                Err(e) => {
+                    return (
+                        axum::http::StatusCode::UNAUTHORIZED,
+                        Json(json!({"success": false, "message": e.to_string()})),
+                    )
+                        .into_response();
+                }
+            }
+        },
+        "schooladmin" | "school" => {
+            let school_id = match payload.school_id {
+                Some(id) => id,
+                None => return (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(json!({"success": false, "message": "Missing school_id"})),
+                ).into_response(),
+            };
+
+            let password = match payload.password {
+                Some(p) => p,
+                None => return (
+                    axum::http::StatusCode::BAD_REQUEST,
+                    Json(json!({"success": false, "message": "Missing password"})),
+                ).into_response(),
+            };
+
+            let login_data = json!({
+                "schoolId": school_id,
+                "password": password,
+            });
+
+            match state.services.auth.login(login_data).await {
+                Ok(res) => {
+                    let token = res["accessToken"].as_str().unwrap_or_default().to_string();
+                    Json(LoginResponse {
+                        success: true,
+                        message: "Login successful".to_string(),
+                        school_id: Some(school_id),
+                        password_temp: None,
+                        access_token: Some(token),
+                        expires_in: Some("1h".to_string()),
+                        profiles: None,
+                    })
+                    .into_response()
+                }
+                Err(e) => (
+                    axum::http::StatusCode::UNAUTHORIZED,
+                    Json(json!({"success": false, "message": e.to_string()})),
+                )
+                    .into_response(),
+            }
+        },
+        _ => return (
+            axum::http::StatusCode::NOT_FOUND,
+            Json(json!({"success": false, "message": "Invalid user type in login route."})),
         ).into_response(),
-    };
-
-    let password = match payload.password {
-        Some(p) => p,
-        None => return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(json!({"success": false, "message": "Missing password"})),
-        ).into_response(),
-    };
-
-    let login_data = json!({
-        "schoolId": school_id,
-        "password": password,
-        "userType": payload.user_type
-    });
-
-    match state.services.auth.login(login_data).await {
-        Ok(res) => Json(json!({
-            "success": true,
-            "message": res["message"],
-            "accessToken": res["accessToken"],
-            "schoolId": res["schoolId"],
-            "expiresIn": "1h"
-        }))
-        .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::UNAUTHORIZED,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
     }
 }
 
-pub async fn verify_otp_global_handler(
-    State(state): State<AppState>,
-    Json(payload): Json<VerifyOtpGlobalRequest>,
-) -> impl IntoResponse {
-    match state.services.auth.verify_otp_global(&payload.ident, &payload.otp).await {
-        Ok(res) => Json(res).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::UNAUTHORIZED,
-            Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
-    }
-}
 
 pub async fn verify_token_handler(
     State(state): State<AppState>,
@@ -231,14 +255,3 @@ pub async fn verify_otp_handler(
     .into_response()
 }
 
-pub async fn sync_global_handler(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    match state.services.auth.sync_all().await {
-        Ok(_) => Json(json!({"success": true, "message": "Global user synchronization completed successfully"})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        ).into_response(),
-    }
-}

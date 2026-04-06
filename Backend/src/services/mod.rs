@@ -78,6 +78,11 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         repos: repos.clone(),
     });
 
+    let academic_service = Arc::new(PostgresAcademicService {
+        repos: repos.clone(),
+        responsibility: auxiliary_service.clone() as Arc<dyn ResponsibilityService>,
+    });
+
     Services {
         auth: Arc::new(PostgresAuthService {
             repos: repos.clone(),
@@ -87,13 +92,12 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         }),
         setup: Arc::new(PostgresSetupService {
             repos: repos.clone(),
+            academic: academic_service.clone(),
         }),
         employee: Arc::new(PostgresEmployeeService {
             repos: repos.clone(),
         }),
-        academic: Arc::new(PostgresAcademicService {
-            repos: repos.clone(),
-        }),
+        academic: academic_service,
         operations: Arc::new(PostgresOperationsService {
             repos: repos.clone(),
         }),

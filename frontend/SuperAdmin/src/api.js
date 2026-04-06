@@ -155,4 +155,5 @@ export const deleteFileByUrl = async (url) => {
     });
     return res.json();
 };
-
+export const getConfig = (key) => authFetch(`/config/${key}`);
+export const updateConfig = (key, value) => authFetch("/config", { method: "POST", body: JSON.stringify({ key, value }) });

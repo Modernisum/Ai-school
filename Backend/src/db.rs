@@ -217,11 +217,31 @@ impl DbClient {
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(100) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                profile_image_url TEXT,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )",
         )
         .execute(&pool)
         .await?;
+
+        println!("Ensuring system_config table exists...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS system_config (
+                config_key TEXT PRIMARY KEY,
+                config_value TEXT NOT NULL,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        // Seed GEMINI_API_KEY if not already present
+        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
+            sqlx::query("INSERT INTO system_config (config_key, config_value) VALUES ('GEMINI_API_KEY', $1) ON CONFLICT DO NOTHING")
+                .bind(key)
+                .execute(&pool)
+                .await?;
+        }
 
         // Seed default super admin if table is empty
         let initial_hash = bcrypt::hash("admin@123", 10).unwrap_or_else(|_| "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/lfkj7.wU3Kz9s1PFe".to_string());
@@ -322,6 +342,24 @@ impl DbClient {
         .execute(&pool)
         .await?;
 
+        println!("Creating user_activity_logs table for global activity tracking...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS user_activity_logs (
+                id SERIAL PRIMARY KEY,
+                phone VARCHAR(50) NOT NULL,
+                user_type VARCHAR(50) NOT NULL,
+                action VARCHAR(50) NOT NULL,
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )",
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS user_activity_logs_phone_idx ON user_activity_logs (phone)")
+            .execute(&pool)
+            .await?;
+
         println!("Ensuring resource management tables exist...");
         
         // 1. Spaces Table
@@ -333,7 +371,6 @@ impl DbClient {
                 space_name TEXT NOT NULL,
                 space_category TEXT,
                 space_number TEXT,
-                capacity INTEGER DEFAULT 0,
                 data JSONB DEFAULT '{}',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(school_id, space_id)
@@ -368,7 +405,6 @@ impl DbClient {
              ADD COLUMN IF NOT EXISTS space_name TEXT,
              ADD COLUMN IF NOT EXISTS space_category TEXT,
              ADD COLUMN IF NOT EXISTS space_number TEXT,
-             ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 0,
              ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'"
         ).execute(&pool).await?;
 
@@ -812,6 +848,110 @@ impl DbClient {
                     ALTER TABLE public.exams ADD CONSTRAINT exams_school_name_unique UNIQUE (school_id, name);
                 END IF;
              END $$;"
+        ).execute(&pool).await?;
+
+        // 13. Timetable System
+        println!("Ensuring timetable tables exist...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS timetable_configs (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                class_id TEXT NOT NULL,
+                class_name TEXT,
+                periods_per_day INTEGER DEFAULT 8,
+                status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+                season VARCHAR(10),
+                start_time TIME,
+                end_time TIME,
+                period_duration_minutes INTEGER DEFAULT 40,
+                break_duration_minutes INTEGER DEFAULT 10,
+                approved_by TEXT,
+                approved_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, config_id)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE timetable_configs
+             ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+             ADD COLUMN IF NOT EXISTS season VARCHAR(10),
+             ADD COLUMN IF NOT EXISTS start_time TIME,
+             ADD COLUMN IF NOT EXISTS end_time TIME,
+             ADD COLUMN IF NOT EXISTS period_duration_minutes INTEGER DEFAULT 40,
+             ADD COLUMN IF NOT EXISTS break_duration_minutes INTEGER DEFAULT 10,
+             ADD COLUMN IF NOT EXISTS approved_by TEXT,
+             ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS timetable_slots (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                class_id TEXT NOT NULL,
+                day_of_week INTEGER NOT NULL,
+                period_number INTEGER NOT NULL,
+                subject_id TEXT,
+                subject_name TEXT,
+                teacher_id TEXT,
+                room_id TEXT,
+                time_slot TIME,
+                is_free_period BOOLEAN DEFAULT FALSE,
+                UNIQUE(school_id, config_id, day_of_week, period_number)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE timetable_slots ADD COLUMN IF NOT EXISTS time_slot TIME"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS teacher_availability (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                teacher_id TEXT NOT NULL,
+                day_of_week INTEGER NOT NULL,
+                period_number INTEGER NOT NULL,
+                is_available BOOLEAN DEFAULT TRUE,
+                UNIQUE(school_id, teacher_id, day_of_week, period_number)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS timetable_rooms (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                room_id TEXT NOT NULL,
+                room_name TEXT,
+                room_type TEXT,
+                UNIQUE(school_id, room_id)
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS timetable_conflicts (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                conflict_type TEXT,
+                description TEXT,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )"
+        ).execute(&pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS timetable_notifications (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                user_type VARCHAR(20) NOT NULL,
+                notification_type VARCHAR(50) NOT NULL,
+                sent_at TIMESTAMPTZ DEFAULT NOW(),
+                read BOOLEAN DEFAULT FALSE
+            )"
         ).execute(&pool).await?;
 
         println!("Creating app_files table for local storage tracking...");

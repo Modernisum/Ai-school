@@ -20,24 +20,28 @@ fn validate_create_student(payload: &CreateStudentRequest) -> AppResult<()> {
         return Err(AppError::Validation("className cannot exceed 50 characters".to_string()));
     }
 
-    // name validation (optional)
-    if let Some(name) = &payload.name {
-        if !name.trim().is_empty() && name.len() > 100 {
-            return Err(AppError::Validation("name cannot exceed 100 characters".to_string()));
-        }
+    // name validation 
+    let name = &payload.name;
+    if !name.trim().is_empty() && name.len() > 100 {
+        return Err(AppError::Validation("name cannot exceed 100 characters".to_string()));
     }
 
-    // contact validation (optional)
-    if let Some(contact) = &payload.contact {
-        if !contact.trim().is_empty() && contact.len() > 20 {
-            return Err(AppError::Validation("contact cannot exceed 20 characters".to_string()));
-        }
+    // contact validation
+    let contact = &payload.contact;
+    if !contact.trim().is_empty() && contact.len() > 20 {
+        return Err(AppError::Validation("contact cannot exceed 20 characters".to_string()));
     }
 
-    // parentContact validation (optional)
-    if let Some(parent_contact) = &payload.parent_contact {
-        if !parent_contact.trim().is_empty() && parent_contact.len() > 20 {
-            return Err(AppError::Validation("parentContact cannot exceed 20 characters".to_string()));
+    // parentContact validation
+    let parent_contact = &payload.parent_contact;
+    if !parent_contact.trim().is_empty() && parent_contact.len() > 20 {
+        return Err(AppError::Validation("parentContact cannot exceed 20 characters".to_string()));
+    }
+
+    // transport validation
+    if payload.transport_enabled {
+        if payload.transport_radius.is_none() {
+            return Err(AppError::Validation("transportRadius is required when transportEnabled is true".to_string()));
         }
     }
 
@@ -272,6 +276,7 @@ pub async fn bulk_import_students(
             "contact": row.get("Contact").or(row.get("contact")).unwrap_or(&serde_json::Value::Null),
             "email": row.get("Email").or(row.get("email")).unwrap_or(&serde_json::Value::Null),
             "address": row.get("Address").or(row.get("address")).unwrap_or(&serde_json::Value::Null),
+            "roomNumber": row.get("Room Number").or(row.get("roomNumber")).unwrap_or(&serde_json::Value::Null),
         });
 
         match state.services.student.create_student(&school_id, &t_ctx.admin_id, student_data).await {

@@ -16,6 +16,7 @@ import SessionsPage from './pages/SessionsPage.jsx'
 import SupportPage from './pages/SupportPage.jsx'
 import BillingPage from './pages/Billing/BillingPage.jsx'
 import PromoPage from './pages/PromoPage.jsx'
+import AISettings from './pages/AISettings.jsx'
 
 import SpotlightSearch from './components/SpotlightSearch.jsx'
 
@@ -31,13 +32,13 @@ function PrivateLayout() {
 
     const nav = [
         { to: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-        { onClick: () => window.dispatchEvent(new CustomEvent('toggle-spotlight')), icon: <Search size={16} />, label: 'Search (⌘K)' },
         { to: '/schools', icon: <School size={16} />, label: 'Schools' },
         { to: '/billing', icon: <Database size={16} />, label: 'Billing & Rev' },
         { to: '/promos', icon: <Ticket size={16} />, label: 'Promo Codes' },
         { to: '/setup', icon: <Plus size={16} />, label: 'Add School' },
         { to: '/support', icon: <MessageSquare size={16} />, label: 'Support' },
         { to: '/backup', icon: <Database size={16} />, label: 'Backup' },
+        { to: '/ai-settings', icon: <Plus size={16} />, label: 'AI Configuration' },
     ]
 
     return (
@@ -53,14 +54,10 @@ function PrivateLayout() {
                             <p>Control Panel</p>
                         </div>
                     </div>
-                    {nav.map(n => n.to ? (
+                    {nav.map(n => (
                         <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
                             {n.icon} {n.label}
                         </NavLink>
-                    ) : (
-                        <div key={n.label} className="nav-item" onClick={n.onClick} style={{ cursor: 'pointer' }}>
-                            {n.icon} {n.label}
-                        </div>
                     ))}
                     <div className="nav-bottom">
                         <button
@@ -73,23 +70,37 @@ function PrivateLayout() {
                     </div>
                 </aside>
 
-                {/* Main */}
-                <main className="main">
-                    <AnimatePresence mode="wait">
-                        <Routes>
-                            <Route path="dashboard" element={<Dashboard />} />
-                            <Route path="schools" element={<SchoolsList />} />
-                            <Route path="schools/:schoolId" element={<SchoolDetail />} />
-                            <Route path="schools/:schoolId/sessions" element={<SessionsPage />} />
-                            <Route path="setup" element={<SetupPage />} />
-                            <Route path="support" element={<SupportPage />} />
-                            <Route path="billing" element={<BillingPage />} />
-                            <Route path="promos" element={<PromoPage />} />
-                            <Route path="backup" element={<BackupPage />} />
-                            <Route index element={<Navigate to="dashboard" replace />} />
-                        </Routes>
-                    </AnimatePresence>
-                </main>
+                {/* Main Content Area */}
+                <div className="main-container">
+                    <header className="top-bar">
+                        <div 
+                            className="search-trigger"
+                            onClick={() => window.dispatchEvent(new CustomEvent('toggle-spotlight'))}
+                        >
+                            <Search size={16} />
+                            <span>Search for schools or features...</span>
+                            <kbd className="kbd">⌘K</kbd>
+                        </div>
+                    </header>
+
+                    <main className="main">
+                        <AnimatePresence mode="wait">
+                            <Routes>
+                                <Route path="dashboard" element={<Dashboard />} />
+                                <Route path="schools" element={<SchoolsList />} />
+                                <Route path="schools/:schoolId" element={<SchoolDetail />} />
+                                <Route path="schools/:schoolId/sessions" element={<SessionsPage />} />
+                                <Route path="setup" element={<SetupPage />} />
+                                <Route path="support" element={<SupportPage />} />
+                                <Route path="billing" element={<BillingPage />} />
+                                <Route path="promos" element={<PromoPage />} />
+                                <Route path="backup" element={<BackupPage />} />
+                                <Route path="ai-settings" element={<AISettings />} />
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                            </Routes>
+                        </AnimatePresence>
+                    </main>
+                </div>
             </div>
 
             {/* Toast */}

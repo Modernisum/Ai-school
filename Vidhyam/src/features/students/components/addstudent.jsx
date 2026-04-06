@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, BookOpen, Bus, Save, Loader,
   CheckCircle, AlertTriangle, Calendar, MapPin, Plus, X,
-  Hash, Shield, UserCheck, GraduationCap, DollarSign, Star, Tag
+  Hash, Shield, UserCheck, GraduationCap, DollarSign, Star, Tag,
+  ShieldAlert, ArrowRight
 } from 'lucide-react';
 import { getSchoolIdFromStorage } from '../../../utils/api';
 
@@ -1277,3 +1278,4 @@ export default function AddStudentPage({ onSuccess, onBack, mode: propMode, stud
     </div>
   );
 }
+

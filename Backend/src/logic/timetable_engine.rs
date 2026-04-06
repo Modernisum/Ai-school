@@ -35,6 +35,12 @@ pub struct GeneratedTimetable {
     pub config_id: String,
     pub class_id: String,
     pub class_name: String,
+    pub status: String,
+    pub season: Option<String>,
+    pub start_time: Option<chrono::NaiveTime>,
+    pub end_time: Option<chrono::NaiveTime>,
+    pub period_duration_minutes: i32,
+    pub break_duration_minutes: i32,
     /// slots[day][period] = TimetableSlot
     pub slots: Vec<TimetableSlot>,
     pub conflicts: Vec<String>,
@@ -59,6 +65,11 @@ impl TimetableEngine {
         periods_per_day: usize,
         working_days: Vec<usize>,
         requirements: Vec<SubjectRequirement>,
+        season: Option<String>,
+        start_time: Option<chrono::NaiveTime>,
+        end_time: Option<chrono::NaiveTime>,
+        period_duration: i32,
+        break_duration: i32,
     ) -> Result<GeneratedTimetable, sqlx::Error> {
         let config_id = Uuid::new_v4().to_string();
         let mut conflicts = Vec::new();
@@ -229,6 +240,12 @@ impl TimetableEngine {
             class_name,
             &assigned_slots,
             &conflicts,
+            "PROPOSAL", // Default to proposal as per plan
+            season.clone(),
+            start_time,
+            end_time,
+            period_duration,
+            break_duration,
         )
         .await?;
 
@@ -236,23 +253,53 @@ impl TimetableEngine {
             config_id,
             class_id: class_id.to_string(),
             class_name: class_name.to_string(),
+            status: "PROPOSAL".to_string(),
+            season,
+            start_time,
+            end_time,
+            period_duration_minutes: period_duration,
+            break_duration_minutes: break_duration,
             slots: assigned_slots,
             conflicts,
         })
     }
 
-    async fn save_timetable(
+    pub async fn save_timetable(
         &self,
         school_id: &str,
         config_id: &str,
         class_id: &str,
-        _class_name: &str,
+        class_name: &str,
         slots: &[TimetableSlot],
         conflicts: &[String],
+        status: &str,
+        season: Option<String>,
+        start_time: Option<chrono::NaiveTime>,
+        end_time: Option<chrono::NaiveTime>,
+        period_duration: i32,
+        break_duration: i32,
     ) -> Result<(), sqlx::Error> {
         let mut tx = self.pool.begin().await?;
 
-        // Save slots
+        // 1. Create the configuration record
+        sqlx::query(
+            "INSERT INTO timetable_configs 
+             (school_id, config_id, class_id, class_name, periods_per_day, status, season, start_time, end_time, period_duration_minutes, break_duration_minutes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+        )
+        .bind(school_id)
+        .bind(config_id)
+        .bind(class_id)
+        .bind(class_name)
+        .bind(slots.len() as i32 / 5) // Rough estimate or pass periods_per_day
+        .bind(status)
+        .bind(season)
+        .bind(start_time)
+        .bind(end_time)
+        .bind(period_duration)
+        .bind(break_duration)
+        .execute(&mut *tx)
+        .await?;
         for slot in slots {
             sqlx::query(
                 "INSERT INTO timetable_slots 
@@ -337,8 +384,23 @@ impl TimetableEngine {
             })
             .collect();
 
+        let config_info = sqlx::query(
+            "SELECT status, season, start_time, end_time, period_duration_minutes, break_duration_minutes 
+             FROM timetable_configs WHERE school_id = $1 AND config_id = $2"
+        )
+        .bind(school_id)
+        .bind(config_id)
+        .fetch_one(&self.pool)
+        .await?;
+
         Ok(json!({
             "config_id": config_id,
+            "status": config_info.get::<String, _>("status"),
+            "season": config_info.get::<Option<String>, _>("season"),
+            "start_time": config_info.get::<Option<chrono::NaiveTime>, _>("start_time"),
+            "end_time": config_info.get::<Option<chrono::NaiveTime>, _>("end_time"),
+            "period_duration": config_info.get::<i32, _>("period_duration_minutes"),
+            "break_duration": config_info.get::<i32, _>("break_duration_minutes"),
             "slots": slots,
             "conflicts": conflicts,
             "total_slots": slots.len(),
@@ -346,10 +408,9 @@ impl TimetableEngine {
         }))
     }
 
-    /// List all timetable configs for a school
     pub async fn list_timetable_configs(&self, school_id: &str) -> Result<Value, sqlx::Error> {
         let rows = sqlx::query(
-            "SELECT config_id, class_id, class_name, periods_per_day, created_at
+            "SELECT config_id, class_id, class_name, periods_per_day, status, season, created_at
              FROM timetable_configs WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
@@ -361,6 +422,8 @@ impl TimetableEngine {
             "class_id": r.get::<String, _>("class_id"),
             "class_name": r.get::<String, _>("class_name"),
             "periods_per_day": r.get::<i32, _>("periods_per_day"),
+            "status": r.get::<String, _>("status"),
+            "season": r.get::<Option<String>, _>("season"),
             "created_at": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
         })).collect();
 
@@ -429,5 +492,97 @@ impl TimetableEngine {
         candidates.sort_by(|a, b| b["score"].as_i64().unwrap_or(0).cmp(&a["score"].as_i64().unwrap_or(0)));
 
         Ok(candidates)
+    }
+
+    /// Approves a timetable proposal, making it active.
+    pub async fn approve_timetable(
+        &self,
+        school_id: &str,
+        config_id: &str,
+        admin_id: &str,
+    ) -> Result<(), sqlx::Error> {
+        let mut tx = self.pool.begin().await?;
+
+        // 1. Mark as APPROVED
+        sqlx::query(
+            "UPDATE timetable_configs 
+             SET status = 'APPROVED', approved_by = $1, approved_at = NOW() 
+             WHERE school_id = $2 AND config_id = $3"
+        )
+        .bind(admin_id)
+        .bind(school_id)
+        .bind(config_id)
+        .execute(&mut *tx)
+        .await?;
+
+        // 2. Trigger notifications for affected users
+        self.send_timetable_notifications(&mut tx, school_id, config_id).await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn send_timetable_notifications(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        school_id: &str,
+        config_id: &str,
+    ) -> Result<(), sqlx::Error> {
+        // Get affected teachers
+        let teachers = sqlx::query(
+            "SELECT DISTINCT teacher_id FROM timetable_slots WHERE school_id = $1 AND config_id = $2 AND teacher_id IS NOT NULL AND teacher_id != ''"
+        )
+        .bind(school_id)
+        .bind(config_id)
+        .fetch_all(&mut **tx)
+        .await?;
+
+        for row in teachers {
+            let tid: String = row.get("teacher_id");
+            sqlx::query(
+                "INSERT INTO timetable_notifications (school_id, config_id, user_id, user_type, notification_type)
+                 VALUES ($1, $2, $3, 'teacher', 'timetable_approved')"
+            )
+            .bind(school_id)
+            .bind(config_id)
+            .bind(tid)
+            .execute(&mut **tx)
+            .await?;
+        }
+
+        // Get the class_id for this config to notify students
+        let config_row = sqlx::query(
+            "SELECT class_id FROM timetable_configs WHERE school_id = $1 AND config_id = $2"
+        )
+        .bind(school_id)
+        .bind(config_id)
+        .fetch_one(&mut **tx)
+        .await?;
+        
+        let class_id: String = config_row.get("class_id");
+
+        // Notify all students in this class
+        let students = sqlx::query(
+            "SELECT student_id FROM students WHERE school_id = $1 AND class_id = $2"
+        )
+        .bind(school_id)
+        .bind(&class_id)
+        .fetch_all(&mut **tx)
+        .await?;
+
+        for row in students {
+            let sid: String = row.get("student_id");
+            sqlx::query(
+                "INSERT INTO timetable_notifications (school_id, config_id, user_id, user_type, notification_type)
+                 VALUES ($1, $2, $3, 'student', 'timetable_approved')"
+            )
+            .bind(school_id)
+            .bind(config_id)
+            .bind(sid)
+            .execute(&mut **tx)
+            .await?;
+        }
+
+        Ok(())
     }
 }

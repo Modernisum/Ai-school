@@ -81,41 +81,27 @@ export default function AuthPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 w-full max-w-[380px] px-4"
       >
-        <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 md:p-10 m-4 shadow-2xl">
+        <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
 
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 mb-4"
-            >
-              <span className="text-2xl font-bold text-white tracking-widest">V</span>
-            </motion.div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
               Vidhyam
             </h2>
-            <p className="text-sm font-medium text-indigo-400 mt-1 font-semibold tracking-wide">
-              School Operations Platform
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Sign in to manage your institution
-            </p>
           </div>
 
           {message && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+              className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
             >
               <p className="text-sm text-rose-400 font-medium text-center">{message}</p>
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">School ID</label>
               <input

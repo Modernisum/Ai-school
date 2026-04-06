@@ -311,6 +311,8 @@ export default function EmployeeFormPage() {
   const [responsibilityData, setResponsibilityData] = useState(null);
   const [allResponsibilities, setAllResponsibilities] = useState([]);
   const [selectedResponsibility, setSelectedResponsibility] = useState("");
+  const [selectedResponsibilityDetails, setSelectedResponsibilityDetails] = useState(null);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState("");
   const [availableSpaces, setAvailableSpaces] = useState([]);
   const [isLoadingResponsibilities, setIsLoadingResponsibilities] = useState(false);
@@ -418,41 +420,72 @@ export default function EmployeeFormPage() {
     try {
       const apiUrl = `${API_BASE_URL}/employees/${schoolId}/employees/${employeeData.employeeId}`;
 
+      // Helper to transform responsibilities into the required format: [{ spaceId, roleIds: [] }]
+      const transformResponsibilities = () => {
+        if (!responsibilityData?.responsibilities) return [];
+        
+        const grouped = {};
+        responsibilityData.responsibilities.forEach(r => {
+          const sid = r.spaceId || "GLOBAL";
+          if (!grouped[sid]) grouped[sid] = [];
+          // Use id or responsibilityId as the roleId
+          const rid = r.responsibilityId || r.id;
+          if (rid && !grouped[sid].includes(rid)) {
+            grouped[sid].push(rid);
+          }
+        });
+
+        return Object.entries(grouped).map(([spaceId, roleIds]) => ({
+          spaceId: spaceId === "GLOBAL" ? null : spaceId,
+          roleIds: roleIds
+        }));
+      };
+
+      // Get Aadhaar Number if available from documents
+      const getAadhaarNumber = () => {
+        const aadhaarDoc = documents.find(d => d.type === "Aadhaar Card");
+        return aadhaarDoc?.extracted?.adharNumber || aadhaarDoc?.extracted?.aadhaarNumber || "";
+      };
+
       let updateData = {};
       if (section === 'basicDetails') {
         updateData = {
-          firstName: formFields.firstName,
-          lastName: formFields.lastName,
+          name: `${formFields.firstName} ${formFields.lastName}`.trim(),
+          employeeType: selectedEmployeeType.toLowerCase(),
           fatherName: formFields.fatherName,
           motherName: formFields.motherName,
-          gender: formFields.gender,
           dob: dob,
-          category: formFields.category
+          age: parseInt(age) || 0,
+          gender: formFields.gender.toLowerCase(),
+          category: formFields.category,
+          aadhaarNumber: getAadhaarNumber()
         };
       } else if (section === 'professional') {
         updateData = {
           designation: formFields.designation,
           department: formFields.department,
-          salary: formFields.salary,
+          baseSalary: parseFloat(formFields.salary) || 0.0,
           joiningDate: formFields.joiningDate,
           qualification: formFields.qualification,
-          experience: formFields.experience
+          experience: experiences, // Use the actual experience array
+          education: educations,   // Use the actual education array
+          responsibilities: transformResponsibilities()
         };
       } else if (section === 'contact') {
         updateData = {
           phone: formFields.phone,
           email: formFields.email,
-          emergencyContact: formFields.emergencyContact
+          alternativeContact: formFields.emergencyContact
         };
       } else if (section === 'address') {
         updateData = {
-          permanentAddress: formFields.permanentAddress,
+          "permanent address": formFields.permanentAddress,
           temporaryAddress: sameAddress ? formFields.permanentAddress : formFields.temporaryAddress
         };
       }
 
       const result = await callApiWithBackoff(apiUrl, {
-        method: 'PUT',
+        method: 'PUT', // Backend might need PATCH, but using PUT as per existing code
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
       });
@@ -683,6 +716,12 @@ export default function EmployeeFormPage() {
     }
   };
 
+  useEffect(() => {
+    if (schoolId) {
+      loadAllResponsibilities();
+    }
+  }, [schoolId, selectedEmployeeType]);
+
   // Load employee responsibilities
   const loadEmployeeResponsibilities = async (employeeIdValue) => {
     if (!schoolId || !employeeIdValue) return;
@@ -716,15 +755,40 @@ export default function EmployeeFormPage() {
     if (!schoolId) return;
 
     try {
-      const apiUrl = `${API_BASE_URL}/responsibility/${schoolId}/responsibilities`;
+      const typeParam = selectedEmployeeType ? `employeeType=${selectedEmployeeType.toLowerCase()}` : '';
+      const apiUrl = `${API_BASE_URL}/responsibility/${schoolId}?${typeParam}&idsOnly=true`;
       const result = await callApiWithBackoff(apiUrl);
-      if (result.success && Array.isArray(result.responsibilities)) {
-        setAllResponsibilities(result.responsibilities);
+      if (result.success && Array.isArray(result.data)) {
+        setAllResponsibilities(result.data); // This is now an array of IDs
       }
     } catch (error) {
       console.error("Failed to load all responsibilities:", error);
     }
   };
+
+  const fetchResponsibilityDetails = async (id) => {
+    if (!id || !schoolId) return;
+    setIsFetchingDetails(true);
+    try {
+      const apiUrl = `${API_BASE_URL}/responsibility/${schoolId}/${id}`;
+      const result = await callApiWithBackoff(apiUrl);
+      if (result.success && result.data) {
+        setSelectedResponsibilityDetails(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch responsibility details:", error);
+    } finally {
+      setIsFetchingDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedResponsibility) {
+      fetchResponsibilityDetails(selectedResponsibility);
+    } else {
+      setSelectedResponsibilityDetails(null);
+    }
+  }, [selectedResponsibility]);
 
   // FIXED: Add responsibility to employee with correct API endpoint
   const addResponsibilityToEmployee = async () => {
@@ -788,7 +852,27 @@ export default function EmployeeFormPage() {
 
     setIsLoading(true); setApiError(null);
     const apiUrl = `${API_BASE_URL}/employees/${schoolId}/employees`;
-    const requestBody = { name: `${employeeType} - New`, employeeType: employeeType };
+    const requestBody = { 
+      name: `${employeeType} - New`, 
+      employeeType: employeeType.toLowerCase(),
+      fatherName: "",
+      motherName: "",
+      dob: "",
+      age: 0,
+      gender: "male",
+      category: "General",
+      baseSalary: 0.0,
+      email: "",
+      phone: "",
+      alternativeContact: "",
+      "permanent address": "",
+      temporaryAddress: "",
+      experience: [],
+      education: [],
+      aadhaarNumber: "",
+      responsibilities: [],
+      bankDetails: {}
+    };
 
     try {
       const result = await callApiWithBackoff(apiUrl, {
@@ -801,7 +885,6 @@ export default function EmployeeFormPage() {
         setEmployeeData(result.employee);
         setShowDialog(false);
         setNewEmployeeIdDialog(result.employee.employeeId); // Show Auto ID dialog
-        loadAllResponsibilities();
         loadAvailableSpaces();
         loadEmployeeResponsibilities(result.employee.employeeId);
       } else {
@@ -876,23 +959,23 @@ export default function EmployeeFormPage() {
 
         setFormFields(prev => ({
           ...prev,
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
+          firstName: data.name ? data.name.split(' ')[0] : "",
+          lastName: data.name ? data.name.split(' ').slice(1).join(' ') : "",
           fatherName: data.fatherName || "",
           motherName: data.motherName || "",
           gender: data.gender || "",
           category: data.category || "",
-          permanentAddress: data.permanentAddress || data.address || "",
+          permanentAddress: data["permanent address"] || data.permanentAddress || data.address || "",
           temporaryAddress: data.temporaryAddress || data.currentAddress || "",
           qualification: data.qualification || "",
           experience: data.experience || "",
-          salary: data.salary || "",
+          salary: (data.baseSalary || data.salary || "").toString(),
           joiningDate: data.joiningDate || "",
           department: data.department || "",
           designation: data.designation || "",
           phone: data.phone || data.phoneNumber || "",
           email: data.email || data.emailAddress || "",
-          emergencyContact: data.emergencyContact || ""
+          emergencyContact: data.alternativeContact || data.emergencyContact || ""
         }));
 
         // Set DOB and calculate age
@@ -909,8 +992,7 @@ export default function EmployeeFormPage() {
 
         await fetchAllDocumentsData(employeeIdValue);
 
-        // Load responsibilities, spaces, experience/education
-        loadAllResponsibilities();
+        // Load spaces, responsibilities, experience/education
         loadAvailableSpaces();
         loadEmployeeResponsibilities(employeeIdValue);
         loadExperienceEducation(employeeIdValue);
@@ -1244,9 +1326,9 @@ export default function EmployeeFormPage() {
     }
 
     // Get available responsibilities (not already assigned)
-    const assignedResponsibilityIds = responsibilityData?.responsibilities?.map(r => r.id) || [];
-    const availableResponsibilities = allResponsibilities.filter(resp =>
-      !assignedResponsibilityIds.includes(resp.id)
+    const assignedResponsibilityIds = responsibilityData?.responsibilities?.map(r => r.id || r.responsibilityId) || [];
+    const availableResponsibilities = allResponsibilities.filter(id =>
+      !assignedResponsibilityIds.includes(id)
     );
 
     return (
@@ -1262,7 +1344,9 @@ export default function EmployeeFormPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-700 text-sm font-medium">Total Per Day Price</p>
-                <p className="text-2xl font-bold text-blue-800">{formatCurrency(responsibilityData?.totalPerDayPrice || 0)}</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {formatCurrency(responsibilityData?.totalPerDayPrice || 0)}
+                </p>
               </div>
               <DollarSign size={24} className="text-blue-600" />
             </div>
@@ -1272,7 +1356,9 @@ export default function EmployeeFormPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-700 text-sm font-medium">Monthly Base Salary</p>
-                <p className="text-2xl font-bold text-green-800">{formatCurrency(responsibilityData?.baseSalary || 0)}</p>
+                <p className="text-2xl font-bold text-green-800">
+                  {formatCurrency(responsibilityData?.baseSalary || 0)}
+                </p>
               </div>
               <CreditCard size={24} className="text-green-600" />
             </div>
@@ -1285,17 +1371,15 @@ export default function EmployeeFormPage() {
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Add New Responsibility</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Responsibility</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Responsibility ID</label>
                 <select
-                  className="w-full border-2 border-blue-200 px-3 py-2 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                  className="w-full border-2 border-blue-200 px-3 py-2 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-200 font-mono text-sm"
                   value={selectedResponsibility}
                   onChange={(e) => setSelectedResponsibility(e.target.value)}
                 >
-                  <option value="">-- Select Responsibility --</option>
-                  {availableResponsibilities.map(resp => (
-                    <option key={resp.id} value={resp.id}>
-                      {resp.name} - {formatCurrency(resp.perDayPrice)}/day ({resp.timePeriod}h)
-                    </option>
+                  <option value="">-- Select ID --</option>
+                  {availableResponsibilities.map(id => (
+                    <option key={id} value={id}>{id}</option>
                   ))}
                 </select>
               </div>
@@ -1328,6 +1412,40 @@ export default function EmployeeFormPage() {
                 </button>
               </div>
             </div>
+
+            {/* Selection Preview & Auto-calculation */}
+            {isFetchingDetails && (
+              <div className="flex items-center text-blue-600 text-xs mt-2 italic">
+                <Loader size={12} className="animate-spin mr-1" /> Fetching details...
+              </div>
+            )}
+            
+            {selectedResponsibilityDetails && !isFetchingDetails && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-white/60 border border-blue-200 rounded-xl flex flex-wrap gap-6 items-center"
+              >
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Name</p>
+                  <p className="text-sm font-bold text-slate-800 italic">{selectedResponsibilityDetails.name}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Work Amount</p>
+                  <p className="text-sm font-black text-primary italic">{formatCurrency(selectedResponsibilityDetails.workAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Period</p>
+                  <p className="text-sm font-bold text-slate-700 uppercase">{selectedResponsibilityDetails.workPeriod}</p>
+                </div>
+                <div className="ml-auto bg-blue-600/10 px-4 py-2 rounded-lg border border-blue-600/20">
+                  <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest text-center">Estimated Base Value</p>
+                  <p className="text-lg font-black text-blue-700 italic text-center leading-none mt-1">
+                    {formatCurrency(selectedResponsibilityDetails.workAmount)}
+                  </p>
+                </div>
+              </motion.div>
+            )}
           </div>
         )}
 

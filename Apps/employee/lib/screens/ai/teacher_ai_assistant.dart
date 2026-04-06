@@ -150,10 +150,24 @@ class _TeacherAiAssistantState extends State<TeacherAiAssistant> {
 
   void _sendMessage(String text) {
     if (text.isEmpty) return;
+
     setState(() {
       _messages.add({"role": "user", "content": text});
       _controller.clear();
     });
+
+    if (text == "Generate Test") {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!mounted) return;
+        setState(() {
+          _messages.add({
+            "role": "assistant", 
+            "content": "Sure! To generate an exam efficiently targeting your syllabus with minimal input, I'll need some basic details:\n\n1. Select your target Class (e.g. 10-A)\n2. Select your Subject (e.g. Physics)\n3. Pick the Difficulty (Easy/Medium/Hard).\n\nTapping [Generate] will query the database, cross-reference your specific timeline, and produce a ready-to-print JSON exam paper for you right now."
+          });
+        });
+      });
+      return;
+    }
 
     // Simulated AI Response
     Future.delayed(const Duration(seconds: 1), () {
@@ -161,7 +175,7 @@ class _TeacherAiAssistantState extends State<TeacherAiAssistant> {
       setState(() {
         _messages.add({
           "role": "assistant",
-          "content": "Analyzing your request for '\$text'... Connecting to backend AI Studio and generating results. I can summarize any class metrics for you in real-time."
+          "content": "Analyzing your request for '$text'... Connecting to backend AI Studio and generating results. I can summarize any class metrics for you in real-time."
         });
       });
     });

@@ -21,8 +21,8 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
 
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
-        let aadhaar_number = data["aadhaarNumber"].as_str().or(data["aadhaar_number"].as_str());
-        let contact = data["contact"].as_str();
+        let aadhaar_number = data["aadhaarNumber"].as_str();
+        let contact = data["phone"].as_str();
         let email = data["email"].as_str();
 
         sqlx::query(
@@ -274,8 +274,8 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
 
         // 2. Perform the update
         let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
-        let aadhaar_number = data["aadhaarNumber"].as_str().or(data["aadhaar_number"].as_str());
-        let contact = data["contact"].as_str();
+        let aadhaar_number = data["aadhaarNumber"].as_str();
+        let contact = data["phone"].as_str();
         let email = data["email"].as_str();
 
         if let Some(etype) = employee_type {

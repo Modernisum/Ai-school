@@ -3388,6 +3388,187 @@ impl ResponsibilityRepository for PostgresResponsibilityRepository {
         Ok(result.map(|val| val.to_f64().unwrap_or(0.0)).unwrap_or(0.0))
     }
 
+    async fn get_responsibility_analytics(&self, school_id: &str, responsibility_id: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // 1. Get employees assigned and aggregate space IDs
+        let emp_rows = sqlx::query(
+            "SELECT er.employee_id, e.data->>'name' as employee_name, er.space_ids
+             FROM employee_responsibilities er 
+             LEFT JOIN employees e ON er.employee_id = e.employee_id AND er.school_id = e.school_id
+             WHERE er.school_id = $1 AND er.responsibility_id = $2"
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let mut assigned_employees = Vec::new();
+        let mut all_space_ids = std::collections::HashSet::new();
+
+        for row in emp_rows {
+            let emp_id: String = row.get("employee_id");
+            let emp_name: Option<String> = row.get("employee_name");
+            
+            assigned_employees.push(json!({
+                "employeeId": emp_id,
+                "name": emp_name.unwrap_or_default()
+            }));
+
+            if let Ok(spaces) = row.try_get::<Value, _>("space_ids") {
+                if let Some(arr) = spaces.as_array() {
+                    for s in arr {
+                        if let Some(space_str) = s.as_str() {
+                            all_space_ids.insert(space_str.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        let active_spaces: Vec<String> = all_space_ids.into_iter().collect();
+        
+        // 2. Find students across these active spaces
+        let mut total_students = 0;
+        let mut classes_distribution = serde_json::Map::new();
+        
+        if !active_spaces.is_empty() {
+            let st_rows = sqlx::query(
+                "SELECT class_name, COUNT(*) as student_count 
+                 FROM students 
+                 WHERE school_id = $1 AND room_number = ANY($2) AND status = 'active'
+                 GROUP BY class_name"
+            )
+            .bind(school_id)
+            .bind(&active_spaces)
+            .fetch_all(&mut *conn)
+            .await?;
+
+            for row in st_rows {
+                let cname: String = row.get("class_name");
+                let count: i64 = row.get("student_count");
+                total_students += count;
+                classes_distribution.insert(cname, json!(count));
+            }
+        }
+
+        // 3. Get responsibility fee to calculate total projected revenue
+        let fee: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
+            "SELECT student_fee FROM responsibilities WHERE school_id = $1 AND responsibility_id = $2"
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+        
+        let fee_val = fee.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
+        let combined_fee_generated = fee_val * (total_students as f64);
+
+        Ok(json!({
+            "responsibilityId": responsibility_id,
+            "assignedEmployees": assigned_employees,
+            "activeSpaces": active_spaces,
+            "consumingStudents": {
+                "totalCount": total_students,
+                "byClass": classes_distribution,
+                "combinedFeeGenerated": combined_fee_generated
+            }
+        }))
+    }
+
+    async fn get_student_responsibilities(&self, school_id: &str, student_id: &str) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // 1. Get student's roomNumber
+        let room_number: Option<String> = sqlx::query_scalar(
+            "SELECT room_number FROM students WHERE school_id = $1 AND student_id = $2"
+        )
+        .bind(school_id)
+        .bind(student_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+        
+        let rn = match room_number {
+            Some(r) if !r.is_empty() => r,
+            _ => return Ok(vec![])
+        };
+
+        // 2. Fetch responsibilities where assigned space_ids contain this room
+        let rows = sqlx::query(
+            "SELECT DISTINCT r.responsibility_id, r.name, r.student_fee 
+             FROM responsibilities r 
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id 
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(&rn)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        Ok(rows.into_iter().map(|row| json!({
+            "responsibilityId": row.get::<String, _>("responsibility_id"),
+            "name": row.get::<String, _>("name"),
+            "studentFee": row.try_get::<bigdecimal::BigDecimal, _>("student_fee")
+                .unwrap_or_default()
+                .to_f64()
+                .unwrap_or(0.0)
+        })).collect())
+    }
+
+    async fn get_responsibility(&self, school_id: &str, responsibility_id: &str) -> Result<Option<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query("SELECT * FROM responsibilities WHERE school_id = $1 AND responsibility_id = $2")
+            .bind(school_id)
+            .bind(responsibility_id)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        if let Some(r) = row {
+            Ok(Some(json!({
+                "responsibilityId": r.get::<String, _>("responsibility_id"),
+                "name": r.get::<String, _>("name"),
+                "description": r.get::<Option<String>, _>("description"),
+                "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0),
+                "timePeriod": r.get::<i32, _>("time_period"),
+                "employeeType": r.get::<Option<String>, _>("employee_type"),
+                "monthlyPrice": r.get::<bigdecimal::BigDecimal, _>("monthly_price").to_f64().unwrap_or(0.0),
+                "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0),
+                "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, data: Value) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        sqlx::query(
+            "UPDATE responsibilities SET 
+                name = COALESCE($1, name),
+                description = COALESCE($2, description),
+                per_day_price = COALESCE($3, per_day_price),
+                time_period = COALESCE($4, time_period),
+                employee_type = COALESCE($5, employee_type),
+                monthly_price = COALESCE($6, monthly_price),
+                student_fee = COALESCE($7, student_fee)
+             WHERE school_id = $8 AND responsibility_id = $9"
+        )
+        .bind(data["name"].as_str())
+        .bind(data["description"].as_str())
+        .bind(data["perDayPrice"].as_f64())
+        .bind(data["timePeriod"].as_i64().map(|v| v as i32))
+        .bind(data["employeeType"].as_str())
+        .bind(data["monthlyPrice"].as_f64())
+        .bind(data["studentFee"].as_f64())
+        .bind(school_id)
+        .bind(responsibility_id)
+        .execute(&mut *conn)
+        .await?;
+
+        Ok(())
+    }
+
     async fn get_employee_responsibilities(
         &self,
         school_id: &str,

@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 
 import 'api_service.dart';
 import 'blocs/auth/auth_bloc.dart';
@@ -15,6 +18,20 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Configure Firebase Auth emulator for local testing
+  // This bypasses network connectivity issues in the emulator
+  try {
+    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    print('Firebase Auth emulator configured successfully');
+  } catch (e) {
+    print('Could not configure Firebase Auth emulator: $e');
+    print('Using production Firebase Auth (requires internet connection)');
+  }
+  
   runApp(const MyApp());
 }
 

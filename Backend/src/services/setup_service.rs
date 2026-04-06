@@ -3,11 +3,11 @@ use crate::services::traits::*;
 use crate::services::academic_utils;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::collections::HashMap;
 use std::sync::Arc;
 
 pub struct PostgresSetupService {
     pub repos: Arc<Repositories>,
+    pub academic: Arc<dyn AcademicService>,
 }
 
 
@@ -58,69 +58,62 @@ impl SetupService for PostgresSetupService {
             )
             .await?;
 
-        // 4. Create Space Categories
-        let default_categories = academic_utils::get_default_space_categories();
-        println!("Creating space categories...");
-        for category in default_categories {
-            self.repos.resource.create_space_category(&school_id, category).await?;
-        }
-
-        // 5. Initialize Infrastructure (Spaces & Items)
+        // 4. No category creation needed (categories are now string-based in the spaces table)
+        println!("Initializing Infrastructure (Spaces & Items)...");
         let default_spaces = academic_utils::get_default_spaces();
-
-        // Build mapping from category name to id
-        let categories = self.repos.resource.get_space_categories(&school_id).await?;
-        let mut category_map = HashMap::new();
-        for cat in categories {
-            if let (Some(id), Some(name)) = (cat["id"].as_i64(), cat["name"].as_str()) {
-                category_map.insert(name.to_string(), id as i32);
-            }
-        }
+        let default_materials = academic_utils::get_default_materials();
 
         println!("Initializing Infrastructure (Spaces & Items)...");
         for space_type in default_spaces {
             println!("Adding space: {}", space_type);
-            let category_id = category_map.get(space_type).cloned()
-                .ok_or_else(|| AppError::Internal(format!("Category not found for {}", space_type)))?;
-            
-            // This call to create_space handles ALL automatic material allocation
-            // based on category templates, just like a frontend API call would.
-            let space_data = json!({
-                "categoryId": category_id,
-                "spaceNumber": "",
-                "capacity": 0,
-            });
-            let created = self.repos.resource.create_space(&school_id, space_data).await?;
-            let space_id = created["spaceId"].as_str().unwrap_or("");
-            if space_id.is_empty() {
-                return Err(AppError::Internal("create_space did not return spaceId".to_string()));
+            let created = self.repos.resource.create_space(&school_id, space_type, space_type.to_string()).await?;
+            let space_name = created["spaceName"].as_str().unwrap_or("");
+            if space_name.is_empty() {
+                return Err(AppError::Internal("create_space did not return spaceName".to_string()));
             }
 
-            // We only need to add specialized sub-items (like 'Principal Office') 
-            // that aren't part of the generic template.
-            let mut items = Vec::new();
-            match space_type {
-                "kitchen" => items.push("Kitchen 1".to_string()),
-                "storeroom" => items.push("Storeroom 1".to_string()),
-                "office" => {
-                    items.push("Principal Office".to_string());
-                    items.push("Staff Office".to_string());
+            // We add the generic default materials from academic_utils
+            if let Some(materials) = default_materials.get(space_type) {
+                println!("Adding {} default materials to space {}", materials.len(), space_type);
+                for (index, material) in materials.iter().enumerate() {
+                    let mut material_data = material.clone();
+                    let mat_name = material_data["materialName"].as_str().unwrap_or("unknown");
+                    let item_id = format!("{}-{}-{}", space_type, mat_name.to_lowercase().replace(' ', "-"), index);
+                    
+                    material_data["id"] = json!(item_id);
+                    material_data["roomNumber"] = json!("");
+                    material_data["classId"] = json!(null);
+                    
+                    self.repos.resource.add_item(&school_id, space_name, material_data).await?;
                 }
-                "ground" => items.push("Playground".to_string()),
-                "parking" => items.push("Parking 1".to_string()),
+            }
+
+            // Specific logical additions that might not be raw materials (e.g. nested sub-spaces acting as items)
+            let mut internal_items = Vec::new();
+            match space_type {
+                "kitchen" => internal_items.push("Kitchen 1".to_string()),
+                "storeroom" => internal_items.push("Storeroom 1".to_string()),
+                "office" => {
+                    internal_items.push("Principal Office".to_string());
+                    internal_items.push("Staff Office".to_string());
+                }
+                "ground" => internal_items.push("Playground".to_string()),
+                "parking" => internal_items.push("Parking 1".to_string()),
                 "classroom" => continue, // Handled in specialized loop below
                 _ => {}
             }
 
-            println!("Adding {} items to space {}", items.len(), space_type);
-            for item in items {
-                let item_id = item.to_lowercase().replace(' ', "-");
-                self.repos.resource.add_item(&school_id, space_id, json!({
-                    "id": item_id,
-                    "itemName": item.clone(),
-                    "roomNumber": if space_type == "classroom" { item.clone() } else { "".to_string() },
-                    "classId": if space_type == "classroom" { Some(item_id.clone()) } else { None::<String> }
-                })).await?;
+            if !internal_items.is_empty() {
+                println!("Adding {} structural sub-items to space {}", internal_items.len(), space_type);
+                for item in internal_items {
+                    let item_id = item.to_lowercase().replace(' ', "-");
+                    self.repos.resource.add_item(&school_id, space_name, json!({
+                        "id": item_id,
+                        "itemName": item.clone(),
+                        "roomNumber": if space_type == "classroom" { item.clone() } else { "".to_string() },
+                        "classId": if space_type == "classroom" { Some(item_id.clone()) } else { None::<String> }
+                    })).await?;
+                }
             }
         }
 
@@ -170,6 +163,7 @@ impl SetupService for PostgresSetupService {
                             "id": class_id,
                             "className": class_name,
                             "classFees": fee,
+                            "roomNumber": class_name, // Fix: Added roomNumber to bind subjects correctly!
                             "totalClassStudents": 0,
                             "sections": sections,
                             "streams": streams_vec,
@@ -180,23 +174,31 @@ impl SetupService for PostgresSetupService {
                     .await?;
 
                 // B. Create Infrastructure Space (Room)
-                let category_id = *category_map.get("classroom")
-                    .ok_or_else(|| AppError::Internal("Classroom category not found".to_string()))?;
-                let space_data = json!({
-                    "categoryId": category_id,
-                    "spaceNumber": class_id,
-                    "capacity": 0,
-                    "spaceName": class_name,
-                });
-                let created = self.repos.resource.create_space(&school_id, space_data).await?;
-                let space_id = created["spaceId"].as_str()
-                    .ok_or_else(|| AppError::Internal("create_space did not return spaceId".to_string()))?
+                let created = self.repos.resource.create_space(&school_id, "classroom", class_name.clone()).await?;
+                let space_name = created["spaceName"].as_str()
+                    .ok_or_else(|| AppError::Internal("create_space did not return spaceName".to_string()))?
                     .to_string();
 
-                // C. Add Item to the Space
-                let item_id = class_id.clone();
-                self.repos.resource.add_item(&school_id, &space_id, json!({
-                    "id": item_id,
+                // Build default classroom materials for this specific class room
+                if let Some(classroom_materials) = default_materials.get("classroom") {
+                    for (index, material) in classroom_materials.iter().enumerate() {
+                        let mut material_data = material.clone();
+                        let mat_name = material_data["materialName"].as_str().unwrap_or("unknown");
+                        
+                        // ID contains class_id to keep it unique per classroom
+                        let item_id = format!("{}-{}-{}", class_id, mat_name.to_lowercase().replace(' ', "-"), index);
+                        
+                        material_data["id"] = json!(item_id);
+                        material_data["roomNumber"] = json!(class_name);
+                        material_data["classId"] = json!(class_id.clone());
+                        
+                        self.repos.resource.add_item(&school_id, &space_name, material_data).await?;
+                    }
+                }
+
+                // C. Link Structural Name Item to Room (for backward parity)
+                self.repos.resource.add_item(&school_id, &space_name, json!({
+                    "id": class_id.clone(),
                     "itemName": class_name.clone(),
                     "roomNumber": class_name.clone(),
                     "classId": Some(class_id.clone())
@@ -216,7 +218,7 @@ impl SetupService for PostgresSetupService {
                     let prefix = &prefix[..std::cmp::min(4, prefix.len())].to_uppercase();
                     let subj_id = format!("{}{:06}", prefix, rand::random::<u32>() % 1_000_000);
                     
-                    self.repos.academic.add_subject(&school_id, json!({
+                    self.academic.create_subject(&school_id, admin_id, json!({
                         "subjectId": subj_id,
                         "subjectName": subj_name,
                         "classId": class_id,
@@ -228,11 +230,9 @@ impl SetupService for PostgresSetupService {
         }
 
         // 6. Automated Role Generation
-        // Trigger the standard subject role sync to create infrastructure roles (responsibilities)
-        // This ensures the metadata (required_employee: 0) and unique role naming are handled 
-        // exactly as they would be via the "Sync Roles" API endpoint.
-        println!("Syncing automated roles for school: {}", school_id);
-        self.repos.responsibility.sync_subject_roles(&school_id).await?;
+        // Note: Responsibilities are now automatically created within create_subject
+        // in AcademicService, following strict validation rules.
+        println!("Automated responsibilities successfully generated via AcademicService.");
 
         // System Audit Log
         let _ = self.repos.audit.log_action(

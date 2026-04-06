@@ -52,17 +52,30 @@ impl StudentService for PostgresStudentService {
         
         let section = self.get_section_for_roll(roll_number, section_size);
 
+        let full_section_name = format!("{}-{}", class_name, section);
+
+        // Auto-Creation of Space if it doesn't exist
+        if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
+            // Create a new classroom space matching the generated section name
+            let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+        }
+
         // 3. Generate Student ID
         let student_id = self.repos.student.generate_student_id(school_id).await?;
 
         let mut student_data = data.clone();
         
+        // Auto-assign the generated section room (e.g. Class 10-A)
+        // AND Seat Index (e.g. 1 to 60)
+        let (section, room_index, full_section_name) = self.calculate_room_and_section(roll_number, section_size, class_name);
+        
+        student_data["sectionRoom"] = json!(full_section_name);
+        student_data["roomNumber"] = json!(room_index.to_string());
+        
         // Auto-calculate Base Fees from Responsibilities
-        if let Some(room) = student_data["roomNumber"].as_str() {
-            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, room).await {
-                if fee > 0.0 {
-                    student_data["totalFees"] = json!(fee);
-                }
+        if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, &full_section_name).await {
+            if fee > 0.0 {
+                student_data["totalFees"] = json!(fee);
             }
         }
 
@@ -107,7 +120,19 @@ impl StudentService for PostgresStudentService {
         });
         self.repos.global_user.sync_user(sync_data).await.ok();
 
-        Ok(result)
+        // Fetch responsibilities to embed in the response
+        let responsibilities = self.repos.responsibility.get_student_responsibilities(school_id, &student_id).await.unwrap_or(vec![]);
+
+        // Clean up response data to meet requirements
+        let mut final_result = result.clone();
+        if let Some(obj) = final_result.as_object_mut() {
+            obj.remove("rollNumber");
+            obj.remove("updatedAt");
+            obj.remove("sectionRoom");
+            obj.insert("responsibilities".to_string(), json!(responsibilities));
+        }
+
+        Ok(final_result)
     }
 
     async fn bulk_create_students(
@@ -172,6 +197,14 @@ impl StudentService for PostgresStudentService {
 
             let section = self.get_section_for_roll(roll_number, section_size);
 
+            let full_section_name = format!("{}-{}", class_name, section);
+
+            // Auto-Creation of Space if it doesn't exist
+            if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
+                // Ignore failure during bulk import, we just try to create it
+                let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+            }
+
             let student_id = match self.repos.student.generate_student_id(school_id).await {
                 Ok(id) => id,
                 Err(e) => {
@@ -181,10 +214,21 @@ impl StudentService for PostgresStudentService {
                 }
             };
 
+            let (section, room_index, full_section_name) = self.calculate_room_and_section(roll_number, section_size, &class_name);
+
             student_data["studentId"] = json!(student_id);
+            student_data["sectionRoom"] = json!(full_section_name);
+            student_data["roomNumber"] = json!(room_index.to_string());
             student_data["rollNumber"] = json!(roll_number);
             student_data["section"] = json!(section);
             student_data["status"] = json!("active");
+
+            // Auto-calculate Base Fees from Responsibilities
+            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, &full_section_name).await {
+                if fee > 0.0 {
+                    student_data["totalFees"] = json!(fee);
+                }
+            }
 
             match self
                 .repos
@@ -295,17 +339,28 @@ impl StudentService for PostgresStudentService {
                     .and_then(|c| c["sectionSize"].as_i64())
                     .unwrap_or(60) as i32;
 
+                let section = self.get_section_for_roll(next_roll, section_size);
+                let full_section_name = format!("{}-{}", nc, section);
+
+                // Auto-Creation of Space if it doesn't exist
+                if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
+                    let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+                }
+
+                let room_index = ((next_roll - 1) % section_size) + 1;
                 final_data["rollNumber"] = json!(next_roll);
-                final_data["section"] = json!(self.get_section_for_roll(next_roll, section_size));
+                final_data["section"] = json!(section);
+                final_data["roomNumber"] = json!(room_index.to_string());
+                final_data["sectionRoom"] = json!(full_section_name);
             }
         }
 
         // Auto-calculate Base Fees from Responsibilities if space changed or fee doesn't exist
-        let old_room = old_student["roomNumber"].as_str().unwrap_or("");
-        let new_room = data["roomNumber"].as_str().unwrap_or("");
+        let old_space = old_student["sectionRoom"].as_str().unwrap_or("");
+        let new_space = final_data["sectionRoom"].as_str().unwrap_or("");
         
-        if (!new_room.is_empty() && new_room != old_room) || (final_data["totalFees"].is_null() && !new_room.is_empty()) {
-            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, new_room).await {
+        if (!new_space.is_empty() && new_space != old_space) || (final_data["totalFees"].is_null() && !new_space.is_empty()) {
+            if let Ok(fee) = self.repos.responsibility.get_student_fee_sum_for_space(school_id, new_space).await {
                 if fee > 0.0 {
                     final_data["totalFees"] = json!(fee);
                 }
@@ -421,12 +476,14 @@ impl StudentService for PostgresStudentService {
                 .and_then(|c| c["sectionSize"].as_i64())
                 .unwrap_or(60) as i32;
 
-            let new_section = self.get_section_for_roll(new_roll, section_size);
-
+            let (new_section, room_index, full_section_name) = self.calculate_room_and_section(new_roll, section_size, class_name);
+            
             let sid = student["studentId"].as_str().unwrap_or("");
             let update_data = json!({
                 "rollNumber": new_roll,
-                "section": new_section
+                "section": new_section,
+                "roomNumber": room_index.to_string(),
+                "sectionRoom": full_section_name
             });
             self.repos
                 .student
@@ -518,5 +575,12 @@ impl PostgresStudentService {
         let index = ((roll - 1) / size) as usize;
         let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         alphabet.chars().nth(index).unwrap_or('Z').to_string()
+    }
+
+    fn calculate_room_and_section(&self, roll: i32, section_size: i32, class_name: &str) -> (String, i32, String) {
+        let section = self.get_section_for_roll(roll, section_size);
+        let room_index = ((roll - 1) % section_size) + 1;
+        let full_name = format!("{}-{}", class_name, section);
+        (section, room_index, full_name)
     }
 }

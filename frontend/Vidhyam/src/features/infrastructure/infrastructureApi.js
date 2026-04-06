@@ -25,7 +25,15 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     // --- Materials ---
     getMaterials: builder.query({
-      query: (schoolId) => `/materials/${schoolId}`,
+      query: ({ schoolId, search, filter, page, limit }) => {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (filter) params.append('filter', filter);
+        if (page) params.append('page', page);
+        if (limit) params.append('limit', limit);
+        const qs = params.toString();
+        return `/materials/${schoolId}${qs ? `?${qs}` : ''}`;
+      },
       providesTags: [{ type: 'Materials', id: 'LIST' }],
     }),
 
@@ -87,10 +95,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
       transformResponse: (res) => res.data || [],
     }),
 
-    getMaterialsDashboard: builder.query({
-      query: (schoolId) => `/materials/${schoolId}/dashboard`,
-      transformResponse: (res) => res.data || {},
-    }),
+    // getMaterialsDashboard is now integrated into getMaterials
 
     getSpaces: builder.query({
       query: (schoolId) => `/spaces/${schoolId}/spaces`,
@@ -138,13 +143,20 @@ export const infrastructureApi = baseApi.injectEndpoints({
     getSpaceCategories: builder.query({
       query: (schoolId) => `/spaces/${schoolId}/categories`,
       providesTags: [{ type: 'Categories', id: 'LIST' }],
+      transformResponse: (response) => {
+        // Standardize response to ensure it's an array of category objects
+        if (response.success && response.data) {
+          return Array.isArray(response.data) ? response.data : [response.data];
+        }
+        return response.categories || [];
+      }
     }),
 
     createSpaceCategory: builder.mutation({
       query: ({ schoolId, body }) => ({
         url: `/spaces/${schoolId}/categories`,
         method: 'POST',
-        body,
+        body, // Expecting { name: "Category Name" }
       }),
       invalidatesTags: [{ type: 'Categories', id: 'LIST' }],
     }),
@@ -205,7 +217,13 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     // --- Responsibilities ---
     getResponsibilities: builder.query({
-      query: (schoolId) => `/responsibility/${schoolId}`,
+      query: ({ schoolId, employeeType, idsOnly }) => {
+        const params = new URLSearchParams();
+        if (employeeType) params.append('employeeType', employeeType);
+        if (idsOnly) params.append('idsOnly', 'true');
+        const queryString = params.toString();
+        return `/responsibility/${schoolId}${queryString ? `?${queryString}` : ''}`;
+      },
       providesTags: [{ type: 'Responsibilities', id: 'LIST' }],
     }),
 
@@ -219,6 +237,26 @@ export const infrastructureApi = baseApi.injectEndpoints({
         url: `/responsibility/${schoolId}`,
         method: 'POST',
         body,
+      }),
+      invalidatesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+    }),
+
+    updateResponsibility: builder.mutation({
+      query: ({ schoolId, responsibilityId, body }) => ({
+        url: `/responsibility/${schoolId}/${responsibilityId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'ResponsibilityDetails', id: responsibilityId }
+      ],
+    }),
+
+    deleteResponsibility: builder.mutation({
+      query: ({ schoolId, responsibilityId }) => ({
+        url: `/responsibility/${schoolId}/${responsibilityId}`,
+        method: 'DELETE',
       }),
       invalidatesTags: [{ type: 'Responsibilities', id: 'LIST' }],
     }),
@@ -259,7 +297,6 @@ export const {
   useSellMaterialMutation,
   useBulkImportMaterialsMutation,
   useGetMaterialHistoryQuery,
-  useGetMaterialsDashboardQuery,
   useGetSpacesQuery,
   useCreateSpaceMutation,
   useUpdateSpaceMutation,
@@ -277,6 +314,8 @@ export const {
   useGetResponsibilitiesQuery,
   useGetResponsibilityDetailsQuery,
   useCreateResponsibilityMutation,
+  useUpdateResponsibilityMutation,
+  useDeleteResponsibilityMutation,
   useGetEmployeeResponsibilitiesQuery,
   useAssignResponsibilityMutation,
   useRemoveResponsibilityMutation,

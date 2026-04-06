@@ -53,12 +53,16 @@ function ResponsibilityDetailModal({ responsibility, onClose }) {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Monthly Rate</span>
-                  <span className="text-lg font-black text-green-400 italic">₹{responsibility.monthlyPrice || 0}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Work Amount</span>
+                  <span className="text-lg font-black text-green-400 italic">₹{responsibility.workAmount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Daily Rate</span>
-                  <span className="text-sm font-black text-slate-300">₹{responsibility.perDayPrice || 0}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Work Period</span>
+                  <span className="text-sm font-black text-slate-300 uppercase">{responsibility.workPeriod || 'Monthly'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Student Fee</span>
+                  <span className="text-sm font-black text-slate-300">₹{responsibility.studentFee || 0}</span>
                 </div>
               </div>
             </div>
@@ -75,8 +79,8 @@ function ResponsibilityDetailModal({ responsibility, onClose }) {
                   <span className="text-sm font-black text-blue-400 uppercase">{responsibility.employeeType || 'Not Specified'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Required Staff</span>
-                  <span className="text-sm font-black text-slate-300">{responsibility.data?.required_employee || 0}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Work Level</span>
+                  <span className="text-sm font-black text-slate-300 uppercase">{responsibility.workLevel || 'Junior'}</span>
                 </div>
               </div>
             </div>
@@ -85,17 +89,17 @@ function ResponsibilityDetailModal({ responsibility, onClose }) {
             <div className="p-5 rounded-xl bg-white/[0.02] border border-white/5">
               <div className="flex items-center gap-2 mb-3">
                 <MapPin size={16} className="text-purple-400" />
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Operational Sector</span>
+                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Operational Sectors</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Space ID</span>
-                  <span className="text-sm font-black text-purple-400">{responsibility.spaceId || 'Global Protocol'}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Space Category</span>
+                  <span className="text-sm font-black text-purple-400 uppercase">{responsibility.spaceCategory || 'Classroom'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">Assignment Scope</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Assigned Spaces</span>
                   <span className="text-sm font-black text-slate-300">
-                    {responsibility.spaceId ? 'Sector-Specific' : 'Organization-Wide'}
+                    {responsibility.spaceIds?.length || 0} Sectors
                   </span>
                 </div>
               </div>

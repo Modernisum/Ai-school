@@ -16,25 +16,25 @@ const FinanceModule = () => {
     const location = useLocation();
 
     const incomeTabs = useMemo(() => [
-        { label: 'Income Overview', path: '/dashboard/finance/income/overview', icon: LayoutDashboard },
-        { label: 'Fees', path: '/dashboard/finance/income/fees', icon: CreditCard },
-        { label: 'Admission', path: '/dashboard/finance/income/admission', icon: UserPlus },
-        { label: 'Transport', path: '/dashboard/finance/income/transport', icon: Truck },
-        { label: 'Events', path: '/dashboard/finance/income/events', icon: Star },
-        { label: 'Other', path: '/dashboard/finance/income/other', icon: MoreHorizontal },
+        { label: 'Income Overview', path: '/dashboard/finance/income/overview', icon: LayoutDashboard, color: '#6366f1' },
+        { label: 'Fees', path: '/dashboard/finance/income/fees', icon: CreditCard, color: '#10b981' }, // Green
+        { label: 'Admission', path: '/dashboard/finance/income/admission', icon: UserPlus, color: '#8b5cf6' }, // Violet
+        { label: 'Transport', path: '/dashboard/finance/income/transport', icon: Truck, color: '#3b82f6' }, // Blue
+        { label: 'Events', path: '/dashboard/finance/income/events', icon: Star, color: '#ef4444' }, // Red
+        { label: 'Other', path: '/dashboard/finance/income/other', icon: MoreHorizontal, color: '#64748b' }, // Slate
     ], []);
 
     const expenseTabs = useMemo(() => [
-        { label: 'Expense Overview', path: '/dashboard/finance/expense/overview', icon: LayoutDashboard },
-        { label: 'Salary', path: '/dashboard/finance/expense/salary', icon: Briefcase },
-        { label: 'Infra', path: '/dashboard/finance/expense/infra', icon: Box },
-        { label: 'Food', path: '/dashboard/finance/expense/food', icon: Utensils },
-        { label: 'Travel', path: '/dashboard/finance/expense/travel', icon: Plane },
-        { label: 'Utilities', path: '/dashboard/finance/expense/utilities', icon: Zap },
-        { label: 'Maintenance', path: '/dashboard/finance/expense/maintenance', icon: Wrench },
-        { label: 'Entertainment', path: '/dashboard/finance/expense/entertainment', icon: Film },
-        { label: 'Transport', path: '/dashboard/finance/expense/transport', icon: Truck },
-        { label: 'Events', path: '/dashboard/finance/expense/events', icon: Star },
+        { label: 'Expense Overview', path: '/dashboard/finance/expense/overview', icon: LayoutDashboard, color: '#6366f1' }, // Primary Indigo
+        { label: 'Salary', path: '/dashboard/finance/expense/salary', icon: Briefcase, color: '#0ea5e9' }, // Sky Blue
+        { label: 'Infra', path: '/dashboard/finance/expense/infra', icon: Box, color: '#8b5cf6' }, // Violet
+        { label: 'Food', path: '/dashboard/finance/expense/food', icon: Utensils, color: '#f97316' }, // Orange
+        { label: 'Travel', path: '/dashboard/finance/expense/travel', icon: Plane, color: '#06b6d4' }, // Cyan
+        { label: 'Utilities', path: '/dashboard/finance/expense/utilities', icon: Zap, color: '#eab308' }, // Yellow
+        { label: 'Maintenance', path: '/dashboard/finance/expense/maintenance', icon: Wrench, color: '#64748b' }, // Slate
+        { label: 'Entertainment', path: '/dashboard/finance/expense/entertainment', icon: Film, color: '#ec4899' }, // Pink
+        { label: 'Transport', path: '/dashboard/finance/expense/transport', icon: Truck, color: '#3b82f6' }, // Blue
+        { label: 'Events', path: '/dashboard/finance/expense/events', icon: Star, color: '#ef4444' }, // Red
     ], []);
 
     // Switch tabs based on path

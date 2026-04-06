@@ -4,7 +4,7 @@ import { Box, Layers, ClipboardList } from "lucide-react";
 import SecondaryNav from "../../../components/ui/SecondaryNav";
 import PageLoader from "../../../components/ui/PageLoader";
 
-const InfraPage = lazy(() => import("../pages/infra.jsx"));
+const InfraPage = lazy(() => import("./infra.jsx"));
 
 const InfraModule = () => {
   const tabs = [

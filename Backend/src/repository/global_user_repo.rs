@@ -79,63 +79,6 @@ impl GlobalUserRepository for PostgresGlobalUserRepository {
         }).collect())
     }
 
-    async fn sync_all_to_global(&self) -> Result<(), AppError> {
-        // 1. Get all schools
-        let schools = sqlx::query("SELECT school_id FROM schools")
-            .fetch_all(&self.client.pool)
-            .await?;
-
-        for school in schools {
-            let school_id: String = school.get("school_id");
-            let schema_name = format!("school_{}", school_id.replace('-', "_"));
-
-            // 2. Sync Students
-            let student_query = format!("SELECT student_id, contact, email, alternative_contact, aadhaar_number, name, class_name FROM {}.students", schema_name);
-            let students = sqlx::query(&student_query).fetch_all(&self.client.pool).await;
-            
-            if let Ok(st_rows) = students {
-                for r in st_rows {
-                    let sync_data = json!({
-                        "phone": r.get::<Option<String>, _>("contact"),
-                        "email": r.get::<Option<String>, _>("email"),
-                        "alternativePhone": r.get::<Option<String>, _>("alternative_contact"),
-                        "aadhaarNumber": r.get::<Option<String>, _>("aadhaar_number"),
-                        "schoolId": school_id,
-                        "userId": r.get::<String, _>("student_id"),
-                        "userType": "student",
-                        "name": r.get::<Option<String>, _>("name"),
-                        "className": r.get::<Option<String>, _>("class_name"),
-                        "imageUrl": null // Profile images might be in a separate field or data JSON
-                    });
-                    self.sync_user(sync_data).await.ok();
-                }
-            }
-
-            // 3. Sync Employees
-            let employee_query = format!("SELECT employee_id, contact, email, aadhaar_number, data FROM {}.employees", schema_name);
-            let employees = sqlx::query(&employee_query).fetch_all(&self.client.pool).await;
-
-            if let Ok(emp_rows) = employees {
-                for r in emp_rows {
-                    let data: Value = r.get("data");
-                    let sync_data = json!({
-                        "phone": r.get::<Option<String>, _>("contact"),
-                        "email": r.get::<Option<String>, _>("email"),
-                        "alternativePhone": data["alternativeContact"],
-                        "aadhaarNumber": r.get::<Option<String>, _>("aadhaar_number"),
-                        "schoolId": school_id,
-                        "userId": r.get::<String, _>("employee_id"),
-                        "userType": "employee",
-                        "name": data["name"],
-                        "imageUrl": data["imageUrl"]
-                    });
-                    self.sync_user(sync_data).await.ok();
-                }
-            }
-        }
-        Ok(())
-    }
-
     async fn delete_user(&self, school_id: &str, user_id: &str, user_type: &str) -> Result<(), AppError> {
         sqlx::query("DELETE FROM global_users WHERE school_id = $1 AND user_id = $2 AND user_type = $3")
             .bind(school_id)

@@ -18,8 +18,16 @@ export default function SessionHandler({ children }) {
   // Use a ref to ensure we don't show the dialog on the very first render
   const isFirstCheck = useRef(true);
 
+  const [errorCount, setErrorCount] = useState(0);
+
   useEffect(() => {
     async function checkSession() {
+      // Backoff if we've had many errors
+      if (errorCount > 3) {
+        setTimeout(() => setErrorCount(0), 10 * 60000);
+        return;
+      }
+
       if (!token) {
         if (!isFirstCheck.current) {
           setShowDialog(true);
@@ -35,20 +43,25 @@ export default function SessionHandler({ children }) {
           dispatch(logout());
           setShowDialog(true);
         }
+        setErrorCount(0); // Reset on success
       } catch (err) {
-        console.error("Verify token failed:", err);
-        // Network errors don't trigger logout to avoid UX disruption during outages
+        setErrorCount(prev => prev + 1);
+        // Silently handle fetch errors to avoid console noise when backend is down
+        const isFetchError = err?.status === 'FETCH_ERROR' || err?.name === 'TypeError';
+        if (!isFetchError) {
+          console.error("Verify token failed:", err);
+        }
       }
     }
 
     const initialDelay = setTimeout(checkSession, 500);
-    const interval = setInterval(checkSession, 5 * 60 * 1000);
+    const interval = setInterval(checkSession, errorCount > 0 ? 15 * 60 * 1000 : 5 * 60 * 1000);
 
     return () => {
       clearTimeout(initialDelay);
       clearInterval(interval);
     };
-  }, [location?.pathname, token, verifyToken, dispatch]);
+  }, [location?.pathname, token, verifyToken, dispatch, errorCount]);
 
   const handleOk = () => {
     setShowDialog(false);

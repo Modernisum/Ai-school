@@ -76,7 +76,6 @@ pub trait EmployeeService: Send + Sync {
 pub trait AuthService: Send + Sync {
     async fn login(&self, data: Value) -> AppResult<Value>;
     async fn login_global(&self, ident: &str, app_type: &str) -> AppResult<Value>;
-    async fn verify_otp_global(&self, ident: &str, otp: &str) -> AppResult<Value>;
     async fn verify_token(&self, token: &str) -> AppResult<Value>;
     async fn logout(&self, token: &str) -> AppResult<()>;
     async fn set_security(
@@ -93,7 +92,6 @@ pub trait AuthService: Send + Sync {
         new_pass: &str,
     ) -> AppResult<()>;
     async fn change_id(&self, old_id: &str, pass: &str, new_id: &str) -> AppResult<String>;
-    async fn sync_all(&self) -> AppResult<()>;
 }
 
 #[async_trait]
@@ -129,6 +127,11 @@ pub trait AiService: Send + Sync {
     async fn post_query(&self, school_id: &str, query: Value) -> AppResult<Value>;
     async fn query_ai(&self, school_id: &str, user_query: &str) -> AppResult<Value>;
     async fn generate_embedding(&self, text: &str) -> AppResult<Vec<f32>>;
+    
+    // AI Task generation endpoints
+    async fn generate_employee_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value>;
+    async fn reorganize_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value>;
+    async fn generate_exam_questions(&self, school_id: &str, payload: &Value) -> AppResult<Value>;
 }
 
 #[async_trait]
@@ -141,7 +144,7 @@ pub trait AwardService: Send + Sync {
 #[async_trait]
 pub trait ComplainService: Send + Sync {
     async fn create_complain(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn list_complains(&self, school_id: &str, student_id: Option<&str>) -> AppResult<Vec<Value>>;
+    async fn list_complains(&self, school_id: &str, user_id: Option<&str>, user_role: Option<&str>) -> AppResult<Vec<Value>>;
     async fn delete_complain(&self, school_id: &str, admin_id: &str, complain_id: i32) -> AppResult<()>;
 }
 
@@ -161,7 +164,7 @@ pub trait DocumentBoxService: Send + Sync {
 
 #[async_trait]
 pub trait SchoolService: Send + Sync {
-    async fn get_school_details(&self, school_id: &str) -> AppResult<Value>;
+    async fn get_school_details(&self, school_id: &str, filter: Option<String>) -> AppResult<Value>;
     async fn update_school(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<()>;
 }
 
@@ -169,16 +172,17 @@ pub trait SchoolService: Send + Sync {
 pub trait ResponsibilityService: Send + Sync {
     async fn list_responsibilities(&self, school_id: &str, employee_type: Option<String>) -> AppResult<Vec<Value>>;
     async fn create_responsibility(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn assign_responsibility(&self, school_id: &str, employee_id: &str, responsibility_id: &str, admin_id: &str) -> AppResult<()>;
-    async fn bulk_assign_responsibilities(&self, school_id: &str, employee_ids: Vec<String>, responsibility_ids: Vec<String>, space_ids: Vec<String>, admin_id: &str) -> AppResult<()>;
-    async fn remove_responsibility(&self, school_id: &str, employee_id: &str, responsibility_id: &str, admin_id: &str) -> AppResult<()>;
-    async fn list_employee_responsibilities(&self, school_id: &str, employee_id: &str) -> AppResult<Value>;
-    async fn sync_subject_roles(&self, school_id: &str, admin_id: &str) -> AppResult<()>;
+    async fn get_responsibility(&self, school_id: &str, responsibility_id: &str) -> AppResult<Option<Value>>;
+    async fn get_responsibility_analytics(&self, school_id: &str, responsibility_id: &str) -> AppResult<Value>;
+    async fn list_student_responsibilities(&self, school_id: &str, student_id: &str) -> AppResult<Vec<Value>>;
+    async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, admin_id: &str, data: Value) -> AppResult<()>;
 }
 
 #[async_trait]
 pub trait TaskService: Send + Sync {
-    async fn list_tasks(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn add_task(&self, school_id: &str, data: Value) -> AppResult<Value>;
+    async fn list_tasks(&self, school_id: &str, start_date: Option<&str>, end_date: Option<&str>) -> AppResult<Vec<Value>>;
+    async fn update_task_status(&self, school_id: &str, task_id: &str, status: &str) -> AppResult<()>;
 }
 
 #[async_trait]
@@ -270,31 +274,40 @@ pub trait ResourceService: Send + Sync {
     
     // Materials
     async fn create_material(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn list_materials(&self, school_id: &str) -> AppResult<Vec<Value>>;
-    async fn get_material(&self, school_id: &str, material_id: &str) -> AppResult<Option<Value>>;
-    async fn update_material(&self, school_id: &str, admin_id: &str, material_id: &str, data: Value) -> AppResult<()>;
-    async fn delete_material(&self, school_id: &str, admin_id: &str, material_id: &str) -> AppResult<()>;
+    async fn list_materials(
+        &self,
+        school_id: &str,
+        search: Option<String>,
+        filter: Option<String>,
+        page: i64,
+        limit: i64,
+    ) -> AppResult<Value>;
+    async fn get_material(&self, school_id: &str, material_name: &str) -> AppResult<Option<Value>>;
+    async fn update_material(&self, school_id: &str, admin_id: &str, material_name: &str, data: Value) -> AppResult<()>;
+    async fn delete_material(&self, school_id: &str, admin_id: &str, material_name: &str) -> AppResult<()>;
+    async fn sell_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_name: &str,
+        data: Value,
+    ) -> AppResult<()>;
     
     // Events
     async fn create_event(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
     async fn delete_event(&self, school_id: &str, admin_id: &str, event_id: i32) -> AppResult<()>;
     
     // Spaces
-    async fn create_space(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn list_spaces(&self, school_id: &str, category_id: Option<i32>) -> AppResult<Vec<Value>>;
-    async fn update_space(&self, school_id: &str, admin_id: &str, space_id: &str, data: Value) -> AppResult<()>;
-    async fn delete_space(&self, school_id: &str, admin_id: &str, space_id: &str) -> AppResult<()>;
-    async fn get_space_details(&self, school_id: &str, space_id: &str) -> AppResult<Option<Value>>;
+    async fn create_space_by_category(&self, school_id: &str, admin_id: &str, category: &str, name: String) -> AppResult<Value>;
+    async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>>;
+    async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>>;
+    async fn update_space(&self, school_id: &str, admin_id: &str, space_name: &str, data: Value) -> AppResult<()>;
+    async fn delete_space(&self, school_id: &str, admin_id: &str, space_name: &str) -> AppResult<()>;
+    async fn get_space_details(&self, school_id: &str, space_name: &str) -> AppResult<Option<Value>>;
     
-    // Space Categories
-    async fn get_space_categories(&self, school_id: &str) -> AppResult<Vec<Value>>;
-    async fn create_space_category(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
-    async fn delete_space_category(&self, school_id: &str, admin_id: &str, category_id: i32) -> AppResult<()>;
     
     // Assignments
-    async fn assign_space_materials(&self, school_id: &str, admin_id: &str, space_id: &str, materials: Vec<Value>) -> AppResult<()>;
-    async fn assign_space_employees(&self, school_id: &str, admin_id: &str, space_id: &str, employee_ids: Vec<String>) -> AppResult<()>;
-    async fn remove_space_employee(&self, school_id: &str, admin_id: &str, space_id: &str, employee_id: &str) -> AppResult<()>;
+    async fn assign_space_materials(&self, school_id: &str, admin_id: &str, space_name: &str, materials: Vec<Value>) -> AppResult<()>;
 
     async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value>;
     async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>>;

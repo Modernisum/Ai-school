@@ -30,6 +30,11 @@ export default function TimetableGeneratorPage() {
     className: '',
     periodsPerDay: 8,
     workingDays: [1, 2, 3, 4, 5],
+    season: 'SUMMER',
+    startTime: '09:00',
+    endTime: '14:00',
+    periodDuration: 40,
+    breakDuration: 10,
     requirements: [
       { subject: '', teacher_name: '', required_periods: 5, preferred_slots: [] }
     ]
@@ -38,8 +43,8 @@ export default function TimetableGeneratorPage() {
   const [classes, setClasses] = useState([]);
 
   useEffect(() => {
-    fetchTimetables();
-  }, []);
+    if (schoolId) fetchTimetables();
+  }, [schoolId]);
 
   // Load classes using RTK Query
   const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
@@ -59,7 +64,7 @@ export default function TimetableGeneratorPage() {
       const res = await fetch(`${API}/school/${schoolId}/timetable`, { headers });
       const data = await res.json();
       if (data.success) {
-        setTimetables(data.data || []);
+        setTimetables(Array.isArray(data.data) ? data.data : []);
       } else {
         setError(data.message || 'Failed to load timetables');
       }
@@ -133,7 +138,12 @@ export default function TimetableGeneratorPage() {
         teacher_name: r.teacher_name,
         required_periods: r.required_periods,
         preferred_slots: r.preferred_slots
-      }))
+      })),
+      season: form.season,
+      start_time: form.startTime,
+      end_time: form.endTime,
+      period_duration_minutes: parseInt(form.periodDuration, 10),
+      break_duration_minutes: parseInt(form.breakDuration, 10)
     };
 
     try {
@@ -163,6 +173,28 @@ export default function TimetableGeneratorPage() {
     }
   };
 
+  const approveTimetable = async (configId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const headers = { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
+      };
+      const res = await fetch(`${API}/school/${schoolId}/timetable/${configId}/approve`, { 
+        method: 'POST', 
+        headers 
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess('Timetable approved and users notified!');
+        fetchTimetables();
+        setTimeout(() => setSuccess(null), 5000);
+      }
+    } catch (e) {
+      setError('Approve failed');
+    }
+  };
+
   const viewTimetable = async (config) => {
     try {
       const token = localStorage.getItem('accessToken');
@@ -181,9 +213,9 @@ export default function TimetableGeneratorPage() {
   const renderTimetableGrid = () => {
     if (!viewingTimetable) return null;
 
-    const days = viewingTimetable.working_days || [1, 2, 3, 4, 5];
-    const periods = viewingTimetable.periods_per_day || 8;
-    const slots = viewingTimetable.slots || [];
+    const days = Array.isArray(viewingTimetable.working_days) ? viewingTimetable.working_days : [1, 2, 3, 4, 5];
+    const periods = parseInt(viewingTimetable.periods_per_day, 10) || 8;
+    const slots = Array.isArray(viewingTimetable.slots) ? viewingTimetable.slots : [];
 
     return (
       <div className="overflow-x-auto w-full">
@@ -277,8 +309,8 @@ export default function TimetableGeneratorPage() {
             <thead>
               <tr>
                 <th className="px-6 py-4">Class</th>
-                <th className="px-6 py-4">Config ID</th>
-                <th className="px-6 py-4">Days / Periods</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Season</th>
                 <th className="px-6 py-4">Created At</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -287,10 +319,23 @@ export default function TimetableGeneratorPage() {
               {timetables.map((t, idx) => (
                 <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-4 font-bold text-white">{t.class_name}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-primary">{t.config_id}</td>
-                  <td className="px-6 py-4 text-slate-400">{t.working_days?.length || 5} Days / {t.periods_per_day || 8} Periods</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
+                      t.status === 'APPROVED' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'
+                    }`}>
+                      {t.status || 'PROPOSAL'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-400 capitalize">{t.season || 'N/A'}</td>
                   <td className="px-6 py-4 text-slate-400">{new Date(t.created_at || Date.now()).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
+                    {t.status !== 'APPROVED' && (
+                      <button
+                        onClick={() => approveTimetable(t.config_id)}
+                        className="p-2 text-success hover:bg-success/10 rounded-lg transition-colors mr-2"
+                        title="Approve & Notify"
+                      ><CheckCircle size={16} /></button>
+                    )}
                     <button
                       onClick={() => viewTimetable(t)}
                       className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors mr-2"
@@ -345,6 +390,38 @@ export default function TimetableGeneratorPage() {
                     <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Periods / Day</label>
                     <input type="number" className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary"
                       value={form.periodsPerDay} min="1" max="15" onChange={e => setForm(f => ({ ...f, periodsPerDay: e.target.value }))} />
+                  </div>
+                </div>
+
+                {/* Timing Settings */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-4">
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                    <Clock size={14} className="text-primary" /> Timing & Season
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Season</label>
+                      <select className="w-full bg-slate-900 border border-white/5 rounded-lg px-3 py-2 text-sm text-white" 
+                        value={form.season} onChange={e => setForm(f => ({ ...f, season: e.target.value }))}>
+                        <option value="SUMMER">Summer</option>
+                        <option value="WINTER">Winter</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Start Time</label>
+                      <input type="time" className="w-full bg-slate-900 border border-white/5 rounded-lg px-3 py-2 text-sm text-white"
+                        value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Period Duration (min)</label>
+                      <input type="number" className="w-full bg-slate-900 border border-white/5 rounded-lg px-3 py-2 text-sm text-white"
+                        value={form.periodDuration} onChange={e => setForm(f => ({ ...f, periodDuration: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Break Duration (min)</label>
+                      <input type="number" className="w-full bg-slate-900 border border-white/5 rounded-lg px-3 py-2 text-sm text-white"
+                        value={form.breakDuration} onChange={e => setForm(f => ({ ...f, breakDuration: e.target.value }))} />
+                    </div>
                   </div>
                 </div>
 

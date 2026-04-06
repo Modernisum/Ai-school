@@ -1,70 +1,133 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, LayoutGrid, Loader } from 'lucide-react';
-import { useGetResponsibilitiesQuery, useGetResponsibilityDetailsQuery, useCreateResponsibilityMutation } from '../infrastructureApi';
+import { Briefcase, Loader } from 'lucide-react';
+import { 
+  useGetResponsibilitiesQuery, 
+  useGetResponsibilityDetailsQuery, 
+  useCreateResponsibilityMutation,
+  useUpdateResponsibilityMutation,
+  useDeleteResponsibilityMutation 
+} from '../infrastructureApi';
 import ResponsibilityCard from '../components/responsibility/ResponsibilityCard';
 import ResponsibilityForm from '../components/responsibility/ResponsibilityForm';
 import ResponsibilityDetailModal from '../components/responsibility/ResponsibilityDetailModal';
+import NoConnection from '../../../components/ui/NoConnection.jsx';
 
-function ResponsibilityPage({ schoolId, pollingInterval, spaces }) {
-  const { data: responsibilitiesData, isFetching: responsibilitiesFetching } = useGetResponsibilitiesQuery(schoolId, { pollingInterval });
+function ResponsibilityPage({ schoolId, pollingInterval, spaces, showToast }) {
+  const { data: responsibilitiesData, isFetching: responsibilitiesFetching, refetch: refetchResponsibilities, error: responsibilitiesError } = useGetResponsibilitiesQuery(schoolId, { pollingInterval });
+  
+  const isOffline = responsibilitiesError?.status === 'FETCH_ERROR';
+  const responsibilities = responsibilitiesData?.data || [];
+
   const [createResponsibility] = useCreateResponsibilityMutation();
+  const [updateResponsibility] = useUpdateResponsibilityMutation();
+  const [deleteResponsibility] = useDeleteResponsibilityMutation();
+  
   const [selectedResponsibilityId, setSelectedResponsibilityId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingResponsibilityId, setEditingResponsibilityId] = useState(null);
+
   const { data: responsibilityDetails, isFetching: detailsFetching } = useGetResponsibilityDetailsQuery(
     { schoolId, responsibilityId: selectedResponsibilityId },
-    { skip: !selectedResponsibilityId }
+    { skip: !selectedResponsibilityId || isOffline }
   );
 
-  const [newResponsibilityName, setNewResponsibilityName] = useState('');
-  const [newRoleDescription, setNewRoleDescription] = useState('');
-  const [newRolePrice, setNewRolePrice] = useState('');
-  const [newRolePerDayPrice, setNewRolePerDayPrice] = useState('');
-  const [newRoleTimePeriod, setNewRoleTimePeriod] = useState('30');
-  const [newRoleType, setNewRoleType] = useState('teacher');
-  const [newRoleSpaceId, setNewRoleSpaceId] = useState('');
-  const [employees, setEmployees] = useState([]);
+  const handleRetry = () => {
+    refetchResponsibilities();
+  };
+
+  if (isOffline && !responsibilities.length) {
+    return <NoConnection onRetry={handleRetry} />;
+  }
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    spaceCategory: 'classroom',
+    employeeType: 'teaching',
+    workLevel: 'junior',
+    workAmount: '0.0',
+    workPeriod: 'monthly',
+    spaceIds: [],
+    studentFee: '0.0'
+  });
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      spaceCategory: 'classroom',
+      employeeType: 'teaching',
+      workLevel: 'junior',
+      workAmount: '0.0',
+      workPeriod: 'monthly',
+      spaceIds: [],
+      studentFee: '0.0'
+    });
+    setIsEditing(false);
+    setEditingResponsibilityId(null);
+  };
 
   const handleCreateResponsibility = async () => {
-    if (!newResponsibilityName.trim()) return;
+    if (!formData.name.trim()) return;
     try {
-      // Filter out empty employee entries and clean up spaceIds
-      const filteredEmployees = employees
-        .filter(emp => emp.employeeId && emp.employeeId.trim() !== '')
-        .map(emp => ({
-          employeeId: emp.employeeId.trim(),
-          spaceIds: (emp.spaceIds || [])
-            .filter(spaceId => spaceId && spaceId.trim() !== '')
-            .map(spaceId => spaceId.trim())
-        }))
-        .filter(emp => emp.spaceIds.length > 0 || emp.employeeId !== '');
-
       const body = {
-        name: newResponsibilityName.trim(),
-        description: newRoleDescription.trim(),
-        employeeType: newRoleType,
-        monthlyPrice: parseFloat(newRolePrice) || 0,
-        perDayPrice: parseFloat(newRolePerDayPrice) || 0,
-        timePeriod: parseInt(newRoleTimePeriod) || 30,
-        spaceId: newRoleSpaceId || null,
-        employees: filteredEmployees
+        ...formData,
+        workAmount: parseFloat(formData.workAmount) || 0,
+        studentFee: parseFloat(formData.studentFee) || 0,
+        spaceIds: formData.spaceIds.filter(id => id.trim() !== '')
       };
       await createResponsibility({ schoolId, body }).unwrap();
       showToast('success', 'Mission Protocol (Role) Authorized');
-      setNewResponsibilityName('');
-      setNewRoleDescription('');
-      setNewRolePrice('');
-      setNewRolePerDayPrice('');
-      setNewRoleTimePeriod('30');
-      setNewRoleType('teacher');
-      setNewRoleSpaceId('');
-      setEmployees([]);
+      resetForm();
     } catch (e) { showToast('error', e.data?.message || 'Failed to authorize protocol'); }
   };
 
-  const showToast = (type, message) => {
-    // This would typically use a toast notification library
-    console.log(`${type}: ${message}`);
+  const handleUpdateResponsibility = async () => {
+    if (!formData.name.trim() || !editingResponsibilityId) return;
+    try {
+      const body = {
+        ...formData,
+        workAmount: parseFloat(formData.workAmount) || 0,
+        studentFee: parseFloat(formData.studentFee) || 0,
+        spaceIds: formData.spaceIds.filter(id => id.trim() !== '')
+      };
+      await updateResponsibility({ 
+        schoolId, 
+        responsibilityId: editingResponsibilityId, 
+        body 
+      }).unwrap();
+      showToast('success', 'Protocol Updated and Re-authorized');
+      resetForm();
+    } catch (e) { showToast('error', e.data?.message || 'Failed to update protocol'); }
   };
+
+  const handleEditClick = (responsibility) => {
+    setFormData({
+      name: responsibility.name || '',
+      description: responsibility.description || '',
+      spaceCategory: responsibility.spaceCategory || 'classroom',
+      employeeType: responsibility.employeeType || 'teaching',
+      workLevel: responsibility.workLevel || 'junior',
+      workAmount: (responsibility.workAmount || 0).toString(),
+      workPeriod: responsibility.workPeriod || 'monthly',
+      spaceIds: responsibility.spaceIds || [],
+      studentFee: (responsibility.studentFee || 0).toString()
+    });
+    setIsEditing(true);
+    setEditingResponsibilityId(responsibility.responsibilityId || responsibility.id);
+  };
+
+  const handleDeleteResponsibility = async (responsibilityId) => {
+    if (window.confirm('Are you sure you want to decommission this protocol?')) {
+      try {
+        await deleteResponsibility({ schoolId, responsibilityId }).unwrap();
+        showToast('success', 'Protocol Decommissioned');
+      } catch (e) { showToast('error', e.data?.message || 'Failed to decommission protocol'); }
+    }
+  };
+
 
   const handleCardClick = (responsibilityId) => {
     setSelectedResponsibilityId(responsibilityId);
@@ -76,6 +139,9 @@ function ResponsibilityPage({ schoolId, pollingInterval, spaces }) {
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-8 max-w-5xl mx-auto space-y-12">
+      {isOffline && (
+        <NoConnection compact onRetry={handleRetry} />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Command Roles</h2>
@@ -95,24 +161,13 @@ function ResponsibilityPage({ schoolId, pollingInterval, spaces }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         <div className="md:col-span-1 space-y-6">
           <ResponsibilityForm
-            newResponsibilityName={newResponsibilityName}
-            setNewResponsibilityName={setNewResponsibilityName}
-            newRoleDescription={newRoleDescription}
-            setNewRoleDescription={setNewRoleDescription}
-            newRolePrice={newRolePrice}
-            setNewRolePrice={setNewRolePrice}
-            newRolePerDayPrice={newRolePerDayPrice}
-            setNewRolePerDayPrice={setNewRolePerDayPrice}
-            newRoleTimePeriod={newRoleTimePeriod}
-            setNewRoleTimePeriod={setNewRoleTimePeriod}
-            newRoleType={newRoleType}
-            setNewRoleType={setNewRoleType}
-            newRoleSpaceId={newRoleSpaceId}
-            setNewRoleSpaceId={setNewRoleSpaceId}
-            employees={employees}
-            setEmployees={setEmployees}
+            formData={formData}
+            setFormData={setFormData}
             spaces={spaces}
             handleCreateResponsibility={handleCreateResponsibility}
+            handleUpdateResponsibility={handleUpdateResponsibility}
+            isEditing={isEditing}
+            resetForm={resetForm}
           />
         </div>
 
@@ -134,6 +189,8 @@ function ResponsibilityPage({ schoolId, pollingInterval, spaces }) {
                   responsibility={r}
                   spaces={spaces}
                   onClick={() => handleCardClick(r.responsibilityId || r.id)}
+                  onEdit={() => handleEditClick(r)}
+                  onDelete={() => handleDeleteResponsibility(r.responsibilityId || r.id)}
                 />
               ))}
            </div>

@@ -147,18 +147,6 @@ pub fn get_default_spaces() -> Vec<&'static str> {
     vec!["classroom", "kitchen", "storeroom", "office", "ground", "parking", "canteen", "park"]
 }
 
-pub fn get_default_space_categories() -> Vec<Value> {
-    vec![
-        json!({"name": "classroom", "is_default": true}),
-        json!({"name": "kitchen", "is_default": true}),
-        json!({"name": "storeroom", "is_default": true}),
-        json!({"name": "office", "is_default": true}),
-        json!({"name": "ground", "is_default": true}),
-        json!({"name": "parking", "is_default": true}),
-        json!({"name": "canteen", "is_default": true}),
-        json!({"name": "park", "is_default": true}),
-    ]
-}
 
 pub fn get_default_materials() -> HashMap<&'static str, Vec<Value>> {
     let mut m = HashMap::new();

@@ -10,8 +10,10 @@ use crate::error::{AppResult, AppError};
 pub async fn get_school_details(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> AppResult<Json<Value>> {
-    let details = state.services.school.get_school_details(&school_id).await?;
+    let filter = params.get("filter").map(|s| s.to_string());
+    let details = state.services.school.get_school_details(&school_id, filter).await?;
     Ok(Json(json!({"success": true, "data": details})))
 }
 

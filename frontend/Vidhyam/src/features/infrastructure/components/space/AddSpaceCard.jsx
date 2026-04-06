@@ -18,8 +18,14 @@ function AddSpaceCard({ selectedCategory, categories, responsibilities, availabl
 
   useEffect(() => {
     if (selectedCategory && categories.length > 0) {
-      const cat = categories.find(c => c.name === selectedCategory);
-      if (cat) setCatId(cat.id);
+      const cat = categories.find(c => {
+        const name = typeof c === 'string' ? c : (c.name || '');
+        return name === selectedCategory;
+      });
+      if (cat) {
+        const id = typeof cat === 'string' ? cat : (cat.id || cat.name);
+        setCatId(id);
+      }
     }
   }, [selectedCategory, categories]);
 

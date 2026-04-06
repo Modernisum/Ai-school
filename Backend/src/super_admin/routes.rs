@@ -782,3 +782,34 @@ pub async fn manual_backup(headers: HeaderMap, State(state): State<AppState>) ->
         Err(e) => err_json!(e),
     }
 }
+
+pub async fn get_config(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Path(key): Path<String>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    match svc.get_system_config(&key).await {
+        Ok(val) => ok_json!(val),
+        Err(e) => err_json!(e),
+    }
+}
+
+pub async fn update_config(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(payload): Json<Value>,
+) -> impl IntoResponse {
+    let svc = require_admin!(headers, state);
+    let key = payload["key"].as_str().unwrap_or("");
+    let value = payload["value"].as_str().unwrap_or("");
+    
+    if key.is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(json!({"success": false, "message": "key is required"}))).into_response();
+    }
+    
+    match svc.update_system_config(key, value).await {
+        Ok(_) => ok_json!("Config updated"),
+        Err(e) => err_json!(e),
+    }
+}

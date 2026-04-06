@@ -166,6 +166,33 @@ impl AdminService {
         Ok(())
     }
 
+    pub async fn get_system_config(&self, key: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        let row = sqlx::query("SELECT config_value FROM system_config WHERE config_key = $1")
+            .bind(key)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        match row {
+            Some(r) => Ok(r.get::<String, _>("config_value")),
+            None => Err(format!("Config key '{}' not found", key).into()),
+        }
+    }
+
+    pub async fn update_system_config(&self, key: &str, value: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.db.acquire_super_admin_connection().await?;
+        sqlx::query(
+            "INSERT INTO system_config (config_key, config_value, updated_at) 
+             VALUES ($1, $2, NOW()) 
+             ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, updated_at = EXCLUDED.updated_at"
+        )
+        .bind(key)
+        .bind(value)
+        .execute(&mut *conn)
+        .await?;
+        Ok(())
+    }
+
     // ───── School List ─────
 
     pub async fn list_all_schools(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {

@@ -13,8 +13,9 @@ pub async fn list_complains(
     Path(school_id): Path<String>,
     Query(params): Query<HashMap<String, String>>,
 ) -> AppResult<Json<Value>> {
-    let student_id = params.get("student_id").map(|s| s.as_str());
-    let mut list = state.services.complain.list_complains(&school_id, student_id).await?;
+    let user_id = params.get("user_id").or(params.get("student_id")).map(|s| s.as_str());
+    let user_role = params.get("user_role").map(|s| s.as_str());
+    let mut list = state.services.complain.list_complains(&school_id, user_id, user_role).await?;
     
     // Generate signed URLs for attachments
     for item in list.iter_mut() {

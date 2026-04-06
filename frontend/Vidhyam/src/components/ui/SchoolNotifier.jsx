@@ -1,22 +1,43 @@
 import React, { useEffect, useState, memo } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from "framer-motion";
 import { BellRing, AlertTriangle, AlertCircle, X, Check } from "lucide-react";
 import { API_BASE_URL, getSchoolIdFromStorage } from "../../utils/api";
+import { setOnline, selectIsOnline } from '../../features/settings/settingsSlice';
 
 const API = API_BASE_URL;
 
 const SchoolNotifier = memo(() => {
+    const dispatch = useDispatch();
+    const isOnline = useSelector(selectIsOnline);
     const [notif, setNotif] = useState(null);
     const [loading, setLoading] = useState(false);
     const schoolId = getSchoolIdFromStorage();
+
+    const [errorCount, setErrorCount] = useState(0);
 
     useEffect(() => {
         if (!schoolId) return;
 
         const checkNotif = async () => {
+            // If we've had too many errors or we are offline, wait
+            if (errorCount > 5 || !isOnline) {
+                // Try to recover after 5 minutes
+                if (errorCount > 5) {
+                    setTimeout(() => setErrorCount(0), 5 * 60000);
+                }
+                return;
+            }
+
             try {
                 const res = await fetch(`${API}/school/${schoolId}/notification`);
-                if (!res.ok) return;
+                if (!res.ok) {
+                    setErrorCount(prev => prev + 1);
+                    return;
+                }
+                setErrorCount(0); // Reset on success
+                dispatch(setOnline(true));
+
                 const data = await res.json();
                 if (data.success && data.data) {
                     // data.data could be null if no notification
@@ -25,19 +46,26 @@ const SchoolNotifier = memo(() => {
                     setNotif(null);
                 }
             } catch (err) {
-                console.error("Failed to check notifications:", err);
+                setErrorCount(prev => prev + 1);
+                // Silently handle fetch errors
+                const isFetchError = err?.name === 'TypeError' || err?.message?.includes('fetch');
+                if (isFetchError) {
+                    dispatch(setOnline(false));
+                } else if (!isFetchError) {
+                    console.error("Failed to check notifications:", err);
+                }
             }
         };
 
         // Check immediately, then every 60 seconds
         const delay = setTimeout(checkNotif, 2000);
-        const interval = setInterval(checkNotif, 60000);
+        const interval = setInterval(checkNotif, errorCount > 0 ? 120000 : 60000);
 
         return () => {
             clearTimeout(delay);
             clearInterval(interval);
         };
-    }, [schoolId]);
+    }, [schoolId, errorCount, isOnline, dispatch]);
 
     const handleDismiss = async () => {
         if (!schoolId) return;
@@ -50,7 +78,10 @@ const SchoolNotifier = memo(() => {
                 setNotif(null);
             }
         } catch (err) {
-            console.error("Failed to clear notification:", err);
+            // Silently handle fetch errors to avoid console noise when backend is down
+            if (err.name !== "TypeError") {
+                console.error("Failed to clear notification:", err);
+            }
         }
         setLoading(false);
     };

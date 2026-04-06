@@ -93,6 +93,9 @@ pub fn create_router(state: AppState) -> Router {
                     "/promos/:promoId/usage",
                     get(crate::super_admin::routes::get_promo_usage),
                 )
+                // Config
+                .route("/config/:key", get(crate::super_admin::routes::get_config))
+                .route("/config", post(crate::super_admin::routes::update_config))
                 // Schools CRUD
                 .route(
                     "/schools",
@@ -196,39 +199,6 @@ pub fn create_router(state: AppState) -> Router {
         );
 
     let app = app
-        // Auth Routes
-        .route("/api/auth/login", post(routes::auth::login_handler))
-        .route(
-            "/api/auth/verify-otp-global",
-            post(routes::auth::verify_otp_global_handler),
-        )
-        .route(
-            "/api/auth/sync-all",
-            post(routes::auth::sync_global_handler),
-        )
-        .route("/api/search/global", get(routes::search::global_search))
-        // ── Mobile App API ────────────────────────────────────────────────────
-        .route(
-            "/api/:schoolId/mobile/login",
-            post(routes::mobile::mobile_login),
-        )
-        .route(
-            "/api/:schoolId/mobile/verify",
-            post(routes::mobile::mobile_verify),
-        )
-        .route(
-            "/api/:schoolId/mobile/select-profile",
-            post(routes::mobile::mobile_select_profile),
-        )
-        .route(
-            "/api/:schoolId/mobile/fees/:studentId",
-            get(routes::mobile::get_student_fee_mobile),
-        )
-        .route(
-            "/api/:schoolId/mobile/order",
-            post(routes::mobile::create_mobile_order),
-        )
-        // Mobile Auth Routes
         .nest(
             "/api/complains",
             Router::new()
@@ -254,6 +224,7 @@ pub fn create_router(state: AppState) -> Router {
                 .route("/generate", post(routes::timetable::generate_timetable))
                 .route("/", get(routes::timetable::list_timetables))
                 .route("/:configId", get(routes::timetable::get_timetable))
+                .route("/:configId/approve", post(routes::timetable::approve_timetable))
                 .route("/:configId", delete(routes::timetable::delete_timetable)),
         )
         // ── Webhook Engine Routes ─────────────────────────────────────────────
@@ -290,11 +261,11 @@ pub fn create_router(state: AppState) -> Router {
         .nest(
             "/api/auth",
             Router::new()
+                .route("/:userType/login", post(routes::auth::login_handler))
                 .route(
                     "/school/support",
                     post(crate::super_admin::routes::create_support_request),
                 )
-                .route("/school/login", post(routes::auth::login_handler))
                 .route(
                     "/school/verify-token",
                     post(routes::auth::verify_token_handler),
@@ -415,53 +386,34 @@ pub fn create_router(state: AppState) -> Router {
                 ),
         )
         // Space/Material Routes
+        //GET /api/spaces/:schoolId/spaces?category=Classroom&simple=true
         .route(
             "/api/spaces/:schoolId/spaces",
-            get(routes::spaces::list_spaces).post(routes::spaces::create_space),
-        )
-        .route(
-            "/api/spaces/:schoolId/spaces/bulk",
-            axum::routing::post(routes::spaces::bulk_import_spaces),
+            get(routes::spaces::list_spaces),
         )
         .route(
             "/api/spaces/:schoolId/categories",
-            get(routes::spaces::get_space_categories),
+            get(routes::spaces::list_space_categories),
         )
         .route(
-            "/api/spaces/:schoolId/categories",
-            post(routes::spaces::create_space_category),
+            "/api/spaces/:schoolId/spaces/:category",
+            post(routes::spaces::create_space_by_category),
         )
         .route(
-            "/api/spaces/:schoolId/categories/:categoryId",
-            delete(routes::spaces::delete_category),
-        )
-        .route(
-            "/api/spaces/:schoolId/:spaceId",
+            "/api/spaces/:schoolId/:spaceName",
             get(routes::spaces::get_space_details),
         )
         .route(
-            "/api/spaces/:schoolId/:spaceId",
+            "/api/spaces/:schoolId/:spaceName",
             put(routes::spaces::update_space),
         )
         .route(
-            "/api/spaces/:schoolId/:spaceId",
+            "/api/spaces/:schoolId/:spaceName",
             delete(routes::spaces::delete_space),
         )
         .route(
-            "/api/spaces/:schoolId/:spaceId/materials",
+            "/api/spaces/:schoolId/:spaceName/materials",
             post(routes::spaces::assign_space_materials),
-        )
-        .route(
-            "/api/spaces/:schoolId/:spaceId/employees",
-            post(routes::spaces::assign_space_employees),
-        )
-        .route(
-            "/api/spaces/:schoolId/:spaceId/employees/:employeeId",
-            delete(routes::spaces::remove_space_employee),
-        )
-        .route(
-            "/api/materials/:schoolId/bulk",
-            axum::routing::post(routes::materials::bulk_import_materials),
         )
         // Academic Routes
         .route(
@@ -475,6 +427,10 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/api/exams/:schoolId",
             post(routes::exam::create_exam).get(routes::exam::list_exams),
+        )
+        .route(
+            "/api/exam/ai/:schoolId/generate",
+            post(routes::exam::ai_generate_exam),
         )
         .route("/api/topics", post(routes::topic::create_topic))
         // Attendance Routes
@@ -600,22 +556,22 @@ pub fn create_router(state: AppState) -> Router {
             get(routes::materials::list_materials).post(routes::materials::create_material),
         )
         .route(
-            "/api/materials/:schoolId/:materialId",
+            "/api/materials/:schoolId/:materialName",
             get(routes::materials::get_material)
                 .patch(routes::materials::update_material)
                 .delete(routes::materials::delete_material),
         )
         .route(
-            "/api/materials/:schoolId/dashboard",
-            get(routes::materials::materials_dashboard),
-        )
-        .route(
-            "/api/materials/:schoolId/:materialId/buy",
+            "/api/materials/:schoolId/:materialName/buy",
             post(routes::materials::buy_material),
         )
         .route(
-            "/api/materials/:schoolId/:materialId/history",
-            get(routes::materials::get_material_history),
+            "/api/materials/:schoolId/:materialName/sell",
+            post(routes::materials::sell_material),
+        )
+        .route(
+            "/api/materials/:schoolId/bulk",
+            axum::routing::post(routes::materials::bulk_import_materials),
         )
         .route("/api/award/:schoolId", get(routes::award::list_awards))
         .route(
@@ -643,21 +599,17 @@ pub fn create_router(state: AppState) -> Router {
                         .post(routes::responsibility::create_responsibility),
                 )
                 .route(
-                    "/:schoolId/sync",
-                    post(routes::responsibility::sync_subject_roles),
+                    "/:schoolId/:responsibilityId/analytics",
+                    get(routes::responsibility::responsibility_analytics),
                 )
                 .route(
-                    "/:schoolId/bulk-assign",
-                    post(routes::responsibility::bulk_assign_responsibility),
+                    "/:schoolId/students/:studentId/responsibilities",
+                    get(routes::responsibility::list_student_responsibilities),
                 )
                 .route(
-                    "/:schoolId/employees/:employeeId/responsibilities",
-                    get(routes::responsibility::list_employee_responsibilities)
-                        .post(routes::responsibility::assign_responsibility),
-                )
-                .route(
-                    "/:schoolId/employees/:employeeId/responsibilities/:responsibilityId",
-                    delete(routes::responsibility::remove_responsibility),
+                    "/:schoolId/:responsibilityId",
+                    get(routes::responsibility::get_responsibility_definition)
+                        .patch(routes::responsibility::update_responsibility),
                 ),
         )
         .nest(
@@ -713,6 +665,9 @@ pub fn create_router(state: AppState) -> Router {
             post(routes::setup::setup_school_handler),
         )
         .route("/api/task/:schoolId", get(routes::task::list_tasks))
+        .route("/api/task/:schoolId/:taskId/status", put(routes::task::update_task_status))
+        .route("/api/task/ai/:schoolId/generate", post(routes::task::ai_generate_tasks))
+        .route("/api/task/ai/:schoolId/reorganize", post(routes::task::ai_reorganize_tasks))
         .nest(
             "/api/ai",
             Router::new().route("/:schoolId/query", post(routes::ai::query_ai)),

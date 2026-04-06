@@ -41,21 +41,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LoginRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      // Step 1: Request OTP / Login (mock sending)
-      final loginSuccess = await apiService.login(event.identifier);
-      if (!loginSuccess) {
-        emit(const AuthError('User not found or Invalid credentials.'));
-        emit(AuthUnauthenticated());
-        return;
-      }
-
-      // Step 2: Verify OTP
-      final profiles = await apiService.verifyOtp(event.identifier, event.password);
+      // Step 1: Fetch Profiles (Firebase OTP is already verified in UI)
+      final profiles = await apiService.getProfiles(event.identifier);
       
-      if (profiles != null) {
+      if (profiles != null && profiles.isNotEmpty) {
         emit(AuthProfileSelection(profiles: profiles, identifier: event.identifier));
       } else {
-        emit(const AuthError('Invalid OTP or Password.'));
+        emit(const AuthError('No Employee profiles found for this number.'));
         emit(AuthUnauthenticated());
       }
     } catch (e) {

@@ -23,12 +23,16 @@ import AddSpaceCard from '../components/space/AddSpaceCard';
 import SpaceDetailModal from '../components/space/SpaceDetailModal';
 import SpaceRoleRow from '../components/space/SpaceRoleRow';
 import EmptyState from '../components/space/EmptyState';
+import NoConnection from '../../../components/ui/NoConnection.jsx';
 
-function SpacePage({ schoolId, pollingInterval }) {
-  const { data: spacesData, isLoading: spacesLoading, isFetching: spacesFetching, refetch: refetchSpaces } = useGetSpacesQuery(schoolId, { pollingInterval });
-  const { data: categoriesData, isFetching: categoriesFetching } = useGetSpaceCategoriesQuery(schoolId, { pollingInterval });
-  const { data: responsibilitiesData } = useGetResponsibilitiesQuery(schoolId, { pollingInterval });
-  const { data: employeesData } = useGetEmployeesQuery(schoolId, { pollingInterval });
+function SpacePage({ schoolId, pollingInterval, showToast }) {
+  const { data: spacesData, isLoading: spacesLoading, isFetching: spacesFetching, refetch: refetchSpaces, error: spacesError } = useGetSpacesQuery(schoolId, { pollingInterval });
+  const { data: categoriesData, isFetching: categoriesFetching, refetch: refetchCategories, error: categoriesError } = useGetSpaceCategoriesQuery(schoolId, { pollingInterval });
+  
+  const isOffline = spacesError?.status === 'FETCH_ERROR' || categoriesError?.status === 'FETCH_ERROR';
+
+  const { data: responsibilitiesData } = useGetResponsibilitiesQuery(schoolId, { pollingInterval, skip: isOffline });
+  const { data: employeesData } = useGetEmployeesQuery(schoolId, { pollingInterval, skip: isOffline });
 
   const [createSpaceCategory] = useCreateSpaceCategoryMutation();
   const [deleteSpaceCategory] = useDeleteSpaceCategoryMutation();
@@ -47,9 +51,9 @@ function SpacePage({ schoolId, pollingInterval }) {
   const [showSpaceDetail, setShowSpaceDetail] = useState(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
-  const spaces = spacesData?.spaces || [];
-  const categories = categoriesData?.categories || [];
-  const availableEmployees = employeesData?.employees || [];
+  const spaces = spacesData?.spaces || spacesData?.data || [];
+  const categories = categoriesData || [];
+  const availableEmployees = employeesData?.employees || employeesData?.data || [];
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -92,11 +96,6 @@ function SpacePage({ schoolId, pollingInterval }) {
     } catch (e) { showToast('error', e.data?.message || 'Failed to delete space'); }
   };
 
-  const showToast = (type, message) => {
-    // This would typically use a toast notification library
-    console.log(`${type}: ${message}`);
-  };
-
   const filtered = spaces.filter(s => {
     const name = s.spaceName || s.space_name || s.name || '';
     const cat = s.categoryName || s.category_name || s.category || s.spaceCategory || '';
@@ -106,10 +105,24 @@ function SpacePage({ schoolId, pollingInterval }) {
     return matchesSearch && matchesCategory;
   });
 
-  const categoriesList = categories?.map(c => c.name || 'Unnamed');
+  const categoriesList = Array.from(new Set(categories?.map(c => typeof c === 'string' ? c : (c.name || 'Unnamed'))));
+
+  const handleRetry = () => {
+    refetchSpaces();
+    refetchCategories();
+  };
+
+  if (isOffline && !spaces.length) {
+    return <NoConnection onRetry={handleRetry} />;
+  }
 
   return (
     <div className="space-y-6">
+      {isOffline && (
+        <div className="px-6 py-2">
+          <NoConnection compact onRetry={handleRetry} />
+        </div>
+      )}
       {/* Category Scroller */}
       <div className="px-6 py-2 bg-white/[0.02] border-b border-white/5 overflow-x-auto no-scrollbar scroll-smooth flex items-center gap-2">
         {categoriesList?.map(cat => (
@@ -130,6 +143,7 @@ function SpacePage({ schoolId, pollingInterval }) {
           className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 ${
             showCategoryView ? 'text-primary' : 'text-slate-500 hover:text-primary'
           }`}
+          disabled={isOffline}
         >
           <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
             showCategoryView ? 'bg-primary/20 border-primary/50' : 'bg-white/5 border-white/10 group-hover:border-primary/30'
@@ -144,6 +158,7 @@ function SpacePage({ schoolId, pollingInterval }) {
         <button 
           onClick={() => setBulkModalOpen(true)} 
           className="whitespace-nowrap px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5"
+          disabled={isOffline}
         >
           <Upload size={13} /> BULK IMPORT
         </button>
@@ -177,8 +192,15 @@ function SpacePage({ schoolId, pollingInterval }) {
                         value={newCategoryName} 
                         onChange={e => setNewCategoryName(e.target.value)} 
                         onKeyDown={e => e.key === 'Enter' && handleCreateCategory()}
+                        disabled={isOffline}
                       />
-                      <button onClick={handleCreateCategory} className="btn-primary w-full mt-4 py-3 text-[10px] font-black uppercase tracking-widest italic">Initialize Class</button>
+                      <button 
+                        onClick={handleCreateCategory} 
+                        className="btn-primary w-full mt-4 py-3 text-[10px] font-black uppercase tracking-widest italic disabled:opacity-50"
+                        disabled={isOffline || !newCategoryName.trim()}
+                      >
+                        Initialize Class
+                      </button>
                    </div>
                    
                    <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10">
@@ -195,20 +217,26 @@ function SpacePage({ schoolId, pollingInterval }) {
                      <div className="flex justify-center py-20"><Loader className="animate-spin text-primary" size={32} /></div>
                    ) : (
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {categories?.map(c => (
-                          <div key={c.id} className="group flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary/30 hover:bg-primary/[0.02] transition-all">
-                             <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
-                                <span className="text-xs font-black text-white uppercase italic tracking-tight">{c.name}</span>
-                                {c.isDefault && <span className="text-[8px] text-slate-600 font-bold uppercase tracking-tighter">System</span>}
-                             </div>
-                             {!c.isDefault && (
-                               <button onClick={() => handleDeleteCategory(c.id)} className="p-2 text-slate-700 hover:text-accent transition-colors">
-                                 <Trash2 size={14} />
-                               </button>
-                             )}
-                          </div>
-                        ))}
+                        {categories?.map((c, idx) => {
+                          const name = typeof c === 'string' ? c : (c.name || 'Unnamed');
+                          const id = typeof c === 'string' ? c : (c.id || name);
+                          const isDefault = typeof c === 'string' ? false : (c.isDefault || false);
+                          
+                          return (
+                            <div key={id && id !== name ? id : `${name}-${idx}`} className="group flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary/30 hover:bg-primary/[0.02] transition-all">
+                               <div className="flex items-center gap-3">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
+                                  <span className="text-xs font-black text-white uppercase italic tracking-tight">{name}</span>
+                                  {isDefault && <span className="text-[8px] text-slate-600 font-bold uppercase tracking-tighter">System</span>}
+                               </div>
+                               {!isDefault && (
+                                 <button onClick={() => handleDeleteCategory(id)} className="p-2 text-slate-700 hover:text-accent transition-colors">
+                                   <Trash2 size={14} />
+                                 </button>
+                               )}
+                            </div>
+                          );
+                        })}
                      </div>
                    )}
                 </div>
@@ -228,7 +256,7 @@ function SpacePage({ schoolId, pollingInterval }) {
 
             {spacesLoading ? (
               <div className="flex items-center justify-center py-24"><Loader size={32} className="animate-spin text-primary" /></div>
-            ) : (!selectedCategory && filtered.length === 0) ? (
+            ) : (!selectedCategory && filtered.length === 0 && !isOffline) ? (
               <div className="text-center py-32 bg-white/[0.01] border border-white/5 rounded-3xl border-dashed">
                 <LayoutGrid size={48} className="text-slate-800 mx-auto mb-4 opacity-50" />
                 <p className="text-slate-500 font-black text-xs uppercase tracking-widest">No matching infrastructure</p>
@@ -236,29 +264,31 @@ function SpacePage({ schoolId, pollingInterval }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <AddSpaceCard 
-                  selectedCategory={selectedCategory}
-                  categories={categories}
-                  responsibilities={responsibilitiesData?.data || []}
-                  availableMaterials={[]}
-                  spaces={spaces}
-                  onCreateResponsibility={async (name) => {
-                    const res = await createResponsibility({ schoolId, body: { name } }).unwrap();
-                    return res?.data;
-                  }}
-                  onProvision={(data) => {
-                    handleCreateSpace({
-                      spaceName: undefined,
-                      categoryId: data.categoryId,
-                      capacity: data.capacity,
-                      requirements: data.requirements,
-                      materialRequirements: data.materialRequirements,
-                      materials: data.materials
-                    });
-                  }}
-                  isExpanded={isAddingSpace}
-                  setIsExpanded={setIsAddingSpace}
-                />
+                {!isOffline && (
+                  <AddSpaceCard 
+                    selectedCategory={selectedCategory}
+                    categories={categories}
+                    responsibilities={responsibilitiesData?.data || []}
+                    availableMaterials={[]}
+                    spaces={spaces}
+                    onCreateResponsibility={async (name) => {
+                      const res = await createResponsibility({ schoolId, body: { name } }).unwrap();
+                      return res?.data;
+                    }}
+                    onProvision={(data) => {
+                      handleCreateSpace({
+                        spaceName: undefined,
+                        categoryId: data.categoryId,
+                        capacity: data.capacity,
+                        requirements: data.requirements,
+                        materialRequirements: data.materialRequirements,
+                        materials: data.materials
+                      });
+                    }}
+                    isExpanded={isAddingSpace}
+                    setIsExpanded={setIsAddingSpace}
+                  />
+                )}
                 {filtered?.map((space, i) => (
                   <SpaceCard 
                     key={space.id || space.spaceId || i}

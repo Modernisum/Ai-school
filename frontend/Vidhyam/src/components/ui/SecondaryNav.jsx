@@ -33,12 +33,21 @@ const SecondaryNav = ({ type, tabs }) => {
                         to={tab.path}
                         className={`flex items-center gap-2.5 px-2 py-2 transition-all duration-200 group relative rounded-md ${
                             isActive 
-                                ? 'bg-primary/10 text-primary font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)]' 
+                                ? tab.color 
+                                    ? `bg-opacity-10 font-bold shadow-[0_0_15px_rgba(0,0,0,0.1)]`
+                                    : 'bg-primary/10 text-primary font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)]' 
                                 : 'text-slate-400 hover:text-white hover:bg-white/5'
                         }`}
+                        style={isActive && tab.color ? { backgroundColor: `${tab.color}1A`, color: tab.color } : {}}
                         title={isCollapsed ? tab.label : ''}
                     >
-                        {tab.icon && <tab.icon size={13} className={`${isActive ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'} flex-shrink-0 transition-colors`} />}
+                        {tab.icon && (
+                            <tab.icon 
+                                size={13} 
+                                className={`flex-shrink-0 transition-colors ${isActive ? '' : 'text-slate-500 group-hover:text-slate-300'}`}
+                                style={isActive && tab.color ? { color: tab.color } : (isActive ? {} : {})}
+                            />
+                        )}
                         <AnimatePresence mode="wait">
                             {!isCollapsed && (
                                 <motion.span

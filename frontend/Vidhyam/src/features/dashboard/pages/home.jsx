@@ -12,10 +12,12 @@ import {
 } from 'recharts';
 import { useWebSockets } from "../../../hooks/useWebSockets";
 import SkeletonLoader from "../../../components/ui/SkeletonLoader";
+import NoConnection from "../../../components/ui/NoConnection.jsx";
 
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { selectSchoolId, selectSchoolProfile } from "../../auth/authSlice";
-import { selectTheme } from "../../settings/settingsSlice";
+import { selectTheme, selectIsOnline } from "../../settings/settingsSlice";
+import { setOnline } from "../../settings/settingsSlice";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 
@@ -29,9 +31,11 @@ const stagger = {
 };
 
 export default function HomePage() {
+  const dispatch = useDispatch();
   const reduxSchoolId = useSelector(selectSchoolId);
   const schoolProfile = useSelector(selectSchoolProfile);
   const themeColors = useSelector(selectTheme);
+  const isOnline = useSelector(selectIsOnline);
   const schoolName = schoolProfile?.name || "Vidhyam";
   const schoolId = reduxSchoolId || "";
   
@@ -41,6 +45,12 @@ export default function HomePage() {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [remindersLoading, setRemindersLoading] = useState(true);
   const [holidaysLoading, setHolidaysLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isReorganizing, setIsReorganizing] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmp, setSelectedEmp] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
   const [data, setData] = useState({
     counts: { totalStudents: 0, totalEmployees: 0, totalClasses: 0, openComplaints: 0, activeTasks: 0, highRiskStudents: 0 },
     attendance: { presentToday: 0, percentage: 0 },
@@ -79,6 +89,14 @@ export default function HomePage() {
     { name: 'Discount', value: Number(data.revenue.discount), color: themeColors.accent },
   ];
 
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setStatsLoading(true);
+    setTasksLoading(true);
+    setRemindersLoading(true);
+    setHolidaysLoading(true);
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
     
@@ -90,29 +108,83 @@ export default function HomePage() {
       return;
     }
 
+    const handleError = (err) => {
+      if (err.name === 'TypeError' || err.message?.includes('fetch')) {
+        dispatch(setOnline(false));
+      }
+    };
+
     // Decoupled independent data fetching for perceived speed
     fetch(`${API_BASE_URL}/dashboard/${schoolId}/stats`)
       .then(res => res.json())
-      .then(d => { if (d.data) setData(d.data); })
+      .then(d => { if (d.data) { setData(d.data); dispatch(setOnline(true)); } })
+      .catch(handleError)
       .finally(() => setStatsLoading(false));
 
     fetch(`${API_BASE_URL}/task/${schoolId}`)
       .then(res => res.json())
       .then(d => { if (Array.isArray(d.data)) setTasks(d.data); })
+      .catch(handleError)
       .finally(() => setTasksLoading(false));
 
     fetch(`${API_BASE_URL}/reminder/${schoolId}`)
       .then(res => res.json())
       .then(d => { if (Array.isArray(d.data)) setReminders(d.data); })
+      .catch(handleError)
       .finally(() => setRemindersLoading(false));
 
     fetch(`${API_BASE_URL}/operations/attendance/${schoolId}/holidays`)
       .then(res => res.json())
       .then(d => { if (Array.isArray(d.data)) setHolidays(d.data); })
+      .catch(handleError)
       .finally(() => setHolidaysLoading(false));
 
+    fetch(`${API_BASE_URL}/employees/${schoolId}`)
+      .then(res => res.json())
+      .then(d => { 
+        if (Array.isArray(d.data) && d.data.length > 0) {
+           setEmployees(d.data); 
+           setSelectedEmp(d.data[0].employee_id || d.data[0].employeeId || 'EMP-001');
+        } 
+      })
+      .catch(console.error);
+
     return () => clearInterval(timer);
-  }, [schoolId]);
+  }, [schoolId, retryCount, dispatch]);
+
+  const handleGenerateTasks = async () => {
+    if (!selectedEmp) return alert("Select an employee first");
+    setIsGenerating(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/task/ai/${schoolId}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeId: selectedEmp })
+      });
+      if(res.ok) handleRetry();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleReorganizeTasks = async () => {
+    if (!selectedEmp) return alert("Select an employee first");
+    setIsReorganizing(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/task/ai/${schoolId}/reorganize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeId: selectedEmp })
+      });
+      if(res.ok) handleRetry();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsReorganizing(false);
+    }
+  };
 
   const statCards = [
     { label: "Today Attendance", value: `${data.attendance.percentage.toFixed(1)}%`, sub: `${data.attendance.presentToday} Present`, icon: UserCheck, color: "success" },
@@ -123,6 +195,9 @@ export default function HomePage() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto overflow-x-hidden">
+      {!isOnline && (
+        <NoConnection compact onRetry={handleRetry} />
+      )}
       {/* Header - Enterprise Command Style */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -324,32 +399,75 @@ export default function HomePage() {
            
            {/* Tasks Center */}
            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 flex flex-col h-[480px]">
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-black text-white flex items-center gap-3">
-                  <CheckSquare size={22} className="text-primary" /> Action Center
-                </h3>
-                <span className="text-[10px] font-black bg-primary/20 text-primary px-3 py-1.5 rounded-full uppercase tracking-widest">{data.counts.activeTasks} Active</span>
+              <div className="flex flex-col mb-6 gap-4 border-b border-white/5 pb-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-black text-white flex items-center gap-3">
+                    <CheckSquare size={22} className="text-primary" /> AI To-Do List
+                  </h3>
+                  <span className="text-[10px] font-black bg-white/10 text-slate-300 px-3 py-1.5 rounded-full uppercase tracking-widest">{tasks.length} Active</span>
+                </div>
+                
+                {/* AI Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
+                   <select 
+                     value={selectedEmp} 
+                     onChange={(e) => setSelectedEmp(e.target.value)}
+                     className="bg-transparent text-xs text-white border-none outline-none cursor-pointer flex-1 min-w-[120px] font-bold"
+                   >
+                     <option value="" disabled className="bg-slate-900">Select Staff</option>
+                     {employees.map(emp => (
+                       <option key={emp.employee_id} value={emp.employee_id} className="bg-slate-900">
+                         {emp.name || emp.employee_id}
+                       </option>
+                     ))}
+                   </select>
+
+                   <div className="flex items-center gap-2">
+                     <button 
+                         onClick={handleGenerateTasks} disabled={isGenerating || !selectedEmp}
+                         className="text-[10px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
+                     >
+                         {isGenerating ? <div className="w-2 h-2 rounded-full border border-t-transparent animate-spin"/> : <Zap size={10} />}
+                         Auto-Plan
+                     </button>
+                     <button 
+                         onClick={handleReorganizeTasks} disabled={isReorganizing || !selectedEmp}
+                         className="text-[10px] bg-accent/20 hover:bg-accent text-accent hover:text-white px-3 py-1.5 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
+                     >
+                         {isReorganizing ? <div className="w-2 h-2 rounded-full border border-t-transparent animate-spin"/> : <Layers size={10} />}
+                         Reorganize
+                     </button>
+                   </div>
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-3">
-                {tasksLoading ? <SkeletonLoader type="list" count={1} /> : tasks.length > 0 ? tasks.map((t, idx) => (
+
+              <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-3">
+                {tasksLoading ? <SkeletonLoader type="list" count={3} className="h-16 rounded-xl" /> : tasks.length > 0 ? tasks.map((t, idx) => (
                   <div key={idx} className="p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white/5 transition-all flex items-start gap-4 group cursor-pointer">
-                     <div className="w-6 h-6 rounded-lg border-2 border-slate-700 mt-0.5 group-hover:border-primary group-hover:bg-primary/10 transition-all flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform" />
+                     <div className="w-5 h-5 rounded-md border-2 border-slate-600 mt-1 flex items-center justify-center shrink-0">
+                        {t.status === 'completed' && <div className="w-full h-full bg-primary rounded-sm shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]" />}
                      </div>
                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white leading-tight">{t.task_name}</p>
-                        <div className="flex items-center gap-3 mt-2">
-                           <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                              <motion.div initial={{ width: 0 }} animate={{ width: `${t.complete_percentage}%` }} transition={{ duration: 1, delay: 0.5 }} className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" />
-                           </div>
-                           <span className="text-[10px] font-black text-slate-500">{t.complete_percentage}%</span>
+                        <div className="flex justify-between items-start mb-1">
+                           <p className="text-sm font-bold text-white leading-tight">{t.task_name}</p>
+                           {t.is_ai_generated && <span className="text-[8px] bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded uppercase font-black tracking-widest">AI Tracked</span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                           <span className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1">
+                              <Calendar size={10} /> 
+                              {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric'}) : 'No Date'}
+                           </span>
+                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1 ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                              {t.priority}
+                           </span>
                         </div>
                      </div>
                   </div>
                 )) : (
                   <div className="h-full flex flex-col items-center justify-center opacity-40">
-                     <CheckSquare size={48} className="mb-4 text-slate-600" />
-                     <p className="text-sm font-bold text-slate-500">Operation Pipeline Clear</p>
+                     <CheckSquare size={32} className="mb-4 text-slate-600" />
+                     <p className="text-xs font-bold text-slate-500">No pending tasks.</p>
+                     <p className="text-[9px] text-slate-600 uppercase tracking-widest">Click Auto-Plan to schedule syllabus.</p>
                   </div>
                 )}
               </div>
@@ -435,6 +553,54 @@ export default function HomePage() {
 
         </div>
       </div>
+
+      {/* 1-Week Teacher Timeline View */}
+      {selectedEmp && (
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-10 mt-8 bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+            <div>
+               <p className="section-label tracking-[0.2em] text-primary">AI Scheduler</p>
+               <h2 className="text-2xl font-black text-white mt-1">1-Week Action Timeline</h2>
+            </div>
+         </div>
+         <div className="flex overflow-x-auto custom-scrollbar pb-6 gap-4 snap-x">
+             {[...Array(7)].map((_, index) => {
+                 const date = new Date();
+                 date.setDate(date.getDate() + index);
+                 const dateStr = date.toISOString().split('T')[0];
+                 const isToday = index === 0;
+                 const dayTasks = tasks.filter(t => t.deadline && t.deadline.startsWith(dateStr));
+                 
+                 return (
+                 <div key={index} className={`shrink-0 w-64 p-5 rounded-3xl border transition-all snap-start
+                        ${isToday ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] relative' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'}
+                 `}>
+                     {isToday && <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg"><Activity size={14} className="text-white animate-pulse" /></div>}
+                     <p className={`text-[10px] font-black uppercase tracking-widest ${isToday ? 'text-primary' : 'text-slate-500'}`}>
+                         {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                     </p>
+                     <h4 className="text-lg font-black text-white mb-4">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</h4>
+                     
+                     <div className="space-y-3">
+                         {dayTasks.length > 0 ? dayTasks.map((t, idx) => (
+                             <div key={idx} className="p-3 bg-slate-950/40 rounded-xl border border-white/5 relative overflow-hidden group">
+                                 {t.is_ai_generated && <div className="absolute top-0 right-0 w-8 h-8 bg-primary/20 blur-xl group-hover:bg-primary/40 transition-colors" />}
+                                 <p className="text-xs font-bold text-white line-clamp-2">{t.task_name}</p>
+                                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-2">{t.priority} Priority</p>
+                             </div>
+                         )) : (
+                             <div className="py-6 text-center opacity-30">
+                                <Calendar size={24} className="mx-auto mb-2 text-slate-500" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">No classes</p>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+                 );
+             })}
+         </div>
+      </motion.div>
+      )}
 
       {/* Bottom Section: Enterprise Calendar */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-10 mt-8">

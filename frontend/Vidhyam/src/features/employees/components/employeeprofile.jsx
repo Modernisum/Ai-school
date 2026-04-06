@@ -260,10 +260,10 @@ const ResponsibilitySection = ({ employee, isLoading }) => {
         <div className="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-lg border border-blue-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-700 text-sm font-medium">Monthly Salary</p>
+              <p className="text-blue-700 text-sm font-medium">Monthly Base Value</p>
               <p className="text-2xl font-bold text-blue-800">{formatCurrency(baseSalary)}</p>
             </div>
-            <CreditCard size={24} className="text-blue-600" />
+            <Zap size={24} className="text-blue-600" />
           </div>
         </div>
 

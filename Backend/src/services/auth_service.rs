@@ -1,8 +1,18 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
+use chrono;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Claims {
+    sub: String,  // phone / ident
+    role: String, // app_type (student/employee)
+    exp: usize,
+}
 
 pub struct PostgresAuthService {
     pub repos: Arc<Repositories>,
@@ -81,14 +91,49 @@ impl AuthService for PostgresAuthService {
     }
 
     async fn verify_token(&self, token: &str) -> AppResult<Value> {
+        // 1. Try legacy session matching first
         let token_data = self.repos.auth.get_token(token).await?;
-        match token_data {
-            Some(t) => Ok(t),
-            None => Err(AppError::Unauthorized("Invalid token".to_string())),
+        if let Some(t) = token_data {
+            return Ok(t);
+        }
+
+        // 2. Try JWT verification (for student/employee apps)
+        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        match decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(secret.as_ref()),
+            &Validation::default(),
+        ) {
+            Ok(token_data) => {
+                Ok(json!({
+                    "sub": token_data.claims.sub,
+                    "role": token_data.claims.role,
+                    "status": "valid",
+                    "expiresAt": token_data.claims.exp
+                }))
+            }
+            Err(e) => Err(AppError::Unauthorized(format!("Invalid or expired token: {}", e))),
         }
     }
 
     async fn logout(&self, token: &str) -> AppResult<()> {
+        // Log logout for JWT if possible, or just revoke legacy token
+        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        if let Ok(token_data) = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(secret.as_ref()),
+            &Validation::default(),
+        ) {
+            sqlx::query(
+                "INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, 'logout', $3)",
+            )
+            .bind(token_data.claims.sub)
+            .bind(token_data.claims.role)
+            .bind(json!({ "timestamp": chrono::Utc::now() }))
+            .execute(&self.repos.db_client.pool)
+            .await?;
+        }
+
         self.repos.auth.revoke_token(token).await?;
         Ok(())
     }
@@ -182,43 +227,77 @@ impl AuthService for PostgresAuthService {
     async fn login_global(&self, ident: &str, app_type: &str) -> AppResult<Value> {
         let matches = self.repos.global_user.find_by_identifier(ident).await?;
         if matches.is_empty() {
-            return Err(AppError::NotFound("This identifier does not exist. Please contact your administrator.".to_string()));
+            return Err(AppError::NotFound(
+                "This identifier does not exist. Please contact your administrator.".to_string(),
+            ));
         }
 
         // Validate if the user has the required profile for the app type
-        let has_valid_profile = matches.iter().any(|m| m["userType"] == app_type);
-        if !has_valid_profile {
+        let filtered_profiles: Vec<Value> = matches
+            .into_iter()
+            .filter(|m| m["userType"] == app_type)
+            .collect();
+
+        if filtered_profiles.is_empty() {
             return Err(AppError::Forbidden(format!(
-                "This number belongs to a {} and cannot be used to login to the {} app.",
-                if app_type == "student" { "employee" } else { "student" },
-                app_type
+                "This number does not have a {} profile and cannot be used to login to the {} app.",
+                app_type, app_type
             )));
         }
 
-        // Mock sending OTP to primary contact (always 1234 for now)
+        // Calculate JWT Expiration based on school policies
+        let school_ids: Vec<String> = filtered_profiles
+            .iter()
+            .filter_map(|p| p["schoolId"].as_str().map(|s| s.to_string()))
+            .collect();
+
+        let durations = sqlx::query("SELECT session_duration_hours FROM schools WHERE school_id = ANY($1)")
+            .bind(&school_ids)
+            .fetch_all(&self.repos.db_client.pool)
+            .await?;
+
+        let max_hours = durations
+            .iter()
+            .map(|row| sqlx::Row::get::<i32, _>(row, "session_duration_hours") as i64)
+            .max()
+            .unwrap_or(24); // Default to 24 hours
+
+        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        let expiration = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::hours(max_hours))
+            .expect("valid timestamp")
+            .timestamp();
+
+        let claims = Claims {
+            sub: ident.to_string(),
+            role: app_type.to_string(),
+            exp: expiration as usize,
+        };
+
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(secret.as_ref()),
+        )
+        .map_err(|e| AppError::Internal(format!("JWT Error: {}", e)))?;
+
+        // Record Audit Log (Global User Activity)
+        sqlx::query(
+            "INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, 'login', $3)",
+        )
+        .bind(ident)
+        .bind(app_type)
+        .bind(json!({ "app": app_type, "timestamp": chrono::Utc::now() }))
+        .execute(&self.repos.db_client.pool)
+        .await?;
+
         Ok(json!({
             "success": true,
-            "message": "OTP sent to your primary contact information",
-            "otp_mock": "1234"
+            "message": "Login successful",
+            "accessToken": token,
+            "expiresIn": format!("{}h", max_hours),
+            "profiles": filtered_profiles
         }))
     }
 
-    async fn verify_otp_global(&self, ident: &str, otp: &str) -> AppResult<Value> {
-        if otp != "1234" {
-            return Err(AppError::Unauthorized("Invalid OTP. Please try again or resend.".to_string()));
-        }
-
-        let profiles = self.repos.global_user.find_by_identifier(ident).await?;
-        // Only return student profiles for the student app
-        let student_profiles: Vec<Value> = profiles.into_iter().filter(|p| p["userType"] == "student").collect();
-
-        Ok(json!({
-            "success": true,
-            "profiles": student_profiles
-        }))
-    }
-
-    async fn sync_all(&self) -> AppResult<()> {
-        self.repos.global_user.sync_all_to_global().await.map_err(AppError::from)
-    }
 }

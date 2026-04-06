@@ -14,6 +14,9 @@ pub enum AppError {
     #[error("Redis error: {0}")]
     Redis(#[from] redis::RedisError),
 
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+
     #[error("Validation error: {0}")]
     Validation(String),
 
@@ -47,6 +50,10 @@ impl IntoResponse for AppError {
             AppError::Redis(ref e) => {
                 tracing::error!("Redis error: {:?}", e);
                 (StatusCode::INTERNAL_SERVER_ERROR, "A cache error occurred".to_string())
+            }
+            AppError::Json(ref e) => {
+                tracing::error!("JSON error: {:?}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("JSON error: {}", e))
             }
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),

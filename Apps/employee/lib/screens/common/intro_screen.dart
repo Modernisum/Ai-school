@@ -44,32 +44,32 @@ class _IntroScreenState extends State<IntroScreen> {
                   itemCount: _pages.length,
                   itemBuilder: (context, index) {
                     final page = _pages[index];
-                    return Padding(
+                    return SingleChildScrollView(
                       padding: const EdgeInsets.all(40.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             page['icon'],
-                            size: 120,
+                            size: 100, // Slightly reduced icon size for better fit
                             color: Colors.white,
                           ),
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 32), // Reduced spacing
                           Text(
                             page['title'],
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 32,
+                              fontSize: 28, // Slightly reduced font size
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16), // Reduced spacing
                           Text(
                             page['subtitle'],
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               color: Colors.white70,
                             ),
                           ),

@@ -1,3 +1,4 @@
+use crate::models::resource::{CreateSpaceRequest};
 use crate::AppState;
 
 use axum::{
@@ -14,15 +15,14 @@ pub async fn list_spaces(
     Path(school_id): Path<String>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> AppResult<impl IntoResponse> {
-    let category_id = params.get("categoryId").and_then(|id| id.parse::<i32>().ok());
+    let category = params.get("category").map(|s| s.as_str());
     let simple = params.get("simple").map(|v| v == "true").unwrap_or(false);
     
-    let list = state.services.resource.list_spaces(&school_id, category_id).await?;
+    let list = state.services.resource.list_spaces(&school_id, category).await?;
     
     if simple {
         let simple_list: Vec<serde_json::Value> = list.into_iter().map(|s| {
             json!({
-                "spaceId": s["spaceId"],
                 "name": s["name"]
             })
         }).collect();
@@ -32,105 +32,24 @@ pub async fn list_spaces(
     Ok(Json(json!({"success": true, "data": list})))
 }
 
-// POST /api/spaces/:schoolId/spaces/bulk
-pub async fn bulk_import_spaces(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> AppResult<impl IntoResponse> {
-    let rows = match payload["spaces"].as_array().or(payload.as_array()) {
-        Some(r) => r.clone(),
-        None => {
-            return Ok(Json(json!({"success": false, "message": "Expected a 'spaces' array"})).into_response());
-        }
-    };
-
-    let mut success_count = 0usize;
-    let mut fail_count = 0usize;
-    let mut results = Vec::new();
-
-    for (i, row) in rows.iter().enumerate() {
-        let space_name = row
-            .get("Space Name")
-            .or(row.get("spaceName"))
-            .or(row.get("name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unnamed Space")
-            .to_string();
-
-        let space_data = json!({ "name": space_name });
-        match state
-            .services
-            .resource
-            .create_space(&school_id, &tenant_ctx.admin_id, space_data)
-            .await
-        {
-            Ok(_) => {
-                success_count += 1;
-                results.push(json!({"row": i + 1, "status": "success", "spaceName": space_name}));
-            }
-            Err(e) => {
-                fail_count += 1;
-                results.push(json!({"row": i + 1, "status": "error", "message": e.to_string()}));
-            }
-        }
-    }
-
-    Ok(Json(json!({
-        "success": true,
-        "message": format!("{} spaces imported, {} failed", success_count, fail_count),
-        "results": results,
-        "successCount": success_count,
-        "failCount": fail_count,
-    })).into_response())
-}
-
-pub async fn get_space_categories(
+pub async fn list_space_categories(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
 ) -> AppResult<impl IntoResponse> {
-    let list = state.services.resource.get_space_categories(&school_id).await?;
-    Ok(Json(json!({"success": true, "data": list})))
+    let list = state.services.resource.list_space_categories(&school_id).await?;
+    Ok(Json(json!({"success": true, "categories": list})))
 }
 
-pub async fn create_space_category(
+pub async fn create_space_by_category(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
+    Path((school_id, category)): Path<(String, String)>,
+    Json(payload): Json<CreateSpaceRequest>,
 ) -> AppResult<impl IntoResponse> {
     let data = state
         .services
         .resource
-        .create_space_category(&school_id, &tenant_ctx.admin_id, payload)
-        .await?;
-    Ok(Json(json!({"success": true, "data": data})))
-}
-
-pub async fn delete_category(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, category_id)): Path<(String, i32)>,
-) -> AppResult<impl IntoResponse> {
-    state
-        .services
-        .resource
-        .delete_space_category(&school_id, &tenant_ctx.admin_id, category_id)
-        .await?;
-    Ok(Json(json!({"success": true, "message": "Category deleted successfully"})))
-}
-
-pub async fn create_space(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> AppResult<impl IntoResponse> {
-    let data = state
-        .services
-        .resource
-        .create_space(&school_id, &tenant_ctx.admin_id, payload)
+        .create_space_by_category(&school_id, &tenant_ctx.admin_id, &category, payload.space_name)
         .await?;
     Ok(Json(json!({"success": true, "space": data})))
 }
@@ -138,13 +57,13 @@ pub async fn create_space(
 pub async fn update_space(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, space_id)): Path<(String, String)>,
+    Path((school_id, space_name)): Path<(String, String)>,
     Json(payload): Json<serde_json::Value>,
 ) -> AppResult<impl IntoResponse> {
     state
         .services
         .resource
-        .update_space(&school_id, &tenant_ctx.admin_id, &space_id, payload)
+        .update_space(&school_id, &tenant_ctx.admin_id, &space_name, payload)
         .await?;
     Ok(Json(json!({"success": true, "message": "Space updated successfully"})))
 }
@@ -152,24 +71,24 @@ pub async fn update_space(
 pub async fn delete_space(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, space_id)): Path<(String, String)>,
+    Path((school_id, space_name)): Path<(String, String)>,
 ) -> AppResult<impl IntoResponse> {
     state
         .services
         .resource
-        .delete_space(&school_id, &tenant_ctx.admin_id, &space_id)
+        .delete_space(&school_id, &tenant_ctx.admin_id, &space_name)
         .await?;
     Ok(Json(json!({"success": true, "message": "Space deleted successfully"})))
 }
 
 pub async fn get_space_details(
     State(state): State<AppState>,
-    Path((school_id, space_id)): Path<(String, String)>,
+    Path((school_id, space_name)): Path<(String, String)>,
 ) -> AppResult<impl IntoResponse> {
     let data = state
         .services
         .resource
-        .get_space_details(&school_id, &space_id)
+        .get_space_details(&school_id, &space_name)
         .await?;
     
     match data {
@@ -181,40 +100,14 @@ pub async fn get_space_details(
 pub async fn assign_space_materials(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, space_id)): Path<(String, String)>,
+    Path((school_id, space_name)): Path<(String, String)>,
     Json(payload): Json<Vec<serde_json::Value>>,
 ) -> AppResult<impl IntoResponse> {
     state
         .services
         .resource
-        .assign_space_materials(&school_id, &tenant_ctx.admin_id, &space_id, payload)
+        .assign_space_materials(&school_id, &tenant_ctx.admin_id, &space_name, payload)
         .await?;
     Ok(Json(json!({"success": true, "message": "Materials assigned successfully"})))
 }
 
-pub async fn assign_space_employees(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, space_id)): Path<(String, String)>,
-    Json(payload): Json<Vec<String>>,
-) -> AppResult<impl IntoResponse> {
-    state
-        .services
-        .resource
-        .assign_space_employees(&school_id, &tenant_ctx.admin_id, &space_id, payload)
-        .await?;
-    Ok(Json(json!({"success": true, "message": "Employees assigned successfully"})))
-}
-
-pub async fn remove_space_employee(
-    State(state): State<AppState>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    Path((school_id, space_id, employee_id)): Path<(String, String, String)>,
-) -> AppResult<impl IntoResponse> {
-    state
-        .services
-        .resource
-        .remove_space_employee(&school_id, &tenant_ctx.admin_id, &space_id, &employee_id)
-        .await?;
-    Ok(Json(json!({"success": true, "message": "Employee removed successfully"})))
-}
