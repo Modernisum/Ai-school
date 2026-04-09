@@ -1,11 +1,10 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { UserCheck, UserPlus, CreditCard, CalendarCheck } from "lucide-react";
+import { UserCheck, CreditCard, CalendarCheck } from "lucide-react";
 import SecondaryNav from "../../../components/ui/SecondaryNav";
 import PageLoader from "../../../components/ui/PageLoader";
 
 const EmployeePage = lazy(() => import("../pages/employee.jsx"));
-const EmployeeFormPage = lazy(() => import("../components/employeeform.jsx"));
 const EmployeeProfilePage = lazy(() => import("../components/employeeprofile.jsx"));
 const PayrollPage = lazy(() => import("../pages/payroll.jsx"));
 const LeaveManagementPage = lazy(() => import("../components/LeaveManagement.jsx"));
@@ -13,7 +12,6 @@ const LeaveManagementPage = lazy(() => import("../components/LeaveManagement.jsx
 const EmployeeModule = () => {
   const tabs = [
     { label: "All Employees", path: "/dashboard/employee/all", icon: UserCheck },
-    { label: "Add Employee", path: "/dashboard/employee/add", icon: UserPlus },
     { label: "Payroll", path: "/dashboard/employee/payroll", icon: CreditCard },
     { label: "Leave", path: "/dashboard/employee/leave", icon: CalendarCheck },
   ];
@@ -25,7 +23,6 @@ const EmployeeModule = () => {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="all" element={<EmployeePage />} />
-            <Route path="add" element={<EmployeeFormPage />} />
             <Route path="profile/:employeeId" element={<EmployeeProfilePage />} />
             <Route path="payroll" element={<PayrollPage />} />
             <Route path="leave" element={<LeaveManagementPage />} />

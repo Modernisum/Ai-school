@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use dotenv::dotenv;
 // use serde_json::json;
 use std::net::SocketAddr;

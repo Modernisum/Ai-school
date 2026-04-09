@@ -30,7 +30,7 @@ class GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final defaultBorderRadius = BorderRadius.circular(24.0);
-    
+
     return Container(
       margin: margin,
       width: width,
@@ -39,7 +39,7 @@ class GlassCard extends StatelessWidget {
         borderRadius: borderRadius ?? defaultBorderRadius,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 24,
             spreadRadius: -4,
             offset: const Offset(0, 12),
@@ -58,15 +58,16 @@ class GlassCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color ?? Colors.white.withValues(alpha: 0.4),
-                  (color ?? Colors.white).withValues(alpha: 0.1),
+                  color ?? Colors.white.withOpacity(0.4),
+                  (color ?? Colors.white).withOpacity(0.1),
                 ],
               ),
               borderRadius: borderRadius ?? defaultBorderRadius,
-              border: border ?? Border.all(
-                width: 1.5,
-                color: borderColor ?? Colors.white.withValues(alpha: 0.3),
-              ),
+              border: border ??
+                  Border.all(
+                    width: 1.5,
+                    color: borderColor ?? Colors.white.withOpacity(0.3),
+                  ),
             ),
             child: child,
           ),

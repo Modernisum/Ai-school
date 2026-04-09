@@ -13,10 +13,23 @@ pub struct PostgresLeaveRepository {
 impl LeaveRepository for PostgresLeaveRepository {
     async fn add_leave(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
         let leave_id = format!("LV{}", chrono::Utc::now().timestamp_millis());
-        let employee_id = data["employeeId"]
-            .as_str()
-            .ok_or("Employee ID is required")?;
-        let employee_name = data["employeeName"].as_str().unwrap_or("");
+
+        // Support both employee and student leave applications
+        let applicant_type = data["applicantType"].as_str().unwrap_or("employee");
+        let (employee_id, student_id, applicant_name) = if applicant_type == "student" {
+            let student_id = data["studentId"]
+                .as_str()
+                .ok_or("Student ID is required for student leave")?;
+            let student_name = data["studentName"].as_str().unwrap_or("");
+            (None, Some(student_id), student_name)
+        } else {
+            let employee_id = data["employeeId"]
+                .as_str()
+                .ok_or("Employee ID is required for employee leave")?;
+            let employee_name = data["employeeName"].as_str().unwrap_or("");
+            (Some(employee_id), None, employee_name)
+        };
+
         let reason = data["reason"].as_str().unwrap_or("");
         let leave_type = data["leaveType"].as_str().unwrap_or("casual");
         let from_date =
@@ -29,17 +42,19 @@ impl LeaveRepository for PostgresLeaveRepository {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(
             "INSERT INTO leave_applications (
-                leave_id, school_id, employee_id, employee_name, reason, leave_type, from_date, to_date
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+                leave_id, school_id, employee_id, student_id, employee_name, reason, leave_type, from_date, to_date, applicant_type
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         )
         .bind(&leave_id)
         .bind(school_id)
         .bind(employee_id)
-        .bind(employee_name)
+        .bind(student_id)
+        .bind(applicant_name)
         .bind(reason)
         .bind(leave_type)
         .bind(from_date)
         .bind(to_date)
+        .bind(applicant_type)
         .execute(&mut *conn)
         .await?;
 
@@ -51,7 +66,7 @@ impl LeaveRepository for PostgresLeaveRepository {
     async fn get_leaves(&self, school_id: &str) -> Result<Vec<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query(
-            "SELECT leave_id, employee_id, employee_name, reason, leave_type, from_date, to_date, status
+            "SELECT leave_id, employee_id, student_id, employee_name, reason, leave_type, from_date, to_date, status, applicant_type
              FROM leave_applications WHERE school_id = $1 ORDER BY created_at DESC",
         )
         .bind(school_id)
@@ -63,13 +78,15 @@ impl LeaveRepository for PostgresLeaveRepository {
             .map(|r| {
                 json!({
                     "leaveId": r.get::<String, _>("leave_id"),
-                    "employeeId": r.get::<String, _>("employee_id"),
+                    "employeeId": r.get::<Option<String>, _>("employee_id").unwrap_or_default(),
+                    "studentId": r.get::<Option<String>, _>("student_id").unwrap_or_default(),
                     "employeeName": r.get::<Option<String>, _>("employee_name").unwrap_or_default(),
                     "reason": r.get::<String, _>("reason"),
                     "leaveType": r.get::<String, _>("leave_type"),
                     "fromDate": r.get::<chrono::NaiveDate, _>("from_date").to_string(),
                     "toDate": r.get::<chrono::NaiveDate, _>("to_date").to_string(),
                     "status": r.get::<String, _>("status"),
+                    "applicantType": r.get::<String, _>("applicant_type"),
                 })
             })
             .collect())
@@ -137,7 +154,11 @@ impl LeaveRepository for PostgresLeaveRepository {
         Ok(())
     }
 
-    async fn delete_leave_application(&self, school_id: &str, leave_id: &str) -> Result<(), AppError> {
+    async fn delete_leave_application(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+    ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query("DELETE FROM leave_applications WHERE school_id = $1 AND leave_id = $2")
             .bind(school_id)

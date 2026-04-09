@@ -63,14 +63,18 @@ impl AttendanceService for PostgresAttendanceService {
             .add_attendance_history(school_id, role, user_id, "mark", final_data.clone())
             .await?;
 
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "ATTENDANCE",
-            user_id,
-            "MARK",
-            final_data
-        ).await;
+        let _ = self
+            .repos
+            .audit
+            .log_action(
+                school_id,
+                admin_id,
+                "ATTENDANCE",
+                user_id,
+                "MARK",
+                final_data,
+            )
+            .await;
 
         Ok(response_data)
     }
@@ -115,14 +119,18 @@ impl AttendanceService for PostgresAttendanceService {
             )
             .await?;
 
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "ATTENDANCE_HOLIDAY",
-            user_id,
-            "MARK_HOLIDAY",
-            holiday_data.clone()
-        ).await;
+        let _ = self
+            .repos
+            .audit
+            .log_action(
+                school_id,
+                admin_id,
+                "ATTENDANCE_HOLIDAY",
+                user_id,
+                "MARK_HOLIDAY",
+                holiday_data.clone(),
+            )
+            .await;
 
         Ok(holiday_data)
     }
@@ -141,7 +149,11 @@ impl AttendanceService for PostgresAttendanceService {
             .ok_or_else(|| AppError::Validation("outTime is required".to_string()))?
             .to_string();
 
-        let existing_list = self.repos.attendance.get_attendance(school_id, role, user_id).await?;
+        let existing_list = self
+            .repos
+            .attendance
+            .get_attendance(school_id, role, user_id)
+            .await?;
         let existing = existing_list
             .iter()
             .find(|a| a["date"].as_str() == Some(date))
@@ -177,14 +189,11 @@ impl AttendanceService for PostgresAttendanceService {
 
         let delta = self.calculate_delta(&existing, &updated);
         if !delta.as_object().map(|o| o.is_empty()).unwrap_or(true) {
-            let _ = self.repos.audit.log_action(
-                school_id,
-                admin_id,
-                "ATTENDANCE",
-                user_id,
-                "UPDATE",
-                delta
-            ).await;
+            let _ = self
+                .repos
+                .audit
+                .log_action(school_id, admin_id, "ATTENDANCE", user_id, "UPDATE", delta)
+                .await;
         }
 
         Ok(updated)
@@ -198,23 +207,27 @@ impl AttendanceService for PostgresAttendanceService {
         date: &str,
         admin_id: &str,
     ) -> AppResult<()> {
-        let existing_list = self.repos.attendance.get_attendance(school_id, role, user_id).await?;
-        let existing = existing_list.iter().find(|a| a["date"].as_str() == Some(date)).cloned();
+        let existing_list = self
+            .repos
+            .attendance
+            .get_attendance(school_id, role, user_id)
+            .await?;
+        let existing = existing_list
+            .iter()
+            .find(|a| a["date"].as_str() == Some(date))
+            .cloned();
 
         self.repos
             .attendance
             .delete_attendance(school_id, role, user_id, date)
             .await?;
-        
+
         if let Some(e) = existing {
-            let _ = self.repos.audit.log_action(
-                school_id,
-                admin_id,
-                "ATTENDANCE",
-                user_id,
-                "DELETE",
-                e
-            ).await;
+            let _ = self
+                .repos
+                .audit
+                .log_action(school_id, admin_id, "ATTENDANCE", user_id, "DELETE", e)
+                .await;
         }
 
         self.repos
@@ -237,33 +250,52 @@ impl AttendanceService for PostgresAttendanceService {
         role: &str,
         user_id: &str,
     ) -> AppResult<Vec<Value>> {
-        Ok(self.repos
+        Ok(self
+            .repos
             .attendance
             .get_attendance(school_id, role, user_id)
             .await?)
     }
 
     async fn list_attendance_by_date(&self, school_id: &str, date: &str) -> AppResult<Vec<String>> {
-        let rows = sqlx::query("SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2")
+        let rows = sqlx::query("SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2::date")
             .bind(school_id)
             .bind(date)
             .fetch_all(&self.repos.db_client.pool)
             .await?;
-        
-        Ok(rows.into_iter().filter_map(|r| sqlx::Row::try_get::<String, _>(&r, "user_id").ok()).collect())
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|r| sqlx::Row::try_get::<String, _>(&r, "user_id").ok())
+            .collect())
     }
 
-    async fn list_school_holidays(&self, school_id: &str, month: Option<i32>, year: Option<i32>) -> AppResult<Vec<Value>> {
+    async fn list_school_holidays(
+        &self,
+        school_id: &str,
+        month: Option<i32>,
+        year: Option<i32>,
+    ) -> AppResult<Vec<Value>> {
         let now = Local::now();
         let query_year = year.unwrap_or(now.year());
         let (start_date, end_date) = if let Some(m) = month {
-            (format!("{}-{:02}-01", query_year, m), format!("{}-{:02}-31", query_year, m))
+            (
+                format!("{}-{:02}-01", query_year, m),
+                format!("{}-{:02}-31", query_year, m),
+            )
         } else {
-            let academic_start = if now.month() < 4 { query_year - 1 } else { query_year };
-            (format!("{}-04-01", academic_start), format!("{}-03-31", academic_start + 1))
+            let academic_start = if now.month() < 4 {
+                query_year - 1
+            } else {
+                query_year
+            };
+            (
+                format!("{}-04-01", academic_start),
+                format!("{}-03-31", academic_start + 1),
+            )
         };
 
-        let rows = sqlx::query("SELECT id, title, description, from_date, to_date, classes FROM school_holidays WHERE school_id = $1 AND (($2 <= to_date AND $3 >= from_date)) ORDER BY from_date ASC")
+        let rows = sqlx::query("SELECT id, title, description, from_date, to_date, classes FROM school_holidays WHERE school_id = $1 AND (($2::date <= to_date AND $3::date >= from_date)) ORDER BY from_date ASC")
             .bind(school_id).bind(&start_date).bind(&end_date)
             .fetch_all(&self.repos.db_client.pool).await?;
 
@@ -276,7 +308,10 @@ impl AttendanceService for PostgresAttendanceService {
             let to_str: String = sqlx::Row::get(&r, "to_date");
             let classes: Value = sqlx::Row::get(&r, "classes");
 
-            if let (Ok(start), Ok(end)) = (chrono::NaiveDate::parse_from_str(&from_str, "%Y-%m-%d"), chrono::NaiveDate::parse_from_str(&to_str, "%Y-%m-%d")) {
+            if let (Ok(start), Ok(end)) = (
+                chrono::NaiveDate::parse_from_str(&from_str, "%Y-%m-%d"),
+                chrono::NaiveDate::parse_from_str(&to_str, "%Y-%m-%d"),
+            ) {
                 let mut curr = start;
                 while curr <= end {
                     let curr_str = curr.format("%Y-%m-%d").to_string();
@@ -284,7 +319,9 @@ impl AttendanceService for PostgresAttendanceService {
                         data.push(json!({ "id": id, "date": curr_str, "title": title, "description": desc, "classes": classes, "fullRange": { "from": from_str, "to": to_str } }));
                     }
                     curr = curr.succ_opt().unwrap_or(curr);
-                    if curr == start { break; } // safety
+                    if curr == start {
+                        break;
+                    } // safety
                 }
             }
         }
@@ -311,7 +348,10 @@ impl AttendanceService for PostgresAttendanceService {
     }
 
     async fn create_school_holiday(&self, school_id: &str, data: Value) -> AppResult<Value> {
-        let from_date = data["fromDate"].as_str().ok_or_else(|| AppError::Validation("fromDate required".into()))?.to_string();
+        let from_date = data["fromDate"]
+            .as_str()
+            .ok_or_else(|| AppError::Validation("fromDate required".into()))?
+            .to_string();
         let id = uuid::Uuid::new_v4().to_string();
         let title = data["title"].as_str().unwrap_or("Holiday").to_string();
         let desc = data["description"].as_str().unwrap_or("").to_string();
@@ -329,17 +369,23 @@ impl AttendanceService for PostgresAttendanceService {
     }
 
     async fn delete_school_holiday(&self, school_id: &str, holiday_id: &str) -> AppResult<()> {
-        sqlx::query("DELETE FROM school_holidays WHERE id=$1 AND school_id=$2").bind(holiday_id).bind(school_id).execute(&self.repos.db_client.pool).await?;
+        sqlx::query("DELETE FROM school_holidays WHERE id=$1 AND school_id=$2")
+            .bind(holiday_id)
+            .bind(school_id)
+            .execute(&self.repos.db_client.pool)
+            .await?;
         Ok(())
     }
 
     async fn check_school_holiday(&self, school_id: &str, date: &str) -> AppResult<Value> {
-        let r = sqlx::query("SELECT id, title FROM school_holidays WHERE school_id=$1 AND from_date<=$2 AND to_date>=$2 LIMIT 1")
+        let r = sqlx::query("SELECT id, title FROM school_holidays WHERE school_id=$1 AND from_date<=$2::date AND to_date>=$2::date LIMIT 1")
             .bind(school_id).bind(date).fetch_optional(&self.repos.db_client.pool).await?;
 
         match r {
-            Some(row) => Ok(json!({ "success": true, "isHoliday": true, "holidayId": sqlx::Row::get::<String, _>(&row, "id"), "reason": sqlx::Row::get::<String, _>(&row, "title") })),
-            None => Ok(json!({ "success": true, "isHoliday": false }))
+            Some(row) => Ok(
+                json!({ "success": true, "isHoliday": true, "holidayId": sqlx::Row::get::<String, _>(&row, "id"), "reason": sqlx::Row::get::<String, _>(&row, "title") }),
+            ),
+            None => Ok(json!({ "success": true, "isHoliday": false })),
         }
     }
 }
@@ -364,7 +410,11 @@ impl PostgresAttendanceService {
         let mut delta = json!({});
         if let (Some(old_obj), Some(new_obj)) = (old.as_object(), new.as_object()) {
             for (key, new_val) in new_obj {
-                if key == "updatedAt" || key == "updated_at" || key == "createdAt" || key == "created_at" {
+                if key == "updatedAt"
+                    || key == "updated_at"
+                    || key == "createdAt"
+                    || key == "created_at"
+                {
                     continue;
                 }
                 if let Some(old_val) = old_obj.get(key) {

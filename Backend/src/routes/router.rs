@@ -224,7 +224,10 @@ pub fn create_router(state: AppState) -> Router {
                 .route("/generate", post(routes::timetable::generate_timetable))
                 .route("/", get(routes::timetable::list_timetables))
                 .route("/:configId", get(routes::timetable::get_timetable))
-                .route("/:configId/approve", post(routes::timetable::approve_timetable))
+                .route(
+                    "/:configId/approve",
+                    post(routes::timetable::approve_timetable),
+                )
                 .route("/:configId", delete(routes::timetable::delete_timetable)),
         )
         // ── Webhook Engine Routes ─────────────────────────────────────────────
@@ -603,18 +606,122 @@ pub fn create_router(state: AppState) -> Router {
                     get(routes::responsibility::responsibility_analytics),
                 )
                 .route(
+                    "/:schoolId/overview/analytics",
+                    get(routes::responsibility::overview_analytics),
+                )
+                .route(
+                    "/:schoolId/export/csv",
+                    get(routes::responsibility::export_responsibilities_csv),
+                )
+                .route(
+                    "/:schoolId/import/csv",
+                    post(routes::responsibility::import_responsibilities_csv),
+                )
+                .route(
                     "/:schoolId/students/:studentId/responsibilities",
                     get(routes::responsibility::list_student_responsibilities),
                 )
                 .route(
                     "/:schoolId/:responsibilityId",
                     get(routes::responsibility::get_responsibility_definition)
-                        .patch(routes::responsibility::update_responsibility),
-                ),
+                        .patch(routes::responsibility::update_responsibility)
+                        .delete(routes::responsibility::delete_responsibility),
+                )
+                .route(
+                    "/:schoolId/employees/:employeeId/responsibilities",
+                    get(routes::responsibility::list_employee_responsibilities),
+                )
+                .route(
+                    "/:schoolId/spaces/:spaceId/responsibilities",
+                    get(routes::responsibility::list_space_responsibilities),
+                )
+                .route(
+                    "/:schoolId/responsibilities/search",
+                    get(routes::responsibility::search_responsibilities),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/bulk-assign",
+                    post(routes::responsibility::bulk_assign_responsibility),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/bulk-remove",
+                    delete(routes::responsibility::bulk_remove_responsibility),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/bulk-update",
+                    put(routes::responsibility::bulk_update_responsibility),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/history",
+                    get(routes::responsibility::get_responsibility_history),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/versions",
+                    get(routes::responsibility::get_responsibility_versions),
+                )
+                .route(
+                    "/:schoolId/responsibilities/:responsibilityId/rollback/:version",
+                    post(routes::responsibility::rollback_responsibility),
+                )
+                // Phase 6: Reporting & Analytics routes
+                .route(
+                    "/:schoolId/metrics/utilization",
+                    get(routes::responsibility::get_utilization_metrics),
+                )
+                .route(
+                    "/:schoolId/metrics/workload",
+                    get(routes::responsibility::get_workload_metrics),
+                )
+                .route(
+                    "/:schoolId/metrics/space-distribution",
+                    get(routes::responsibility::get_space_distribution_metrics),
+                )
+                .route(
+                    "/:schoolId/metrics/revenue",
+                    get(routes::responsibility::get_revenue_metrics),
+                )
+                .route(
+                    "/:schoolId/reports/utilization/:startDate/:endDate",
+                    get(routes::responsibility::generate_utilization_report),
+                )
+                .route(
+                    "/:schoolId/reports/workload/:startDate/:endDate",
+                    get(routes::responsibility::generate_workload_report),
+                )
+                .route(
+                    "/:schoolId/reports/space-distribution/:startDate/:endDate",
+                    get(routes::responsibility::generate_space_distribution_report),
+                )
+                .route(
+                    "/:schoolId/reports/revenue/:startDate/:endDate",
+                    get(routes::responsibility::generate_revenue_report),
+                )
+                // PDF Export routes
+                .route(
+                    "/:schoolId/reports/utilization/:startDate/:endDate/pdf",
+                    get(routes::responsibility::generate_utilization_report_pdf),
+                )
+                .route(
+                    "/:schoolId/reports/workload/:startDate/:endDate/pdf",
+                    get(routes::responsibility::generate_workload_report_pdf),
+                )
+                .route(
+                    "/:schoolId/reports/space-distribution/:startDate/:endDate/pdf",
+                    get(routes::responsibility::generate_space_distribution_report_pdf),
+                )
+                .route(
+                    "/:schoolId/reports/revenue/:startDate/:endDate/pdf",
+                    get(routes::responsibility::generate_revenue_report_pdf),
+                )
+                .nest(
+                    "/ws",
+                    routes::responsibility_ws::router(),
+                )
         )
         .nest(
             "/api/leave",
             Router::new()
+                // Basic leave operations
                 .route(
                     "/:schoolId",
                     post(routes::leave::create_leave).get(routes::leave::list_leaves),
@@ -638,6 +745,66 @@ pub fn create_router(state: AppState) -> Router {
                 .route(
                     "/:schoolId/:leaveId/pdf",
                     get(routes::leave::download_leave_pdf),
+                )
+                // Enhanced leave system routes
+                .route(
+                    "/:schoolId/balance/:employeeId",
+                    get(routes::leave::get_leave_balance),
+                )
+                .route("/:schoolId/queue", get(routes::leave::get_leave_queue))
+                .route(
+                    "/:schoolId/details/:leaveId",
+                    get(routes::leave::get_leave_details),
+                )
+                // Conditional approval routes
+                .route(
+                    "/:schoolId/:leaveId/conditional/approve",
+                    post(routes::leave::apply_conditional_approval),
+                )
+                .route(
+                    "/:schoolId/:leaveId/conditional/respond",
+                    post(routes::leave::respond_to_conditions),
+                )
+                .route(
+                    "/:schoolId/conditional/templates",
+                    get(routes::leave::get_conditional_templates)
+                        .post(routes::leave::create_conditional_template),
+                )
+                // Responsibility coverage routes
+                .route(
+                    "/:schoolId/:leaveId/coverage/assign",
+                    post(routes::leave::assign_coverage),
+                )
+                .route(
+                    "/:schoolId/:leaveId/coverage/available",
+                    get(routes::leave::get_available_coverages),
+                )
+                .route(
+                    "/:schoolId/coverage/:coverageId/accept",
+                    post(routes::leave::accept_coverage),
+                )
+                // Workload assessment routes
+                .route(
+                    "/:schoolId/:leaveId/workload/assess",
+                    post(routes::leave::assess_workload),
+                )
+                .route(
+                    "/:schoolId/:leaveId/workload/assessment",
+                    get(routes::leave::get_workload_assessment),
+                )
+                // Notification routes
+                .route(
+                    "/:schoolId/notifications",
+                    get(routes::leave::get_notifications),
+                )
+                .route(
+                    "/:schoolId/notifications/:notificationId/read",
+                    post(routes::leave::mark_notification_read),
+                )
+                // Feature flag routes
+                .route(
+                    "/:schoolId/feature-flags",
+                    get(routes::leave::get_feature_flags).post(routes::leave::update_feature_flags),
                 ),
         )
         .route(
@@ -665,9 +832,18 @@ pub fn create_router(state: AppState) -> Router {
             post(routes::setup::setup_school_handler),
         )
         .route("/api/task/:schoolId", get(routes::task::list_tasks))
-        .route("/api/task/:schoolId/:taskId/status", put(routes::task::update_task_status))
-        .route("/api/task/ai/:schoolId/generate", post(routes::task::ai_generate_tasks))
-        .route("/api/task/ai/:schoolId/reorganize", post(routes::task::ai_reorganize_tasks))
+        .route(
+            "/api/task/:schoolId/:taskId/status",
+            put(routes::task::update_task_status),
+        )
+        .route(
+            "/api/task/ai/:schoolId/generate",
+            post(routes::task::ai_generate_tasks),
+        )
+        .route(
+            "/api/task/ai/:schoolId/reorganize",
+            post(routes::task::ai_reorganize_tasks),
+        )
         .nest(
             "/api/ai",
             Router::new().route("/:schoolId/query", post(routes::ai::query_ai)),

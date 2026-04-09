@@ -1,10 +1,10 @@
+use crate::middleware::rls::TenantContext;
 use crate::AppState;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
-    Json, Extension,
+    Extension, Json,
 };
-use crate::middleware::rls::TenantContext;
 use serde_json::json;
 
 pub async fn create_leave(
@@ -13,7 +13,12 @@ pub async fn create_leave(
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state.services.leave.create_leave(&school_id, &tenant_ctx.admin_id, payload).await {
+    match state
+        .services
+        .leave
+        .create_leave(&school_id, &tenant_ctx.admin_id, payload)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -275,8 +280,329 @@ pub async fn get_proxy_suggestions(
     let period = params["period"].as_str().unwrap_or("1");
     let subject = params["subject"].as_str();
 
-    match state.services.leave.get_proxy_suggestions(&school_id, date, period, subject).await {
+    match state
+        .services
+        .leave
+        .get_proxy_suggestions(&school_id, date, period, subject)
+        .await
+    {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+// Enhanced leave system routes
+
+pub async fn get_leave_balance(
+    State(state): State<AppState>,
+    Path((school_id, employee_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_leave_balance(&school_id, &employee_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_leave_queue(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    axum::extract::Query(params): axum::extract::Query<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_leave_queue(&school_id, params)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_leave_details(
+    State(state): State<AppState>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_leave_details(&school_id, &leave_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn apply_conditional_approval(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .apply_conditional_approval(&school_id, &tenant_ctx.admin_id, &leave_id, payload)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn respond_to_conditions(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .respond_to_conditions(&school_id, &tenant_ctx.admin_id, &leave_id, payload)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_conditional_templates(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_conditional_templates(&school_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn create_conditional_template(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .create_conditional_template(&school_id, &tenant_ctx.admin_id, payload)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn assign_coverage(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .assign_coverage(&school_id, &tenant_ctx.admin_id, &leave_id, payload)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_available_coverages(
+    State(state): State<AppState>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_available_coverages(&school_id, &leave_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn accept_coverage(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, coverage_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .accept_coverage(&school_id, &tenant_ctx.admin_id, &coverage_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn assess_workload(
+    State(state): State<AppState>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .assess_workload(&school_id, &leave_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_workload_assessment(
+    State(state): State<AppState>,
+    Path((school_id, leave_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .get_workload_assessment(&school_id, &leave_id)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_notifications(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+    axum::extract::Query(params): axum::extract::Query<serde_json::Value>,
+) -> impl IntoResponse {
+    let unread_only = params["unread_only"].as_bool().unwrap_or(false);
+    match state
+        .services
+        .leave
+        .get_notifications(&school_id, &tenant_ctx.admin_id, unread_only)
+        .await
+    {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn mark_notification_read(
+    State(state): State<AppState>,
+    Path((school_id, notification_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .mark_notification_read(&school_id, &notification_id)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_feature_flags(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    match state.services.leave.get_feature_flags(&school_id).await {
+        Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn update_feature_flags(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    match state
+        .services
+        .leave
+        .update_feature_flags(&school_id, &tenant_ctx.admin_id, payload)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

@@ -5,6 +5,7 @@ use axum::{
 };
 use serde_json::json;
 use thiserror::Error;
+use anyhow;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -97,5 +98,11 @@ impl From<&str> for AppError {
 impl From<String> for AppError {
     fn from(err: String) -> Self {
         AppError::Internal(err)
+    }
+}
+
+impl From<anyhow::Error> for AppError {
+    fn from(err: anyhow::Error) -> Self {
+        AppError::Internal(err.to_string())
     }
 }

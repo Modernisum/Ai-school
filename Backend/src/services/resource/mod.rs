@@ -1,0 +1,188 @@
+use crate::repository::Repositories;
+use crate::services::traits::*;
+use async_trait::async_trait;
+use serde_json::Value;
+use std::sync::Arc;
+
+mod equipment;
+mod inventory;
+mod material;
+
+pub use equipment::EquipmentOperations;
+pub use inventory::InventoryOperations;
+pub use material::MaterialOperations;
+
+pub struct PostgresResourceService {
+    pub repos: Arc<Repositories>,
+    pub material: MaterialOperations,
+    pub equipment: EquipmentOperations,
+    pub inventory: InventoryOperations,
+}
+
+impl PostgresResourceService {
+    pub fn new(repos: Arc<Repositories>) -> Self {
+        Self {
+            material: MaterialOperations::new(repos.clone()),
+            equipment: EquipmentOperations::new(repos.clone()),
+            inventory: InventoryOperations::new(repos.clone()),
+            repos,
+        }
+    }
+}
+
+#[async_trait]
+impl ResourceService for PostgresResourceService {
+    async fn create_announcement(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        type_str: &str,
+        user_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        self.equipment.create_announcement(school_id, admin_id, type_str, user_id, data).await
+    }
+
+    async fn delete_announcement(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        announcement_id: i32,
+    ) -> AppResult<()> {
+        self.equipment.delete_announcement(school_id, admin_id, announcement_id).await
+    }
+
+    async fn create_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        self.material.create_material(school_id, admin_id, data).await
+    }
+
+    async fn list_materials(
+        &self,
+        school_id: &str,
+        search: Option<String>,
+        filter: Option<String>,
+        page: i64,
+        limit: i64,
+    ) -> AppResult<Value> {
+        self.material.list_materials(school_id, search, filter, page, limit).await
+    }
+
+    async fn get_material(&self, school_id: &str, material_name: &str) -> AppResult<Option<Value>> {
+        self.material.get_material(school_id, material_name).await
+    }
+
+    async fn update_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_name: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.material.update_material(school_id, admin_id, material_name, data).await
+    }
+
+    async fn delete_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_name: &str,
+    ) -> AppResult<()> {
+        self.material.delete_material(school_id, admin_id, material_name).await
+    }
+
+    async fn sell_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        material_name: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.material.sell_material(school_id, admin_id, material_name, data).await
+    }
+
+    async fn create_event(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        self.equipment.create_event(school_id, admin_id, data).await
+    }
+
+    async fn delete_event(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        event_id: i32,
+    ) -> AppResult<()> {
+        self.equipment.delete_event(school_id, admin_id, event_id).await
+    }
+
+    async fn create_space_by_category(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        category: &str,
+        name: String,
+    ) -> AppResult<Value> {
+        self.inventory.create_space_by_category(school_id, admin_id, category, name).await
+    }
+
+    async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>> {
+        self.inventory.list_spaces(school_id, category).await
+    }
+
+    async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>> {
+        self.inventory.list_space_categories(school_id).await
+    }
+
+    async fn update_space(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.inventory.update_space(school_id, admin_id, space_name, data).await
+    }
+
+    async fn delete_space(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+    ) -> AppResult<()> {
+        self.inventory.delete_space(school_id, admin_id, space_name).await
+    }
+
+    async fn get_space_details(
+        &self,
+        school_id: &str,
+        space_name: &str,
+    ) -> AppResult<Option<Value>> {
+        self.inventory.get_space_details(school_id, space_name).await
+    }
+
+    async fn assign_space_materials(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        materials: Vec<Value>,
+    ) -> AppResult<()> {
+        self.inventory.assign_space_materials(school_id, admin_id, space_name, materials).await
+    }
+
+    async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value> {
+        self.material.get_materials_dashboard(school_id).await
+    }
+
+    async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>> {
+        self.material.get_material_history(school_id, material_id).await
+    }
+}

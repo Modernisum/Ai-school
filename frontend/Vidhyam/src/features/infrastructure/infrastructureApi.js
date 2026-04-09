@@ -8,12 +8,12 @@ export const infrastructureApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.success && result.data
           ? [
-              ...result.data.map(({ id }) => ({ type: 'Complaints', id })),
-              { type: 'Complaints', id: 'LIST' },
-            ]
+            ...result.data.map(({ id }) => ({ type: 'Complaints', id })),
+            { type: 'Complaints', id: 'LIST' },
+          ]
           : [{ type: 'Complaints', id: 'LIST' }],
     }),
-    
+
     createComplaint: builder.mutation({
       query: ({ schoolId, body }) => ({
         url: `/complains/${schoolId}`,
@@ -96,6 +96,10 @@ export const infrastructureApi = baseApi.injectEndpoints({
     }),
 
     // getMaterialsDashboard is now integrated into getMaterials
+    getMaterialsDashboard: builder.query({
+      query: (schoolId) => `/materials/${schoolId}?dashboard=true`,
+      transformResponse: (res) => res.dashboard || {},
+    }),
 
     getSpaces: builder.query({
       query: (schoolId) => `/spaces/${schoolId}/spaces`,
@@ -282,6 +286,45 @@ export const infrastructureApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { employeeId }) => [{ type: 'EmployeeResponsibilities', id: employeeId }],
     }),
+
+    // --- Responsibility History & Versioning ---
+    getResponsibilityHistory: builder.query({
+      query: ({ schoolId, responsibilityId, limit = 50 }) => {
+        const params = new URLSearchParams();
+        if (limit) params.append('limit', limit);
+        const queryString = params.toString();
+        return `/responsibility/${schoolId}/${responsibilityId}/history${queryString ? `?${queryString}` : ''}`;
+      },
+      providesTags: (result, error, { responsibilityId }) => [{ type: 'ResponsibilityHistory', id: responsibilityId }],
+    }),
+
+    getResponsibilityVersions: builder.query({
+      query: ({ schoolId, responsibilityId }) => `/responsibility/${schoolId}/${responsibilityId}/versions`,
+      providesTags: (result, error, { responsibilityId }) => [{ type: 'ResponsibilityVersions', id: responsibilityId }],
+    }),
+
+    rollbackResponsibility: builder.mutation({
+      query: ({ schoolId, responsibilityId, version }) => ({
+        url: `/responsibility/${schoolId}/${responsibilityId}/rollback`,
+        method: 'POST',
+        body: { version },
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'ResponsibilityDetails', id: responsibilityId },
+        { type: 'ResponsibilityVersions', id: responsibilityId }
+      ],
+    }),
+
+    createResponsibilityVersion: builder.mutation({
+      query: ({ schoolId, responsibilityId }) => ({
+        url: `/responsibility/${schoolId}/${responsibilityId}/version`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'ResponsibilityVersions', id: responsibilityId }
+      ],
+    }),
   }),
   overrideExisting: false,
 });
@@ -297,6 +340,7 @@ export const {
   useSellMaterialMutation,
   useBulkImportMaterialsMutation,
   useGetMaterialHistoryQuery,
+  useGetMaterialsDashboardQuery,
   useGetSpacesQuery,
   useCreateSpaceMutation,
   useUpdateSpaceMutation,
@@ -319,4 +363,8 @@ export const {
   useGetEmployeeResponsibilitiesQuery,
   useAssignResponsibilityMutation,
   useRemoveResponsibilityMutation,
+  useGetResponsibilityHistoryQuery,
+  useGetResponsibilityVersionsQuery,
+  useRollbackResponsibilityMutation,
+  useCreateResponsibilityVersionMutation,
 } = infrastructureApi;

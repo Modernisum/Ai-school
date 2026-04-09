@@ -10,7 +10,7 @@ const InfraModule = () => {
   const tabs = [
     { label: "Manifest", path: "/dashboard/infra/manifest", icon: Box },
     { label: "Materials", path: "/dashboard/infra/materials", icon: Layers },
-    { label: "Protocols", path: "/dashboard/infra/protocols", icon: ClipboardList },
+    { label: "Responsibility", path: "/dashboard/infra/protocols", icon: ClipboardList },
   ];
 
   return (

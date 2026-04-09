@@ -2,23 +2,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../api_service.dart';
-import '../logic/auth/auth_bloc.dart';
-import '../logic/auth/auth_state.dart';
-import '../logic/dashboard/dashboard_bloc.dart';
-import '../logic/notices/notice_bloc.dart';
-import '../login_screen.dart';
+import 'package:chatra/core/network/api_service.dart';
+import 'package:chatra/features/auth/bloc/auth_bloc.dart';
+import 'package:chatra/features/auth/bloc/auth_state.dart';
+import 'package:chatra/features/dashboard/bloc/dashboard_bloc.dart';
+import 'package:chatra/features/notices/bloc/notice_bloc.dart';
+import 'package:chatra/features/auth/screens/login_screen.dart';
 import '../navbar_screen.dart';
 import '../intro_screen.dart';
 
-
-
 // ─── DEFERRED IMPORTS — heavy screens load only on demand ⚡ ───────────────────
-import '../fees_screen.dart' deferred as fees;
-import '../bus_tracking_screen.dart' deferred as tracking;
-import '../attendance_calendar_screen.dart' deferred as attendance;
-import '../academic_vault_screen.dart' deferred as vault;
-import '../live_classroom_screen.dart' deferred as live;
+import 'package:chatra/features/fees/screens/fees_screen.dart' deferred as fees;
+import 'package:chatra/features/transport/screens/bus_tracking_screen.dart' deferred as tracking;
+import 'package:chatra/features/attendance/screens/attendance_calendar_screen.dart' deferred as attendance;
+import 'package:chatra/features/academic/screens/academic_vault_screen.dart' deferred as vault;
+import 'package:chatra/features/live/screens/live_classroom_screen.dart' deferred as live;
+import 'package:chatra/features/leave/screens/leave_management_screen.dart' deferred as leave;
+import 'package:chatra/features/responsibility/screens/my_teachers_screen.dart' deferred as teachers;
+import 'package:chatra/features/responsibility/screens/fee_breakdown_screen.dart' deferred as feeBreakdown;
 
 /// Lightweight transparent splash shown while a deferred library loads.
 class _DeferredLoader extends StatefulWidget {
@@ -44,7 +45,8 @@ class _DeferredLoaderState extends State<_DeferredLoader> {
     return FutureBuilder<void>(
       future: _future,
       builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.done) return widget.builder();
+        if (snap.connectionState == ConnectionState.done)
+          return widget.builder();
         return const Scaffold(
           backgroundColor: Color(0xFF1A1A2E),
           body: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -76,7 +78,8 @@ class AppRouter {
       }
       if (authState is AuthAuthenticated) {
         if (authState.role != 'student') return '/login';
-        if (isLoggingIn) return '/dashboard'; // replace, not push — no back to login
+        if (isLoggingIn)
+          return '/dashboard'; // replace, not push — no back to login
       }
       return null;
     },
@@ -89,7 +92,8 @@ class AppRouter {
       ),
       GoRoute(
         path: '/intro',
-        pageBuilder: (context, state) => const NoTransitionPage(child: IntroScreen()),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: IntroScreen()),
       ),
 
       // ── Student Hub (always resident, never deferred) ─────────────────────
@@ -98,14 +102,18 @@ class AppRouter {
         pageBuilder: (context, state) => NoTransitionPage(
           child: MultiBlocProvider(
             providers: [
-              BlocProvider(create: (ctx) => DashboardBloc(apiService: ctx.read<ApiService>())),
-              BlocProvider(create: (ctx) => NoticeBloc(apiService: ctx.read<ApiService>())),
+              BlocProvider(
+                create: (ctx) =>
+                    DashboardBloc(apiService: ctx.read<ApiService>()),
+              ),
+              BlocProvider(
+                create: (ctx) => NoticeBloc(apiService: ctx.read<ApiService>()),
+              ),
             ],
             child: const NavbarScreen(),
           ),
         ),
       ),
-
 
       // ── Fees — deferred ───────────────────────────────────────────────────
       GoRoute(
@@ -152,6 +160,35 @@ class AppRouter {
         ),
       ),
 
+      // ── My Teachers — deferred ─────────────────────────────────────────
+      GoRoute(
+        path: '/teachers',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          transitionDuration: const Duration(milliseconds: 300),
+          child: _DeferredLoader(
+            loader: teachers.loadLibrary,
+            builder: () => teachers.MyTeachersScreen(),
+          ),
+          transitionsBuilder: _slideUp,
+        ),
+      ),
+
+      // ── Fee Breakdown — deferred ───────────────────────────────────────
+      GoRoute(
+        path: '/fee-breakdown/:responsibilityId',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          transitionDuration: const Duration(milliseconds: 300),
+          child: _DeferredLoader(
+            loader: feeBreakdown.loadLibrary,
+            builder: () => feeBreakdown.FeeBreakdownScreen(
+              responsibilityId: state.pathParameters['responsibilityId']!,
+              responsibilityName: state.uri.queryParameters['name'] ?? 'Responsibility',
+            ),
+          ),
+          transitionsBuilder: _slideUp,
+        ),
+      ),
+
       // ── Academic Vault — deferred ─────────────────────────────────────────
       GoRoute(
         path: '/vault/:schoolId/:studentId',
@@ -179,6 +216,19 @@ class AppRouter {
               schoolId: state.pathParameters['schoolId']!,
               classId: state.pathParameters['classId']!,
             ),
+          ),
+          transitionsBuilder: _slideUp,
+        ),
+      ),
+
+      // ── Leave Management — deferred ───────────────────────────────────────
+      GoRoute(
+        path: '/leave',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          transitionDuration: const Duration(milliseconds: 280),
+          child: _DeferredLoader(
+            loader: leave.loadLibrary,
+            builder: () => leave.LeaveManagementScreen(),
           ),
           transitionsBuilder: _slideUp,
         ),

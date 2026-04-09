@@ -35,7 +35,9 @@ class _LeaveApprovalsScreenState extends State<LeaveApprovalsScreen> {
       pendingLeaves[index]['status'] = status;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Leave \$status successfully'), backgroundColor: status == 'approved' ? Colors.green : Colors.red),
+      SnackBar(
+          content: Text('Leave \$status successfully'),
+          backgroundColor: status == 'approved' ? Colors.green : Colors.red),
     );
   }
 
@@ -66,28 +68,42 @@ class _LeaveApprovalsScreenState extends State<LeaveApprovalsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(leave['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                      Expanded(
+                          child: Text(leave['name'],
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18))),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.orangeAccent.withValues(alpha: 0.2),
+                          color: Colors.orangeAccent.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.orangeAccent),
                         ),
-                        child: Text(leave['type'], style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                        child: Text(leave['type'],
+                            style: const TextStyle(
+                                color: Colors.orangeAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
                       )
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.date_range, size: 16, color: Colors.white70),
+                      const Icon(Icons.date_range,
+                          size: 16, color: Colors.white70),
                       const SizedBox(width: 8),
-                      Text(leave['dates'], style: const TextStyle(color: Colors.white70)),
+                      Text(leave['dates'],
+                          style: const TextStyle(color: Colors.white70)),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text("Reason:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
+                  const Text("Reason:",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.white54)),
                   Text(leave['reason'], style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 16),
                   Row(

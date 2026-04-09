@@ -4,11 +4,13 @@ import {
   Users, UserCheck, GraduationCap, DollarSign,
   TrendingUp, Calendar, Bell, Activity, Clock,
   BookOpen, School, Award, ChevronRight, ChevronLeft,
-  AlertTriangle, CheckSquare, Layers, Map, MoreVertical, Search, Zap
+  AlertTriangle, CheckSquare, Layers, Map, MoreVertical, Search, Zap,
+  Briefcase, Truck
 } from "lucide-react";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, 
-  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid 
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  LineChart, Line, AreaChart, Area, Legend
 } from 'recharts';
 import { useWebSockets } from "../../../hooks/useWebSockets";
 import SkeletonLoader from "../../../components/ui/SkeletonLoader";
@@ -18,6 +20,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectSchoolId, selectSchoolProfile } from "../../auth/authSlice";
 import { selectTheme, selectIsOnline } from "../../settings/settingsSlice";
 import { setOnline } from "../../settings/settingsSlice";
+
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 
@@ -32,6 +36,7 @@ const stagger = {
 
 export default function HomePage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const reduxSchoolId = useSelector(selectSchoolId);
   const schoolProfile = useSelector(selectSchoolProfile);
   const themeColors = useSelector(selectTheme);
@@ -50,11 +55,46 @@ export default function HomePage() {
   const [employees, setEmployees] = useState([]);
   const [selectedEmp, setSelectedEmp] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
 
   const [data, setData] = useState({
-    counts: { totalStudents: 0, totalEmployees: 0, totalClasses: 0, openComplaints: 0, activeTasks: 0, highRiskStudents: 0 },
-    attendance: { presentToday: 0, percentage: 0 },
-    revenue: { total: 0, paid: 0, pending: 0, discount: 0 }
+    counts: { 
+      totalStudents: 0, 
+      totalEmployees: 0, 
+      totalClasses: 0, 
+      openComplaints: 0, 
+      activeTasks: 0, 
+      highRiskStudents: 0,
+      students: { regular: 0, private: 0 },
+      staff: { teachers: 0, peons: 0, drivers: 0, principal: 0 }
+    },
+    attendance: { 
+      presentToday: 0, 
+      percentage: 0,
+      byRole: {
+        regular: 0, private: 0,
+        teachers: 0, peons: 0, drivers: 0, principal: 0
+      },
+      dailyTrend: [
+        { date: '2026-04-01', students: 85, staff: 90 },
+        { date: '2026-04-02', students: 88, staff: 92 },
+        { date: '2026-04-03', students: 82, staff: 85 },
+        { date: '2026-04-04', students: 90, staff: 95 },
+        { date: '2026-04-05', students: 92, staff: 94 },
+        { date: '2026-04-06', students: 87, staff: 89 },
+        { date: '2026-04-07', students: 95, staff: 98 },
+      ]
+    },
+    revenue: { 
+      total: 0, 
+      paid: 0, 
+      pending: 0, 
+      discount: 0,
+      breakdown: {
+        income: { tuition: 0, exam: 0, other: 0 },
+        expense: { salary: 0, infra: 0, operations: 0 }
+      }
+    }
   });
   const [tasks, setTasks] = useState([]);
   const [reminders, setReminders] = useState([]);
@@ -84,10 +124,100 @@ export default function HomePage() {
   }, [calYear, calMonth, holidays]);
 
   const feeData = [
-    { name: 'Paid', value: Number(data.revenue.paid), color: themeColors.success },
-    { name: 'Pending', value: Number(data.revenue.pending), color: themeColors.primary },
-    { name: 'Discount', value: Number(data.revenue.discount), color: themeColors.accent },
+    { name: 'Paid Fees', value: Number(data.revenue.paid), color: '#10b981', path: '/dashboard/billing/income/fees' }, // Emerald/Green
+    { name: 'Pending Fees', value: Number(data.revenue.pending), color: '#ef4444', path: '/dashboard/billing/income/fees' }, // Rose/Red
+    { name: 'Discount Fees', value: Number(data.revenue.discount), color: '#3b82f6', path: '/dashboard/billing/income/fees' }, // Blue
   ];
+
+  const handleFeePieClick = (entry) => {
+    if (entry && entry.path) navigate(entry.path);
+  };
+
+  const financialTrendData = [
+    {
+      name: 'Income',
+      tuition: data.revenue?.breakdown?.income?.tuition || 50000,
+      exam: data.revenue?.breakdown?.income?.exam || 15000,
+      other: data.revenue?.breakdown?.income?.other || 10000,
+    },
+    {
+      name: 'Expense',
+      salary: data.revenue?.breakdown?.expense?.salary || 35000,
+      infra: data.revenue?.breakdown?.expense?.infra || 12000,
+      operations: data.revenue?.breakdown?.expense?.operations || 8000,
+    }
+  ];
+
+  const UserRoleColumn = ({ label, total, present, color, icon: Icon }) => {
+    const absent = Math.max(0, total - present);
+    const presentPct = total > 0 ? (present / total) * 100 : 0;
+    
+    return (
+      <div className="flex flex-col items-center gap-2 group/col">
+        <div className="relative w-full h-32 bg-white/[0.02] border border-white/5 rounded-lg overflow-hidden flex flex-col justify-end">
+          {/* Absent Block (Gray) */}
+          <motion.div 
+            initial={{ height: '100%' }}
+            animate={{ height: `${100 - presentPct}%` }}
+            className="w-full bg-slate-800/50 relative z-0"
+          />
+          {/* Present Block (Color) */}
+          <motion.div 
+            initial={{ height: 0 }}
+            animate={{ height: `${presentPct}%` }}
+            style={{ backgroundColor: color }}
+            className="w-full relative z-10 shadow-[0_-4px_15px_rgba(0,0,0,0.2)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          </motion.div>
+
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 opacity-0 group-hover/col:opacity-100 transition-opacity bg-slate-950/80 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm">
+             <p className="text-[7px] font-black text-slate-500 uppercase mb-1">{label}</p>
+             <p className="text-[10px] font-black text-white">{present} / {total}</p>
+             <p className="text-[8px] font-bold text-success mt-1">{presentPct.toFixed(0)}% Present</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+           <div className={`p-1.5 rounded-md bg-white/5 border border-white/10 text-slate-400 group-hover/col:text-white transition-colors`}>
+              <Icon size={10} />
+           </div>
+           <span className="text-[7px] font-black text-slate-500 uppercase tracking-tighter group-hover/col:text-slate-300 transition-colors">{label}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const userCompositionData = [
+    {
+      name: 'Students',
+      regular: data.counts.students?.regular || 0,
+      private: data.counts.students?.private || 0,
+    },
+    {
+      name: 'Employees',
+      teachers: data.counts.staff?.teachers || 0,
+      peons: data.counts.staff?.peons || 0,
+      drivers: data.counts.staff?.drivers || 0,
+      principal: data.counts.staff?.principal || 0,
+    }
+  ];
+
+  const attendanceBlocks = useMemo(() => {
+    const total = data.counts.totalStudents + data.counts.totalEmployees;
+    const present = data.attendance.presentToday;
+    const blocks = [];
+    for (let i = 0; i < total; i++) {
+      blocks.push(i < present ? 'present' : 'absent');
+    }
+    return blocks;
+  }, [data]);
+
+   const netProfit = useMemo(() => {
+    const totalIncome = Object.values(financialTrendData[0]).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0);
+    const totalExpense = Object.values(financialTrendData[1]).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0);
+    return totalIncome - totalExpense;
+  }, [data]);
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
@@ -117,7 +247,18 @@ export default function HomePage() {
     // Decoupled independent data fetching for perceived speed
     fetch(`${API_BASE_URL}/dashboard/${schoolId}/stats`)
       .then(res => res.json())
-      .then(d => { if (d.data) { setData(d.data); dispatch(setOnline(true)); } })
+      .then(d => { 
+        if (d.data) { 
+          setData(prev => ({
+            ...prev,
+            ...d.data,
+            counts: { ...prev.counts, ...d.data.counts },
+            attendance: { ...prev.attendance, ...d.data.attendance },
+            revenue: { ...prev.revenue, ...d.data.revenue }
+          })); 
+          dispatch(setOnline(true)); 
+        } 
+      })
       .catch(handleError)
       .finally(() => setStatsLoading(false));
 
@@ -187,205 +328,358 @@ export default function HomePage() {
   };
 
   const statCards = [
-    { label: "Today Attendance", value: `${data.attendance.percentage.toFixed(1)}%`, sub: `${data.attendance.presentToday} Present`, icon: UserCheck, color: "success" },
-    { label: "Pending Fees", value: `₹${Number(data.revenue.pending).toLocaleString()}`, sub: "Payment Overdue", icon: DollarSign, color: "accent" },
-    { label: "Open Complaints", value: data.counts.openComplaints, sub: "Action Required", icon: AlertTriangle, color: "accent" },
-    { label: "Risk Profiles", value: data.counts.highRiskStudents, sub: "Low Academic Performance", icon: TrendingUp, color: "primary" },
+    { label: "Today Attendance", value: `${(data.attendance?.percentage || 0).toFixed(1)}%`, sub: `${data.attendance?.presentToday || 0} Present`, icon: UserCheck, color: "success" },
+    { label: "Pending Fees", value: `₹${Number(data.revenue?.pending || 0).toLocaleString()}`, sub: "Payment Overdue", icon: DollarSign, color: "accent" },
+    { label: "Open Complaints", value: data.counts?.openComplaints || 0, sub: "Action Required", icon: AlertTriangle, color: "accent" },
+    { label: "Risk Profiles", value: data.counts?.highRiskStudents || 0, sub: "Low Academic Performance", icon: TrendingUp, color: "primary" },
   ];
 
   return (
-    <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto overflow-x-hidden">
+    <div className="p-2 lg:p-4 space-y-4 max-w-[1600px] mx-auto overflow-x-hidden">
       {!isOnline && (
         <NoConnection compact onRetry={handleRetry} />
       )}
-      {/* Header - Enterprise Command Style */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2.5">
-             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md text-sm">V</div>
-             {schoolName} <span className="text-slate-500 font-medium text-xs">Control Center</span>
-          </h1>
-          <p className="text-slate-400 mt-1 flex items-center gap-3 text-[10px] font-medium">
-            <span className="flex items-center gap-1"><Clock size={12} className="text-primary" />{currentDateTime.toLocaleTimeString()}</span>
-            <span className="flex items-center gap-1"><Calendar size={12} className="text-primary" />{currentDateTime.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-white/5 border border-white/10 px-3 py-1.5 flex items-center gap-2 rounded-lg">
-             <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-             <span className="text-[9px] font-bold text-success uppercase tracking-widest">Live Cloud Secure</span>
-          </div>
-          <button className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-slate-400"><Bell size={14} /></button>
-        </div>
-      </motion.div>
 
       {/* KPI Row */}
-      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        {statsLoading ? (
-            <SkeletonLoader type="card" count={4} className="h-40" />
-        ) : (
-          statCards.map((card, i) => (
-          <motion.div key={i} variants={fadeUp} className="glass-card p-6 relative overflow-hidden group hover:border-white/20 transition-all">
-            <div className={`absolute top-0 right-0 w-24 h-24 bg-${card.color}-500/5 blur-3xl -mr-12 -mt-12 group-hover:bg-${card.color}-500/10 transition-all`} />
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="section-label mb-1 opacity-70 tracking-widest">{card.label}</p>
-                <h3 className="text-3xl font-black text-white">{card.value}</h3>
-                <p className={`text-xs mt-2 font-bold flex items-center gap-1 text-${card.color}-400/80`}>
-                   <Activity size={10} /> {card.sub}
-                </p>
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        {/* Attendance Trend Graph (6 cols) */}
+        <motion.div variants={fadeUp} className="xl:col-span-7 glass-card p-4 relative overflow-hidden group border-white/10 transition-all">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <p className="section-label mb-0.5 opacity-70 tracking-widest text-[8px]">Attendance Analytics</p>
+              <h3 className="text-base font-black text-white">Daily Presence Curve</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative group/select">
+                <Calendar size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input 
+                  type="date" 
+                  value={attendanceDate}
+                  onChange={(e) => setAttendanceDate(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded pl-6 pr-2 py-1 text-[9px] text-white outline-none cursor-pointer hover:bg-white/10 transition-colors appearance-none"
+                />
               </div>
-              <div className={`p-4 rounded-2xl bg-${card.color}-500/10 text-${card.color}-400 shadow-inner group-hover:scale-110 transition-transform`}>
-                <card.icon size={24} />
+              <div className="flex items-center gap-2 text-[8px] font-bold">
+                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]" /> Students</span>
+                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_5px_#10b981]" /> Staff</span>
               </div>
             </div>
-          </motion.div>
-        )))}
+          </div>
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.attendance?.dailyTrend || []}>
+                <defs>
+                  <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorStaff" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
+                  tickFormatter={(val) => {
+                    const d = new Date(val);
+                    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                  }}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
+                  tickFormatter={(val) => `${val}%`}
+                  domain={[0, 100]}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', backdropFilter: 'blur(10px)' }}
+                  itemStyle={{ fontSize: '9px', fontWeight: 'bold', padding: '2px 0' }}
+                  labelStyle={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}
+                  formatter={(value, name) => [`${value}% Attendance`, name === 'students' ? 'Students' : 'Staff']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="students" 
+                  stroke="var(--primary-color)" 
+                  fillOpacity={1} 
+                  fill="url(#colorStudents)" 
+                  strokeWidth={3}
+                  animationDuration={1500}
+                  dot={{ r: 2, fill: 'var(--primary-color)', strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 0, shadow: '0 0 10px var(--primary-color)' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="staff" 
+                  stroke="#10b981" 
+                  fillOpacity={1} 
+                  fill="url(#colorStaff)" 
+                  strokeWidth={3}
+                  animationDuration={1500}
+                  dot={{ r: 2, fill: '#10b981', strokeWidth: 0 }}
+                  activeDot={{ r: 4, strokeWidth: 0, shadow: '0 0 10px #10b981' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Real-time Status Indicator */}
+          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+             <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                   <div className={`w-2 h-2 rounded-full ${data.attendance.percentage > 80 ? 'bg-success' : 'bg-amber-500'} animate-pulse`} />
+                   <span className="text-[9px] font-black text-white uppercase tracking-wider">Live Network Status</span>
+                </div>
+                <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                      <span className="text-[8px] font-bold text-slate-400">Present</span>
+                   </div>
+                   <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                      <span className="text-[8px] font-bold text-slate-400">Absent</span>
+                   </div>
+                </div>
+             </div>
+             <div className="text-right">
+                <p className="text-[7px] font-black text-slate-500 uppercase">Avg. Daily Sync</p>
+                <p className="text-[10px] font-black text-white">
+                  {data.attendance?.dailyTrend?.length > 0 
+                    ? (data.attendance.dailyTrend.reduce((acc, curr) => acc + curr.students, 0) / data.attendance.dailyTrend.length).toFixed(1) 
+                    : "0.0"}%
+                </p>
+             </div>
+          </div>
+        </motion.div>
+
+        {/* Comprehensive Column-based User Visualization (5 cols) */}
+        <motion.div variants={fadeUp} className="xl:col-span-5 glass-card p-4 border-white/10 transition-all flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+             <div>
+                <p className="section-label mb-0.5 opacity-70 tracking-widest text-[8px]">Network Composition</p>
+                <h3 className="text-sm font-black text-white uppercase tracking-tight">Active User Matrix</h3>
+             </div>
+             <div className="text-right">
+                <p className="text-[7px] font-black text-slate-500 uppercase">System Capacity</p>
+                <p className="text-[10px] font-black text-white">{data.counts.totalStudents + data.counts.totalEmployees} Nodes</p>
+             </div>
+          </div>
+
+          {/* Role Columns Grid */}
+          <div className="grid grid-cols-6 gap-3 flex-1">
+             {/* Students: Regular */}
+             <UserRoleColumn 
+                label="Regular" 
+                total={data.counts.students?.regular || 0} 
+                present={data.attendance.byRole?.regular || 0} 
+                color="var(--primary-color)" 
+                icon={GraduationCap}
+             />
+             {/* Students: Private */}
+             <UserRoleColumn 
+                label="Private" 
+                total={data.counts.students?.private || 0} 
+                present={data.attendance.byRole?.private || 0} 
+                color="#818cf8" 
+                icon={Users}
+             />
+             {/* Staff: Teachers */}
+             <UserRoleColumn 
+                label="Teachers" 
+                total={data.counts.staff?.teachers || 0} 
+                present={data.attendance.byRole?.teachers || 0} 
+                color="#10b981" 
+                icon={UserCheck}
+             />
+             {/* Staff: Peons */}
+             <UserRoleColumn 
+                label="Peons" 
+                total={data.counts.staff?.peons || 0} 
+                present={data.attendance.byRole?.peons || 0} 
+                color="#f59e0b" 
+                icon={Briefcase}
+             />
+             {/* Staff: Drivers */}
+             <UserRoleColumn 
+                label="Drivers" 
+                total={data.counts.staff?.drivers || 0} 
+                present={data.attendance.byRole?.drivers || 0} 
+                color="#6366f1" 
+                icon={Truck}
+             />
+             {/* Staff: Principal */}
+             <UserRoleColumn 
+                label="Principal" 
+                total={data.counts.staff?.principal || 0} 
+                present={data.attendance.byRole?.principal || 0} 
+                color="#f43f5e" 
+                icon={Award}
+             />
+          </div>
+          
+          {/* Legend / Status Info */}
+          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+             <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                   <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                   <span className="text-[8px] font-bold text-slate-400 uppercase">Present</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                   <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                   <span className="text-[8px] font-bold text-slate-400 uppercase">Absent</span>
+                </div>
+             </div>
+             <div className="flex items-center gap-1">
+                <Activity size={10} className="text-primary animate-pulse" />
+                <span className="text-[9px] font-black text-white uppercase tracking-widest">Real-time Pulse</span>
+             </div>
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* Main Analytics + Action Center Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        
-        {/* Left: Charts & Stats (8 cols) */}
-        <div className="xl:col-span-8 space-y-8">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Revenue Donut */}
-            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 min-h-[440px] flex flex-col">
-              <div className="flex justify-between items-center mb-8">
+      {/* Main Analytics Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        {/* Left: Financial Analytics (8 cols) */}
+        <div className="xl:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. Fee Structure Pie Chart */}
+            <motion.div variants={fadeUp} className="glass-card p-4 min-h-[320px] flex flex-col">
+              <div className="flex justify-between items-center mb-4">
                  <div>
-                   <p className="section-label">Financial Analytics</p>
-                   <h2 className="text-xl font-black text-white">Revenue Distribution</h2>
+                   <p className="section-label text-[8px]">Fee Management</p>
+                   <h2 className="text-base font-black text-white">Revenue Distribution</h2>
                  </div>
-                 <div className={`p-2 rounded-xl bg-success/10 text-success`}>
-                    <DollarSign size={20} />
+                 <div className="p-1.5 rounded-lg bg-success/10 text-success">
+                    <DollarSign size={16} />
                  </div>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center pt-6">
-                {statsLoading ? (
-                   <div className="w-full flex-1 flex items-center justify-center">
-                      <div className="w-48 h-48 rounded-full border-8 border-slate-700/30 border-t-slate-600/50 animate-spin"></div>
-                   </div>
-                ) : (
-                <><div className="w-full h-64 relative">
+              <div className="flex-1 flex flex-col items-center justify-center pt-2">
+                <div className="w-full h-44 relative">
                    <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={feeData} innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value" animationBegin={200}>
+                        <Pie 
+                          data={feeData} 
+                          innerRadius={50} 
+                          outerRadius={70} 
+                          paddingAngle={6} 
+                          dataKey="value" 
+                          animationBegin={200}
+                          cursor="pointer"
+                          labelLine={false}
+                          label={({ percent, name }) => `${(percent * 100).toFixed(0)}%`}
+                          onClick={handleFeePieClick}
+                        >
                           {feeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
                         </Pie>
                         <Tooltip 
-                           contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', backdropFilter: 'blur(10px)' }}
-                           itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                           contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}
+                           itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                           formatter={(value) => `₹${Number(value).toLocaleString()}`}
                         />
+                        <Legend iconType="circle" verticalAlign="bottom" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', paddingTop: '15px' }} />
                       </PieChart>
                    </ResponsiveContainer>
-                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase">Collection</p>
-                      <p className="text-xl font-black text-white">{((data.revenue.paid / (data.revenue.total || 1)) * 100).toFixed(0)}%</p>
-                   </div>
                 </div>
-                <div className="grid grid-cols-3 w-full gap-4 mt-8">
-                   {feeData.map(d => (
-                     <div key={d.name} className="glass-card p-3 text-center border-none bg-white/5">
-                       <p className="text-[10px] uppercase font-black text-slate-500 mb-1">{d.name}</p>
-                       <p className="text-sm font-black text-white">₹{Number(d.value / 1000).toFixed(1)}k</p>
-                     </div>
-                   ))}
-                </div>
-                </>)}
               </div>
             </motion.div>
 
-            {/* Risk Analysis Bar */}
-            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 min-h-[440px]">
-               <div className="flex justify-between items-center mb-8">
+            {/* 2. Comprehensive Financial Column View */}
+            <motion.div variants={fadeUp} className="glass-card p-4 min-h-[320px] flex flex-col relative overflow-hidden">
+               {/* Profit Badge Overlay */}
+               <div className={`absolute -right-12 top-6 rotate-45 px-12 py-1 text-[8px] font-black uppercase tracking-widest shadow-xl z-10 ${netProfit >= 0 ? 'bg-success text-white' : 'bg-rose-500 text-white'}`}>
+                  {netProfit >= 0 ? 'Surplus' : 'Deficit'}
+               </div>
+
+               <div className="flex justify-between items-center mb-4">
                  <div>
-                   <p className="section-label">Predictive Insights</p>
-                   <h2 className="text-xl font-black text-white">Student Risk Matrix</h2>
+                   <p className="section-label text-[8px]">Finance Matrix</p>
+                   <h2 className="text-base font-black text-white">Income vs Expense</h2>
                  </div>
-                 <div className={`p-2 rounded-xl bg-primary/10 text-primary`}>
-                    <Activity size={20} />
+                 <div className="flex items-center gap-2 mr-8">
+                    <div className="text-right">
+                       <p className="text-[7px] font-black text-slate-500 uppercase">Current Balance</p>
+                       <p className={`text-base font-black ${netProfit >= 0 ? 'text-success' : 'text-rose-500'} flex items-center gap-1`}>
+                          <Award size={14} /> ₹{Number(netProfit).toLocaleString()}
+                       </p>
+                    </div>
                  </div>
               </div>
-              <div className="h-64 mt-4">
-                 {statsLoading ? (
-                    <div className="flex items-end gap-4 h-full pt-10">
-                       {[...Array(3)].map((_, i) => <div key={i} className="flex-1 bg-slate-700/30 rounded-t-md animate-pulse" style={{ height: `${Math.random() * 80 + 20}%`}}></div>)}
-                    </div>
-                 ) : (
+              <div className="flex-1 h-44 mt-1">
                  <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={[{ name: 'Low', count: 45 }, { name: 'Medium', count: 12 }, { name: 'High', count: data.counts.highRiskStudents }]}>
-                     <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="0%" stopColor={themeColors.primary} stopOpacity={1}/>
-                           <stop offset="100%" stopColor={themeColors.secondary} stopOpacity={0.6}/>
-                        </linearGradient>
-                     </defs>
+                   <BarChart data={financialTrendData}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 'bold' }} />
-                     <Bar dataKey="count" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={45} />
-                     <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }} />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 'bold' }} />
+                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 8, fontWeight: 'bold' }} tickFormatter={(v) => `₹${v/1000}k`} />
+                     <Tooltip 
+                        cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
+                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}
+                        itemStyle={{ fontSize: '9px', fontWeight: 'bold' }}
+                     />
+                     <Bar dataKey="tuition" stackId="income" fill="#6366f1" radius={[0, 0, 0, 0]} name="Tuition Fee" />
+                     <Bar dataKey="exam" stackId="income" fill="#818cf8" radius={[0, 0, 0, 0]} name="Exam Fee" />
+                     <Bar dataKey="other" stackId="income" fill="#a5b4fc" radius={[3, 3, 0, 0]} name="Other Sources" />
+                     
+                     <Bar dataKey="salary" stackId="expense" fill="#ef4444" radius={[0, 0, 0, 0]} name="Salary" />
+                     <Bar dataKey="infra" stackId="expense" fill="#f87171" radius={[0, 0, 0, 0]} name="Infrastructure" />
+                     <Bar dataKey="operations" stackId="expense" fill="#fca5a5" radius={[3, 3, 0, 0]} name="Operations" />
                    </BarChart>
                  </ResponsiveContainer>
-                 )}
-              </div>
-              <div className="mt-8 p-5 bg-primary/10 rounded-2xl border border-primary/10 flex items-center gap-5">
-                 <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20"><Zap size={24} /></div>
-                 <div>
-                   <p className="text-xs font-black text-primary uppercase tracking-widest">AI Intervention Active</p>
-                   <p className="text-sm text-slate-300 font-medium leading-tight mt-0.5">Automated review requested for {data.counts.highRiskStudents} critical profiles.</p>
-                 </div>
               </div>
             </motion.div>
           </div>
 
           {/* Quick Registry Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              {[
                { icon: GraduationCap, label: 'Students', value: data.counts.totalStudents, color: 'primary' },
                { icon: Users, label: 'Faculty', value: data.counts.totalEmployees, color: 'secondary' },
                { icon: BookOpen, label: 'Sections', value: data.counts.totalClasses, color: 'secondary' },
                { icon: School, label: 'Instance', value: `#${schoolId}`, color: 'slate' }
              ].map((item, i) => (
-                <div key={i} className="glass-card p-5 hover:bg-white/[0.07] transition-all cursor-default group border-none bg-white/[0.04]">
-                  <item.icon size={18} className="text-slate-500 mb-3 group-hover:text-primary transition-colors" />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                  <p className="text-xl font-black text-white mt-1">{item.value}</p>
+                <div key={i} className="glass-card p-4 hover:bg-white/[0.07] transition-all cursor-default group border-none bg-white/[0.04]">
+                  <item.icon size={16} className="text-slate-500 mb-2 group-hover:text-primary transition-colors" />
+                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                  <p className="text-lg font-black text-white mt-0.5">{item.value}</p>
                 </div>
              ))}
           </div>
 
           {/* Critical Alerts: AI Risk Defaulters */}
           {data.counts.detailedRisks && data.counts.detailedRisks.length > 0 && (
-            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 border-accent/20 bg-accent/5">
-              <div className="flex justify-between items-center mb-6">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 rounded-lg bg-accent/20 text-accent anim-pulse">
-                      <AlertTriangle size={20} />
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 border-accent/20 bg-accent/5">
+              <div className="flex justify-between items-center mb-4">
+                 <div className="flex items-center gap-2">
+                   <div className="p-1.5 rounded-lg bg-accent/20 text-accent anim-pulse">
+                      <AlertTriangle size={16} />
                    </div>
-                   <h2 className="text-xl font-black text-white">Critical Performance & Fee Alerts</h2>
+                   <h2 className="text-lg font-black text-white">Critical Alerts</h2>
                  </div>
-                 <span className="text-[10px] font-black text-accent uppercase tracking-widest bg-accent/10 px-3 py-1 rounded-full border border-accent/20">Action Required</span>
+                 <span className="text-[8px] font-black text-accent uppercase tracking-widest bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">Action Required</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                  {data.counts.detailedRisks.map((risk, idx) => (
-                   <div key={idx} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-rose-500/30 transition-all flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-rose-400 font-black text-lg">
+                   <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-rose-500/30 transition-all flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-rose-400 font-black text-base">
                             {risk.name.charAt(0)}
                          </div>
                          <div>
-                            <p className="text-sm font-bold text-white tracking-wide">{risk.name}</p>
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <p className="text-xs font-bold text-white tracking-wide">{risk.name}</p>
+                            <div className="flex flex-wrap gap-1.5 mt-0.5">
                                {Array.isArray(risk.factors) && risk.factors.slice(0, 2).map((f, i) => (
-                                 <span key={i} className="text-[9px] font-bold text-rose-400/80 uppercase tracking-tighter bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">{f}</span>
+                                 <span key={i} className="text-[8px] font-bold text-rose-400/80 uppercase tracking-tighter bg-rose-500/5 px-1.5 py-0.5 rounded border border-rose-500/10">{f}</span>
                                ))}
                             </div>
                          </div>
                       </div>
                       <div className="text-right">
-                         <p className="text-[10px] font-black text-slate-500 uppercase">Risk Score</p>
-                         <p className="text-lg font-black text-rose-500">{risk.score}%</p>
+                         <p className="text-[8px] font-black text-slate-500 uppercase">Risk Score</p>
+                         <p className="text-base font-black text-rose-500">{risk.score}%</p>
                       </div>
                    </div>
                  ))}
@@ -395,24 +689,24 @@ export default function HomePage() {
         </div>
 
         {/* Right: Real-time Action Center (4 cols) */}
-        <div className="xl:col-span-4 space-y-8">
+        <div className="xl:col-span-4 space-y-6">
            
            {/* Tasks Center */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 flex flex-col h-[480px]">
-              <div className="flex flex-col mb-6 gap-4 border-b border-white/5 pb-4">
+           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex flex-col h-[420px]">
+              <div className="flex flex-col mb-4 gap-3 border-b border-white/5 pb-3">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-black text-white flex items-center gap-3">
-                    <CheckSquare size={22} className="text-primary" /> AI To-Do List
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <CheckSquare size={18} className="text-primary" /> AI To-Do List
                   </h3>
-                  <span className="text-[10px] font-black bg-white/10 text-slate-300 px-3 py-1.5 rounded-full uppercase tracking-widest">{tasks.length} Active</span>
+                  <span className="text-[8px] font-black bg-white/10 text-slate-300 px-2 py-1 rounded-full uppercase tracking-widest">{tasks.length} Active</span>
                 </div>
                 
                 {/* AI Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-white/[0.02] p-2 rounded-xl border border-white/5">
                    <select 
                      value={selectedEmp} 
                      onChange={(e) => setSelectedEmp(e.target.value)}
-                     className="bg-transparent text-xs text-white border-none outline-none cursor-pointer flex-1 min-w-[120px] font-bold"
+                     className="bg-transparent text-[10px] text-white border-none outline-none cursor-pointer flex-1 min-w-[100px] font-bold"
                    >
                      <option value="" disabled className="bg-slate-900">Select Staff</option>
                      {employees.map(emp => (
@@ -422,42 +716,42 @@ export default function HomePage() {
                      ))}
                    </select>
 
-                   <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-1.5">
                      <button 
                          onClick={handleGenerateTasks} disabled={isGenerating || !selectedEmp}
-                         className="text-[10px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
+                         className="text-[8px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-2 py-1 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
                      >
-                         {isGenerating ? <div className="w-2 h-2 rounded-full border border-t-transparent animate-spin"/> : <Zap size={10} />}
-                         Auto-Plan
+                         {isGenerating ? <div className="w-1.5 h-1.5 rounded-full border border-t-transparent animate-spin"/> : <Zap size={8} />}
+                         Plan
                      </button>
                      <button 
                          onClick={handleReorganizeTasks} disabled={isReorganizing || !selectedEmp}
-                         className="text-[10px] bg-accent/20 hover:bg-accent text-accent hover:text-white px-3 py-1.5 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
+                         className="text-[8px] bg-accent/20 hover:bg-accent text-accent hover:text-white px-2 py-1 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
                      >
-                         {isReorganizing ? <div className="w-2 h-2 rounded-full border border-t-transparent animate-spin"/> : <Layers size={10} />}
-                         Reorganize
+                         {isReorganizing ? <div className="w-1.5 h-1.5 rounded-full border border-t-transparent animate-spin"/> : <Layers size={8} />}
+                         Sync
                      </button>
                    </div>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-3">
-                {tasksLoading ? <SkeletonLoader type="list" count={3} className="h-16 rounded-xl" /> : tasks.length > 0 ? tasks.map((t, idx) => (
-                  <div key={idx} className="p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white/5 transition-all flex items-start gap-4 group cursor-pointer">
-                     <div className="w-5 h-5 rounded-md border-2 border-slate-600 mt-1 flex items-center justify-center shrink-0">
-                        {t.status === 'completed' && <div className="w-full h-full bg-primary rounded-sm shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]" />}
+              <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-2">
+                {tasksLoading ? <SkeletonLoader type="list" count={3} className="h-14 rounded-lg" /> : tasks.length > 0 ? tasks.map((t, idx) => (
+                  <div key={idx} className="p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:bg-white/5 transition-all flex items-start gap-3 group cursor-pointer">
+                     <div className="w-4 h-4 rounded border-2 border-slate-600 mt-0.5 flex items-center justify-center shrink-0">
+                        {t.status === 'completed' && <div className="w-full h-full bg-primary rounded-sm" />}
                      </div>
                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-1">
-                           <p className="text-sm font-bold text-white leading-tight">{t.task_name}</p>
-                           {t.is_ai_generated && <span className="text-[8px] bg-primary/20 text-primary border border-primary/20 px-2 py-0.5 rounded uppercase font-black tracking-widest">AI Tracked</span>}
+                        <div className="flex justify-between items-start mb-0.5">
+                           <p className="text-xs font-bold text-white leading-tight">{t.task_name}</p>
+                           {t.is_ai_generated && <span className="text-[7px] bg-primary/20 text-primary border border-primary/20 px-1.5 py-0.5 rounded uppercase font-black tracking-widest">AI</span>}
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
-                           <span className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1">
-                              <Calendar size={10} /> 
+                        <div className="flex items-center gap-2 mt-1.5">
+                           <span className="text-[8px] font-black text-slate-500 uppercase flex items-center gap-1">
+                              <Calendar size={8} /> 
                               {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric'}) : 'No Date'}
                            </span>
-                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1 ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                           <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700/50 text-slate-400'}`}>
                               {t.priority}
                            </span>
                         </div>
@@ -465,88 +759,75 @@ export default function HomePage() {
                   </div>
                 )) : (
                   <div className="h-full flex flex-col items-center justify-center opacity-40">
-                     <CheckSquare size={32} className="mb-4 text-slate-600" />
-                     <p className="text-xs font-bold text-slate-500">No pending tasks.</p>
-                     <p className="text-[9px] text-slate-600 uppercase tracking-widest">Click Auto-Plan to schedule syllabus.</p>
+                     <CheckSquare size={24} className="mb-2 text-slate-600" />
+                     <p className="text-[10px] font-bold text-slate-500">No pending tasks.</p>
                   </div>
                 )}
               </div>
            </motion.div>
 
            {/* Fleet Intelligence */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 bg-gradient-to-br from-success/10 via-transparent to-transparent">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-white flex items-center gap-3">
-                   <Map size={22} className="text-success" /> Fleet Radar
+           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 bg-gradient-to-br from-success/10 via-transparent to-transparent">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                   <Map size={18} className="text-success" /> Fleet Radar
                 </h3>
-                <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-success animate-ping" />
-                   <span className="text-[10px] font-black text-success uppercase">Live</span>
+                <div className="flex items-center gap-1.5">
+                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-ping" />
+                   <span className="text-[8px] font-black text-success uppercase">Live</span>
                 </div>
               </div>
-              <div className="h-32 bg-slate-950/80 rounded-3xl relative overflow-hidden border border-white/5 flex items-center justify-center shadow-inner">
-                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--success-rgb),0.15),transparent)] animate-pulse" />
+              <div className="h-24 bg-slate-950/80 rounded-2xl relative overflow-hidden border border-white/5 flex items-center justify-center shadow-inner">
                  <div className="z-10 text-center">
-                    <p className="text-[10px] font-black text-success uppercase tracking-[0.2em] mb-2">Network Synchronized</p>
-                    <p className="text-xs text-slate-400 font-bold">4 Vehicles Active · 100% Signal Strength</p>
+                    <p className="text-[8px] font-black text-success uppercase tracking-[0.2em] mb-1">Synchronized</p>
+                    <p className="text-[10px] text-slate-400 font-bold">4 Vehicles Active</p>
                  </div>
-                 {/* Sweeping Radar Line */}
                  <div className="absolute top-1/2 left-1/2 w-[200%] h-[1px] bg-success/20 -translate-x-1/2 -translate-y-1/2 origin-center animate-[spin_4s_linear_infinite]" />
               </div>
            </motion.div>
 
            {/* Upcoming Notices */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 flex flex-col bg-accent/5 border-accent/10">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-white flex items-center gap-3">
-                   <Bell size={22} className="text-accent" /> Upcoming Notices
+           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex flex-col bg-accent/5 border-accent/10">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                   <Bell size={18} className="text-accent" /> Notices
                 </h3>
-                <span className="text-[10px] font-black bg-accent/20 text-accent px-3 py-1.5 rounded-full uppercase tracking-widest">{reminders.length} Active</span>
+                <span className="text-[8px] font-black bg-accent/20 text-accent px-2 py-1 rounded-full uppercase tracking-widest">{reminders.length}</span>
               </div>
-              <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                {remindersLoading ? <SkeletonLoader type="text" count={3} className="h-16 rounded-xl" /> : reminders.length > 0 ? reminders.map((rem, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/5 transition-all group">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="text-sm font-bold text-white group-hover:text-accent transition-colors uppercase tracking-tight">{rem.title}</p>
-                      <span className="text-[9px] font-mono text-slate-600">{rem.date}</span>
+              <div className="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-1.5">
+                {remindersLoading ? <SkeletonLoader type="text" count={2} className="h-14 rounded-lg" /> : reminders.length > 0 ? reminders.map((rem, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/5 transition-all group">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-xs font-bold text-white group-hover:text-accent transition-colors uppercase tracking-tight">{rem.title}</p>
+                      <span className="text-[8px] font-mono text-slate-600">{rem.date}</span>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{rem.content}</p>
+                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed line-clamp-2">{rem.content}</p>
                   </div>
                 )) : (
-                  <div className="py-10 text-center opacity-30">
-                    <Bell size={32} className="mx-auto mb-2 text-slate-600" />
-                    <p className="text-[10px] font-black uppercase tracking-widest">No active notices</p>
+                  <div className="py-6 text-center opacity-30">
+                    <Bell size={24} className="mx-auto mb-1 text-slate-600" />
+                    <p className="text-[8px] font-black uppercase tracking-widest">No active notices</p>
                   </div>
                 )}
               </div>
            </motion.div>
 
            {/* Live Neural Feed */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-8 flex-1 border-primary/10">
-              <p className="section-label mb-6 tracking-[0.2em]">Neural Activity Link</p>
-              <div className="space-y-6">
+           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex-1 border-primary/10">
+              <p className="section-label mb-4 tracking-[0.2em] text-[8px]">Neural Activity Link</p>
+              <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {liveMessages.slice(-2).reverse().map((m, i) => (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={i} className="flex gap-4">
-                       <div className="w-1.5 h-auto self-stretch bg-primary rounded-full flex-shrink-0 shadow-lg shadow-primary/50" />
-                       <div className="py-1">
-                          <p className="text-sm font-bold text-white leading-tight tracking-tight">{m.content || m.title || "User Connection Established"}</p>
-                          <p className="text-[10px] text-slate-500 mt-2 font-black uppercase tracking-wider flex items-center gap-2">
-                             <Clock size={10} /> Just Synchronized
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={i} className="flex gap-3">
+                       <div className="w-1 h-auto self-stretch bg-primary rounded-full flex-shrink-0" />
+                       <div className="py-0.5">
+                          <p className="text-xs font-bold text-white leading-tight tracking-tight">{m.content || m.title || "Network Link Active"}</p>
+                          <p className="text-[8px] text-slate-500 mt-1 font-black uppercase tracking-wider flex items-center gap-1.5">
+                             <Clock size={8} /> Just Now
                           </p>
                        </div>
                     </motion.div>
                   ))}
-                  {liveMessages.length === 0 && (
-                     <div className="flex gap-4 opacity-40">
-                       <div className="w-1.5 h-10 bg-slate-700 rounded-full" />
-                       <div className="py-1">
-                          <p className="text-sm font-bold text-white">Observing Network...</p>
-                          <p className="text-[10px] text-slate-500 mt-2 font-black uppercase flex items-center gap-2"><Activity size={10} /> Standing By</p>
-                       </div>
-                    </div>
-                  )}
                 </AnimatePresence>
               </div>
            </motion.div>
@@ -556,14 +837,14 @@ export default function HomePage() {
 
       {/* 1-Week Teacher Timeline View */}
       {selectedEmp && (
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-10 mt-8 bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-5 mt-6 bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
             <div>
-               <p className="section-label tracking-[0.2em] text-primary">AI Scheduler</p>
-               <h2 className="text-2xl font-black text-white mt-1">1-Week Action Timeline</h2>
+               <p className="section-label tracking-[0.2em] text-primary text-[8px]">AI Scheduler</p>
+               <h2 className="text-lg font-black text-white mt-0.5">1-Week Action Timeline</h2>
             </div>
          </div>
-         <div className="flex overflow-x-auto custom-scrollbar pb-6 gap-4 snap-x">
+         <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-3 snap-x">
              {[...Array(7)].map((_, index) => {
                  const date = new Date();
                  date.setDate(date.getDate() + index);
@@ -572,26 +853,25 @@ export default function HomePage() {
                  const dayTasks = tasks.filter(t => t.deadline && t.deadline.startsWith(dateStr));
                  
                  return (
-                 <div key={index} className={`shrink-0 w-64 p-5 rounded-3xl border transition-all snap-start
-                        ${isToday ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] relative' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'}
+                 <div key={index} className={`shrink-0 w-48 p-3.5 rounded-xl border transition-all snap-start
+                        ${isToday ? 'bg-primary/10 border-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)] relative' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'}
                  `}>
-                     {isToday && <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg"><Activity size={14} className="text-white animate-pulse" /></div>}
-                     <p className={`text-[10px] font-black uppercase tracking-widest ${isToday ? 'text-primary' : 'text-slate-500'}`}>
+                     {isToday && <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg"><Activity size={10} className="text-white animate-pulse" /></div>}
+                     <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-primary' : 'text-slate-500'}`}>
                          {date.toLocaleDateString('en-US', { weekday: 'long' })}
                      </p>
-                     <h4 className="text-lg font-black text-white mb-4">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</h4>
+                     <h4 className="text-sm font-black text-white mb-2.5">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</h4>
                      
-                     <div className="space-y-3">
+                     <div className="space-y-1.5">
                          {dayTasks.length > 0 ? dayTasks.map((t, idx) => (
-                             <div key={idx} className="p-3 bg-slate-950/40 rounded-xl border border-white/5 relative overflow-hidden group">
-                                 {t.is_ai_generated && <div className="absolute top-0 right-0 w-8 h-8 bg-primary/20 blur-xl group-hover:bg-primary/40 transition-colors" />}
-                                 <p className="text-xs font-bold text-white line-clamp-2">{t.task_name}</p>
-                                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-2">{t.priority} Priority</p>
+                             <div key={idx} className="p-2 bg-slate-950/40 rounded-lg border border-white/5 relative overflow-hidden group">
+                                 <p className="text-[10px] font-bold text-white line-clamp-1">{t.task_name}</p>
+                                 <p className="text-[7px] text-slate-500 uppercase tracking-widest mt-1">{t.priority}</p>
                              </div>
                          )) : (
-                             <div className="py-6 text-center opacity-30">
-                                <Calendar size={24} className="mx-auto mb-2 text-slate-500" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">No classes</p>
+                             <div className="py-3 text-center opacity-30">
+                                <Calendar size={16} className="mx-auto mb-1 text-slate-500" />
+                                <p className="text-[8px] font-black uppercase tracking-widest">No classes</p>
                              </div>
                          )}
                      </div>
@@ -603,44 +883,40 @@ export default function HomePage() {
       )}
 
       {/* Bottom Section: Enterprise Calendar */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-10 mt-8">
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-5 mt-6">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
             <div>
-               <p className="section-label tracking-[0.2em]">Academic Infrastructure</p>
-               <h2 className="text-3xl font-black text-white mt-1">Institutional Roadmap</h2>
+               <p className="section-label tracking-[0.2em] text-[8px]">Academic Infrastructure</p>
+               <h2 className="text-lg font-black text-white mt-0.5">Institutional Roadmap</h2>
             </div>
-            <div className="flex items-center gap-4">
-               <div className="p-4 glass-card border-none bg-white/5 flex items-center gap-4">
+            <div className="flex items-center gap-3">
+               <div className="p-2 glass-card border-none bg-white/5 flex items-center gap-2.5">
                   <div className="text-right">
-                     <p className="text-[10px] font-black text-slate-500 uppercase">Upcoming Events</p>
-                     <p className="text-lg font-black text-white">12 Scheduled</p>
+                     <p className="text-[7px] font-black text-slate-500 uppercase">Events</p>
+                     <p className="text-xs font-black text-white">12 Scheduled</p>
                   </div>
-                  <Calendar size={28} className="text-primary" />
+                  <Calendar size={18} className="text-primary" />
                </div>
-               <button className="px-6 py-3 rounded-2xl bg-primary text-white text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20 active:scale-95">Configure Schedule</button>
+               <button className="px-3 py-1.5 rounded-lg bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all active:scale-95">Config</button>
             </div>
          </div>
          
-         <div className="grid grid-cols-7 gap-6">
+         <div className="grid grid-cols-7 gap-2">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-              <div key={d} className={`text-center text-[11px] font-black tracking-[0.2em] ${d === 'SUN' ? 'text-accent' : 'text-slate-600'}`}>{d}</div>
+              <div key={d} className={`text-center text-[8px] font-black tracking-[0.1em] ${d === 'SUN' ? 'text-accent' : 'text-slate-600'}`}>{d}</div>
             ))}
             {calDays.map((cell, i) => {
-              if (!cell) return <div key={`e${i}`} className="h-24" />;
+              if (!cell) return <div key={`e${i}`} className="h-12" />;
               return (
-                <div key={cell.dateStr} className={`p-4 h-24 rounded-3xl border transition-all relative group
-                   ${cell.isToday ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'}
+                <div key={cell.dateStr} className={`p-1.5 h-12 rounded-xl border transition-all relative group
+                   ${cell.isToday ? 'border-primary bg-primary/10 shadow-lg shadow-primary/5' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'}
                    ${cell.isSun && !cell.isToday ? 'bg-accent/5' : ''}
                    ${!cell.isSun && cell.isHoliday && !cell.isToday ? 'bg-accent/5' : ''}
                 `}>
-                  <p className={`text-sm font-black ${cell.isToday ? 'text-primary' : cell.isSun ? 'text-accent' : cell.isHoliday ? 'text-accent' : 'text-slate-400'}`}>
+                  <p className={`text-[10px] font-black ${cell.isToday ? 'text-primary' : cell.isSun ? 'text-accent' : cell.isHoliday ? 'text-accent' : 'text-slate-400'}`}>
                     {cell.d}
                   </p>
-                  {cell.isToday && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-                  <div className="mt-2 space-y-1">
-                     {cell.isHoliday && <div className="h-1 w-full bg-amber-500/20 rounded-full" />}
-                     {cell.isSun && <div className="h-1 w-1/2 bg-rose-500/20 rounded-full" />}
-                  </div>
+                  {cell.isToday && <div className="absolute top-1 right-1 w-0.5 h-0.5 rounded-full bg-primary animate-pulse" />}
                 </div>
               );
             })}

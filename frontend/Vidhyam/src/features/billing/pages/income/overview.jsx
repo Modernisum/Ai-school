@@ -44,15 +44,15 @@ const IncomeOverview = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-4 animate-in fade-in duration-500">
             {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-lg border border-white/10">
                     {['daily', 'weekly', 'monthly', 'yearly'].map((range) => (
                         <button
                             key={range}
                             onClick={() => setTimeRange(range)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
                                 timeRange === range ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'
                             }`}
                         >
@@ -60,54 +60,54 @@ const IncomeOverview = () => {
                         </button>
                     ))}
                 </div>
-                <div className="flex gap-2">
-                    <button className="btn-secondary py-2 px-4 text-xs flex items-center gap-2">
-                        <Download size={14} /> Export Excel
+                <div className="flex gap-1.5">
+                    <button className="btn-secondary py-1.5 px-3 text-[10px] flex items-center gap-1.5">
+                        <Download size={12} /> Excel
                     </button>
-                    <button className="btn-primary py-2 px-4 text-xs flex items-center gap-2">
-                        <FileText size={14} /> PDF Report
+                    <button className="btn-primary py-1.5 px-3 text-[10px] flex items-center gap-1.5">
+                        <FileText size={12} /> PDF
                     </button>
                 </div>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {metrics.map((m, i) => (
                     <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="glass-card p-4 border-white/5 bg-white/[0.02] relative overflow-hidden group"
+                        transition={{ delay: i * 0.08 }}
+                        className="glass-card p-3 border-white/5 bg-white/[0.02] relative overflow-hidden group"
                     >
-                        <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 ${m.bg}`} />
-                        <div className="flex items-start justify-between mb-3">
-                            <div className={`p-2.5 rounded-xl ${m.bg} ${m.color}`}>
-                                <m.icon size={20} />
+                        <div className={`absolute -right-3 -top-3 w-20 h-20 rounded-full blur-2xl opacity-10 transition-opacity group-hover:opacity-20 ${m.bg}`} />
+                        <div className="flex items-start justify-between mb-2">
+                            <div className={`p-2 rounded-lg ${m.bg} ${m.color}`}>
+                                <m.icon size={16} />
                             </div>
-                            <div className={`flex items-center gap-1 text-[10px] font-bold ${m.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {m.change.startsWith('+') ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                            <div className={`flex items-center gap-1 text-[9px] font-bold ${m.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {m.change.startsWith('+') ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                                 {m.change}
                             </div>
                         </div>
-                        <h3 className="text-2xl font-black text-white tracking-tight">{m.value}</h3>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{m.label}</p>
+                        <h3 className="text-xl font-black text-white tracking-tight">{m.value}</h3>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{m.label}</p>
                     </motion.div>
                 ))}
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Monthly Trend Bar Chart */}
-                <div className="lg:col-span-2 glass-card p-6 border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-black text-white uppercase tracking-widest">Income Growth Trend</h3>
-                        <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> Income</span>
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-700" /> Target</span>
+                <div className="lg:col-span-2 glass-card p-4 border-white/5 bg-white/[0.02]">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xs font-black text-white uppercase tracking-widest">Growth Trend</h3>
+                        <div className="flex items-center gap-3 text-[8px] font-bold uppercase tracking-widest">
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Income</span>
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-slate-700" /> Target</span>
                         </div>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[240px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyTrend}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
@@ -115,13 +115,13 @@ const IncomeOverview = () => {
                                     dataKey="name" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
-                                    dy={10}
+                                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }} 
+                                    dy={5}
                                 />
                                 <YAxis 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }}
                                     tickFormatter={(v) => `₹${v/1000}k`}
                                 />
                                 <Tooltip 
@@ -129,35 +129,35 @@ const IncomeOverview = () => {
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className="bg-slate-900 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-xl">
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{payload[0].payload.name}</p>
-                                                    <p className="text-sm font-black text-white">₹{payload[0].value.toLocaleString('en-IN')}</p>
+                                                <div className="bg-slate-900 border border-white/10 p-2 rounded-lg shadow-xl backdrop-blur-xl">
+                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
+                                                    <p className="text-xs font-black text-white">₹{payload[0].value.toLocaleString('en-IN')}</p>
                                                 </div>
                                             );
                                         }
                                         return null;
                                     }}
                                 />
-                                <Bar dataKey="income" fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={32} />
-                                <Bar dataKey="target" fill="#334155" radius={[4, 4, 0, 0]} barSize={8} />
+                                <Bar dataKey="income" fill="var(--primary-color)" radius={[3, 3, 0, 0]} barSize={24} />
+                                <Bar dataKey="target" fill="#334155" radius={[3, 3, 0, 0]} barSize={6} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Category Breakdown Pie Chart */}
-                <div className="glass-card p-6 border-white/5 bg-white/[0.02]">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 text-center">Revenue Streams</h3>
-                    <div className="h-[240px] w-full">
+                <div className="glass-card p-4 border-white/5 bg-white/[0.02]">
+                    <h3 className="text-xs font-black text-white uppercase tracking-widest mb-4 text-center">Revenue Streams</h3>
+                    <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
                                 <Pie
                                     data={categoryBreakdown}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={8}
+                                    innerRadius={45}
+                                    outerRadius={65}
+                                    paddingAngle={6}
                                     dataKey="value"
                                     onClick={(data) => handlePieClick(data)}
                                     cursor="pointer"
@@ -171,7 +171,7 @@ const IncomeOverview = () => {
                                         if (active && payload && payload.length) {
                                             return (
                                                 <div className="bg-slate-900 border border-white/10 p-2 rounded-lg shadow-xl">
-                                                    <p className="text-[10px] font-bold text-white uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
+                                                    <p className="text-[9px] font-bold text-white uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
                                                 </div>
                                             );
                                         }
@@ -181,18 +181,18 @@ const IncomeOverview = () => {
                             </RePieChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-2 space-y-1">
                         {categoryBreakdown.map((c, i) => (
                             <button 
                                 key={i} 
                                 onClick={() => navigate(c.path)}
-                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                                className="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} />
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
                                 </div>
-                                <ArrowRight size={12} className="text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                                <ArrowRight size={10} className="text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
                             </button>
                         ))}
                     </div>

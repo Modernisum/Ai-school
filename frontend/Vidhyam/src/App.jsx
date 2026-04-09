@@ -35,7 +35,6 @@ const DocumentUploadPage = lazy(() => import("./features/documents/pages/Documen
 const AddStudentPage = lazy(() => import("./features/students/components/addstudent.jsx"));
 const Studentinfo = lazy(() => import("./features/students/components/studentprofile.jsx"));
 const SchoolProfilePage = lazy(() => import("./features/infrastructure/pages/schoolprofile.jsx"));
-const EmployeeFormPage = lazy(() => import("./features/employees/components/employeeform.jsx"));
 const EmployeeProfilePage = lazy(() => import("./features/employees/components/employeeprofile.jsx"));
 const PayrollPage = lazy(() => import("./features/employees/pages/payroll.jsx"));
 const LeaveManagementPage = lazy(() => import("./features/employees/components/LeaveManagement.jsx"));
@@ -70,42 +69,41 @@ export default function App() {
 
           {/* Dashboard routes */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="home" replace />} /> {/* default redirect */}
-          <Route path="home" element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
-          <Route path="complains" element={<Suspense fallback={<PageLoader />}><ComplainsPage /></Suspense>} />
-          
-          {/* Academic Section */}
-          <Route path="academic/*" element={<Suspense fallback={<PageLoader />}><AcademicModule /></Suspense>} />
+            <Route index element={<Navigate to="home" replace />} /> {/* default redirect */}
+            <Route path="home" element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
+            <Route path="complains" element={<Suspense fallback={<PageLoader />}><ComplainsPage /></Suspense>} />
 
-          {/* Legacy Redirects for Academic */}
-          <Route path="exam" element={<Navigate to="/dashboard/academic/exam" replace />} />
-          <Route path="events" element={<Navigate to="/dashboard/academic/events" replace />} />
-          <Route path="attendance" element={<Navigate to="/dashboard/academic/attendance" replace />} />
-          <Route path="academic-materials" element={<Navigate to="/dashboard/academic/materials" replace />} />
+            {/* Academic Section */}
+            <Route path="academic/*" element={<Suspense fallback={<PageLoader />}><AcademicModule /></Suspense>} />
 
-          <Route path="employee/*" element={<Suspense fallback={<PageLoader />}><EmployeeModule /></Suspense>} />
-          <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="finance/*" element={<Suspense fallback={<PageLoader />}><FinanceModule /></Suspense>} />
-          <Route path="infra/*" element={<Suspense fallback={<PageLoader />}><InfraModule /></Suspense>} />
-          <Route path="student/*" element={<Suspense fallback={<PageLoader />}><StudentModule /></Suspense>} />
+            {/* Legacy Redirects for Academic */}
+            <Route path="exam" element={<Navigate to="/dashboard/academic/exam" replace />} />
+            <Route path="events" element={<Navigate to="/dashboard/academic/events" replace />} />
+            <Route path="attendance" element={<Navigate to="/dashboard/academic/attendance" replace />} />
+            <Route path="academic-materials" element={<Navigate to="/dashboard/academic/materials" replace />} />
 
-          <Route path="upload" element={<Suspense fallback={<PageLoader />}><DocumentUploadPage /></Suspense>} />
-          <Route path="announcements" element={<Suspense fallback={<PageLoader />}><AnnouncementsPage /></Suspense>} />
-          <Route path="notifications" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>} />
-          <Route path="employeeform" element={<Suspense fallback={<PageLoader />}><EmployeeFormPage /></Suspense>} />
-          <Route path="employeeprofile" element={<Suspense fallback={<PageLoader />}><EmployeeProfilePage /></Suspense>} />
-          <Route path="payroll" element={<Suspense fallback={<PageLoader />}><PayrollPage /></Suspense>} />
-          <Route path="leave-management" element={<Suspense fallback={<PageLoader />}><LeaveManagementPage /></Suspense>} />
-          <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
-          <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
-          <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />
-          <Route path="recovery" element={<Suspense fallback={<PageLoader />}><RecoveryPage /></Suspense>} />
-          <Route path="settings" element={<Suspense fallback={<PageLoader />}><GeneralSettings /></Suspense>} />
-        </Route>
+            <Route path="employee/*" element={<Suspense fallback={<PageLoader />}><EmployeeModule /></Suspense>} />
+            <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="finance/*" element={<Suspense fallback={<PageLoader />}><FinanceModule /></Suspense>} />
+            <Route path="infra/*" element={<Suspense fallback={<PageLoader />}><InfraModule /></Suspense>} />
+            <Route path="student/*" element={<Suspense fallback={<PageLoader />}><StudentModule /></Suspense>} />
 
-        {/* Fallback 404 */}
-        <Route path="*" element={<h1 className="text-white text-center mt-20 text-2xl font-bold">404 - System Offline or Page Not Found</h1>} />
-      </Routes>
+            <Route path="upload" element={<Suspense fallback={<PageLoader />}><DocumentUploadPage /></Suspense>} />
+            <Route path="announcements" element={<Suspense fallback={<PageLoader />}><AnnouncementsPage /></Suspense>} />
+            <Route path="notifications" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>} />
+            <Route path="employeeprofile" element={<Suspense fallback={<PageLoader />}><EmployeeProfilePage /></Suspense>} />
+            <Route path="payroll" element={<Suspense fallback={<PageLoader />}><PayrollPage /></Suspense>} />
+            <Route path="leave-management" element={<Suspense fallback={<PageLoader />}><LeaveManagementPage /></Suspense>} />
+            <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
+            <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
+            <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />
+            <Route path="recovery" element={<Suspense fallback={<PageLoader />}><RecoveryPage /></Suspense>} />
+            <Route path="settings" element={<Suspense fallback={<PageLoader />}><GeneralSettings /></Suspense>} />
+          </Route>
+
+          {/* Fallback 404 */}
+          <Route path="*" element={<h1 className="text-white text-center mt-20 text-2xl font-bold">404 - System Offline or Page Not Found</h1>} />
+        </Routes>
       </Suspense>
     </Router>
   );

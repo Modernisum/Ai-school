@@ -22,7 +22,7 @@ const AcademicModule = () => {
   return (
     <div className="flex h-full min-h-[calc(100vh-64px)] overflow-hidden">
       <SecondaryNav type="academic" tabs={tabs} />
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-900/10">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-900/10">
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="exam" element={<ExamsPage />} />

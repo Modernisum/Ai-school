@@ -46,10 +46,11 @@ pub async fn rls_middleware(
 
     // 6. Always insert TenantContext
     let sid = school_id.clone().unwrap_or_else(|| "default_school".to_string());
-    request.extensions_mut().insert(TenantContext { 
-        _school_id: sid, 
+    request.extensions_mut().insert(TenantContext {
+        _school_id: sid,
         _is_super_admin: is_super_admin,
-        admin_id
+        admin_id,
+        user_permissions: vec![], // TODO: Load from database based on admin_id
     });
 
     let mut response = next.run(request).await;
@@ -67,4 +68,5 @@ pub struct TenantContext {
     pub _school_id: String,
     pub _is_super_admin: bool,
     pub admin_id: String,
+    pub user_permissions: Vec<String>,
 }

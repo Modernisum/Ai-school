@@ -10,13 +10,16 @@ class AppTheme {
   static const Color lightGray = Color(0xFFECEFF1);
   static const Color whiteGlass = Color(0x33FFFFFF); // 20% opacity white
   static const Color darkGlass = Color(0x26000000); // 15% opacity black
-  static const Color lightText = Color(0xFFECEFF1); // Light text for dark backgrounds
-  static const Color darkText = Color(0xFF263238); // Dark text for light elements
+  static const Color lightText =
+      Color(0xFFECEFF1); // Light text for dark backgrounds
+  static const Color darkText =
+      Color(0xFF263238); // Dark text for light elements
 
   static ThemeData get theme {
     return ThemeData(
       primaryColor: deepPurple,
-      scaffoldBackgroundColor: Colors.transparent, // Background will be handled by AnimatedGradient
+      scaffoldBackgroundColor:
+          Colors.transparent, // Background will be handled by AnimatedGradient
       textTheme: GoogleFonts.outfitTextTheme().apply(
         bodyColor: lightText,
         displayColor: lightText,
@@ -26,7 +29,7 @@ class AppTheme {
           backgroundColor: deepPurple,
           foregroundColor: Colors.white,
           elevation: 8,
-          shadowColor: darkBlue.withValues(alpha: 0.5),
+          shadowColor: darkBlue.withOpacity(0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -41,7 +44,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: darkGlass,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: whiteGlass),
@@ -54,7 +58,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: deepPurple, width: 2),
         ),
-        hintStyle: TextStyle(color: lightText.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(color: lightText.withOpacity(0.7)),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,

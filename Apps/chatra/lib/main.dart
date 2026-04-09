@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'api_service.dart';
-import 'logic/auth/auth_bloc.dart';
-import 'logic/auth/auth_event.dart';
+import 'package:chatra/core/network/api_service.dart';
+import 'package:chatra/features/auth/bloc/auth_bloc.dart';
+import 'package:chatra/features/auth/bloc/auth_event.dart';
 import 'services/notification_service.dart';
 import 'router/app_router.dart';
-import 'theme/app_theme.dart';
+import 'package:chatra/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

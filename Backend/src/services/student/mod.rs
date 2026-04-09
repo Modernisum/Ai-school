@@ -1,0 +1,110 @@
+use crate::repository::Repositories;
+use crate::services::traits::*;
+use async_trait::async_trait;
+use serde_json::Value;
+use std::sync::Arc;
+
+mod crud;
+mod queries;
+mod validation;
+
+pub use crud::StudentCrud;
+pub use queries::StudentQueries;
+pub use validation::StudentValidation;
+
+pub struct PostgresStudentService {
+    pub repos: Arc<Repositories>,
+    pub crud: StudentCrud,
+}
+
+impl PostgresStudentService {
+    pub fn new(repos: Arc<Repositories>) -> Self {
+        Self {
+            crud: StudentCrud::new(repos.clone()),
+            repos,
+        }
+    }
+}
+
+#[async_trait]
+impl StudentService for PostgresStudentService {
+    async fn create_student(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        self.crud.create_student(school_id, admin_id, data).await
+    }
+
+    async fn bulk_create_students(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Vec<Value>,
+    ) -> AppResult<Value> {
+        self.crud.bulk_create_students(school_id, admin_id, data).await
+    }
+
+    async fn list_students(
+        &self,
+        school_id: &str,
+    ) -> AppResult<Vec<Value>> {
+        self.crud.list_students(school_id).await
+    }
+
+    async fn list_students_by_class(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        section: Option<&str>,
+    ) -> AppResult<Vec<Value>> {
+        self.crud.list_students_by_class(school_id, class_name, section).await
+    }
+
+    async fn get_student(
+        &self,
+        school_id: &str,
+        student_id: &str,
+    ) -> AppResult<Option<Value>> {
+        self.crud.get_student(school_id, student_id).await
+    }
+
+    async fn update_student(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.crud.update_student(school_id, student_id, admin_id, data).await
+    }
+
+    async fn delete_student(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        admin_id: &str,
+    ) -> AppResult<()> {
+        self.crud.delete_student(school_id, student_id, admin_id).await
+    }
+
+    async fn resequence_roll_numbers(
+        &self,
+        school_id: &str,
+        class_name: &str,
+    ) -> AppResult<()> {
+        self.crud.resequence_roll_numbers(school_id, class_name).await
+    }
+
+    async fn list_student_ids(
+        &self,
+        school_id: &str,
+    ) -> AppResult<Vec<String>> {
+        self.crud.list_student_ids(school_id).await
+    }
+
+    async fn validate_student_data(&self, school_id: &str, data: Value) -> AppResult<()> {
+        self.crud.validation.validate_student_data(school_id, data).await
+    }
+}

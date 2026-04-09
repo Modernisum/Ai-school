@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
-import 'logic/auth/auth_bloc.dart';
-import 'logic/auth/auth_event.dart';
-import 'widgets/animated_gradient_bg.dart';
+import 'package:chatra/features/auth/bloc/auth_bloc.dart';
+import 'package:chatra/features/auth/bloc/auth_event.dart';
+import 'package:chatra/widgets/animated_gradient_bg.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});

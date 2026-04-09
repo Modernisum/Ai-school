@@ -45,35 +45,35 @@ const COLORS = {
 function MiniPieCard({ title, subtitle, data, loading, extra }) {
     const total = data.reduce((s, d) => s + (d.value || 0), 0);
     return (
-        <div className="glass-card p-4 flex flex-col gap-1 min-w-[220px] flex-1">
-            <div className="flex items-center justify-between mb-1">
+        <div className="glass-card p-3 flex flex-col gap-1 min-w-[180px] flex-1">
+            <div className="flex items-center justify-between mb-0.5">
                 <div>
-                    <p className="text-xs font-semibold text-white">{title}</p>
-                    <p className="text-[10px] text-slate-500">{subtitle}</p>
+                    <p className="text-[10px] font-semibold text-white">{title}</p>
+                    <p className="text-[8px] text-slate-500 uppercase tracking-wider">{subtitle}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xl font-bold" style={{ color: 'var(--primary-color)' }}>{total}</p>
+                    <p className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>{total}</p>
                     {extra}
                 </div>
             </div>
             {loading ? (
-                <div className="h-[100px] flex items-center justify-center"><Loader size={18} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>
+                <div className="h-[80px] flex items-center justify-center"><Loader size={16} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>
             ) : (
                 <>
-                    <ResponsiveContainer width="100%" height={100}>
+                    <ResponsiveContainer width="100%" height={80}>
                         <PieChart>
-                            <Pie data={data} cx="50%" cy="50%" innerRadius={24} outerRadius={44} paddingAngle={3} dataKey="value" animationBegin={0} animationDuration={700}>
+                            <Pie data={data} cx="50%" cy="50%" innerRadius={18} outerRadius={35} paddingAngle={3} dataKey="value" animationBegin={0} animationDuration={700}>
                                 {data.map((entry, i) => <Cell key={i} fill={entry.color} opacity={0.9} />)}
                             </Pie>
-                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} />
+                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 9 }} />
                         </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
                         {data.map((d, i) => (
-                            <div key={i} className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-                                <span className="text-[10px] text-slate-400">{d.name}</span>
-                                <span className="text-[10px] font-medium text-slate-300">{d.value}</span>
+                            <div key={i} className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
+                                <span className="text-[9px] text-slate-400">{d.name}</span>
+                                <span className="text-[9px] font-medium text-slate-300">{d.value}</span>
                             </div>
                         ))}
                     </div>
@@ -396,102 +396,98 @@ export default function StudentManagement() {
     return (
         <div className="min-h-full">
             {/* ─── Header ── */}
-            <div className="flex items-center justify-between px-6 py-3">
-                <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between px-4 py-2.5">
+                <div className="flex items-center gap-2">
                     {/* Compact Switch Header */}
-                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 backdrop-blur-md relative min-w-[160px] h-9">
+                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 backdrop-blur-md relative min-w-[140px] h-8">
                         <motion.div
                             className="absolute inset-y-1 bg-primary rounded-md shadow-lg shadow-primary/20"
                             initial={false}
                             animate={{
-                                x: activeTab === 'overview' ? 0 : 76,
-                                width: activeTab === 'overview' ? 76 : 84
+                                x: activeTab === 'overview' ? 0 : 66,
+                                width: activeTab === 'overview' ? 66 : 74
                             }}
                             transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         />
                         <button
                             onClick={() => setActiveTab('overview')}
-                            className={`relative flex-1 z-10 text-[10px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'overview' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`relative flex-1 z-10 text-[9px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'overview' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             General
                         </button>
                         <button
                             onClick={() => setActiveTab('attendance')}
-                            className={`relative flex-1 z-10 text-[10px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'attendance' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`relative flex-1 z-10 text-[9px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'attendance' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Attendance
                         </button>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => { setEditStudentId(null); setShowAddForm(true); }} className="btn-primary py-1.5 px-3 text-[11px]"><Plus size={13} /> Admission</button>
+                    <button onClick={() => { setEditStudentId(null); setShowAddForm(true); }} className="btn-primary py-1.5 px-3 text-[10px]"><Plus size={12} /> Admission</button>
                 </div>
             </div>
 
             {/* ─── OVERVIEW TAB ── */}
             {activeTab === 'overview' && (
-                <div className="p-6 space-y-6 flex-col">
+                <div className="p-4 space-y-4 flex-col">
                     {/* Pie charts row */}
                     <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Live Overview</p>
-                        <div className="flex gap-4 overflow-x-auto pb-1">
-                            <MiniPieCard title="Total Students" data={pieData1} loading={sLoading} />
-                            {/* Quick stats */}
-
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Network Overview</p>
+                        <div className="flex gap-3 overflow-x-auto pb-1">
+                            <MiniPieCard title="Total Enrollment" data={pieData1} loading={sLoading} />
                         </div>
                     </div>
 
-
-
                     {/* Student table */}
                     <div className="space-y-3">
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                             <div className="relative flex-1">
-                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input className="input-standard pl-10 w-full" placeholder="Search by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <input className="input-standard pl-9 w-full text-xs py-1.5" placeholder="Search students..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                             </div>
-                            <div className="w-48">
-                                <select className="input-standard bg-slate-900" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
+                            <div className="w-40">
+                                <select className="input-standard bg-slate-900 text-xs py-1.5" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
                                     <option value="All">All Classes</option>
                                     {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
                                 </select>
                             </div>
                         </div>
                         <div className="glass-card overflow-hidden">
-                            {sLoading ? <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-primary" /></div>
+                            {sLoading ? <div className="flex items-center justify-center py-16"><Loader size={22} className="animate-spin text-primary" /></div>
                                 : filtered.length === 0 ? (
-                                    <div className="text-center py-16"><GraduationCap size={34} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500">No students found</p></div>
+                                    <div className="text-center py-12"><GraduationCap size={28} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500 text-xs">No students found</p></div>
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <table className="dark-table">
                                             <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Class</th><th>Type</th><th>Joined</th><th>Actions</th></tr></thead>
                                             <tbody>
                                                 {filtered.map((s, i) => (
-                                                    <motion.tr key={s.studentId || s.student_id || i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.4) }}>
-                                                        <td className="text-slate-500 text-xs">{i + 1}</td>
+                                                    <motion.tr key={s.studentId || s.student_id || i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}>
+                                                        <td className="text-slate-500 text-[10px]">{i + 1}</td>
                                                         <td>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-xl bg-slate-800 border border-white/10 overflow-hidden flex items-center justify-center shadow-inner">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-7 h-7 rounded-lg bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shadow-inner">
                                                                     {s.profileImageUrl ? (
                                                                         <img src={s.profileImageUrl} alt="" className="w-full h-full object-cover" />
                                                                     ) : (
-                                                                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-violet-600/20 flex items-center justify-center text-primary text-[10px] font-bold">
+                                                                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-violet-600/20 flex items-center justify-center text-primary text-[9px] font-bold">
                                                                             {(s.studentName || s.name || 'S')[0].toUpperCase()}
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <span className="font-medium text-white">{s.studentName || s.student_name || s.name || 'N/A'}</span>
+                                                                <span className="text-xs font-semibold text-white">{s.studentName || s.student_name || s.name || 'N/A'}</span>
                                                             </div>
                                                         </td>
-                                                        <td><span className="font-mono text-xs text-secondary">{s.studentId || s.student_id || 'N/A'}</span></td>
-                                                        <td><span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
-                                                        <td><span className={`badge ${(s.type || s.studentType || '').toLowerCase() === 'private' ? 'bg-secondary/15 border-violet-500/25 text-violet-300' : 'bg-slate-500/15 border-slate-500/25 text-slate-400'}`}>{s.type || s.studentType || 'Regular'}</span></td>
-                                                        <td className="text-xs text-slate-500">{fmtDate(s.createdAt || s.created_at)}</td>
-                                                        <td><div className="flex gap-1">
-                                                            <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} title="View Profile" className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-colors"><Eye size={14} /></button>
-                                                            <button onClick={() => { setEditStudentId(s.studentId || s.student_id); setShowAddForm(true); }} title="Edit Student" className="p-1.5 rounded-lg text-slate-500 hover:text-success hover:bg-emerald-500/10 transition-colors"><Edit3 size={14} /></button>
-                                                            <button onClick={() => setConfirmAction({ type: 'block', student: s })} title="Block Student" className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-amber-500/10 transition-colors"><UserX size={14} /></button>
-                                                            <button onClick={() => setConfirmAction({ type: 'delete', student: s })} title="Delete Student" className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-rose-500/10 transition-colors"><X size={14} /></button>
+                                                        <td><span className="font-mono text-[10px] text-indigo-400">{s.studentId || s.student_id || 'N/A'}</span></td>
+                                                        <td><span className="badge bg-primary/10 border-indigo-500/20 text-indigo-300 text-[10px]">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
+                                                        <td><span className={`badge text-[9px] ${(s.type || s.studentType || '').toLowerCase() === 'private' ? 'bg-secondary/10 border-violet-500/20 text-violet-300' : 'bg-slate-500/10 border-slate-500/20 text-slate-400'}`}>{s.type || s.studentType || 'Regular'}</span></td>
+                                                        <td className="text-[10px] text-slate-500">{fmtDate(s.createdAt || s.created_at)}</td>
+                                                        <td><div className="flex gap-0.5">
+                                                            <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-colors"><Eye size={12} /></button>
+                                                            <button onClick={() => { setEditStudentId(s.studentId || s.student_id); setShowAddForm(true); }} className="p-1.5 rounded-lg text-slate-500 hover:text-success hover:bg-emerald-500/10 transition-colors"><Edit3 size={12} /></button>
+                                                            <button onClick={() => setConfirmAction({ type: 'block', student: s })} className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-amber-500/10 transition-colors"><UserX size={12} /></button>
+                                                            <button onClick={() => setConfirmAction({ type: 'delete', student: s })} className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-rose-500/10 transition-colors"><X size={12} /></button>
                                                         </div></td>
                                                     </motion.tr>
                                                 ))}
@@ -506,58 +502,58 @@ export default function StudentManagement() {
 
             {/* ─── ATTENDANCE TAB ── */}
             {activeTab === 'attendance' && (
-                <div className="p-6 space-y-4">
+                <div className="p-4 space-y-4">
                     {/* Controls */}
                     <div className="flex flex-wrap gap-3 items-center">
-                        <div className="flex items-center gap-2 bg-slate-800/60 border border-white/10 rounded-xl px-3 py-2">
-                            <Calendar size={13} className="text-slate-500" />
-                            <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="bg-transparent text-sm text-white focus:outline-none" />
+                        <div className="flex items-center gap-2 bg-slate-800/60 border border-white/10 rounded-lg px-2.5 py-1.5">
+                            <Calendar size={12} className="text-slate-500" />
+                            <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="bg-transparent text-xs text-white focus:outline-none" />
                         </div>
-                        <select value={attClass} onChange={e => setAttClass(e.target.value)} className="input-dark sm:w-40">
+                        <select value={attClass} onChange={e => setAttClass(e.target.value)} className="input-dark sm:w-36 text-xs py-1.5">
                             <option value="All">All Classes</option>
                             {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
                         </select>
-                        <div className="relative flex-1 min-w-[160px]">
-                            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input className="input-dark pl-8 w-full" placeholder="Search student..." value={attSearch} onChange={e => setAttSearch(e.target.value)} />
+                        <div className="relative flex-1 min-w-[150px]">
+                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input className="input-dark pl-8 w-full text-xs py-1.5" placeholder="Search name..." value={attSearch} onChange={e => setAttSearch(e.target.value)} />
                         </div>
-                        <button onClick={markAllPresent} disabled={isHoliday.isHoliday} className={`btn-primary ${isHoliday.isHoliday ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600/80 hover:bg-emerald-500/80'} ml-auto`}>
-                            <CheckCircle size={14} /> Mark All Present
+                        <button onClick={markAllPresent} disabled={isHoliday.isHoliday} className={`btn-primary py-1.5 px-3 text-[10px] ${isHoliday.isHoliday ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600/80 hover:bg-emerald-500/80'} ml-auto`}>
+                            <CheckCircle size={12} /> Mark All
                         </button>
                     </div>
 
                     {isHoliday.isHoliday && (
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3 text-accent">
-                            <AlertTriangle size={18} />
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-center gap-3 text-accent">
+                            <AlertTriangle size={16} />
                             <div>
-                                <p className="text-sm font-bold">School Closed / Holiday</p>
-                                <p className="text-xs opacity-80">Attendance cannot be marked on {isHoliday.reason}.</p>
+                                <p className="text-xs font-bold">School Closed</p>
+                                <p className="text-[10px] opacity-80">{isHoliday.reason}</p>
                             </div>
                         </div>
                     )}
 
                     {/* Stats */}
-                    <div className="flex gap-3 flex-wrap">
-                        {[['slate', <Users size={13} />, 'Total', attStudents.length], ['emerald', <UserCheck size={13} />, 'Present', presentCount], ['rose', <UserX size={13} />, 'Absent', absentCount]].map(([color, icon, label, val]) => (
-                            <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm text-${color}-400 bg-${color}-500/10 border-${color}-500/20`}>
-                                {icon}<span className="text-xs text-slate-500">{label}</span><span className="font-bold">{val}</span>
+                    <div className="flex gap-2 flex-wrap items-center">
+                        {[['slate', <Users size={11} />, 'Total', attStudents.length], ['emerald', <UserCheck size={11} />, 'Present', presentCount], ['rose', <UserX size={11} />, 'Absent', absentCount]].map(([color, icon, label, val]) => (
+                            <div key={label} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] text-${color}-400 bg-${color}-500/10 border-${color}-500/20 font-bold`}>
+                                {icon}<span className="text-[9px] text-slate-500 uppercase">{label}</span><span>{val}</span>
                             </div>
                         ))}
                         <div className="ml-auto flex items-center gap-2">
-                            <span className="text-lg font-bold text-success">{pct}%</span>
-                            <span className="text-xs text-slate-500">Attendance</span>
+                            <span className="text-base font-black text-success">{pct}%</span>
+                            <span className="text-[9px] text-slate-500 uppercase font-black">Attendance</span>
                         </div>
                     </div>
 
                     {/* Student attendance list */}
                     <div className="glass-card overflow-hidden">
                         {(sLoading || attLoading) ? (
-                            <div className="flex items-center justify-center py-20"><Loader size={26} className="animate-spin text-success" /></div>
+                            <div className="flex items-center justify-center py-16"><Loader size={22} className="animate-spin text-success" /></div>
                         ) : attStudents.length === 0 ? (
-                            <div className="text-center py-16"><ClipboardList size={34} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500">No students found</p></div>
+                            <div className="text-center py-12"><ClipboardList size={28} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500 text-xs">No students found</p></div>
                         ) : (
                             <div className="divide-y divide-white/[0.04]">
-                                <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 px-5 py-2.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                                <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 px-4 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/[0.02]">
                                     <span>#</span><span>Student</span><span>Class</span><span>Status</span>
                                 </div>
                                 {attStudents.map((s, i) => {
@@ -567,20 +563,20 @@ export default function StudentManagement() {
                                     const name = s.studentName || s.name || 'N/A';
                                     const cls = s.className || s.classId || '—';
                                     return (
-                                        <motion.div key={sid || i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.01, 0.3) }}
-                                            className={`grid grid-cols-[2rem_1fr_auto_auto] gap-3 items-center px-5 py-3.5 transition-colors ${isPresent ? 'bg-emerald-500/5' : ''}`}>
-                                            <span className="text-xs text-slate-600">{i + 1}</span>
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isPresent ? 'bg-success/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{name[0]?.toUpperCase()}</div>
+                                        <motion.div key={sid || i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.01, 0.2) }}
+                                            className={`grid grid-cols-[2rem_1fr_auto_auto] gap-3 items-center px-4 py-2.5 transition-colors ${isPresent ? 'bg-emerald-500/5' : ''}`}>
+                                            <span className="text-[10px] text-slate-600">{i + 1}</span>
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isPresent ? 'bg-success/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{name[0]?.toUpperCase()}</div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-medium text-white truncate">{name}</p>
-                                                    <p className="text-[10px] text-slate-500 font-mono truncate">{sid}</p>
+                                                    <p className="text-xs font-bold text-white truncate">{name}</p>
+                                                    <p className="text-[9px] text-slate-500 font-mono truncate">{sid}</p>
                                                 </div>
                                             </div>
-                                            <span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300 text-[10px] whitespace-nowrap">{cls}</span>
+                                            <span className="badge bg-primary/10 border-indigo-500/20 text-indigo-300 text-[9px] whitespace-nowrap">{cls}</span>
                                             <button onClick={() => togglePresent(s)} disabled={isLoad || isHoliday.isHoliday}
-                                                className={`w-14 h-7 rounded-full relative transition-all ${isPresent ? 'bg-success/20 border-emerald-500/40' : 'bg-slate-700/50 border-white/5'} border ${(isLoad || isHoliday.isHoliday) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
-                                                <div className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full transition-all shadow-lg ${isPresent ? 'right-1 bg-emerald-400' : 'left-1 bg-slate-500'}`} />
+                                                className={`w-10 h-5 rounded-full relative transition-all ${isPresent ? 'bg-success/20 border-emerald-500/40' : 'bg-slate-700/50 border-white/5'} border ${(isLoad || isHoliday.isHoliday) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
+                                                <div className={`absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full transition-all shadow-lg ${isPresent ? 'right-0.5 bg-emerald-400' : 'left-0.5 bg-slate-500'}`} />
                                             </button>
                                         </motion.div>
                                     );

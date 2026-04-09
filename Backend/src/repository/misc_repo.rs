@@ -2,9 +2,9 @@ use crate::db::DbClient;
 use crate::repository::traits::*;
 use async_trait::async_trait;
 use bigdecimal::ToPrimitive;
+use rand::Rng;
 use serde_json::{json, Value};
 use sqlx::{Acquire, Row};
-use rand::Rng;
 use std::sync::Arc;
 
 // --- OCR Repository ---
@@ -111,16 +111,22 @@ pub struct PostgresComplainRepository {
 impl crate::repository::traits::ComplainRepository for PostgresComplainRepository {
     async fn add_complain(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
+
         // Generate Unique Complaint ID: CMP-YYYYMMDD-RAND
         let random_part: u32 = rand::thread_rng().gen_range(10000..99999);
-        let complaint_id = format!("CMP-{}-{}", chrono::Utc::now().format("%Y%m%d"), random_part);
+        let complaint_id = format!(
+            "CMP-{}-{}",
+            chrono::Utc::now().format("%Y%m%d"),
+            random_part
+        );
 
-        let res = sqlx::query(
+        // Try to insert with new schema (sender_id, sender_type)
+        // If it fails due to missing columns, fall back to old schema (student_id)
+        let res = match sqlx::query(
             "INSERT INTO complaints (
-                complaint_id, school_id, sender_id, sender_type, 
+                complaint_id, school_id, sender_id, sender_type,
                 target_id, target_type, subject, description, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING id"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING id",
         )
         .bind(&complaint_id)
         .bind(school_id)
@@ -131,7 +137,32 @@ impl crate::repository::traits::ComplainRepository for PostgresComplainRepositor
         .bind(data["subject"].as_str().or(data["title"].as_str())) // Handle both for backward compatibility
         .bind(data["description"].as_str())
         .fetch_one(&mut *conn)
-        .await?;
+        .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                // If error is about missing sender_id column, fall back to student_id
+                if e.to_string().contains("sender_id") || e.to_string().contains("column") {
+                    sqlx::query(
+                        "INSERT INTO complaints (
+                            complaint_id, school_id, student_id,
+                            target_id, target_type, subject, description, status
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING id",
+                    )
+                    .bind(&complaint_id)
+                    .bind(school_id)
+                    .bind(data["senderId"].as_str())
+                    .bind(data["targetId"].as_str())
+                    .bind(data["targetType"].as_str())
+                    .bind(data["subject"].as_str().or(data["title"].as_str()))
+                    .bind(data["description"].as_str())
+                    .fetch_one(&mut *conn)
+                    .await?
+                } else {
+                    return Err(e.into());
+                }
+            }
+        };
 
         let mut ret = data.clone();
         ret["id"] = json!(res.get::<i32, _>("id"));
@@ -146,13 +177,17 @@ impl crate::repository::traits::ComplainRepository for PostgresComplainRepositor
         user_role: Option<&str>,
     ) -> Result<JsonList, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
+
+        // Check if sender_id column exists, fallback to student_id
         let rows = if let Some(uid) = user_id {
             // Filter by sender OR target
             sqlx::query(
-                "SELECT id, complaint_id, sender_id, sender_type, target_id, target_type, subject, description, status, created_at 
-                 FROM complaints 
-                 WHERE school_id = $1 AND (sender_id = $2 OR target_id = $2)"
+                "SELECT id, complaint_id,
+                 COALESCE(sender_id, student_id) as sender_id,
+                 COALESCE(sender_type, 'student') as sender_type,
+                 target_id, target_type, subject, description, status, created_at
+                 FROM complaints
+                 WHERE school_id = $1 AND (COALESCE(sender_id, student_id) = $2 OR target_id = $2)",
             )
             .bind(school_id)
             .bind(uid)
@@ -161,27 +196,35 @@ impl crate::repository::traits::ComplainRepository for PostgresComplainRepositor
         } else {
             // Admin view: all complaints for the school
             sqlx::query(
-                "SELECT id, complaint_id, sender_id, sender_type, target_id, target_type, subject, description, status, created_at 
-                 FROM complaints 
-                 WHERE school_id = $1"
+                "SELECT id, complaint_id,
+                 COALESCE(sender_id, student_id) as sender_id,
+                 COALESCE(sender_type, 'student') as sender_type,
+                 target_id, target_type, subject, description, status, created_at
+                 FROM complaints
+                 WHERE school_id = $1",
             )
             .bind(school_id)
             .fetch_all(&mut *conn)
             .await?
         };
 
-        Ok(rows.into_iter().map(|r| json!({
-            "id": r.get::<i32, _>("id"),
-            "complaintId": r.get::<Option<String>, _>("complaint_id"),
-            "senderId": r.get::<Option<String>, _>("sender_id"),
-            "senderType": r.get::<Option<String>, _>("sender_type"),
-            "targetId": r.get::<Option<String>, _>("target_id"),
-            "targetType": r.get::<Option<String>, _>("target_type"),
-            "subject": r.get::<String, _>("subject"),
-            "description": r.get::<String, _>("description"),
-            "status": r.get::<String, _>("status"),
-            "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-        })).collect())
+        Ok(rows
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "id": r.get::<i32, _>("id"),
+                    "complaintId": r.get::<Option<String>, _>("complaint_id"),
+                    "senderId": r.get::<Option<String>, _>("sender_id"),
+                    "senderType": r.get::<Option<String>, _>("sender_type"),
+                    "targetId": r.get::<Option<String>, _>("target_id"),
+                    "targetType": r.get::<Option<String>, _>("target_type"),
+                    "subject": r.get::<String, _>("subject"),
+                    "description": r.get::<String, _>("description"),
+                    "status": r.get::<String, _>("status"),
+                    "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+                })
+            })
+            .collect())
     }
 
     async fn get_complain(
@@ -195,7 +238,9 @@ impl crate::repository::traits::ComplainRepository for PostgresComplainRepositor
             .bind(complain_id)
             .fetch_optional(&mut *conn)
             .await?;
-        Ok(row.map(|r| json!({"id": r.get::<i32, _>("id"), "subject": r.get::<String, _>("subject")})))
+        Ok(row.map(
+            |r| json!({"id": r.get::<i32, _>("id"), "subject": r.get::<String, _>("subject")}),
+        ))
     }
 
     async fn delete_complain(&self, school_id: &str, complain_id: i32) -> Result<(), AppError> {
@@ -344,18 +389,21 @@ pub struct PostgresResponsibilityRepository {
 
 #[async_trait]
 impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibilityRepository {
-    async fn get_responsibilities(&self, school_id: &str, employee_type: Option<String>) -> Result<JsonList, AppError> {
-        let mut conn = self
-            .client
-            .acquire_tenant_connection(school_id)
-            .await?;
+    async fn get_responsibilities(
+        &self,
+        school_id: &str,
+        employee_type: Option<String>,
+    ) -> Result<JsonList, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
         let rows = if let Some(ref e_type) = employee_type {
-            sqlx::query("SELECT * FROM responsibilities WHERE school_id = $1 AND employee_type = $2")
-                .bind(school_id)
-                .bind(e_type)
-                .fetch_all(&mut *conn)
-                .await?
+            sqlx::query(
+                "SELECT * FROM responsibilities WHERE school_id = $1 AND employee_type = $2",
+            )
+            .bind(school_id)
+            .bind(e_type)
+            .fetch_all(&mut *conn)
+            .await?
         } else {
             sqlx::query("SELECT * FROM responsibilities WHERE school_id = $1")
                 .bind(school_id)
@@ -381,9 +429,12 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
 
     async fn add_responsibility(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
-        let name = data["name"].as_str().ok_or_else(|| AppError::from("Name is required"))?;
-        let responsibility_id = name.to_uppercase()
+
+        let name = data["name"]
+            .as_str()
+            .ok_or_else(|| AppError::from("Name is required"))?;
+        let responsibility_id = name
+            .to_uppercase()
             .chars()
             .filter(|c| c.is_alphanumeric() || c.is_whitespace())
             .collect::<String>()
@@ -534,7 +585,11 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         Ok(())
     }
 
-    async fn get_student_fee_sum_for_space(&self, school_id: &str, space_id: &str) -> Result<f64, AppError> {
+    async fn get_student_fee_sum_for_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<f64, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let result: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
             "SELECT SUM(r.student_fee) FROM responsibilities r 
@@ -549,15 +604,19 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         Ok(result.map(|val| val.to_f64().unwrap_or(0.0)).unwrap_or(0.0))
     }
 
-    async fn get_responsibility_analytics(&self, school_id: &str, responsibility_id: &str) -> Result<Value, AppError> {
+    async fn get_responsibility_analytics(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
+
         // 1. Get employees assigned and aggregate space IDs
         let emp_rows = sqlx::query(
             "SELECT er.employee_id, e.data->>'name' as employee_name, er.space_ids
              FROM employee_responsibilities er 
              LEFT JOIN employees e ON er.employee_id = e.employee_id AND er.school_id = e.school_id
-             WHERE er.school_id = $1 AND er.responsibility_id = $2"
+             WHERE er.school_id = $1 AND er.responsibility_id = $2",
         )
         .bind(school_id)
         .bind(responsibility_id)
@@ -570,7 +629,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         for row in emp_rows {
             let emp_id: String = row.get("employee_id");
             let emp_name: Option<String> = row.get("employee_name");
-            
+
             assigned_employees.push(json!({
                 "employeeId": emp_id,
                 "name": emp_name.unwrap_or_default()
@@ -588,17 +647,17 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         }
 
         let active_spaces: Vec<String> = all_space_ids.into_iter().collect();
-        
+
         // 2. Find students across these active spaces
         let mut total_students = 0;
         let mut classes_distribution = serde_json::Map::new();
-        
+
         if !active_spaces.is_empty() {
             let st_rows = sqlx::query(
                 "SELECT class_name, COUNT(*) as student_count 
                  FROM students 
                  WHERE school_id = $1 AND room_number = ANY($2) AND status = 'active'
-                 GROUP BY class_name"
+                 GROUP BY class_name",
             )
             .bind(school_id)
             .bind(&active_spaces)
@@ -621,7 +680,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         .bind(responsibility_id)
         .fetch_optional(&mut *conn)
         .await?;
-        
+
         let fee_val = fee.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
         let combined_fee_generated = fee_val * (total_students as f64);
 
@@ -637,28 +696,34 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         }))
     }
 
-    async fn get_student_responsibilities(&self, school_id: &str, student_id: &str) -> Result<Vec<Value>, AppError> {
+    async fn get_student_responsibilities(
+        &self,
+        school_id: &str,
+        student_id: &str,
+    ) -> Result<Vec<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
+
         // 1. Get student's class details
         let info_opt = sqlx::query(
-            "SELECT class_name, section FROM students WHERE school_id = $1 AND student_id = $2"
+            "SELECT class_name, section FROM students WHERE school_id = $1 AND student_id = $2",
         )
         .bind(school_id)
         .bind(student_id)
         .fetch_optional(&mut *conn)
         .await?;
-        
+
         let rn = match info_opt {
             Some(row) => {
-                let class_name = row.get::<Option<String>, _>("class_name").unwrap_or_default();
+                let class_name = row
+                    .get::<Option<String>, _>("class_name")
+                    .unwrap_or_default();
                 let section = row.get::<Option<String>, _>("section").unwrap_or_default();
                 if class_name.is_empty() || section.is_empty() {
                     return Ok(vec![]);
                 }
                 format!("{}-{}", class_name, section)
-            },
-            None => return Ok(vec![])
+            }
+            None => return Ok(vec![]),
         };
 
         // 2. Fetch responsibilities where assigned space_ids contain this room
@@ -673,14 +738,19 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         .fetch_all(&mut *conn)
         .await?;
 
-        let items: Vec<Value> = rows.into_iter().map(|row| json!({
-            "responsibilityId": row.get::<String, _>("responsibility_id"),
-            "name": row.get::<String, _>("name"),
-            "studentFee": row.try_get::<bigdecimal::BigDecimal, _>("student_fee")
-                .unwrap_or_default()
-                .to_f64()
-                .unwrap_or(0.0)
-        })).collect();
+        let items: Vec<Value> = rows
+            .into_iter()
+            .map(|row| {
+                json!({
+                    "responsibilityId": row.get::<String, _>("responsibility_id"),
+                    "name": row.get::<String, _>("name"),
+                    "studentFee": row.try_get::<bigdecimal::BigDecimal, _>("student_fee")
+                        .unwrap_or_default()
+                        .to_f64()
+                        .unwrap_or(0.0)
+                })
+            })
+            .collect();
 
         // 3. Return grouped logically by space
         Ok(vec![json!({
@@ -689,14 +759,19 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         })])
     }
 
-
-    async fn get_responsibility(&self, school_id: &str, responsibility_id: &str) -> Result<Option<Value>, AppError> {
+    async fn get_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let row = sqlx::query("SELECT * FROM responsibilities WHERE school_id = $1 AND responsibility_id = $2")
-            .bind(school_id)
-            .bind(responsibility_id)
-            .fetch_optional(&mut *conn)
-            .await?;
+        let row = sqlx::query(
+            "SELECT * FROM responsibilities WHERE school_id = $1 AND responsibility_id = $2",
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .fetch_optional(&mut *conn)
+        .await?;
 
         if let Some(r) = row {
             Ok(Some(json!({
@@ -715,9 +790,45 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         }
     }
 
-    async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, data: Value) -> Result<(), AppError> {
+    async fn get_responsibility_by_name(
+        &self,
+        school_id: &str,
+        name: &str,
+    ) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
+        let row = sqlx::query(
+            "SELECT * FROM responsibilities WHERE school_id = $1 AND name = $2",
+        )
+        .bind(school_id)
+        .bind(name)
+        .fetch_optional(&mut *conn)
+        .await?;
+
+        if let Some(r) = row {
+            Ok(Some(json!({
+                "responsibilityId": r.get::<String, _>("responsibility_id"),
+                "name": r.get::<String, _>("name"),
+                "description": r.get::<Option<String>, _>("description"),
+                "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0),
+                "timePeriod": r.get::<i32, _>("time_period"),
+                "employeeType": r.get::<Option<String>, _>("employee_type"),
+                "monthlyPrice": r.get::<bigdecimal::BigDecimal, _>("monthly_price").to_f64().unwrap_or(0.0),
+                "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0),
+                "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn update_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        data: Value,
+    ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
         sqlx::query(
             "UPDATE responsibilities SET 
                 name = COALESCE($1, name),
@@ -727,7 +838,7 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
                 employee_type = COALESCE($5, employee_type),
                 monthly_price = COALESCE($6, monthly_price),
                 student_fee = COALESCE($7, student_fee)
-             WHERE school_id = $8 AND responsibility_id = $9"
+             WHERE school_id = $8 AND responsibility_id = $9",
         )
         .bind(data["name"].as_str())
         .bind(data["description"].as_str())
@@ -787,5 +898,4 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0)
         })).collect())
     }
-
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/notifications/notifications_bloc.dart';
@@ -13,6 +14,7 @@ import '../common/salary_analytics_screen.dart';
 import '../teacher/classroom_hub_screen.dart';
 import '../community/staff_room_screen.dart';
 import '../ai/teacher_ai_assistant.dart';
+import '../responsibility/responsibility_list_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -160,6 +162,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             _buildActionCard(context, Icons.beach_access, 'Leave Panel', onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveManagementScreen()));
             }),
+            _buildActionCard(
+                  context,
+                  Icons.assignment,
+                  "Responsibilities",
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ResponsibilityListScreen()));
+                  },
+                ),
             _buildActionCard(
                   context,
                   Icons.receipt_long,
