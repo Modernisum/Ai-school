@@ -34,3 +34,40 @@ class SubmitAttendance extends AttendanceEvent {
   @override
   List<Object> get props => [classId];
 }
+
+class GenerateQrAttendance extends AttendanceEvent {
+  final String className;
+
+  const GenerateQrAttendance(this.className);
+
+  @override
+  List<Object> get props => [className];
+}
+
+class MarkMobileAttendance extends AttendanceEvent {
+  final String studentId;
+  final String status;
+  final double latitude;
+  final double longitude;
+  final String? qrToken;
+
+  const MarkMobileAttendance({
+    required this.studentId,
+    required this.status,
+    required this.latitude,
+    required this.longitude,
+    this.qrToken,
+  });
+
+  @override
+  List<Object> get props => [studentId, status, latitude, longitude];
+}
+
+class SyncOfflineAttendance extends AttendanceEvent {
+  final List<Map<String, dynamic>> records;
+
+  const SyncOfflineAttendance(this.records);
+
+  @override
+  List<Object> get props => [records];
+}

@@ -14,6 +14,9 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     on<LoadStudents>(_onLoadStudents);
     on<ToggleStudentAttendance>(_onToggleStudentAttendance);
     on<SubmitAttendance>(_onSubmitAttendance);
+    on<GenerateQrAttendance>(_onGenerateQrAttendance);
+    on<MarkMobileAttendance>(_onMarkMobileAttendance);
+    on<SyncOfflineAttendance>(_onSyncOfflineAttendance);
   }
 
   Future<void> _onLoadStudents(LoadStudents event, Emitter<AttendanceState> emit) async {
@@ -74,7 +77,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer \$token'
+          'Authorization': 'Bearer $token'
         },
         body: jsonEncode({
           "class_id": event.classId,
@@ -85,6 +88,73 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       // We spoof success here if the backend isn't perfectly mapped yet in V3 schema
       await Future.delayed(const Duration(seconds: 1));
       emit(AttendanceSuccess());
+    } catch (e) {
+      emit(AttendanceError(e.toString()));
+    }
+  }
+
+  Future<void> _onGenerateQrAttendance(GenerateQrAttendance event, Emitter<AttendanceState> emit) async {
+    emit(QrAttendanceGenerating());
+    try {
+      final result = await apiService.getQrAttendanceToken();
+      
+      if (result != null) {
+        final qrToken = result['qr_token'] as String? ?? '';
+        final qrImageBase64 = result['qr_image_base64'] as String? ?? '';
+        final expiresAtStr = result['expires_at'] as String? ?? '';
+        
+        final expiresAt = DateTime.parse(expiresAtStr);
+        
+        emit(QrAttendanceGenerated(
+          qrToken: qrToken,
+          qrImageBase64: qrImageBase64,
+          expiresAt: expiresAt,
+        ));
+      } else {
+        emit(AttendanceError('Failed to generate QR attendance token'));
+      }
+    } catch (e) {
+      emit(AttendanceError(e.toString()));
+    }
+  }
+
+  Future<void> _onMarkMobileAttendance(MarkMobileAttendance event, Emitter<AttendanceState> emit) async {
+    emit(MobileAttendanceMarking());
+    try {
+      final result = await apiService.markMobileAttendance(
+        studentId: event.studentId,
+        status: event.status,
+        latitude: event.latitude,
+        longitude: event.longitude,
+        qrToken: event.qrToken,
+      );
+      
+      if (result != null) {
+        final locationVerified = result['location_verified'] as bool? ?? false;
+        
+        emit(MobileAttendanceMarked(
+          studentId: event.studentId,
+          status: event.status,
+          locationVerified: locationVerified,
+        ));
+      } else {
+        emit(AttendanceError('Failed to mark mobile attendance'));
+      }
+    } catch (e) {
+      emit(AttendanceError(e.toString()));
+    }
+  }
+
+  Future<void> _onSyncOfflineAttendance(SyncOfflineAttendance event, Emitter<AttendanceState> emit) async {
+    emit(OfflineAttendanceSyncing());
+    try {
+      final results = await apiService.syncOfflineAttendance(event.records);
+      
+      if (results != null) {
+        emit(OfflineAttendanceSynced(results));
+      } else {
+        emit(AttendanceError('Failed to sync offline attendance'));
+      }
     } catch (e) {
       emit(AttendanceError(e.toString()));
     }

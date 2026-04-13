@@ -1,0 +1,58 @@
+{
+  "version": "1",
+  "name": "Chat System APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "Send Message",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/chat/{{schoolId}}/send",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "sender_id": "EMP001",
+            "sender_type": "employee",
+            "receiver_id": "STU001",
+            "receiver_type": "student",
+            "content": "Hello, this is a test message",
+            "attachment_url": null
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Chat History",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/chat/{{schoolId}}/history/EMP001/STU001",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

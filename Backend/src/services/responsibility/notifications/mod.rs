@@ -8,6 +8,7 @@ pub use update::{UpdateNotifier, ResponsibilityNotificationType as UpdateNotific
 
 use crate::error::{AppError, AppResult};
 use crate::repository::Repositories;
+use crate::logic::EmailService;
 use serde_json::Value;
 use std::sync::Arc;
 
@@ -36,18 +37,20 @@ impl ResponsibilityNotificationType {
 
 pub struct ResponsibilityNotificationService {
     repos: Arc<Repositories>,
+    email_service: Arc<EmailService>,
     assignment: AssignmentNotifier,
     removal: RemovalNotifier,
     update: UpdateNotifier,
 }
 
 impl ResponsibilityNotificationService {
-    pub fn new(repos: Arc<Repositories>) -> Self {
-        let assignment = AssignmentNotifier::new(repos.clone());
+    pub fn new(repos: Arc<Repositories>, email_service: Arc<EmailService>) -> Self {
+        let assignment = AssignmentNotifier::new(repos.clone(), email_service.clone());
         let removal = RemovalNotifier::new(repos.clone());
         let update = UpdateNotifier::new(repos.clone());
         Self {
             repos,
+            email_service,
             assignment,
             removal,
             update,

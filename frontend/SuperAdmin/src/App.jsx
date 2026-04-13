@@ -2,7 +2,8 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket, Search
+    Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket, Search, FileText,
+    Settings, UserCheck, Users, BarChart3, ShieldCheck
 } from 'lucide-react'
 import { isLoggedIn, logout } from './api.js'
 import Login from './pages/Login.jsx'
@@ -12,6 +13,7 @@ import SchoolsList from './pages/SchoolsList.jsx'
 import SchoolDetail from './pages/SchoolDetail.jsx'
 import BackupPage from './pages/BackupPage.jsx'
 import SetupPage from './pages/SetupPage.jsx'
+import SetupTemplatesPage from './pages/SetupTemplatesPage.jsx'
 import SessionsPage from './pages/SessionsPage.jsx'
 import SupportPage from './pages/SupportPage.jsx'
 import BillingPage from './pages/Billing/BillingPage.jsx'
@@ -19,27 +21,106 @@ import PromoPage from './pages/PromoPage.jsx'
 import AISettings from './pages/AISettings.jsx'
 
 import SpotlightSearch from './components/SpotlightSearch.jsx'
+import { RBACProvider, useRBAC, PermissionGuard, PERMISSIONS } from './contexts/RBACContext.jsx'
 
 export const ToastCtx = createContext(null)
 
 function PrivateLayout() {
     const [toast, setToast] = useState(null)
+    const { user, checkPermission } = useRBAC()
 
     const showToast = (type, msg) => {
         setToast({ type, msg })
         setTimeout(() => setToast(null), 3500)
     }
 
-    const nav = [
-        { to: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-        { to: '/schools', icon: <School size={16} />, label: 'Schools' },
-        { to: '/billing', icon: <Database size={16} />, label: 'Billing & Rev' },
-        { to: '/promos', icon: <Ticket size={16} />, label: 'Promo Codes' },
-        { to: '/setup', icon: <Plus size={16} />, label: 'Add School' },
-        { to: '/support', icon: <MessageSquare size={16} />, label: 'Support' },
-        { to: '/backup', icon: <Database size={16} />, label: 'Backup' },
-        { to: '/ai-settings', icon: <Plus size={16} />, label: 'AI Configuration' },
+    // Navigation items with required permissions
+    const navItems = [
+        {
+            to: '/dashboard',
+            icon: <LayoutDashboard size={16} />,
+            label: 'Dashboard',
+            permission: PERMISSIONS.VIEW_DASHBOARD
+        },
+        {
+            to: '/schools',
+            icon: <School size={16} />,
+            label: 'Schools',
+            permission: PERMISSIONS.VIEW_SCHOOLS
+        },
+        {
+            to: '/billing',
+            icon: <Database size={16} />,
+            label: 'Billing & Rev',
+            permission: PERMISSIONS.VIEW_BILLING
+        },
+        {
+            to: '/promos',
+            icon: <Ticket size={16} />,
+            label: 'Promo Codes',
+            permission: PERMISSIONS.VIEW_PROMOS
+        },
+        {
+            to: '/setup',
+            icon: <Plus size={16} />,
+            label: 'Add School',
+            permission: PERMISSIONS.CREATE_SCHOOL
+        },
+        {
+            to: '/setup-templates',
+            icon: <FileText size={16} />,
+            label: 'Setup Templates',
+            permission: PERMISSIONS.VIEW_SETUP_TEMPLATES
+        },
+        {
+            to: '/support',
+            icon: <MessageSquare size={16} />,
+            label: 'Support',
+            permission: PERMISSIONS.VIEW_SUPPORT
+        },
+        {
+            to: '/backup',
+            icon: <Database size={16} />,
+            label: 'Backup',
+            permission: PERMISSIONS.VIEW_BACKUP
+        },
+        {
+            to: '/ai-settings',
+            icon: <Settings size={16} />,
+            label: 'AI Configuration',
+            permission: PERMISSIONS.VIEW_AI_SETTINGS
+        },
+        // Admin-only navigation items
+        {
+            to: '/user-management',
+            icon: <Users size={16} />,
+            label: 'User Management',
+            permission: PERMISSIONS.VIEW_USERS,
+            adminOnly: true
+        },
+        {
+            to: '/audit-logs',
+            icon: <ShieldCheck size={16} />,
+            label: 'Audit Logs',
+            permission: PERMISSIONS.VIEW_AUDIT_LOGS,
+            adminOnly: true
+        },
+        {
+            to: '/monitoring',
+            icon: <BarChart3 size={16} />,
+            label: 'Monitoring',
+            permission: PERMISSIONS.VIEW_MONITORING,
+            adminOnly: true
+        },
     ]
+
+    // Filter navigation based on user permissions
+    const nav = navItems.filter(item => {
+        if (item.permission) {
+            return checkPermission(item.permission)
+        }
+        return true
+    })
 
     return (
         <ToastCtx.Provider value={showToast}>
@@ -54,11 +135,34 @@ function PrivateLayout() {
                             <p>Control Panel</p>
                         </div>
                     </div>
+                    
+                    {/* User Role Badge */}
+                    {!user.isLoading && (
+                        <div style={{
+                            margin: '0 16px 20px 16px',
+                            padding: '8px 12px',
+                            background: 'var(--bg-lighter)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            fontSize: '12px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <UserCheck size={12} />
+                                <span style={{ fontWeight: 600 }}>{user.role?.replace('_', ' ')}</span>
+                            </div>
+                            <div style={{ color: 'var(--text3)', fontSize: '11px' }}>
+                                {user.permissions.length} permissions
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Navigation Items */}
                     {nav.map(n => (
                         <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
                             {n.icon} {n.label}
                         </NavLink>
                     ))}
+                    
                     <div className="nav-bottom">
                         <button
                             className="nav-item"
@@ -91,6 +195,7 @@ function PrivateLayout() {
                                 <Route path="schools/:schoolId" element={<SchoolDetail />} />
                                 <Route path="schools/:schoolId/sessions" element={<SessionsPage />} />
                                 <Route path="setup" element={<SetupPage />} />
+                                <Route path="setup-templates" element={<SetupTemplatesPage />} />
                                 <Route path="support" element={<SupportPage />} />
                                 <Route path="billing" element={<BillingPage />} />
                                 <Route path="promos" element={<PromoPage />} />
@@ -127,12 +232,14 @@ function RequireAuth({ children }) {
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/update-credentials" element={<UpdateCredentials />} />
-                <Route path="/*" element={<RequireAuth><PrivateLayout /></RequireAuth>} />
-            </Routes>
-        </BrowserRouter>
+        <RBACProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/update-credentials" element={<UpdateCredentials />} />
+                    <Route path="/*" element={<RequireAuth><PrivateLayout /></RequireAuth>} />
+                </Routes>
+            </BrowserRouter>
+        </RBACProvider>
     )
 }

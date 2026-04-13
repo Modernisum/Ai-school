@@ -1,0 +1,391 @@
+{
+  "version": "1",
+  "name": "Responsibility Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. List Responsibilities (GET /api/responsibility/:schoolId)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2. List Responsibilities Paginated (GET /api/responsibility/:schoolId?paginated=true)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}?paginated=true&page=1&limit=10",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. Create Responsibility (POST /api/responsibility/:schoolId)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Class Monitor\",\n  \"description\": \"Responsible for maintaining classroom discipline\",\n  \"employeeType\": \"teacher\",\n  \"priority\": \"medium\",\n  \"estimatedHoursPerWeek\": 5,\n  \"compensation\": 0,\n  \"startDate\": \"2026-01-01\",\n  \"endDate\": \"2026-12-31\",\n  \"isActive\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "4. Get Responsibility Definition (GET /api/responsibility/:schoolId/:responsibilityId)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibility-001",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "5. Update Responsibility (PATCH /api/responsibility/:schoolId/:responsibilityId)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibility-001",
+        "method": "PATCH",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Class Monitor - Updated\",\n  \"description\": \"Updated responsibility description\",\n  \"priority\": \"high\",\n  \"estimatedHoursPerWeek\": 8\n}"
+        }
+      }
+    },
+    {
+      "name": "6. Delete Responsibility (DELETE /api/responsibility/:schoolId/:responsibilityId)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibility-001",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "7. Get Responsibility Analytics (GET /api/responsibility/:schoolId/:responsibilityId/analytics)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibility-001/analytics",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "8. Get Overview Analytics (GET /api/responsibility/:schoolId/overview/analytics)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/overview/analytics",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "9. List Employee Responsibilities (GET /api/responsibility/:schoolId/employees/:employeeId/responsibilities)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/employees/employee-001/responsibilities",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "10. List Space Responsibilities (GET /api/responsibility/:schoolId/spaces/:spaceId/responsibilities)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/spaces/space-001/responsibilities",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "11. Search Responsibilities (GET /api/responsibility/:schoolId/responsibilities/search?q=monitor)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibilities/search?q=monitor&page=1&limit=10",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "12. Bulk Assign Responsibility (POST /api/responsibility/:schoolId/responsibilities/:responsibilityId/bulk-assign)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibilities/responsibility-001/bulk-assign",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"employeeIds\": [\"employee-001\", \"employee-002\", \"employee-003\"],\n  \"assignmentDate\": \"2026-01-15\",\n  \"notes\": \"Bulk assignment for new semester\"\n}"
+        }
+      }
+    },
+    {
+      "name": "13. Get Responsibility History (GET /api/responsibility/:schoolId/responsibilities/:responsibilityId/history)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibilities/responsibility-001/history",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "14. Get Responsibility Versions (GET /api/responsibility/:schoolId/responsibilities/:responsibilityId/versions)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibilities/responsibility-001/versions",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "15. Rollback Responsibility (POST /api/responsibility/:schoolId/responsibilities/:responsibilityId/rollback/:version)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/responsibilities/responsibility-001/rollback/2",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "16. Get Utilization Metrics (GET /api/responsibility/:schoolId/metrics/utilization?startDate=2026-01-01&endDate=2026-01-31)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/metrics/utilization?startDate=2026-01-01&endDate=2026-01-31",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "17. Get Workload Metrics (GET /api/responsibility/:schoolId/metrics/workload?startDate=2026-01-01&endDate=2026-01-31)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/metrics/workload?startDate=2026-01-01&endDate=2026-01-31",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "18. Generate Utilization Report (GET /api/responsibility/:schoolId/reports/utilization/:startDate/:endDate)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/reports/utilization/2026-01-01/2026-01-31",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "19. Generate Workload Report (GET /api/responsibility/:schoolId/reports/workload/:startDate/:endDate)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/reports/workload/2026-01-01/2026-01-31",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20. Export Responsibilities CSV (GET /api/responsibility/:schoolId/export/csv)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/responsibility/{{schoolId}}/export/csv",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

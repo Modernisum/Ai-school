@@ -230,6 +230,28 @@ impl ResponsibilityCrud {
         Ok(responsibilities)
     }
 
+    pub async fn list_student_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value> {
+        let result = self.repos.responsibility.get_student_responsibilities_paginated(school_id, student_id, page, limit).await?;
+        Ok(result)
+    }
+
+    pub async fn get_employee_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value> {
+        let result = self.repos.responsibility.get_employee_responsibilities_paginated(school_id, employee_id, page, limit).await?;
+        Ok(result)
+    }
+
     pub async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, admin_id: &str, data: Value) -> AppResult<()> {
         // 1. Fetch Old Data for Audit/Recovery
         let old_data = self.repos.responsibility.get_responsibility(school_id, responsibility_id).await?

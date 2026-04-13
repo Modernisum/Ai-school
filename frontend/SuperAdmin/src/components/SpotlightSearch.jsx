@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, User, GraduationCap, School, Command, X, Loader2 } from 'lucide-react';
+import { API_BASE } from '../config.js';
 
 export default function SpotlightSearch() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,8 +52,7 @@ export default function SpotlightSearch() {
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
       try {
-        const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-        const url = `http://${HOST}:8080/api/search/global?q=${query}`;
+        const url = `${API_BASE}/api/search/global?q=${query}`;
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('sa_token')}`

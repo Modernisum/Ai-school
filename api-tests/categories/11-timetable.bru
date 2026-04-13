@@ -1,0 +1,113 @@
+{
+  "version": "1",
+  "name": "Timetable Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Generate Timetable",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/timetable/generate",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"class_id\": \"{{classId}}\",\n  \"class_name\": \"Class 10-A\",\n  \"periods_per_day\": 8,\n  \"working_days\": [1, 2, 3, 4, 5],\n  \"requirements\": [\n    {\n      \"subject_id\": \"{{mathSubjectId}}\",\n      \"subject_name\": \"Mathematics\",\n      \"periods_per_week\": 6,\n      \"teacher_id\": \"{{teacherId}}\"\n    },\n    {\n      \"subject_id\": \"{{scienceSubjectId}}\",\n      \"subject_name\": \"Science\",\n      \"periods_per_week\": 5,\n      \"teacher_id\": \"{{teacherId}}\"\n    },\n    {\n      \"subject_id\": \"{{englishSubjectId}}\",\n      \"subject_name\": \"English\",\n      \"periods_per_week\": 5,\n      \"teacher_id\": \"{{teacherId}}\"\n    }\n  ],\n  \"season\": \"Spring 2025\",\n  \"start_time\": \"08:30\",\n  \"end_time\": \"15:30\",\n  \"period_duration_minutes\": 40,\n  \"break_duration_minutes\": 10\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Get Timetable by Config ID",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/timetable/{{timetableConfigId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. List All Timetables",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/timetable",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4. Approve Timetable",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/timetable/{{timetableConfigId}}/approve",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "5. Delete Timetable",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/timetable/{{timetableConfigId}}",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

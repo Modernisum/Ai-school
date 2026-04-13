@@ -1,0 +1,204 @@
+{
+  "version": "1",
+  "name": "Static File Serving",
+  "type": "collection",
+  "items": [
+    {
+      "name": "Upload File",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/storage/upload",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "multipart/form-data"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "test-file.txt"
+            },
+            {
+              "key": "description",
+              "value": "Test document for upload",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "documents",
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "files": [
+            {
+              "success": true,
+              "file_id": "{{$random.uuid}}",
+              "url": "https://storage.example.com/files/abc123def456.txt",
+              "file_name": "test-file.txt",
+              "size": 1024,
+              "content_type": "text/plain",
+              "hash": "abc123def4567890"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Files",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/storage/files",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "query": {
+          "school_id": "{{schoolId}}",
+          "user_id": "{{adminId}}"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "files": [
+            {
+              "id": "FILE001",
+              "file_name": "test-file.txt",
+              "original_name": "test-file.txt",
+              "size": 1024,
+              "content_type": "text/plain",
+              "hash": "abc123def4567890",
+              "school_id": "{{schoolId}}",
+              "user_id": "{{adminId}}",
+              "uploaded_at": "2024-03-15T10:30:00Z",
+              "public_url": "https://storage.example.com/files/abc123def456.txt",
+              "category": "documents",
+              "description": "Test document for upload"
+            },
+            {
+              "id": "FILE002",
+              "file_name": "school-logo.png",
+              "original_name": "logo.png",
+              "size": 20480,
+              "content_type": "image/png",
+              "hash": "def456abc1237890",
+              "school_id": "{{schoolId}}",
+              "user_id": "{{adminId}}",
+              "uploaded_at": "2024-03-14T14:20:00Z",
+              "public_url": "https://storage.example.com/images/def456abc123.png",
+              "category": "images",
+              "description": "School logo"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get File by Hash",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/storage/files/:hash",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "file": {
+            "id": "FILE001",
+            "file_name": "test-file.txt",
+            "original_name": "test-file.txt",
+            "size": 1024,
+            "content_type": "text/plain",
+            "hash": "abc123def4567890",
+            "school_id": "{{schoolId}}",
+            "user_id": "{{adminId}}",
+            "uploaded_at": "2024-03-15T10:30:00Z",
+            "public_url": "https://storage.example.com/files/abc123def456.txt",
+            "category": "documents",
+            "description": "Test document for upload",
+            "metadata": {
+              "checksum": "abc123def4567890",
+              "storage_path": "/files/abc123def456.txt",
+              "is_public": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Delete File",
+      "type": "http",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/storage/files/:fileId",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "File deleted successfully"
+        }
+      }
+    }
+  ]
+}

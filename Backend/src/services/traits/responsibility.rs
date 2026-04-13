@@ -37,11 +37,25 @@ pub trait ResponsibilityService: Send + Sync {
         school_id: &str,
         student_id: &str,
     ) -> AppResult<Vec<Value>>;
+    async fn list_student_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value>;
     async fn get_employee_responsibilities(
         &self,
         school_id: &str,
         employee_id: &str,
     ) -> AppResult<Vec<Value>>;
+    async fn get_employee_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value>;
     async fn update_responsibility(
         &self,
         school_id: &str,

@@ -1,7 +1,10 @@
 use crate::logic::analytics_engine::AnalyticsEngine;
+use crate::logic::encryption_service::{create_encryption_service, EncryptionService};
+use crate::logic::email_service::EmailService;
 use crate::AppState;
-use chrono::{Duration as ChronoDuration, Utc};
+use chrono::{Datelike, Duration as ChronoDuration, Timelike, Utc};
 use serde_json::json;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -126,6 +129,197 @@ pub async fn start_background_workers(state: AppState) {
             }
         }
     });
+
+    // Background loop for Encryption Key Rotation (every 30 days)
+    tokio::spawn(async move {
+        loop {
+            // Wait 30 days (30 * 24 * 60 * 60 seconds)
+            sleep(Duration::from_secs(30 * 24 * 60 * 60)).await;
+            
+            println!("[Encryption Key Rotation] Starting key rotation...");
+            
+            match create_encryption_service().await {
+                Ok(encryption_service) => {
+                    match encryption_service.rotate_keys().await {
+                        Ok(new_keys) => {
+                            println!("[Encryption Key Rotation] Key rotation completed successfully. New keys: {:?}", new_keys);
+                        }
+                        Err(e) => {
+                            eprintln!("[Encryption Key Rotation] Error rotating keys: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[Encryption Key Rotation] Failed to create encryption service: {}", e);
+                }
+            }
+        }
+    });
+
+    // Background loop for Attendance Automation (daily at 10 AM and 6 PM)
+    let state_clone = state.clone();
+    tokio::spawn(async move {
+        loop {
+            let now = Utc::now();
+            let today = now.format("%Y-%m-%d").to_string();
+            
+            // Schedule next run at 10 AM
+            let mut next_run = now.date_naive().and_hms_opt(10, 0, 0).unwrap().and_utc();
+            if now >= next_run {
+                // If already past 10 AM, schedule for 6 PM
+                next_run = now.date_naive().and_hms_opt(18, 0, 0).unwrap().and_utc();
+                if now >= next_run {
+                    // If already past 6 PM, schedule for 10 AM tomorrow
+                    next_run = (now.date_naive() + ChronoDuration::days(1)).and_hms_opt(10, 0, 0).unwrap().and_utc();
+                }
+            }
+            
+            let wait_duration = (next_run - now).to_std().unwrap_or(Duration::from_secs(24 * 60 * 60));
+            
+            println!("[Attendance Automation] Next run scheduled for: {}", next_run);
+            sleep(wait_duration).await;
+            
+            println!("[Attendance Automation] Starting daily attendance automation...");
+            
+            // Get all active schools
+            match sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
+                .fetch_all(&state_clone.db.pool)
+                .await
+            {
+                Ok(schools) => {
+                    for school in schools {
+                        let school_id = school.school_id;
+                        
+                        // 1. Auto-mark absent after cutoff time (10 AM)
+                        if now.hour() >= 10 {
+                            println!("[Attendance Automation] Auto-marking absent for school: {}", school_id);
+                            match state_clone.services.attendance.auto_mark_absent_after_cutoff(&school_id, "10:00", &today).await {
+                                Ok(result) => {
+                                    let marked_count = result["marked_count"].as_i64().unwrap_or(0);
+                                    if marked_count > 0 {
+                                        println!("[Attendance Automation] Auto-marked {} users as absent for school {}", marked_count, school_id);
+                                        
+                                        // Send push notification to the school admin/topic
+                                        let _ = state_clone.services.fcm.send_to_topic(
+                                            &format!("{}_admins", school_id),
+                                            "Attendance Cutoff Reached",
+                                            &format!("{} users have been auto-marked as absent for today.", marked_count),
+                                            None
+                                        ).await;
+                                    }
+                                }
+                                Err(e) => eprintln!("[Attendance Automation] Error auto-marking absent for school {}: {}", school_id, e),
+                            }
+                        }
+                        
+                        // 2. Generate daily report at 6 PM AND send email
+                        if now.hour() >= 18 {
+                            println!("[Attendance Automation] Generating daily report for school: {}", school_id);
+                            match state_clone.services.attendance.generate_daily_attendance_report(&school_id, &today).await {
+                                Ok(report) => {
+                                    let summary = &report["summary"];
+                                    let attendance_percentage = summary["attendance_percentage"].as_f64().unwrap_or(0.0);
+                                    let present = summary["present_count"].as_i64().unwrap_or(0);
+                                    let absent = summary["absent_count"].as_i64().unwrap_or(0);
+                                    let total = summary["total_users"].as_i64().unwrap_or(0);
+                                    println!("[Attendance Automation] Daily report for school {}: {:.1}% attendance", school_id, attendance_percentage);
+
+                                    // Send email notification
+                                    let email_svc = EmailService::new();
+                                    if email_svc.is_enabled() {
+                                        // Try to get school admin email
+                                        if let Ok(Some(school_row)) = sqlx::query("SELECT admin_email FROM schools WHERE school_id = $1")
+                                            .bind(&school_id)
+                                            .fetch_optional(&state_clone.db.pool)
+                                            .await
+                                        {
+                                            let admin_email: Option<String> = sqlx::Row::try_get(&school_row, "admin_email").unwrap_or(None);
+                                            if let Some(email) = admin_email {
+                                                let subject = format!("Daily Attendance Report - {} - {}", school_id, today);
+                                                let body = format!(
+                                                    "Daily Attendance Summary\n\nDate: {}\nTotal: {}\nPresent: {} ({:.1}%)\nAbsent: {}\n\nThis is an automated report.",
+                                                    today, total, present, attendance_percentage, absent
+                                                );
+                                                let _ = email_svc.send_email(&email, &subject, &body).await;
+
+                                                // Send push notification to admin topic
+                                                let _ = state_clone.services.fcm.send_to_topic(
+                                                    &format!("{}_admins", school_id),
+                                                    "Daily Attendance Summary",
+                                                    &format!("Overall Attendance: {:.1}%. Present: {}, Absent: {}.", attendance_percentage, present, absent),
+                                                    Some(json!({"type": "daily_report", "date": today}))
+                                                ).await;
+                                            }
+                                        }
+                                    }
+                                }
+                                Err(e) => eprintln!("[Attendance Automation] Error generating daily report for school {}: {}", school_id, e),
+                            }
+                        }
+                    }
+                }
+                Err(e) => eprintln!("[Attendance Automation] Failed to fetch schools: {}", e),
+            }
+            
+            println!("[Attendance Automation] Daily automation completed.");
+        }
+    });
+
+    // Background loop for SMS/Email Notifications (every hour)
+    let state_clone = state.clone();
+    tokio::spawn(async move {
+        loop {
+            // Wait 1 hour
+            sleep(Duration::from_secs(60 * 60)).await;
+            
+            println!("[Notification Service] Checking for pending notifications...");
+            
+            // Check for unmarked attendance and send reminders
+            match sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
+                .fetch_all(&state_clone.db.pool)
+                .await
+            {
+                Ok(schools) => {
+                    for school in schools {
+                        let school_id = school.school_id;
+                        let today = Utc::now().format("%Y-%m-%d").to_string();
+                        
+                        // Get unmarked attendance count
+                        match state_clone.services.attendance.get_unmarked_attendance_count(&school_id, &today, None).await {
+                            Ok(result) => {
+                                let unmarked_count = result["unmarked_count"].as_i64().unwrap_or(0);
+                                if unmarked_count > 0 {
+                                    println!("[Notification Service] School {} has {} unmarked attendance records", school_id, unmarked_count);
+                                    // Send notification email to admin
+                                    let email_svc = EmailService::new();
+                                    if email_svc.is_enabled() {
+                                        if let Ok(Some(school_row)) = sqlx::query("SELECT admin_email FROM schools WHERE school_id = $1")
+                                            .bind(&school_id)
+                                            .fetch_optional(&state_clone.db.pool)
+                                            .await
+                                        {
+                                            let admin_email: Option<String> = sqlx::Row::try_get(&school_row, "admin_email").unwrap_or(None);
+                                            if let Some(email) = admin_email {
+                                                let subject = format!("⚠ {} students/employees not marked today - {}", unmarked_count, school_id);
+                                                let body = format!(
+                                                    "Attendance Alert\n\nSchool: {}\nDate: {}\nUnmarked: {} people have not had attendance recorded today.\n\nPlease ensure attendance is marked before end of day.",
+                                                    school_id, today, unmarked_count
+                                                );
+                                                let _ = email_svc.send_email(&email, &subject, &body).await;
+                                                println!("[Notification Service] Sent unmarked attendance alert for school {}", school_id);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => eprintln!("[Notification Service] Error checking unmarked attendance for school {}: {}", school_id, e),
+                        }
+                    }
+                }
+                Err(e) => eprintln!("[Notification Service] Failed to fetch schools: {}", e),
+            }
+        }
+    });
 }
 
 /// Generate scheduled responsibility reports for all active schools
@@ -186,15 +380,15 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
         }
         
         // Store report generation log
-        let _ = sqlx::query!(
+        let _ = sqlx::query(
             "INSERT INTO scheduled_reports (school_id, report_type, period_start, period_end, generated_at)
-             VALUES ($1, $2, $3, $4, $5)",
-            school_id,
-            "weekly_summary",
-            start_date,
-            end_date,
-            now
+             VALUES ($1, $2, $3, $4, $5)"
         )
+        .bind(&school_id)
+        .bind("weekly_summary")
+        .bind(&start_date)
+        .bind(&end_date)
+        .bind(now)
         .execute(&state.db.pool)
         .await;
     }

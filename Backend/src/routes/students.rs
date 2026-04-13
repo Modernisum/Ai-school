@@ -176,6 +176,16 @@ pub struct StudentListQuery {
     pub section: Option<String>,
 }
 
+#[derive(serde::Deserialize)]
+pub struct StudentPaginatedQuery {
+    pub page: Option<i32>,
+    pub limit: Option<i32>,
+    pub class_name: Option<String>,
+    pub section: Option<String>,
+    pub status: Option<String>,
+    pub search: Option<String>,
+}
+
 pub async fn list_students_by_class(
     State(state): State<AppState>,
     Path((school_id, class_name)): Path<(String, String)>,
@@ -251,6 +261,44 @@ pub async fn list_student_ids(
 ) -> AppResult<impl IntoResponse> {
     let ids = state.services.student.list_student_ids(&school_id).await?;
     Ok(Json(json!({"success": true, "studentIds": ids})))
+}
+
+pub async fn list_students_paginated(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+    Query(q): Query<StudentPaginatedQuery>,
+) -> AppResult<impl IntoResponse> {
+    let page = q.page.unwrap_or(1).max(1);
+    let limit = q.limit.unwrap_or(20).max(1).min(100);
+    
+    let class_name = q.class_name.as_deref();
+    let section = q.section.as_deref();
+    let status = q.status.as_deref();
+    let search = q.search.as_deref();
+    
+    tracing::debug!(
+        "Fetching paginated students for school_id: {}, page: {}, limit: {}, class: {:?}, section: {:?}, status: {:?}, search: {:?}",
+        school_id, page, limit, class_name, section, status, search
+    );
+    
+    let (students, total_count) = state.services.student
+        .list_students_paginated(&school_id, page, limit, class_name, section, status, search)
+        .await?;
+    
+    let total_pages = ((total_count as f64) / (limit as f64)).ceil() as i64;
+    
+    Ok(Json(json!({
+        "success": true,
+        "data": students,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total_count,
+            "totalPages": total_pages,
+            "hasNext": page < total_pages as i32,
+            "hasPrev": page > 1
+        }
+    })))
 }
 
 // POST /api/students/:schoolId/bulk

@@ -223,9 +223,37 @@ impl ResponsibilityService for PostgresResponsibilityService {
         Ok(responsibilities)
     }
 
+    async fn list_student_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        _page: i32,
+        _limit: i32,
+    ) -> AppResult<Value> {
+        let list = self.list_student_responsibilities(school_id, student_id).await?;
+        Ok(serde_json::json!({
+            "items": list,
+            "total": list.len()
+        }))
+    }
+
     async fn get_employee_responsibilities(&self, school_id: &str, employee_id: &str) -> AppResult<Vec<Value>> {
         let responsibilities = self.repos.responsibility.get_employee_responsibilities(school_id, employee_id).await?;
         Ok(responsibilities)
+    }
+
+    async fn get_employee_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        _page: i32,
+        _limit: i32,
+    ) -> AppResult<Value> {
+        let list = self.get_employee_responsibilities(school_id, employee_id).await?;
+        Ok(serde_json::json!({
+            "items": list,
+            "total": list.len()
+        }))
     }
 
     async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, admin_id: &str, data: Value) -> AppResult<()> {

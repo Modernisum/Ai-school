@@ -1,0 +1,165 @@
+{
+  "version": "1",
+  "name": "Notification Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Get School Notification",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/notification",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2. Clear School Notification",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/notification",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. Get Global Notification",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/global/notification",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4. Get Leave Notifications",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/notifications",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "5. Mark Notification as Read",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/notifications/{{notificationId}}/read",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "6. Send School Notification (Super Admin)",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/admin/schools/{{schoolId}}/notify",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"System Maintenance\",\n  \"message\": \"The system will undergo maintenance from 2 AM to 4 AM tonight.\",\n  \"type\": \"info\",\n  \"priority\": \"medium\",\n  \"expires_at\": \"2024-12-31T23:59:59Z\"\n}"
+        }
+      }
+    },
+    {
+      "name": "7. Clear School Notification (Super Admin)",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/admin/schools/{{schoolId}}/notify",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "8. Send Global Notification (Super Admin)",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/admin/notify/global",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"New Feature Released\",\n  \"message\": \"We have released a new attendance tracking feature. Check it out!\",\n  \"type\": \"success\",\n  \"priority\": \"high\",\n  \"expires_at\": \"2024-12-31T23:59:59Z\"\n}"
+        }
+      }
+    },
+    {
+      "name": "9. Clear Global Notification (Super Admin)",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/admin/notify/global",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer {{superAdminToken}}"
+          }
+        ]
+      }
+    }
+  ]
+}

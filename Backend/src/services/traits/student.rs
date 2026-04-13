@@ -17,6 +17,16 @@ pub trait StudentService: Send + Sync {
         data: Vec<Value>,
     ) -> AppResult<Value>;
     async fn list_students(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn list_students_paginated(
+        &self,
+        school_id: &str,
+        page: i32,
+        limit: i32,
+        class_name: Option<&str>,
+        section: Option<&str>,
+        status: Option<&str>,
+        search: Option<&str>,
+    ) -> AppResult<(Vec<Value>, i64)>;
     async fn list_students_by_class(
         &self,
         school_id: &str,

@@ -78,8 +78,28 @@ impl ResponsibilityService for PostgresResponsibilityService {
         self.crud.list_student_responsibilities(school_id, student_id).await
     }
 
+    async fn list_student_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value> {
+        self.crud.list_student_responsibilities_paginated(school_id, student_id, page, limit).await
+    }
+
     async fn get_employee_responsibilities(&self, school_id: &str, employee_id: &str) -> AppResult<Vec<Value>> {
         self.crud.get_employee_responsibilities(school_id, employee_id).await
+    }
+
+    async fn get_employee_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> AppResult<Value> {
+        self.crud.get_employee_responsibilities_paginated(school_id, employee_id, page, limit).await
     }
 
     async fn update_responsibility(&self, school_id: &str, responsibility_id: &str, admin_id: &str, data: Value) -> AppResult<()> {
@@ -222,5 +242,45 @@ impl ResponsibilityService for PostgresResponsibilityService {
         end_date: &str,
     ) -> AppResult<Value> {
         self.metrics.generate_revenue_report(school_id, start_date, end_date).await
+    }
+
+    async fn generate_utilization_report_pdf(
+        &self,
+        school_id: &str,
+        start_date: &str,
+        end_date: &str,
+    ) -> AppResult<Vec<u8>> {
+        // TODO: Implement PDF generation
+        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+    }
+
+    async fn generate_workload_report_pdf(
+        &self,
+        school_id: &str,
+        start_date: &str,
+        end_date: &str,
+    ) -> AppResult<Vec<u8>> {
+        // TODO: Implement PDF generation
+        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+    }
+
+    async fn generate_space_distribution_report_pdf(
+        &self,
+        school_id: &str,
+        start_date: &str,
+        end_date: &str,
+    ) -> AppResult<Vec<u8>> {
+        // TODO: Implement PDF generation
+        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+    }
+
+    async fn generate_revenue_report_pdf(
+        &self,
+        school_id: &str,
+        start_date: &str,
+        end_date: &str,
+    ) -> AppResult<Vec<u8>> {
+        // TODO: Implement PDF generation
+        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
     }
 }

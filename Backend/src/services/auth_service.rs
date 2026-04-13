@@ -35,9 +35,9 @@ impl AuthService for PostgresAuthService {
                     .await?;
 
                 if let Some(row) = school_row {
-                    let wallet_balance: bigdecimal::BigDecimal =
+                    let wallet_balance: sqlx::types::BigDecimal =
                         sqlx::Row::get(&row, "wallet_balance");
-                    let per_student_rate: bigdecimal::BigDecimal =
+                    let per_student_rate: sqlx::types::BigDecimal =
                         sqlx::Row::get(&row, "per_student_rate");
                     let billing_status: String = sqlx::Row::get(&row, "billing_status");
 
@@ -47,7 +47,8 @@ impl AuthService for PostgresAuthService {
                         .await?;
                     let active_students: i64 = sqlx::Row::get(&count_row, "count");
 
-                    use bigdecimal::{BigDecimal, FromPrimitive};
+                    use sqlx::types::BigDecimal;
+                    use bigdecimal::FromPrimitive;
                     use std::str::FromStr;
 
                     let students_bd = BigDecimal::from_i64(active_students)

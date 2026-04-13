@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, UserCheck, GraduationCap, DollarSign,
   TrendingUp, Calendar, Bell, Activity, Clock,
-  BookOpen, School, Award, ChevronRight, ChevronLeft,
-  AlertTriangle, CheckSquare, Layers, Map, MoreVertical, Search, Zap,
-  Briefcase, Truck
+  BookOpen, School, Award, ChevronRight, AlertTriangle, 
+  CheckSquare, Layers, Map, Search, Zap,
+  Briefcase, Truck, Database, Cpu, HardDrive, ShieldCheck
 } from "lucide-react";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, 
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  LineChart, Line, AreaChart, Area, Legend
+  AreaChart, Area, Legend
 } from 'recharts';
 import { useWebSockets } from "../../../hooks/useWebSockets";
 import SkeletonLoader from "../../../components/ui/SkeletonLoader";
@@ -27,11 +27,69 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.locat
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
 };
 
 const stagger = {
-  visible: { transition: { staggerChildren: 0.08 } }
+  visible: { transition: { staggerChildren: 0.1 } }
+};
+
+// Premium Glass Card Component
+const GlassCard = ({ children, className = "", glowColor = "primary" }) => {
+  const glowStyles = {
+    primary: "hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] focus-within:shadow-[0_0_30px_rgba(99,102,241,0.2)]",
+    success: "hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+    accent: "hover:shadow-[0_0_20px_rgba(244,63,94,0.15)]",
+    warning: "hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]",
+  };
+
+  return (
+    <div className={`
+      relative overflow-hidden
+      bg-white/[0.03] backdrop-blur-xl
+      border border-white/10
+      rounded-3xl transition-all duration-500
+      ${glowStyles[glowColor] || ""}
+      ${className}
+    `}>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none" />
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+};
+
+// Premium KPi Tile
+const KPITile = ({ label, value, sub, icon: Icon, color = "primary", trend = null }) => {
+  const colorMap = {
+    primary: "from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30",
+    success: "from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30",
+    accent: "from-rose-500/20 to-pink-500/20 text-rose-400 border-rose-500/30",
+    warning: "from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30",
+    purple: "from-purple-500/20 to-fuchsia-500/20 text-purple-400 border-purple-500/30",
+  };
+
+  return (
+    <GlassCard className="p-5 group hover:-translate-y-1" glowColor={color}>
+      <div className="flex justify-between items-start">
+        <div className={`p-3 rounded-2xl bg-gradient-to-br ${colorMap[color]} border shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+          <Icon size={22} strokeWidth={2.5} />
+        </div>
+        {trend && (
+          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-white/5 border border-white/10 ${trend > 0 ? 'text-success' : 'text-rose-400'}`}>
+            {trend > 0 ? <TrendingUp size={10} /> : <Activity size={10} />}
+            {Math.abs(trend)}%
+          </div>
+        )}
+      </div>
+      <div className="mt-4">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
+        <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{value}</h3>
+        <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">
+          <Activity size={10} className="text-slate-600" /> {sub}
+        </p>
+      </div>
+    </GlassCard>
+  );
 };
 
 export default function HomePage() {
@@ -39,262 +97,89 @@ export default function HomePage() {
   const navigate = useNavigate();
   const reduxSchoolId = useSelector(selectSchoolId);
   const schoolProfile = useSelector(selectSchoolProfile);
-  const themeColors = useSelector(selectTheme);
   const isOnline = useSelector(selectIsOnline);
-  const schoolName = schoolProfile?.name || "Vidhyam";
   const schoolId = reduxSchoolId || "";
   
   const { messages: liveMessages } = useWebSockets(schoolId);
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [statsLoading, setStatsLoading] = useState(true);
+  const [proxyLoading, setProxyLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(true);
-  const [remindersLoading, setRemindersLoading] = useState(true);
-  const [holidaysLoading, setHolidaysLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isReorganizing, setIsReorganizing] = useState(false);
+  
+  const [stats, setStats] = useState({
+    total_students: 0,
+    total_employees: 0,
+    total_classes: 0,
+    total_subjects: 0,
+    attendance_percentage: 0,
+    pending_leaves: 0,
+    pending_complaints: 0,
+    upcoming_events: 0,
+    revenue_today: 0,
+    revenue_month: 0,
+    active_sessions: 0,
+    storage_used_mb: 0,
+    ai_queries_today: 0
+  });
+
+  const [proxySuggestions, setProxySuggestions] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [selectedEmp, setSelectedEmp] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const [data, setData] = useState({
-    counts: { 
-      totalStudents: 0, 
-      totalEmployees: 0, 
-      totalClasses: 0, 
-      openComplaints: 0, 
-      activeTasks: 0, 
-      highRiskStudents: 0,
-      students: { regular: 0, private: 0 },
-      staff: { teachers: 0, peons: 0, drivers: 0, principal: 0 }
-    },
-    attendance: { 
-      presentToday: 0, 
-      percentage: 0,
-      byRole: {
-        regular: 0, private: 0,
-        teachers: 0, peons: 0, drivers: 0, principal: 0
-      },
-      dailyTrend: [
-        { date: '2026-04-01', students: 85, staff: 90 },
-        { date: '2026-04-02', students: 88, staff: 92 },
-        { date: '2026-04-03', students: 82, staff: 85 },
-        { date: '2026-04-04', students: 90, staff: 95 },
-        { date: '2026-04-05', students: 92, staff: 94 },
-        { date: '2026-04-06', students: 87, staff: 89 },
-        { date: '2026-04-07', students: 95, staff: 98 },
-      ]
-    },
-    revenue: { 
-      total: 0, 
-      paid: 0, 
-      pending: 0, 
-      discount: 0,
-      breakdown: {
-        income: { tuition: 0, exam: 0, other: 0 },
-        expense: { salary: 0, infra: 0, operations: 0 }
-      }
-    }
-  });
-  const [tasks, setTasks] = useState([]);
-  const [reminders, setReminders] = useState([]);
-  const [holidays, setHolidays] = useState([]);
-  const [calYear, setCalYear] = useState(new Date().getFullYear());
-  const [calMonth, setCalMonth] = useState(new Date().getMonth());
-
-  // Calculate calendar days for the current view
-  const calDays = useMemo(() => {
-    const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const days = [];
-    const today = new Date();
-    
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(calYear, calMonth, d);
-      days.push({
-        d,
-        isToday: today.toDateString() === date.toDateString(),
-        isSun: date.getDay() === 0,
-        isHoliday: holidays.some(h => new Date(h.date).toDateString() === date.toDateString()),
-        dateStr: date.toISOString().split('T')[0]
-      });
-    }
-    return days;
-  }, [calYear, calMonth, holidays]);
-
-  const feeData = [
-    { name: 'Paid Fees', value: Number(data.revenue.paid), color: '#10b981', path: '/dashboard/billing/income/fees' }, // Emerald/Green
-    { name: 'Pending Fees', value: Number(data.revenue.pending), color: '#ef4444', path: '/dashboard/billing/income/fees' }, // Rose/Red
-    { name: 'Discount Fees', value: Number(data.revenue.discount), color: '#3b82f6', path: '/dashboard/billing/income/fees' }, // Blue
+  // Fallback charts data
+  const attendanceTrend = [
+    { name: 'Mon', active: 92, target: 95 },
+    { name: 'Tue', active: 88, target: 95 },
+    { name: 'Wed', active: 94, target: 95 },
+    { name: 'Thu', active: 91, target: 95 },
+    { name: 'Fri', active: 95, target: 95 },
+    { name: 'Sat', active: 85, target: 95 },
   ];
-
-  const handleFeePieClick = (entry) => {
-    if (entry && entry.path) navigate(entry.path);
-  };
-
-  const financialTrendData = [
-    {
-      name: 'Income',
-      tuition: data.revenue?.breakdown?.income?.tuition || 50000,
-      exam: data.revenue?.breakdown?.income?.exam || 15000,
-      other: data.revenue?.breakdown?.income?.other || 10000,
-    },
-    {
-      name: 'Expense',
-      salary: data.revenue?.breakdown?.expense?.salary || 35000,
-      infra: data.revenue?.breakdown?.expense?.infra || 12000,
-      operations: data.revenue?.breakdown?.expense?.operations || 8000,
-    }
-  ];
-
-  const UserRoleColumn = ({ label, total, present, color, icon: Icon }) => {
-    const absent = Math.max(0, total - present);
-    const presentPct = total > 0 ? (present / total) * 100 : 0;
-    
-    return (
-      <div className="flex flex-col items-center gap-2 group/col">
-        <div className="relative w-full h-32 bg-white/[0.02] border border-white/5 rounded-lg overflow-hidden flex flex-col justify-end">
-          {/* Absent Block (Gray) */}
-          <motion.div 
-            initial={{ height: '100%' }}
-            animate={{ height: `${100 - presentPct}%` }}
-            className="w-full bg-slate-800/50 relative z-0"
-          />
-          {/* Present Block (Color) */}
-          <motion.div 
-            initial={{ height: 0 }}
-            animate={{ height: `${presentPct}%` }}
-            style={{ backgroundColor: color }}
-            className="w-full relative z-10 shadow-[0_-4px_15px_rgba(0,0,0,0.2)]"
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-          </motion.div>
-
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 opacity-0 group-hover/col:opacity-100 transition-opacity bg-slate-950/80 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-sm">
-             <p className="text-[7px] font-black text-slate-500 uppercase mb-1">{label}</p>
-             <p className="text-[10px] font-black text-white">{present} / {total}</p>
-             <p className="text-[8px] font-bold text-success mt-1">{presentPct.toFixed(0)}% Present</p>
-          </div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-           <div className={`p-1.5 rounded-md bg-white/5 border border-white/10 text-slate-400 group-hover/col:text-white transition-colors`}>
-              <Icon size={10} />
-           </div>
-           <span className="text-[7px] font-black text-slate-500 uppercase tracking-tighter group-hover/col:text-slate-300 transition-colors">{label}</span>
-        </div>
-      </div>
-    );
-  };
-
-  const userCompositionData = [
-    {
-      name: 'Students',
-      regular: data.counts.students?.regular || 0,
-      private: data.counts.students?.private || 0,
-    },
-    {
-      name: 'Employees',
-      teachers: data.counts.staff?.teachers || 0,
-      peons: data.counts.staff?.peons || 0,
-      drivers: data.counts.staff?.drivers || 0,
-      principal: data.counts.staff?.principal || 0,
-    }
-  ];
-
-  const attendanceBlocks = useMemo(() => {
-    const total = data.counts.totalStudents + data.counts.totalEmployees;
-    const present = data.attendance.presentToday;
-    const blocks = [];
-    for (let i = 0; i < total; i++) {
-      blocks.push(i < present ? 'present' : 'absent');
-    }
-    return blocks;
-  }, [data]);
-
-   const netProfit = useMemo(() => {
-    const totalIncome = Object.values(financialTrendData[0]).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0);
-    const totalExpense = Object.values(financialTrendData[1]).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0);
-    return totalIncome - totalExpense;
-  }, [data]);
-
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-    setStatsLoading(true);
-    setTasksLoading(true);
-    setRemindersLoading(true);
-    setHolidaysLoading(true);
-  };
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
-    
-    if (!schoolId) {
-      setStatsLoading(false);
-      setTasksLoading(false);
-      setRemindersLoading(false);
-      setHolidaysLoading(false);
-      return;
-    }
+    if (!schoolId) return;
 
-    const handleError = (err) => {
-      if (err.name === 'TypeError' || err.message?.includes('fetch')) {
-        dispatch(setOnline(false));
-      }
-    };
-
-    // Decoupled independent data fetching for perceived speed
+    // 1. Fetch Stats
     fetch(`${API_BASE_URL}/dashboard/${schoolId}/stats`)
       .then(res => res.json())
       .then(d => { 
-        if (d.data) { 
-          setData(prev => ({
-            ...prev,
-            ...d.data,
-            counts: { ...prev.counts, ...d.data.counts },
-            attendance: { ...prev.attendance, ...d.data.attendance },
-            revenue: { ...prev.revenue, ...d.data.revenue }
-          })); 
-          dispatch(setOnline(true)); 
-        } 
+        if (d.success) {
+          setStats(prev => ({ ...prev, ...d.data }));
+          dispatch(setOnline(true));
+        }
       })
-      .catch(handleError)
+      .catch(() => dispatch(setOnline(false)))
       .finally(() => setStatsLoading(false));
 
+    // 2. Fetch Proxy Suggestions (Mocking current day/period for dashboard)
+    fetch(`${API_BASE_URL}/dashboard/${schoolId}/leaves/proxy-suggestions?date=${new Date().toISOString().split('T')[0]}&period=1`)
+      .then(res => res.json())
+      .then(d => { 
+        if (Array.isArray(d)) setProxySuggestions(d.slice(0, 3)); 
+      })
+      .finally(() => setProxyLoading(false));
+
+    // 3. Fetch Tasks
     fetch(`${API_BASE_URL}/task/${schoolId}`)
       .then(res => res.json())
-      .then(d => { if (Array.isArray(d.data)) setTasks(d.data); })
-      .catch(handleError)
+      .then(d => { if (d.success && Array.isArray(d.data)) setTasks(d.data.slice(0, 5)); })
       .finally(() => setTasksLoading(false));
 
-    fetch(`${API_BASE_URL}/reminder/${schoolId}`)
-      .then(res => res.json())
-      .then(d => { if (Array.isArray(d.data)) setReminders(d.data); })
-      .catch(handleError)
-      .finally(() => setRemindersLoading(false));
-
-    fetch(`${API_BASE_URL}/operations/attendance/${schoolId}/holidays`)
-      .then(res => res.json())
-      .then(d => { if (Array.isArray(d.data)) setHolidays(d.data); })
-      .catch(handleError)
-      .finally(() => setHolidaysLoading(false));
-
+    // 4. Fetch Employees for AI module
     fetch(`${API_BASE_URL}/employees/${schoolId}`)
       .then(res => res.json())
       .then(d => { 
-        if (Array.isArray(d.data) && d.data.length > 0) {
-           setEmployees(d.data); 
-           setSelectedEmp(d.data[0].employee_id || d.data[0].employeeId || 'EMP-001');
-        } 
-      })
-      .catch(console.error);
+        if (d.success && Array.isArray(d.data) && d.data.length > 0) {
+          setEmployees(d.data);
+          if (d.data[0].employee_id) setSelectedEmp(d.data[0].employee_id);
+        }
+      });
 
-    return () => clearInterval(timer);
-  }, [schoolId, retryCount, dispatch]);
+  }, [schoolId, dispatch]);
 
   const handleGenerateTasks = async () => {
-    if (!selectedEmp) return alert("Select an employee first");
+    if (!selectedEmp) return;
     setIsGenerating(true);
     try {
       const res = await fetch(`${API_BASE_URL}/task/ai/${schoolId}/generate`, {
@@ -302,626 +187,352 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ employeeId: selectedEmp })
       });
-      if(res.ok) handleRetry();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsGenerating(false);
-    }
+      if(res.ok) {
+        // Refresh tasks
+        const tRes = await fetch(`${API_BASE_URL}/task/${schoolId}`);
+        const tData = await tRes.json();
+        if (tData.success && Array.isArray(tData.data)) {
+          setTasks(tData.data.slice(0, 5));
+        }
+      }
+    } catch (e) { console.error(e); }
+    finally { setIsGenerating(false); }
   };
-
-  const handleReorganizeTasks = async () => {
-    if (!selectedEmp) return alert("Select an employee first");
-    setIsReorganizing(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/task/ai/${schoolId}/reorganize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId: selectedEmp })
-      });
-      if(res.ok) handleRetry();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsReorganizing(false);
-    }
-  };
-
-  const statCards = [
-    { label: "Today Attendance", value: `${(data.attendance?.percentage || 0).toFixed(1)}%`, sub: `${data.attendance?.presentToday || 0} Present`, icon: UserCheck, color: "success" },
-    { label: "Pending Fees", value: `₹${Number(data.revenue?.pending || 0).toLocaleString()}`, sub: "Payment Overdue", icon: DollarSign, color: "accent" },
-    { label: "Open Complaints", value: data.counts?.openComplaints || 0, sub: "Action Required", icon: AlertTriangle, color: "accent" },
-    { label: "Risk Profiles", value: data.counts?.highRiskStudents || 0, sub: "Low Academic Performance", icon: TrendingUp, color: "primary" },
-  ];
 
   return (
-    <div className="p-2 lg:p-4 space-y-4 max-w-[1600px] mx-auto overflow-x-hidden">
-      {!isOnline && (
-        <NoConnection compact onRetry={handleRetry} />
-      )}
+    <div className="min-h-screen bg-[#020617] text-slate-200 p-4 lg:p-8 selection:bg-indigo-500/30">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Top Bar: Neural Greeting */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="flex items-center gap-3 text-indigo-400 mb-2">
+              <Cpu size={18} className="animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Neural Interface Active</span>
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight">
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">Commander</span>
+            </h1>
+            <p className="text-slate-500 text-sm mt-1 font-medium">System reports {stats.active_sessions} active sessions across the network.</p>
+          </motion.div>
 
-      {/* KPI Row */}
-      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        {/* Attendance Trend Graph (6 cols) */}
-        <motion.div variants={fadeUp} className="xl:col-span-7 glass-card p-4 relative overflow-hidden group border-white/10 transition-all">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <p className="section-label mb-0.5 opacity-70 tracking-widest text-[8px]">Attendance Analytics</p>
-              <h3 className="text-base font-black text-white">Daily Presence Curve</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative group/select">
-                <Calendar size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input 
-                  type="date" 
-                  value={attendanceDate}
-                  onChange={(e) => setAttendanceDate(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded pl-6 pr-2 py-1 text-[9px] text-white outline-none cursor-pointer hover:bg-white/10 transition-colors appearance-none"
-                />
-              </div>
-              <div className="flex items-center gap-2 text-[8px] font-bold">
-                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_rgba(var(--primary-rgb),0.5)]" /> Students</span>
-                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_5px_#10b981]" /> Staff</span>
-              </div>
-            </div>
-          </div>
-          <div className="h-[180px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.attendance?.dailyTrend || []}>
-                <defs>
-                  <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorStaff" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
-                  tickFormatter={(val) => {
-                    const d = new Date(val);
-                    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-                  }}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }}
-                  tickFormatter={(val) => `${val}%`}
-                  domain={[0, 100]}
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', backdropFilter: 'blur(10px)' }}
-                  itemStyle={{ fontSize: '9px', fontWeight: 'bold', padding: '2px 0' }}
-                  labelStyle={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}
-                  formatter={(value, name) => [`${value}% Attendance`, name === 'students' ? 'Students' : 'Staff']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="students" 
-                  stroke="var(--primary-color)" 
-                  fillOpacity={1} 
-                  fill="url(#colorStudents)" 
-                  strokeWidth={3}
-                  animationDuration={1500}
-                  dot={{ r: 2, fill: 'var(--primary-color)', strokeWidth: 0 }}
-                  activeDot={{ r: 4, strokeWidth: 0, shadow: '0 0 10px var(--primary-color)' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="staff" 
-                  stroke="#10b981" 
-                  fillOpacity={1} 
-                  fill="url(#colorStaff)" 
-                  strokeWidth={3}
-                  animationDuration={1500}
-                  dot={{ r: 2, fill: '#10b981', strokeWidth: 0 }}
-                  activeDot={{ r: 4, strokeWidth: 0, shadow: '0 0 10px #10b981' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          
-          {/* Real-time Status Indicator */}
-          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-             <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                   <div className={`w-2 h-2 rounded-full ${data.attendance.percentage > 80 ? 'bg-success' : 'bg-amber-500'} animate-pulse`} />
-                   <span className="text-[9px] font-black text-white uppercase tracking-wider">Live Network Status</span>
-                </div>
-                <div className="flex items-center gap-3">
-                   <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                      <span className="text-[8px] font-bold text-slate-400">Present</span>
-                   </div>
-                   <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                      <span className="text-[8px] font-bold text-slate-400">Absent</span>
-                   </div>
-                </div>
-             </div>
-             <div className="text-right">
-                <p className="text-[7px] font-black text-slate-500 uppercase">Avg. Daily Sync</p>
-                <p className="text-[10px] font-black text-white">
-                  {data.attendance?.dailyTrend?.length > 0 
-                    ? (data.attendance.dailyTrend.reduce((acc, curr) => acc + curr.students, 0) / data.attendance.dailyTrend.length).toFixed(1) 
-                    : "0.0"}%
-                </p>
-             </div>
-          </div>
+          {!isOnline && <NoConnection compact onRetry={() => window.location.reload()} />}
+        </header>
+
+        {/* KPI Grid */}
+        <motion.div 
+          variants={stagger} initial="hidden" animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6"
+        >
+          <KPITile 
+            label="Total Students" value={stats.total_students} sub={`${stats.total_classes} Active Classes`} 
+            icon={GraduationCap} color="primary" trend={2.4} 
+          />
+          <KPITile 
+            label="Revenue Today" value={`₹${(stats.revenue_today || 0).toLocaleString()}`} sub={`Monthly: ₹${(stats.revenue_month || 0).toLocaleString()}`} 
+            icon={DollarSign} color="success" trend={12} 
+          />
+          <KPITile 
+            label="Attendance" value={`${stats.attendance_percentage.toFixed(1)}%`} sub="Real-time Network Node Pulse" 
+            icon={UserCheck} color="purple" 
+          />
+          <KPITile 
+            label="AI Queries" value={stats.ai_queries_today} sub="Optimized Decision Trees" 
+            icon={Zap} color="warning" trend={45} 
+          />
+          <KPITile 
+            label="Cloud Storage" value={`${stats.storage_used_mb.toFixed(1)} MB`} sub="Enterprise Vault Integrity" 
+            icon={Database} color="accent" 
+          />
         </motion.div>
 
-        {/* Comprehensive Column-based User Visualization (5 cols) */}
-        <motion.div variants={fadeUp} className="xl:col-span-5 glass-card p-4 border-white/10 transition-all flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-             <div>
-                <p className="section-label mb-0.5 opacity-70 tracking-widest text-[8px]">Network Composition</p>
-                <h3 className="text-sm font-black text-white uppercase tracking-tight">Active User Matrix</h3>
-             </div>
-             <div className="text-right">
-                <p className="text-[7px] font-black text-slate-500 uppercase">System Capacity</p>
-                <p className="text-[10px] font-black text-white">{data.counts.totalStudents + data.counts.totalEmployees} Nodes</p>
-             </div>
-          </div>
-
-          {/* Role Columns Grid */}
-          <div className="grid grid-cols-6 gap-3 flex-1">
-             {/* Students: Regular */}
-             <UserRoleColumn 
-                label="Regular" 
-                total={data.counts.students?.regular || 0} 
-                present={data.attendance.byRole?.regular || 0} 
-                color="var(--primary-color)" 
-                icon={GraduationCap}
-             />
-             {/* Students: Private */}
-             <UserRoleColumn 
-                label="Private" 
-                total={data.counts.students?.private || 0} 
-                present={data.attendance.byRole?.private || 0} 
-                color="#818cf8" 
-                icon={Users}
-             />
-             {/* Staff: Teachers */}
-             <UserRoleColumn 
-                label="Teachers" 
-                total={data.counts.staff?.teachers || 0} 
-                present={data.attendance.byRole?.teachers || 0} 
-                color="#10b981" 
-                icon={UserCheck}
-             />
-             {/* Staff: Peons */}
-             <UserRoleColumn 
-                label="Peons" 
-                total={data.counts.staff?.peons || 0} 
-                present={data.attendance.byRole?.peons || 0} 
-                color="#f59e0b" 
-                icon={Briefcase}
-             />
-             {/* Staff: Drivers */}
-             <UserRoleColumn 
-                label="Drivers" 
-                total={data.counts.staff?.drivers || 0} 
-                present={data.attendance.byRole?.drivers || 0} 
-                color="#6366f1" 
-                icon={Truck}
-             />
-             {/* Staff: Principal */}
-             <UserRoleColumn 
-                label="Principal" 
-                total={data.counts.staff?.principal || 0} 
-                present={data.attendance.byRole?.principal || 0} 
-                color="#f43f5e" 
-                icon={Award}
-             />
-          </div>
+        {/* Main Content Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           
-          {/* Legend / Status Info */}
-          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-             <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                   <span className="text-[8px] font-bold text-slate-400 uppercase">Present</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                   <span className="text-[8px] font-bold text-slate-400 uppercase">Absent</span>
-                </div>
-             </div>
-             <div className="flex items-center gap-1">
-                <Activity size={10} className="text-primary animate-pulse" />
-                <span className="text-[9px] font-black text-white uppercase tracking-widest">Real-time Pulse</span>
-             </div>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* Main Analytics Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Left: Financial Analytics (8 cols) */}
-        <div className="xl:col-span-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 1. Fee Structure Pie Chart */}
-            <motion.div variants={fadeUp} className="glass-card p-4 min-h-[320px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                 <div>
-                   <p className="section-label text-[8px]">Fee Management</p>
-                   <h2 className="text-base font-black text-white">Revenue Distribution</h2>
-                 </div>
-                 <div className="p-1.5 rounded-lg bg-success/10 text-success">
-                    <DollarSign size={16} />
-                 </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center pt-2">
-                <div className="w-full h-44 relative">
-                   <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie 
-                          data={feeData} 
-                          innerRadius={50} 
-                          outerRadius={70} 
-                          paddingAngle={6} 
-                          dataKey="value" 
-                          animationBegin={200}
-                          cursor="pointer"
-                          labelLine={false}
-                          label={({ percent, name }) => `${(percent * 100).toFixed(0)}%`}
-                          onClick={handleFeePieClick}
-                        >
-                          {feeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
-                        </Pie>
-                        <Tooltip 
-                           contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}
-                           itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
-                           formatter={(value) => `₹${Number(value).toLocaleString()}`}
-                        />
-                        <Legend iconType="circle" verticalAlign="bottom" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', paddingTop: '15px' }} />
-                      </PieChart>
-                   </ResponsiveContainer>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* 2. Comprehensive Financial Column View */}
-            <motion.div variants={fadeUp} className="glass-card p-4 min-h-[320px] flex flex-col relative overflow-hidden">
-               {/* Profit Badge Overlay */}
-               <div className={`absolute -right-12 top-6 rotate-45 px-12 py-1 text-[8px] font-black uppercase tracking-widest shadow-xl z-10 ${netProfit >= 0 ? 'bg-success text-white' : 'bg-rose-500 text-white'}`}>
-                  {netProfit >= 0 ? 'Surplus' : 'Deficit'}
-               </div>
-
-               <div className="flex justify-between items-center mb-4">
-                 <div>
-                   <p className="section-label text-[8px]">Finance Matrix</p>
-                   <h2 className="text-base font-black text-white">Income vs Expense</h2>
-                 </div>
-                 <div className="flex items-center gap-2 mr-8">
-                    <div className="text-right">
-                       <p className="text-[7px] font-black text-slate-500 uppercase">Current Balance</p>
-                       <p className={`text-base font-black ${netProfit >= 0 ? 'text-success' : 'text-rose-500'} flex items-center gap-1`}>
-                          <Award size={14} /> ₹{Number(netProfit).toLocaleString()}
-                       </p>
+          {/* Left: Operations Core (8 cols) */}
+          <div className="xl:col-span-8 space-y-8">
+            
+            {/* Revenue & Attendance Trends */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <GlassCard className="p-6 h-[400px] flex flex-col">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg font-black text-white">Network Pulse</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Attendance Stability</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                       <div className="w-2 h-2 rounded-full bg-indigo-500" /> Active
                     </div>
-                 </div>
-              </div>
-              <div className="flex-1 h-44 mt-1">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={financialTrendData}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 'bold' }} />
-                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 8, fontWeight: 'bold' }} tickFormatter={(v) => `₹${v/1000}k`} />
-                     <Tooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
-                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}
-                        itemStyle={{ fontSize: '9px', fontWeight: 'bold' }}
-                     />
-                     <Bar dataKey="tuition" stackId="income" fill="#6366f1" radius={[0, 0, 0, 0]} name="Tuition Fee" />
-                     <Bar dataKey="exam" stackId="income" fill="#818cf8" radius={[0, 0, 0, 0]} name="Exam Fee" />
-                     <Bar dataKey="other" stackId="income" fill="#a5b4fc" radius={[3, 3, 0, 0]} name="Other Sources" />
-                     
-                     <Bar dataKey="salary" stackId="expense" fill="#ef4444" radius={[0, 0, 0, 0]} name="Salary" />
-                     <Bar dataKey="infra" stackId="expense" fill="#f87171" radius={[0, 0, 0, 0]} name="Infrastructure" />
-                     <Bar dataKey="operations" stackId="expense" fill="#fca5a5" radius={[3, 3, 0, 0]} name="Operations" />
-                   </BarChart>
-                 </ResponsiveContainer>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Quick Registry Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             {[
-               { icon: GraduationCap, label: 'Students', value: data.counts.totalStudents, color: 'primary' },
-               { icon: Users, label: 'Faculty', value: data.counts.totalEmployees, color: 'secondary' },
-               { icon: BookOpen, label: 'Sections', value: data.counts.totalClasses, color: 'secondary' },
-               { icon: School, label: 'Instance', value: `#${schoolId}`, color: 'slate' }
-             ].map((item, i) => (
-                <div key={i} className="glass-card p-4 hover:bg-white/[0.07] transition-all cursor-default group border-none bg-white/[0.04]">
-                  <item.icon size={16} className="text-slate-500 mb-2 group-hover:text-primary transition-colors" />
-                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                  <p className="text-lg font-black text-white mt-0.5">{item.value}</p>
+                  </div>
                 </div>
-             ))}
-          </div>
+                <div className="flex-1 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={attendanceTrend}>
+                      <defs>
+                        <linearGradient id="colorPulse" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10, fontWeight: 'bold'}} />
+                      <YAxis hide />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
+                      />
+                      <Area type="monotone" dataKey="active" stroke="#6366f1" strokeWidth={4} fill="url(#colorPulse)" animationDuration={2000} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </GlassCard>
 
-          {/* Critical Alerts: AI Risk Defaulters */}
-          {data.counts.detailedRisks && data.counts.detailedRisks.length > 0 && (
-            <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 border-accent/20 bg-accent/5">
-              <div className="flex justify-between items-center mb-4">
-                 <div className="flex items-center gap-2">
-                   <div className="p-1.5 rounded-lg bg-accent/20 text-accent anim-pulse">
-                      <AlertTriangle size={16} />
-                   </div>
-                   <h2 className="text-lg font-black text-white">Critical Alerts</h2>
-                 </div>
-                 <span className="text-[8px] font-black text-accent uppercase tracking-widest bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">Action Required</span>
+              <GlassCard className="p-6 h-[400px] flex flex-col" glowColor="success">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg font-black text-white">Financial Flow</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Revenue Distribution</p>
+                  </div>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="w-full h-48 relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Paid', value: stats.revenue_month },
+                            { name: 'Today', value: stats.revenue_today },
+                            { name: 'Pending', value: 12500 }, // Placeholder for pending
+                          ]}
+                          innerRadius={60} outerRadius={80} paddingAngle={10} dataKey="value" stroke="none"
+                        >
+                          <Cell fill="#10b981" />
+                          <Cell fill="#3b82f6" />
+                          <Cell fill="#f43f5e" />
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                       <p className="text-[10px] font-black text-slate-500 uppercase">Total</p>
+                       <p className="text-xl font-black text-white">₹{((stats.revenue_month || 0) + (stats.revenue_today || 0)).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-6 w-full mt-4">
+                     {[
+                       { label: 'Today', value: stats.revenue_today, color: 'bg-blue-500' },
+                       { label: 'Month', value: stats.revenue_month, color: 'bg-emerald-500' },
+                       { label: 'Goal', value: 500000, color: 'bg-rose-500' },
+                     ].map((item, i) => (
+                       <div key={i} className="text-center">
+                          <div className={`w-1.5 h-1.5 rounded-full ${item.color} mx-auto mb-1`} />
+                          <p className="text-[8px] font-black text-slate-500 uppercase">{item.label}</p>
+                          <p className="text-xs font-black text-white">₹{(item.value || 0).toLocaleString()}</p>
+                       </div>
+                     ))}
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* Middle: Smart Proxy Suggestions */}
+            <GlassCard className="p-8 border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-transparent">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-white flex items-center gap-3">
+                    <Search className="text-indigo-400" /> Smart Proxy Substitutes
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1">AI-Ranked teacher availability based on historical subject relevance.</p>
+                </div>
+                <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                  Live Scan Active
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                 {data.counts.detailedRisks.map((risk, idx) => (
-                   <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-rose-500/30 transition-all flex items-center justify-between group">
-                      <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-rose-400 font-black text-base">
-                            {risk.name.charAt(0)}
-                         </div>
-                         <div>
-                            <p className="text-xs font-bold text-white tracking-wide">{risk.name}</p>
-                            <div className="flex flex-wrap gap-1.5 mt-0.5">
-                               {Array.isArray(risk.factors) && risk.factors.slice(0, 2).map((f, i) => (
-                                 <span key={i} className="text-[8px] font-bold text-rose-400/80 uppercase tracking-tighter bg-rose-500/5 px-1.5 py-0.5 rounded border border-rose-500/10">{f}</span>
-                               ))}
-                            </div>
-                         </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {proxyLoading ? [1,2,3].map(i => <SkeletonLoader key={i} className="h-32 rounded-3xl" />) : 
+                 (proxySuggestions && proxySuggestions.length > 0) ? proxySuggestions.map((proxy, i) => (
+                  <motion.div 
+                    key={i} whileHover={{ scale: 1.02 }} 
+                    className="p-5 rounded-3xl bg-slate-900/50 border border-white/5 hover:border-indigo-500/30 transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black text-xl">
+                        {proxy.name.charAt(0)}
                       </div>
                       <div className="text-right">
-                         <p className="text-[8px] font-black text-slate-500 uppercase">Risk Score</p>
-                         <p className="text-base font-black text-rose-500">{risk.score}%</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase">Reliability</p>
+                        <p className="text-lg font-black text-indigo-400">{proxy.compatibility_score}%</p>
                       </div>
-                   </div>
-                 ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Right: Real-time Action Center (4 cols) */}
-        <div className="xl:col-span-4 space-y-6">
-           
-           {/* Tasks Center */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex flex-col h-[420px]">
-              <div className="flex flex-col mb-4 gap-3 border-b border-white/5 pb-3">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <CheckSquare size={18} className="text-primary" /> AI To-Do List
-                  </h3>
-                  <span className="text-[8px] font-black bg-white/10 text-slate-300 px-2 py-1 rounded-full uppercase tracking-widest">{tasks.length} Active</span>
-                </div>
-                
-                {/* AI Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-2 bg-white/[0.02] p-2 rounded-xl border border-white/5">
-                   <select 
-                     value={selectedEmp} 
-                     onChange={(e) => setSelectedEmp(e.target.value)}
-                     className="bg-transparent text-[10px] text-white border-none outline-none cursor-pointer flex-1 min-w-[100px] font-bold"
-                   >
-                     <option value="" disabled className="bg-slate-900">Select Staff</option>
-                     {employees.map(emp => (
-                       <option key={emp.employee_id} value={emp.employee_id} className="bg-slate-900">
-                         {emp.name || emp.employee_id}
-                       </option>
-                     ))}
-                   </select>
-
-                   <div className="flex items-center gap-1.5">
-                     <button 
-                         onClick={handleGenerateTasks} disabled={isGenerating || !selectedEmp}
-                         className="text-[8px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-2 py-1 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
-                     >
-                         {isGenerating ? <div className="w-1.5 h-1.5 rounded-full border border-t-transparent animate-spin"/> : <Zap size={8} />}
-                         Plan
-                     </button>
-                     <button 
-                         onClick={handleReorganizeTasks} disabled={isReorganizing || !selectedEmp}
-                         className="text-[8px] bg-accent/20 hover:bg-accent text-accent hover:text-white px-2 py-1 rounded-full uppercase tracking-widest transition-colors flex items-center gap-1 font-black"
-                     >
-                         {isReorganizing ? <div className="w-1.5 h-1.5 rounded-full border border-t-transparent animate-spin"/> : <Layers size={8} />}
-                         Sync
-                     </button>
-                   </div>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-2">
-                {tasksLoading ? <SkeletonLoader type="list" count={3} className="h-14 rounded-lg" /> : tasks.length > 0 ? tasks.map((t, idx) => (
-                  <div key={idx} className="p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:bg-white/5 transition-all flex items-start gap-3 group cursor-pointer">
-                     <div className="w-4 h-4 rounded border-2 border-slate-600 mt-0.5 flex items-center justify-center shrink-0">
-                        {t.status === 'completed' && <div className="w-full h-full bg-primary rounded-sm" />}
-                     </div>
-                     <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-0.5">
-                           <p className="text-xs font-bold text-white leading-tight">{t.task_name}</p>
-                           {t.is_ai_generated && <span className="text-[7px] bg-primary/20 text-primary border border-primary/20 px-1.5 py-0.5 rounded uppercase font-black tracking-widest">AI</span>}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                           <span className="text-[8px] font-black text-slate-500 uppercase flex items-center gap-1">
-                              <Calendar size={8} /> 
-                              {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric'}) : 'No Date'}
-                           </span>
-                           <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded uppercase ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700/50 text-slate-400'}`}>
-                              {t.priority}
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-                )) : (
-                  <div className="h-full flex flex-col items-center justify-center opacity-40">
-                     <CheckSquare size={24} className="mb-2 text-slate-600" />
-                     <p className="text-[10px] font-bold text-slate-500">No pending tasks.</p>
-                  </div>
-                )}
-              </div>
-           </motion.div>
-
-           {/* Fleet Intelligence */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 bg-gradient-to-br from-success/10 via-transparent to-transparent">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                   <Map size={18} className="text-success" /> Fleet Radar
-                </h3>
-                <div className="flex items-center gap-1.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-ping" />
-                   <span className="text-[8px] font-black text-success uppercase">Live</span>
-                </div>
-              </div>
-              <div className="h-24 bg-slate-950/80 rounded-2xl relative overflow-hidden border border-white/5 flex items-center justify-center shadow-inner">
-                 <div className="z-10 text-center">
-                    <p className="text-[8px] font-black text-success uppercase tracking-[0.2em] mb-1">Synchronized</p>
-                    <p className="text-[10px] text-slate-400 font-bold">4 Vehicles Active</p>
-                 </div>
-                 <div className="absolute top-1/2 left-1/2 w-[200%] h-[1px] bg-success/20 -translate-x-1/2 -translate-y-1/2 origin-center animate-[spin_4s_linear_infinite]" />
-              </div>
-           </motion.div>
-
-           {/* Upcoming Notices */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex flex-col bg-accent/5 border-accent/10">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                   <Bell size={18} className="text-accent" /> Notices
-                </h3>
-                <span className="text-[8px] font-black bg-accent/20 text-accent px-2 py-1 rounded-full uppercase tracking-widest">{reminders.length}</span>
-              </div>
-              <div className="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-1.5">
-                {remindersLoading ? <SkeletonLoader type="text" count={2} className="h-14 rounded-lg" /> : reminders.length > 0 ? reminders.map((rem, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/5 transition-all group">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-xs font-bold text-white group-hover:text-accent transition-colors uppercase tracking-tight">{rem.title}</p>
-                      <span className="text-[8px] font-mono text-slate-600">{rem.date}</span>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed line-clamp-2">{rem.content}</p>
-                  </div>
+                    <h4 className="text-sm font-black text-white">{proxy.name}</h4>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">{proxy.subject} • {proxy.current_load}</p>
+                    <div className="mt-3 p-2 rounded-xl bg-white/5 text-[10px] text-slate-400 leading-tight">
+                      {proxy.reason}
+                    </div>
+                    <button className="w-full mt-4 py-2 rounded-xl bg-indigo-500 text-white text-[10px] font-black uppercase opacity-0 group-hover:opacity-100 transition-all shadow-lg shadow-indigo-500/20">
+                      Assign Node
+                    </button>
+                  </motion.div>
                 )) : (
-                  <div className="py-6 text-center opacity-30">
-                    <Bell size={24} className="mx-auto mb-1 text-slate-600" />
-                    <p className="text-[8px] font-black uppercase tracking-widest">No active notices</p>
+                  <div className="col-span-3 py-10 text-center opacity-30">
+                    <UserCheck size={32} className="mx-auto mb-2" />
+                    <p className="text-xs font-black uppercase tracking-widest">No Leave Conflicts Detected</p>
                   </div>
                 )}
               </div>
-           </motion.div>
+            </GlassCard>
 
-           {/* Live Neural Feed */}
-           <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-6 flex-1 border-primary/10">
-              <p className="section-label mb-4 tracking-[0.2em] text-[8px]">Neural Activity Link</p>
-              <div className="space-y-4">
+          </div>
+
+          {/* Right: Intelligence Center (4 cols) */}
+          <div className="xl:col-span-4 space-y-8">
+            
+            {/* AI Task Engine */}
+            <GlassCard className="p-6 h-[500px] flex flex-col" glowColor="primary">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <CheckSquare size={20} className="text-indigo-400" /> Task Sequencer
+                </h3>
+                <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full uppercase tracking-widest">{(tasks?.length || 0)} Threads</span>
+              </div>
+
+              {/* AI Controller */}
+              <div className="mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Personnel Link</label>
+                  <select 
+                    value={selectedEmp} onChange={(e) => setSelectedEmp(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all font-bold"
+                  >
+                    <option value="">Select Employee</option>
+                    {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.name || e.employee_id}</option>)}
+                  </select>
+                </div>
+                <button 
+                  onClick={handleGenerateTasks} disabled={isGenerating || !selectedEmp}
+                  className="w-full py-3 rounded-xl bg-indigo-500 text-white font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isGenerating ? <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" /> : <><Zap size={14} /> Calculate Routine</>}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                {tasksLoading ? (
+                  <SkeletonLoader type="list" count={4} />
+                ) : (tasks && tasks.length > 0) ? (
+                  tasks.map((t, i) => (
+                    <motion.div 
+                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+                      key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all cursor-pointer group"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="text-xs font-bold text-white leading-tight group-hover:text-indigo-400 transition-colors uppercase tracking-tight line-clamp-1">{t.task_name}</h4>
+                        {t.is_ai_generated && <Cpu size={12} className="text-indigo-500" />}
+                      </div>
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase">
+                          <Clock size={10} /> {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', {day:'numeric', month:'short'}) : 'Inf'}
+                        </div>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase ${t.priority === 'High' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700/50 text-slate-400'}`}>
+                          {t.priority}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 opacity-20">
+                     <CheckSquare size={32} />
+                     <p className="text-[10px] font-black uppercase tracking-widest mt-4">Task Sequencer Empty</p>
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+
+            {/* Neural Event Feed */}
+            <GlassCard className="p-6 flex-1 bg-gradient-to-t from-indigo-500/5 to-transparent">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-6">Real-time Feed</p>
+              <div className="space-y-6">
                 <AnimatePresence mode="popLayout">
-                  {liveMessages.slice(-2).reverse().map((m, i) => (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={i} className="flex gap-3">
-                       <div className="w-1 h-auto self-stretch bg-primary rounded-full flex-shrink-0" />
-                       <div className="py-0.5">
-                          <p className="text-xs font-bold text-white leading-tight tracking-tight">{m.content || m.title || "Network Link Active"}</p>
-                          <p className="text-[8px] text-slate-500 mt-1 font-black uppercase tracking-wider flex items-center gap-1.5">
-                             <Clock size={8} /> Just Now
-                          </p>
-                       </div>
+                  {liveMessages.slice(-3).reverse().map((m, i) => (
+                    <motion.div 
+                      key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-4 relative"
+                    >
+                      <div className="w-1 h-auto self-stretch bg-indigo-500 rounded-full flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-white leading-relaxed">{m.content || "System Synchronized"}</p>
+                        <p className="text-[9px] font-black text-slate-600 uppercase mt-1">Data Packet Received • Just Now</p>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
-              </div>
-           </motion.div>
-
-        </div>
-      </div>
-
-      {/* 1-Week Teacher Timeline View */}
-      {selectedEmp && (
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-5 mt-6 bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-            <div>
-               <p className="section-label tracking-[0.2em] text-primary text-[8px]">AI Scheduler</p>
-               <h2 className="text-lg font-black text-white mt-0.5">1-Week Action Timeline</h2>
-            </div>
-         </div>
-         <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-3 snap-x">
-             {[...Array(7)].map((_, index) => {
-                 const date = new Date();
-                 date.setDate(date.getDate() + index);
-                 const dateStr = date.toISOString().split('T')[0];
-                 const isToday = index === 0;
-                 const dayTasks = tasks.filter(t => t.deadline && t.deadline.startsWith(dateStr));
-                 
-                 return (
-                 <div key={index} className={`shrink-0 w-48 p-3.5 rounded-xl border transition-all snap-start
-                        ${isToday ? 'bg-primary/10 border-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)] relative' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'}
-                 `}>
-                     {isToday && <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg"><Activity size={10} className="text-white animate-pulse" /></div>}
-                     <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-primary' : 'text-slate-500'}`}>
-                         {date.toLocaleDateString('en-US', { weekday: 'long' })}
-                     </p>
-                     <h4 className="text-sm font-black text-white mb-2.5">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</h4>
-                     
-                     <div className="space-y-1.5">
-                         {dayTasks.length > 0 ? dayTasks.map((t, idx) => (
-                             <div key={idx} className="p-2 bg-slate-950/40 rounded-lg border border-white/5 relative overflow-hidden group">
-                                 <p className="text-[10px] font-bold text-white line-clamp-1">{t.task_name}</p>
-                                 <p className="text-[7px] text-slate-500 uppercase tracking-widest mt-1">{t.priority}</p>
-                             </div>
-                         )) : (
-                             <div className="py-3 text-center opacity-30">
-                                <Calendar size={16} className="mx-auto mb-1 text-slate-500" />
-                                <p className="text-[8px] font-black uppercase tracking-widest">No classes</p>
-                             </div>
-                         )}
-                     </div>
-                 </div>
-                 );
-             })}
-         </div>
-      </motion.div>
-      )}
-
-      {/* Bottom Section: Enterprise Calendar */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="glass-card p-5 mt-6">
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
-            <div>
-               <p className="section-label tracking-[0.2em] text-[8px]">Academic Infrastructure</p>
-               <h2 className="text-lg font-black text-white mt-0.5">Institutional Roadmap</h2>
-            </div>
-            <div className="flex items-center gap-3">
-               <div className="p-2 glass-card border-none bg-white/5 flex items-center gap-2.5">
-                  <div className="text-right">
-                     <p className="text-[7px] font-black text-slate-500 uppercase">Events</p>
-                     <p className="text-xs font-black text-white">12 Scheduled</p>
+                {(liveMessages?.length === 0) && (
+                  <div className="flex flex-col items-center justify-center py-10 opacity-20">
+                    <Activity size={32} />
+                    <p className="text-[10px] font-black uppercase tracking-widest mt-4">Monitoring V-Sync...</p>
                   </div>
-                  <Calendar size={18} className="text-primary" />
-               </div>
-               <button className="px-3 py-1.5 rounded-lg bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:brightness-110 transition-all active:scale-95">Config</button>
-            </div>
-         </div>
-         
-         <div className="grid grid-cols-7 gap-2">
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-              <div key={d} className={`text-center text-[8px] font-black tracking-[0.1em] ${d === 'SUN' ? 'text-accent' : 'text-slate-600'}`}>{d}</div>
-            ))}
-            {calDays.map((cell, i) => {
-              if (!cell) return <div key={`e${i}`} className="h-12" />;
-              return (
-                <div key={cell.dateStr} className={`p-1.5 h-12 rounded-xl border transition-all relative group
-                   ${cell.isToday ? 'border-primary bg-primary/10 shadow-lg shadow-primary/5' : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'}
-                   ${cell.isSun && !cell.isToday ? 'bg-accent/5' : ''}
-                   ${!cell.isSun && cell.isHoliday && !cell.isToday ? 'bg-accent/5' : ''}
-                `}>
-                  <p className={`text-[10px] font-black ${cell.isToday ? 'text-primary' : cell.isSun ? 'text-accent' : cell.isHoliday ? 'text-accent' : 'text-slate-400'}`}>
-                    {cell.d}
-                  </p>
-                  {cell.isToday && <div className="absolute top-1 right-1 w-0.5 h-0.5 rounded-full bg-primary animate-pulse" />}
+                )}
+              </div>
+            </GlassCard>
+
+          </div>
+        </div>
+
+        {/* Global Footer Stats */}
+        <footer className="grid grid-cols-2 md:grid-cols-4 gap-6">
+           {[
+             { label: 'Security Status', val: 'Level Alpha', icon: ShieldCheck, color: 'text-emerald-400' },
+             { label: 'Network Uptime', val: '99.99%', icon: Activity, color: 'text-blue-400' },
+             { label: 'Pending Compliance', val: stats.pending_complaints, icon: AlertTriangle, color: 'text-amber-400' },
+             { label: 'Upcoming Events', val: stats.upcoming_events, icon: Calendar, color: 'text-rose-400' },
+           ].map((item, i) => (
+             <GlassCard key={i} className="p-4 flex items-center gap-4 bg-white/[0.01]">
+                <div className={`${item.color} p-2 rounded-xl bg-white/5`}>
+                   <item.icon size={18} />
                 </div>
-              );
-            })}
-         </div>
-      </motion.div>
+                <div>
+                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                   <p className="text-xs font-black text-white">{item.val}</p>
+                </div>
+             </GlassCard>
+           ))}
+        </footer>
+
+      </div>
+      
+      {/* Dynamic CSS Overrides for Premium Aesthetic */}
+      <style>{`
+        .glass-card::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255,255,255,0.2);
+        }
+        @keyframes pulse-soft {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+          animation: pulse-soft 3s infinite;
+        }
+      `}</style>
     </div>
   );
 }

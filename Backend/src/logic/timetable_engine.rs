@@ -440,7 +440,6 @@ impl TimetableEngine {
         subject_id: Option<&str>,
     ) -> Result<Vec<Value>, sqlx::Error> {
         // 1. Get all teachers who ARE NOT assigned to any class in this (day, period)
-        // This is done by looking at timetable_slots for the current school's LATEST config
         let busy_teachers = sqlx::query(
             "SELECT DISTINCT teacher_id FROM timetable_slots 
              WHERE school_id = $1 AND day_of_week = $2 AND period_number = $3 AND is_free_period = false"
@@ -453,7 +452,23 @@ impl TimetableEngine {
 
         let busy_ids: HashSet<String> = busy_teachers.iter().map(|r| r.get::<String, _>("teacher_id")).collect();
 
-        // 2. Get all employees of type 'teacher' or 'staff'
+        // 2. Get total periods per day for load calculation (rough estimate 8)
+        let total_periods = 8;
+
+        // 3. Get current load for all teachers
+        let load_rows = sqlx::query(
+            "SELECT teacher_id, COUNT(*) as used_periods FROM timetable_slots 
+             WHERE school_id = $1 AND is_free_period = false GROUP BY teacher_id"
+        )
+        .bind(school_id)
+        .fetch_all(&self.pool)
+        .await?;
+        
+        let teacher_loads: HashMap<String, i64> = load_rows.into_iter()
+            .map(|r| (r.get::<String, _>("teacher_id"), r.get::<i64, _>("used_periods")))
+            .collect();
+
+        // 4. Get all employees of type 'teacher' or 'staff'
         let all_teachers = sqlx::query(
             "SELECT employee_id, data->>'name' as name, data->>'subject' as subject FROM employees 
              WHERE school_id = $1 AND (employee_type = 'teacher' OR employee_type = 'staff')"
@@ -462,7 +477,7 @@ impl TimetableEngine {
         .fetch_all(&self.pool)
         .await?;
 
-        // 3. Filter out busy ones and rank
+        // 5. Filter and Rank
         let mut candidates = Vec::new();
         for row in all_teachers {
             let eid: String = row.get("employee_id");
@@ -471,25 +486,43 @@ impl TimetableEngine {
             }
 
             let name: String = row.get::<Option<String>, _>("name").unwrap_or_else(|| eid.clone());
-            let teacher_subject: String = row.get::<Option<String>, _>("subject").unwrap_or_default().to_lowercase();
+            let teacher_subject: String = row.get::<Option<String>, _>("subject").unwrap_or_default();
+            let load = teacher_loads.get(&eid).cloned().unwrap_or(0);
             
-            let mut score = 0;
+            let mut compatibility = 70.0; // Base score for being free
+            let mut reason = format!("Available during period {}", period);
+
             if let Some(target_sub) = subject_id {
-                if teacher_subject.contains(&target_sub.to_lowercase()) {
-                    score = 100;
+                if teacher_subject.to_lowercase().contains(&target_sub.to_lowercase()) {
+                    compatibility = 95.0;
+                    reason = format!("Expert in {}, available during period {}", teacher_subject, period);
+                } else {
+                    compatibility = 75.0;
+                    reason = format!("General substitute, available during period {}", period);
                 }
             }
 
+            // Adjust score based on load (prefer less busy teachers)
+            if load > 25 { // Assuming high load
+                compatibility -= 10.0;
+            }
+
             candidates.push(json!({
-                "employee_id": eid,
+                "teacher_id": eid,
                 "name": name,
                 "subject": teacher_subject,
-                "score": score
+                "compatibility_score": compatibility,
+                "current_load": format!("{}/{} periods (weekly)", load, total_periods * 5),
+                "reason": reason
             }));
         }
 
         // Sort by score descending
-        candidates.sort_by(|a, b| b["score"].as_i64().unwrap_or(0).cmp(&a["score"].as_i64().unwrap_or(0)));
+        candidates.sort_by(|a, b| {
+            b["compatibility_score"].as_f64().unwrap_or(0.0)
+                .partial_cmp(&a["compatibility_score"].as_f64().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(candidates)
     }

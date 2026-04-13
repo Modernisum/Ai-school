@@ -21,84 +21,57 @@ pub async fn get_stats(
     let student_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students").fetch_one(&mut *conn).await.unwrap_or(0);
     let employee_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees").fetch_one(&mut *conn).await.unwrap_or(0);
     let class_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM classes").fetch_one(&mut *conn).await.unwrap_or(0);
+    let subject_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM subjects").fetch_one(&mut *conn).await.unwrap_or(0);
 
     // 2. Today's Attendance
     let present_today: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE role = 'student' AND date = CURRENT_DATE AND status = 'present'")
         .fetch_one(&mut *conn).await.unwrap_or(0);
     let attendance_percentage = if student_count > 0 { (present_today as f64 / student_count as f64) * 100.0 } else { 0.0 };
 
-    // 3. Pending Complaints
-    let open_complaints: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM complaints WHERE status = 'pending' OR status = 'Open'")
+    // 3. Pending Items
+    let pending_leaves: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM leave_requests WHERE status = 'pending'")
+        .fetch_one(&mut *conn).await.unwrap_or(0);
+    let pending_complaints: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM complaints WHERE status = 'pending' OR status = 'Open'")
+        .fetch_one(&mut *conn).await.unwrap_or(0);
+    let upcoming_events: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE start_time > NOW()")
         .fetch_one(&mut *conn).await.unwrap_or(0);
 
-    // 4. Fees Analytics
-    let fee_stats = sqlx::query("SELECT SUM(total_fees) as total, SUM(pending_amount) as pending, SUM(discount) as discount FROM student_fees")
-        .fetch_one(&mut *conn).await;
+    // 4. Revenue Today & Month
+    let revenue_today: f64 = sqlx::query_scalar("SELECT COALESCE(SUM((data->>'payAmount')::FLOAT), 0) FROM audit_logs WHERE target_type = 'fee' AND action = 'payment' AND created_at >= CURRENT_DATE")
+        .fetch_one(&mut *conn).await.unwrap_or(0.0);
     
-    use bigdecimal::{BigDecimal, Zero};
-    let (total_revenue, pending_revenue, discount_revenue) = match fee_stats {
-        Ok(r) => {
-            let t: BigDecimal = r.get::<Option<BigDecimal>, _>("total").unwrap_or_else(BigDecimal::zero);
-            let p: BigDecimal = r.get::<Option<BigDecimal>, _>("pending").unwrap_or_else(BigDecimal::zero);
-            let d: BigDecimal = r.get::<Option<BigDecimal>, _>("discount").unwrap_or_else(BigDecimal::zero);
-            (t, p, d)
-        },
-        Err(_) => (BigDecimal::zero(), BigDecimal::zero(), BigDecimal::zero())
-    };
+    let revenue_month: f64 = sqlx::query_scalar("SELECT COALESCE(SUM((data->>'payAmount')::FLOAT), 0) FROM audit_logs WHERE target_type = 'fee' AND action = 'payment' AND created_at >= date_trunc('month', CURRENT_DATE)")
+        .fetch_one(&mut *conn).await.unwrap_or(0.0);
 
-    // 5. Tasks & Detailed Risks
-    let active_tasks: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM tasks WHERE status != 'completed'")
+    // 5. System Health
+    let active_sessions: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM tokens WHERE school_id = $1 AND status = 'active' AND expires_at > NOW()")
+        .bind(&school_id)
+        .fetch_one(&state.db.pool).await.unwrap_or(0); // Querying global pool for sessions
+
+    let storage_used_mb: f64 = sqlx::query_scalar::<_, f64>("SELECT COALESCE(SUM(file_size), 0)::FLOAT / (1024.0 * 1024.0) FROM app_files WHERE school_id = $1")
+        .bind(&school_id)
+        .fetch_one(&state.db.pool).await.unwrap_or(0.0); // Querying global pool for files
+
+    let ai_queries_today: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM tasks WHERE is_ai_generated = true AND created_at >= CURRENT_DATE")
         .fetch_one(&mut *conn).await.unwrap_or(0);
-    
-    let high_risk_rows = sqlx::query(
-        "SELECT s.name, p.risk_score, p.risk_factors 
-         FROM student_risk_profiles p
-         JOIN students s ON p.student_id = s.student_id AND p.school_id = s.school_id
-         WHERE p.risk_score > 70
-         ORDER BY p.risk_score DESC
-         LIMIT 5"
-    )
-    .fetch_all(&mut *conn)
-    .await;
-
-    let high_risk_students = match &high_risk_rows {
-        Ok(rows) => rows.len() as i64,
-        Err(_) => 0
-    };
-
-    let detailed_risks: Vec<serde_json::Value> = match high_risk_rows {
-        Ok(rows) => rows.into_iter().map(|r| {
-            json!({
-                "name": r.get::<String, _>("name"),
-                "score": r.get::<i32, _>("risk_score"),
-                "factors": r.get::<serde_json::Value, _>("risk_factors")
-            })
-        }).collect(),
-        Err(_) => vec![]
-    };
 
     Json(json!({
         "success": true,
         "data": {
-            "counts": {
-                "totalStudents": student_count,
-                "totalEmployees": employee_count,
-                "totalClasses": class_count,
-                "openComplaints": open_complaints,
-                "activeTasks": active_tasks,
-                "highRiskStudents": high_risk_students,
-                "detailedRisks": detailed_risks
-            },
-            "attendance": {
-                "presentToday": present_today,
-                "percentage": attendance_percentage
-            },
-            "revenue": {
-                "total": total_revenue.to_string(),
-                "paid": (&total_revenue - &pending_revenue).to_string(),
-                "pending": pending_revenue.to_string(),
-                "discount": discount_revenue.to_string()
-            }
+            "total_students": student_count,
+            "total_employees": employee_count,
+            "total_classes": class_count,
+            "total_subjects": subject_count,
+            "attendance_percentage": attendance_percentage,
+            "pending_leaves": pending_leaves,
+            "pending_complaints": pending_complaints,
+            "upcoming_events": upcoming_events,
+            "revenue_today": revenue_today,
+            "revenue_month": revenue_month,
+            "active_sessions": active_sessions,
+            "storage_used_mb": storage_used_mb,
+            "ai_queries_today": ai_queries_today
         }
     })).into_response()
 }
+

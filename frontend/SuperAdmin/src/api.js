@@ -1,5 +1,4 @@
-const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-const API = `http://${HOST}:8080/api/admin`;
+import { API_ADMIN as API, API_BASE } from './config.js';
 
 const getToken = () => {
     return localStorage.getItem("sa_token");
@@ -135,7 +134,7 @@ export const uploadFile = async (file, schoolId = "superadmin", userId = "supera
     formData.append("userId", userId);
     formData.append("userType", userType);
 
-    const res = await fetch(`http://${HOST}:8080/api/storage/upload`, {
+    const res = await fetch(`${API_BASE}/api/storage/upload`, {
         method: "POST",
         body: formData,
     });
@@ -147,7 +146,7 @@ export const uploadFile = async (file, schoolId = "superadmin", userId = "supera
 };
 
 export const deleteFileByUrl = async (url) => {
-    const res = await fetch(`http://${HOST}:8080/api/storage/file-by-url?url=${encodeURIComponent(url)}`, {
+    const res = await fetch(`${API_BASE}/api/storage/file-by-url?url=${encodeURIComponent(url)}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${getToken()}`,

@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:chatra/core/network/api_service.dart';
 
 /// Top-level handler required by Firebase for background/terminated state.
 /// Must be a top-level function (not a class method).
@@ -120,4 +120,23 @@ class NotificationService {
   }
 
   static GoRouter? router;
+
+  Future<void> registerWithBackend(ApiService apiService) async {
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) {
+        debugPrint('[FCM] Registering token with backend...');
+        await apiService.registerDevice(token);
+        
+        // Also subscribe to current school topic for broadcasts
+        final sid = await apiService.storage.read(key: 'school_id');
+        if (sid != null) {
+          await _messaging.subscribeToTopic('${sid}_general');
+          // Admins would subscribe to ${sid}_admins
+        }
+      }
+    } catch (e) {
+      debugPrint('[FCM Error] Registration failed: $e');
+    }
+  }
 }

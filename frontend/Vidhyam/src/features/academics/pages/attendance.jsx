@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
   CalendarDays, Plus, Trash2, Loader, CheckCircle, AlertTriangle,
-  ChevronLeft, ChevronRight, Users, GraduationCap, Shield, Info
+  ChevronLeft, ChevronRight, Users, GraduationCap, Shield, Info, UserCheck, FileText, BarChart3, Settings
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -14,6 +14,9 @@ import {
   useCreateHolidayMutation,
   useDeleteHolidayMutation,
 } from '../api/academicApi';
+import BulkAttendance from '../components/BulkAttendance';
+import AttendanceReports from '../components/AttendanceReports';
+import AttendanceConfig from '../components/AttendanceConfig';
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => getSchoolIdFromStorage() || "";
@@ -84,6 +87,9 @@ export default function AttendancePage() {
     showAdvanced: false,
   };
   const [form, setForm] = useState(defaultForm);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState('holidays'); // 'holidays', 'bulk', 'reports', 'config'
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
@@ -191,38 +197,82 @@ export default function AttendancePage() {
                     <CalendarDays size={24} className="text-accent" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black text-white tracking-tight">Announcements & Holidays</h1>
-                    <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Manage school holidays & events</p>
+                    <h1 className="text-2xl font-black text-white tracking-tight">Attendance Management</h1>
+                    <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Manage holidays, bulk attendance & reports</p>
                 </div>
             </div>
-            <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 shadow-lg shadow-accent/20 transition-all duration-300 active:scale-95">
-                <Plus size={18} /> Add Holiday
-            </button>
+            {activeTab === 'holidays' && (
+              <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 shadow-lg shadow-accent/20 transition-all duration-300 active:scale-95">
+                  <Plus size={18} /> Add Holiday
+              </button>
+            )}
         </div>
 
-      <div className="p-6 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
-        {/* ── Left: Holiday List ── */}
-        <div className="space-y-4">
-          {/* Sunday notice */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/10 text-xs text-accent/70 backdrop-blur-md">
-            <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
-                <Info size={14} className="text-accent" />
+        {/* Tabs */}
+        <div className="flex border-b border-white/10 mb-6">
+          <button
+            onClick={() => setActiveTab('holidays')}
+            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'holidays' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} />
+              Holidays
             </div>
-            <span><strong className="text-accent">Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
-          </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('bulk')}
+            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'bulk' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <div className="flex items-center gap-2">
+              <UserCheck size={16} />
+              Bulk Attendance
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'reports' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} />
+              Reports
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('config')}
+            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'config' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Settings size={16} />
+              Config
+            </div>
+          </button>
+        </div>
 
-          {loading || isHolidaysLoading ? (
-            <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-accent" /></div>
-          ) : holidays.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <CalendarDays size={32} className="text-slate-600 mx-auto mb-2" />
-              <p className="text-slate-500 text-sm">No holidays created yet</p>
-              <p className="text-slate-600 text-xs mt-1">Click "Add Holiday" to create one</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {holidays.map(h => {
-                const isSingle = h.fromDate === (h.toDate || h.fromDate);
+        {/* Tab Content */}
+        {activeTab === 'holidays' && (
+          <div className="p-6 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
+            {/* ── Left: Holiday List ── */}
+            <div className="space-y-4">
+              {/* Sunday notice */}
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/10 text-xs text-accent/70 backdrop-blur-md">
+                <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
+                    <Info size={14} className="text-accent" />
+                </div>
+                <span><strong className="text-accent">Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
+              </div>
+
+              {loading || isHolidaysLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-accent" /></div>
+              ) : holidays.length === 0 ? (
+                <div className="glass-card p-8 text-center">
+                  <CalendarDays size={32} className="text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-500 text-sm">No holidays created yet</p>
+                  <p className="text-slate-600 text-xs mt-1">Click "Add Holiday" to create one</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {holidays.map(h => {
+                    const isSingle = h.fromDate === (h.toDate || h.fromDate);
                 const dateLabel = isSingle ? h.fromDate : `${h.fromDate} → ${h.toDate}`;
                 const cls = h.classes?.length === 1 && h.classes[0] === 'All' ? 'All Classes' : (h.classes || []).join(', ');
                 return (
@@ -297,6 +347,28 @@ export default function AttendancePage() {
           </div>
         </div>
       </div>
+        )}
+
+        {/* Bulk Attendance Tab */}
+        {activeTab === 'bulk' && (
+          <div className="p-6">
+            <BulkAttendance />
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="p-6">
+            <AttendanceReports />
+          </div>
+        )}
+
+        {/* Config Tab */}
+        {activeTab === 'config' && (
+          <div className="p-6">
+            <AttendanceConfig />
+          </div>
+        )}
 
       {/* ── Create Holiday Drawer ── */}
       <AnimatePresence>

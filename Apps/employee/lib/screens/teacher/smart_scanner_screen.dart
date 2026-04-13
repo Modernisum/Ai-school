@@ -6,6 +6,9 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:camera/camera.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:flutter/services.dart';
 import '../../core/widgets/animated_gradient_bg.dart';
 import '../../core/widgets/glass_card.dart';
 import 'unassigned_vault_screen.dart';
@@ -18,11 +21,72 @@ class SmartScannerScreen extends StatefulWidget {
 }
 
 class _SmartScannerScreenState extends State<SmartScannerScreen> {
+  CameraController? _cameraController;
+  DocumentScanner? _documentScanner;
+  bool _isCameraInitialized = false;
   bool _isScanning = false;
   bool _isAutoScan = false;
+  bool _isProcessingFrame = false;
   Timer? _scanTimer;
   int _autoCount = 0;
   String? _capturedImagePath;
+  List<Offset>? _detectedEdges; // For AR overlay
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+    _documentScanner = GoogleMlKit.vision.documentScanner(
+      options: DocumentScannerOptions(
+        mode: DocumentScannerMode.fast,
+        numPages: 1,
+        isGalleryImport: false,
+      ),
+    );
+  }
+
+  Future<void> _initializeCamera() async {
+    final cameras = await availableCameras();
+    if (cameras.isEmpty) return;
+
+    _cameraController = CameraController(
+      cameras.first,
+      ResolutionPreset.high,
+      enableAudio: false,
+    );
+
+    try {
+      await _cameraController!.initialize();
+      if (!mounted) return;
+      
+      setState(() => _isCameraInitialized = true);
+      
+      // Start processing frames for edge detection
+      _cameraController!.startImageStream((image) {
+        if (!_isProcessingFrame && _isAutoScan) {
+          _processCameraFrame(image);
+        }
+      });
+    } catch (e) {
+      debugPrint("Camera Init Error: $e");
+    }
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    _documentScanner?.close();
+    _scanTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _processCameraFrame(CameraImage image) async {
+    // This will be implemented in Step 2 for real-time edge detection
+    // For now, it prevents multiple frames from processing at once
+    _isProcessingFrame = true;
+    await Future.delayed(const Duration(milliseconds: 500));
+    _isProcessingFrame = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,34 +120,50 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
   }
 
   Widget _buildCameraPlaceholder() {
+    if (!_isCameraInitialized) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+
     return Container(
       margin: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white24, width: 2),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
+            CameraPreview(_cameraController!),
+            if (_detectedEdges != null)
+              CustomPaint(
+                painter: EdgePainter(_detectedEdges!),
+              ),
             if (_isAutoScan)
-               const Column(
-                 children: [
-                   CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                   SizedBox(height: 16),
-                   Text("CONTINUOUS VISION ACTIVE", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
-                 ],
-               )
-            else
-               const Icon(Icons.camera_alt, size: 80, color: Colors.white24),
-            const SizedBox(height: 16),
-            const Text("Align document within the frame", style: TextStyle(color: Colors.white54)),
-            if (_isAutoScan)
-               Padding(
-                 padding: const EdgeInsets.only(top: 8.0),
-                 child: Text("Captured: $_autoCount pages", style: const TextStyle(color: Colors.greenAccent, fontSize: 10)),
+               Positioned(
+                 top: 16,
+                 right: 16,
+                 child: Column(
+                   children: [
+                     const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                     const SizedBox(height: 16),
+                     Text("AUTO: $_autoCount", style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                   ],
+                 ),
                ),
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 250,
+                height: 350,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white38, width: 2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -102,7 +182,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const Center(child: Icon(Icons.image, size: 80, color: Colors.white24)), // Dummy image
+            Image.file(File(_capturedImagePath!), fit: BoxFit.cover),
             if (_isScanning)
               Container(
                 color: Colors.black45,
@@ -149,7 +229,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
                 "CAPTURE DOCUMENT", 
                 Icons.camera, 
                 Colors.indigoAccent,
-                onTap: () => setState(() => _capturedImagePath = "dummy_path"),
+                onTap: _captureImage,
               )
             else if (_isAutoScan)
                _buildLargeButton(
@@ -181,6 +261,43 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _captureImage() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    
+    try {
+      final XFile image = await _cameraController!.takePicture();
+      setState(() {
+        _capturedImagePath = image.path;
+      });
+      HapticFeedback.mediumImpact();
+    } catch (e) {
+      debugPrint("Capture Error: $e");
+    }
+  }
+
+  Future<void> _processCameraFrame(CameraImage image) async {
+    if (_isProcessingFrame) return;
+    _isProcessingFrame = true;
+
+    try {
+      // Logic for real-time edge detection using ML Kit Document Scanner
+      // In this version, we provide the visual feedback
+      // Real ML Kit frame processing requires converting CameraImage to InputImage
+      // which is typically done via a utility. For MVP phase 1, we simulate 
+      // the alignment scan.
+      
+      await Future.delayed(const Duration(milliseconds: 100)); // Simulate processing
+      
+      // Feedback alignment logic would go here
+      // For now, we clear edges if not auto-scanning
+      if (!_isAutoScan) {
+        setState(() => _detectedEdges = null);
+      }
+    } finally {
+      _isProcessingFrame = false;
+    }
   }
 
   void _toggleAutoScan(bool enable) {
@@ -393,4 +510,35 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
       ),
     );
   }
+}
+
+class EdgePainter extends CustomPainter {
+  final List<Offset> points;
+  EdgePainter(this.points);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.greenAccent.withOpacity(0.5)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    if (points.length >= 4) {
+      final path = Path()
+        ..moveTo(points[0].dx, points[0].dy)
+        ..lineTo(points[1].dx, points[1].dy)
+        ..lineTo(points[2].dx, points[2].dy)
+        ..lineTo(points[3].dx, points[3].dy)
+        ..close();
+      canvas.drawPath(path, paint);
+      
+      final fillPaint = Paint()
+        ..color = Colors.greenAccent.withOpacity(0.1)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(EdgePainter oldDelegate) => oldDelegate.points != points;
 }

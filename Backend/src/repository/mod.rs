@@ -18,6 +18,8 @@ pub mod payroll_repo;
 pub mod transaction_repo;
 pub mod misc_repo;
 pub mod storage_repo;
+pub mod query_builder;
+pub mod grading_repo;
 
 use std::sync::Arc;
 pub use traits::*;
@@ -46,6 +48,7 @@ pub struct Repositories {
     pub audit: Arc<dyn AuditRepository + Send + Sync>,
     pub global_user: Arc<dyn GlobalUserRepository + Send + Sync>,
     pub storage: Arc<dyn StorageRepository + Send + Sync>,
+    pub grading: Arc<dyn GradingRepository + Send + Sync>,
     pub db_client: Arc<crate::db::DbClient>,
 }
 
@@ -110,9 +113,21 @@ pub async fn initialize_repositories(
     let school_repo: Arc<dyn traits::SchoolRepository + Send + Sync> = Arc::new(misc_repo::PostgresSchoolRepository {
         client: db_client.clone(),
     });
-    let responsibility_repo: Arc<dyn traits::ResponsibilityRepository + Send + Sync> = Arc::new(misc_repo::PostgresResponsibilityRepository {
+    // Create the base responsibility repository
+    let base_responsibility_repo = misc_repo::PostgresResponsibilityRepository {
         client: db_client.clone(),
-    });
+    };
+    
+    let responsibility_cache = Arc::new(crate::logic::cache_service::ResponsibilityCacheService::new(
+        db_client.redis.clone()
+    ));
+
+    // Create cached responsibility repository with Redis caching
+    let responsibility_repo: Arc<dyn traits::ResponsibilityRepository + Send + Sync> =
+        Arc::new(crate::logic::cache_service::CachedResponsibilityRepository::new(
+            Arc::new(base_responsibility_repo),
+            responsibility_cache,
+        ));
     let task_repo: Arc<dyn traits::TaskRepository + Send + Sync> = Arc::new(task_repo::PostgresTaskRepository {
         client: db_client.clone(),
     });
@@ -132,6 +147,10 @@ pub async fn initialize_repositories(
     });
 
     let storage_repo: Arc<dyn traits::StorageRepository + Send + Sync> = Arc::new(storage_repo::PostgresStorageRepository::new(db_client.pool.clone()));
+
+    let grading_repo: Arc<dyn traits::GradingRepository + Send + Sync> = Arc::new(grading_repo::PostgresGradingRepository {
+        client: db_client.clone(),
+    });
 
     Repositories {
         auth: auth_repo,
@@ -157,6 +176,7 @@ pub async fn initialize_repositories(
         analytics: analytics_repo,
         audit: audit_repo,
         global_user: global_user_repo,
+        grading: grading_repo,
         db_client,
     }
 }

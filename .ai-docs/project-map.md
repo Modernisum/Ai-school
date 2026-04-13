@@ -88,6 +88,15 @@ See `run-project.md` for detailed startup sequence.
 - Frontends proxy API requests to backend via Vite config
 - Mobile apps require Flutter SDK and Android emulator
 
+## School Setup Automation
+- New schools are automatically configured with comprehensive default data
+- Creates 8 default space types with appropriate materials
+- Generates academic structure (Pre-Nursery to Class 12) with subjects
+- Sets up admin user, default configurations, and notification templates
+- Automated responsibility generation for academic subjects
+- Implemented in `Backend/src/services/setup_service.rs`
+- Provides detailed response with auto-created item counts
+
 ## File Naming Conventions
 - Rust: `snake_case.rs`
 - React components: `PascalCase.jsx`

@@ -4,8 +4,7 @@ import { Plus, Loader, CheckCircle, Copy, X, MapPin, School, BookOpen, ChevronRi
 import { ToastCtx } from '../App.jsx'
 import { uploadFile, deleteFileByUrl } from '../api'
 
-const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-const API_BASE = `http://${HOST}:8080/api`;
+import { API_ROOT as API_BASE } from '../config.js'
 
 const Field = ({ label, field, type = 'text', required, placeholder, form, set, error, maxLength }) => (
     <div className="input-group">

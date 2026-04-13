@@ -21,6 +21,39 @@ pub trait AiService: Send + Sync {
 }
 
 #[async_trait]
+pub trait AiConfigService: Send + Sync {
+    /// Get AI configuration for a school
+    async fn get_school_ai_config(&self, school_id: &str) -> AppResult<Value>;
+    
+    /// Update AI configuration for a school
+    async fn update_school_ai_config(&self, school_id: &str, config: Value) -> AppResult<Value>;
+    
+    /// Delete AI configuration for a school
+    async fn delete_school_ai_config(&self, school_id: &str, provider_id: i32) -> AppResult<bool>;
+}
+
+#[async_trait]
+pub trait EmbeddingService: Send + Sync {
+    /// Generate embedding for text using the configured provider
+    async fn generate_embedding(&self, school_id: &str, text: &str) -> AppResult<Vec<f32>>;
+    
+    /// Generate embeddings for multiple texts in batch
+    async fn generate_embeddings_batch(&self, school_id: &str, texts: &[String]) -> AppResult<Vec<Vec<f32>>>;
+    
+    /// Search for similar documents using embeddings
+    async fn search_similar_documents(&self, school_id: &str, query: &str, limit: usize) -> AppResult<Vec<(f32, String)>>;
+    
+    /// Store document with its embedding
+    async fn store_document_with_embedding(&self, school_id: &str, content: &str, metadata: &Value) -> AppResult<i64>;
+    
+    /// Get embedding provider health status
+    async fn get_provider_health(&self, school_id: &str) -> AppResult<Value>;
+    
+    /// Calculate similarity between two vectors
+    fn calculate_similarity(&self, vec1: &[f32], vec2: &[f32]) -> f32;
+}
+
+#[async_trait]
 pub trait ResourceService: Send + Sync {
     // Announcements
     async fn create_announcement(

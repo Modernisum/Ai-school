@@ -46,6 +46,11 @@ pub fn create_router(state: AppState) -> Router {
             "/",
             get(|| async { "High-Accuracy OCR Backend (Rust/Axum) is running!" }),
         )
+        // -- Health Checks ------------------------------------------------------
+        .route("/health", get(routes::health::health_check))
+        .route("/health/detailed", get(routes::health::health_check_detailed))
+        .route("/health/ready", get(routes::health::readiness_check))
+        .route("/health/alive", get(routes::health::liveness_check))
         // ── Dashboard Stats ────────────────────────────────────────────────────
         .route(
             "/api/dashboard/:schoolId/stats",
@@ -286,6 +291,10 @@ pub fn create_router(state: AppState) -> Router {
                 .route(
                     "/school/change-password",
                     post(routes::auth::change_password_handler),
+                )
+                .route(
+                    "/register-device",
+                    post(routes::auth::register_device_handler),
                 ),
         )
         // ── Storage Routes ────────────────────────────────────────────────────
@@ -311,6 +320,10 @@ pub fn create_router(state: AppState) -> Router {
                     post(routes::students::bulk_import_students),
                 )
                 .route("/:schoolId", get(routes::students::list_students))
+                .route(
+                    "/:schoolId/paginated",
+                    get(routes::students::list_students_paginated),
+                )
                 .route(
                     "/:schoolId/class/:class_name",
                     get(routes::students::list_students_by_class),
@@ -435,6 +448,31 @@ pub fn create_router(state: AppState) -> Router {
             "/api/exam/ai/:schoolId/generate",
             post(routes::exam::ai_generate_exam),
         )
+        // Content Generation Routes
+        .route(
+            "/api/content/:schoolId/generate/exam",
+            post(routes::content_generation::generate_exam_questions),
+        )
+        .route(
+            "/api/content/:schoolId/generate/lesson-plan",
+            post(routes::content_generation::generate_lesson_plan),
+        )
+        .route(
+            "/api/content/:schoolId/generate/study-materials",
+            post(routes::content_generation::generate_study_materials),
+        )
+        .route(
+            "/api/content/:schoolId/generate/practice-problems",
+            post(routes::content_generation::generate_practice_problems),
+        )
+        .route(
+            "/api/content/:schoolId/summarize",
+            post(routes::content_generation::summarize_content),
+        )
+        .route(
+            "/api/content/:schoolId/enhanced/generate-exam",
+            post(routes::content_generation::enhanced_generate_exam),
+        )
         .route("/api/topics", post(routes::topic::create_topic))
         // Attendance Routes
         .nest(
@@ -474,6 +512,52 @@ pub fn create_router(state: AppState) -> Router {
                     "/:schoolId/holidays/:holidayId",
                     axum::routing::get(routes::attendance::get_holiday_detail)
                         .delete(routes::attendance::delete_school_holiday),
+                )
+                // Bulk attendance routes
+                .route(
+                    "/:schoolId/bulk-attendance",
+                    axum::routing::post(routes::attendance::bulk_mark_attendance),
+                )
+                .route(
+                    "/:schoolId/class-attendance",
+                    axum::routing::get(routes::attendance::get_class_attendance),
+                )
+                .route(
+                    "/:schoolId/qr-attendance",
+                    axum::routing::post(routes::attendance::generate_qr_attendance),
+                )
+                .route(
+                    "/:schoolId/mobile-attendance",
+                    axum::routing::post(routes::attendance::mobile_mark_attendance),
+                )
+                .route(
+                    "/:schoolId/offline-sync",
+                    axum::routing::post(routes::attendance::offline_sync_attendance),
+                )
+                // Attendance report routes
+                .route(
+                    "/:schoolId/reports/daily-summary",
+                    axum::routing::get(routes::attendance::get_daily_summary),
+                )
+                .route(
+                    "/:schoolId/reports/monthly-stats",
+                    axum::routing::get(routes::attendance::get_monthly_stats),
+                )
+                .route(
+                    "/:schoolId/reports/student",
+                    axum::routing::get(routes::attendance::get_student_report),
+                )
+                .route(
+                    "/:schoolId/reports/class",
+                    axum::routing::get(routes::attendance::get_class_report),
+                )
+                .route(
+                    "/:schoolId/reports/employee",
+                    axum::routing::get(routes::attendance::get_employee_report),
+                )
+                .route(
+                    "/:schoolId/reports/custom",
+                    axum::routing::post(routes::attendance::generate_custom_report),
                 ),
         )
         .route(
@@ -596,6 +680,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest(
             "/api/responsibility",
             Router::new()
+                .layer(axum::middleware::from_fn(middleware::metrics::metrics_middleware))
                 .route(
                     "/:schoolId",
                     get(routes::responsibility::list_responsibilities)
@@ -851,6 +936,21 @@ pub fn create_router(state: AppState) -> Router {
         .nest(
             "/api/ocr-routes",
             Router::new().route("/extract", post(routes::ocr::extract_text)),
+        )
+        // Developer Access Routes
+        .nest(
+            "/api/developer-access",
+            Router::new()
+                .route("/requests", get(routes::developer_access::get_pending_requests))
+                .route("/validate", get(routes::developer_access::validate_access_token))
+                .route("/:developer_id/request", post(routes::developer_access::request_access))
+                .route("/:developer_id/access", get(routes::developer_access::get_developer_access))
+                .route("/:developer_id/access", delete(routes::developer_access::revoke_access))
+                .route("/:developer_id/activity", get(routes::developer_access::get_developer_activity))
+                .route("/:developer_id/role", put(routes::developer_access::update_developer_role))
+                .route("/:developer_id/emergency", post(routes::developer_access::emergency_access))
+                .route("/requests/:request_id/approve", post(routes::developer_access::approve_access_request))
+                .route("/requests/:request_id/reject", post(routes::developer_access::reject_access_request)),
         )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),

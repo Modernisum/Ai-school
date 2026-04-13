@@ -103,6 +103,111 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         }).collect())
     }
 
+    async fn get_students_paginated(
+        &self,
+        school_id: &str,
+        page: i32,
+        limit: i32,
+        class_name: Option<&str>,
+        section: Option<&str>,
+        status: Option<&str>,
+        search: Option<&str>,
+    ) -> Result<(JsonList, i64), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        let offset = (page - 1) * limit;
+        let limit = limit.min(100); // Max 100 per page
+        
+        // Build WHERE clause dynamically
+        let mut where_conditions = vec!["school_id = $1".to_string()];
+        let mut param_index = 2;
+        
+        if let Some(cn) = class_name {
+            where_conditions.push(format!("class_name = ${}", param_index));
+            param_index += 1;
+        }
+        
+        if let Some(sec) = section {
+            where_conditions.push(format!("section = ${}", param_index));
+            param_index += 1;
+        }
+        
+        if let Some(st) = status {
+            where_conditions.push(format!("status = ${}", param_index));
+            param_index += 1;
+        }
+        
+        if let Some(s) = search {
+            where_conditions.push(format!("(name ILIKE ${} OR contact ILIKE ${} OR student_id ILIKE ${})", param_index, param_index + 1, param_index + 2));
+            param_index += 3;
+        }
+        
+        let where_clause = where_conditions.join(" AND ");
+        
+        // Build count query
+        let count_query = format!("SELECT COUNT(*) FROM students WHERE {}", where_clause);
+        let mut count_query_builder = sqlx::query(&count_query).bind(school_id);
+        
+        if let Some(cn) = class_name {
+            count_query_builder = count_query_builder.bind(cn);
+        }
+        if let Some(sec) = section {
+            count_query_builder = count_query_builder.bind(sec);
+        }
+        if let Some(st) = status {
+            count_query_builder = count_query_builder.bind(st);
+        }
+        let count_search_pattern = search.map(|s| format!("%{}%", s));
+        if let Some(ref pattern) = count_search_pattern {
+            count_query_builder = count_query_builder.bind(pattern.clone()).bind(pattern.clone()).bind(pattern.clone());
+        }
+        
+        let total_count: i64 = count_query_builder.fetch_one(&mut *conn).await?.get(0);
+        
+        // Build data query
+        let data_query = format!(
+            "SELECT student_id, name, class_name, roll_number, section, status, created_at, student_type, profile_image_url
+             FROM students WHERE {} ORDER BY created_at DESC LIMIT ${} OFFSET ${}",
+            where_clause, param_index, param_index + 1
+        );
+        
+        let mut data_query_builder = sqlx::query(&data_query).bind(school_id);
+        
+        if let Some(cn) = class_name {
+            data_query_builder = data_query_builder.bind(cn);
+        }
+        if let Some(sec) = section {
+            data_query_builder = data_query_builder.bind(sec);
+        }
+        if let Some(st) = status {
+            data_query_builder = data_query_builder.bind(st);
+        }
+        let data_search_pattern = search.map(|s| format!("%{}%", s));
+        if let Some(ref pattern) = data_search_pattern {
+            data_query_builder = data_query_builder.bind(pattern.clone()).bind(pattern.clone()).bind(pattern.clone());
+        }
+        
+        data_query_builder = data_query_builder.bind(limit).bind(offset);
+        
+        let rows = data_query_builder.fetch_all(&mut *conn).await?;
+        
+        let students: JsonList = rows.into_iter().map(|r| {
+            json!({
+                "studentId": r.get::<String, _>("student_id"),
+                "name": r.get::<Option<String>, _>("name"),
+                "className": r.get::<Option<String>, _>("class_name"),
+                "rollNumber": r.get::<Option<i32>, _>("roll_number"),
+                "section": r.get::<Option<String>, _>("section"),
+                "status": r.get::<String, _>("status"),
+                "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+                "studentType": r.get::<Option<String>, _>("student_type"),
+                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
+            })
+        }).collect();
+        
+        Ok((students, total_count))
+    }
+
     async fn get_students_by_class(
         &self,
         school_id: &str,

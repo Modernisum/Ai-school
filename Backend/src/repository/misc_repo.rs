@@ -1,5 +1,6 @@
 use crate::db::DbClient;
 use crate::repository::traits::*;
+use crate::repository::query_builder;
 use async_trait::async_trait;
 use bigdecimal::ToPrimitive;
 use rand::Rng;
@@ -382,6 +383,131 @@ impl crate::repository::traits::SchoolRepository for PostgresSchoolRepository {
     }
 }
 
+#[cfg(test)]
+mod responsibility_repository_tests {
+    use super::*;
+    use crate::db::DbClient;
+    use sqlx::{Pool, Postgres};
+    use std::sync::Arc;
+    use mockall::predicate::*;
+    use mockall::mock;
+
+    // Mock DbClient for testing
+    mock! {
+        pub DbClient {
+            pub async fn acquire_tenant_connection(&self, school_id: &str) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error>;
+            pub fn pool(&self) -> &Pool<Postgres>;
+            pub fn redis(&self) -> &deadpool_redis::Pool;
+        }
+    }
+
+    #[test]
+    fn test_query_builder_integration() {
+        // Test that query builder creates correct SQL
+        let query = query_builder::build_responsibility_query(
+            "school123",
+            Some("teacher"),
+            Some("space456"),
+            Some("math"),
+            Some(10),
+            Some(0),
+        );
+        
+        let sql = query.build().sql();
+        assert!(sql.contains("WHERE school_id = $1"));
+        assert!(sql.contains("AND employee_type = $2"));
+        assert!(sql.contains("AND space_id = $3"));
+        assert!(sql.contains("AND name ILIKE $4"));
+        assert!(sql.contains("LIMIT $5"));
+        assert!(sql.contains("OFFSET $6"));
+    }
+
+    #[test]
+    fn test_responsibility_cache_service_creation() {
+        use crate::logic::cache_service::ResponsibilityCacheService;
+        use deadpool_redis::Pool;
+        
+        // This test verifies the cache service can be created
+        // (actual Redis pool creation would require Redis running)
+        let redis_pool = Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379"));
+        
+        // The service should be created without panic
+        let _service = ResponsibilityCacheService::new(redis_pool);
+    }
+
+    #[test]
+    fn test_cached_repository_wrapper() {
+        use crate::logic::cache_service::CachedResponsibilityRepository;
+        
+        // Create a mock base repository
+        let base_repo = PostgresResponsibilityRepository {
+            client: Arc::new(DbClient {
+                pool: Pool::<Postgres>::connect_lazy("postgresql://localhost/test").unwrap(),
+                redis: deadpool_redis::Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379")),
+            }),
+        };
+        
+        let redis_pool = deadpool_redis::Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379"));
+        
+        // Create cached repository
+        let cached_repo = CachedResponsibilityRepository::new(
+            Arc::new(base_repo),
+            redis_pool,
+        );
+        
+        // Verify the repository implements the trait
+        let _repo: &dyn ResponsibilityRepository = &cached_repo;
+    }
+
+    // Test helper functions for query builder
+    #[test]
+    fn test_query_builder_helpers() {
+        // Test build_responsibility_query with various parameters
+        let query1 = query_builder::build_responsibility_query(
+            "school1",
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        assert!(query1.build().sql().contains("WHERE school_id = $1"));
+        
+        let query2 = query_builder::build_responsibility_query(
+            "school2",
+            Some("teacher"),
+            Some("space1"),
+            Some("search term"),
+            Some(20),
+            Some(10),
+        );
+        let sql2 = query2.build().sql();
+        assert!(sql2.contains("AND employee_type = $2"));
+        assert!(sql2.contains("AND space_id = $3"));
+        assert!(sql2.contains("AND name ILIKE $4"));
+        assert!(sql2.contains("LIMIT $5"));
+        assert!(sql2.contains("OFFSET $6"));
+    }
+
+    #[test]
+    fn test_employee_responsibility_query_builder() {
+        let query = query_builder::build_employee_responsibility_query(
+            "school123",
+            "emp456",
+            Some("space789"),
+            Some(5),
+            Some(0),
+        );
+        
+        let sql = query.build().sql();
+        assert!(sql.contains("WHERE er.school_id = $1"));
+        assert!(sql.contains("AND er.employee_id = $2"));
+        assert!(sql.contains("AND er.space_ids @> $3"));
+        assert!(sql.contains("LIMIT $4"));
+        assert!(sql.contains("OFFSET $5"));
+    }
+}
+
 // --- Responsibility Repository ---
 pub struct PostgresResponsibilityRepository {
     pub client: Arc<DbClient>,
@@ -396,20 +522,20 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
     ) -> Result<JsonList, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
-        let rows = if let Some(ref e_type) = employee_type {
-            sqlx::query(
-                "SELECT * FROM responsibilities WHERE school_id = $1 AND employee_type = $2",
-            )
-            .bind(school_id)
-            .bind(e_type)
+        // Use query builder instead of hardcoded SQL
+        let mut query_builder = query_builder::build_responsibility_query(
+            school_id,
+            employee_type.as_deref(),
+            None, // space_id
+            None, // search
+            None, // limit
+            None, // offset
+        );
+
+        let rows = query_builder
+            .build()
             .fetch_all(&mut *conn)
-            .await?
-        } else {
-            sqlx::query("SELECT * FROM responsibilities WHERE school_id = $1")
-                .bind(school_id)
-                .fetch_all(&mut *conn)
-                .await?
-        };
+            .await?;
 
         Ok(rows.into_iter().map(|r| {
              let rid: String = r.try_get("responsibility_id").unwrap_or_default();
@@ -425,6 +551,75 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
                 "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at").ok(),
             })
         }).collect())
+    }
+
+    async fn get_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_type: Option<String>,
+        page: i32,
+        limit: i32,
+    ) -> Result<Value, AppError> {
+        let offset = (page - 1) * limit;
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        // Build query with pagination
+        let mut query_builder = query_builder::build_responsibility_query(
+            school_id,
+            employee_type.as_deref(),
+            None, // space_id
+            None, // search
+            Some(limit as i64),
+            Some(offset as i64),
+        );
+
+        // Get total count
+        let total_query = format!(
+            "SELECT COUNT(*) FROM responsibilities WHERE school_id = '{}'{}",
+            school_id,
+            employee_type
+                .as_ref()
+                .map(|et| format!(" AND employee_type = '{}'", et))
+                .unwrap_or_default()
+        );
+        
+        let total_row = sqlx::query(&total_query)
+            .fetch_one(&mut *conn)
+            .await?;
+        let total: i64 = total_row.get::<i64, _>("count");
+
+        // Get paginated data
+        let rows = query_builder
+            .build()
+            .fetch_all(&mut *conn)
+            .await?;
+
+        let data: Vec<Value> = rows.into_iter().map(|r| {
+            let rid: String = r.try_get("responsibility_id").unwrap_or_default();
+            json!({
+                "responsibilityId": rid,
+                "name": r.try_get::<String, _>("name").unwrap_or_default(),
+                "description": r.try_get::<Option<String>, _>("description").ok().flatten(),
+                "spaceId": r.try_get::<Option<String>, _>("space_id").ok().flatten(),
+                "employeeType": r.try_get::<Option<String>, _>("employee_type").ok().flatten(),
+                "monthlyPrice": r.try_get::<bigdecimal::BigDecimal, _>("monthly_price").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
+                "perDayPrice": r.try_get::<bigdecimal::BigDecimal, _>("per_day_price").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
+                "studentFee": r.try_get::<bigdecimal::BigDecimal, _>("student_fee").ok().map(|b| b.to_string()).unwrap_or_else(|| "0.00".to_string()),
+                "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at").ok(),
+            })
+        }).collect();
+
+        let pages = ((total as f64) / (limit as f64)).ceil() as i32;
+
+        Ok(json!({
+            "data": data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": pages
+            }
+        }))
     }
 
     async fn add_responsibility(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
@@ -759,6 +954,114 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
         })])
     }
 
+    async fn get_student_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> Result<Value, AppError> {
+        let offset = (page - 1) * limit;
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        // 1. Get student's class details
+        let info_opt = sqlx::query(
+            "SELECT class_name, section FROM students WHERE school_id = $1 AND student_id = $2",
+        )
+        .bind(school_id)
+        .bind(student_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+
+        let rn = match info_opt {
+            Some(row) => {
+                let class_name = row
+                    .get::<Option<String>, _>("class_name")
+                    .unwrap_or_default();
+                let section = row.get::<Option<String>, _>("section").unwrap_or_default();
+                if class_name.is_empty() || section.is_empty() {
+                    return Ok(json!({
+                        "data": [],
+                        "pagination": {
+                            "page": page,
+                            "limit": limit,
+                            "total": 0,
+                            "pages": 0
+                        }
+                    }));
+                }
+                format!("{}-{}", class_name, section)
+            }
+            None => return Ok(json!({
+                "data": [],
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": 0,
+                    "pages": 0
+                }
+            })),
+        };
+
+        // 2. Get total count
+        let total_query = "SELECT COUNT(DISTINCT r.responsibility_id) as total
+            FROM responsibilities r
+            JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+            WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)";
+        
+        let total_row = sqlx::query(total_query)
+            .bind(school_id)
+            .bind(&rn)
+            .fetch_one(&mut *conn)
+            .await?;
+        let total: i64 = total_row.get::<i64, _>("total");
+
+        // 3. Fetch paginated responsibilities
+        let rows = sqlx::query(
+            "SELECT DISTINCT r.responsibility_id, r.name, r.student_fee
+             FROM responsibilities r
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)
+             ORDER BY r.name
+             LIMIT $3 OFFSET $4"
+        )
+        .bind(school_id)
+        .bind(&rn)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let items: Vec<Value> = rows
+            .into_iter()
+            .map(|row| {
+                json!({
+                    "responsibilityId": row.get::<String, _>("responsibility_id"),
+                    "name": row.get::<String, _>("name"),
+                    "studentFee": row.try_get::<bigdecimal::BigDecimal, _>("student_fee")
+                        .unwrap_or_default()
+                        .to_f64()
+                        .unwrap_or(0.0)
+                })
+            })
+            .collect();
+
+        let pages = ((total as f64) / (limit as f64)).ceil() as i32;
+
+        Ok(json!({
+            "data": vec![json!({
+                "spaceName": rn,
+                "items": items
+            })],
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": pages
+            }
+        }))
+    }
+
     async fn get_responsibility(
         &self,
         school_id: &str,
@@ -897,5 +1200,69 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0),
             "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0)
         })).collect())
+    }
+
+    async fn get_employee_responsibilities_paginated(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        page: i32,
+        limit: i32,
+    ) -> Result<Value, AppError> {
+        let offset = (page - 1) * limit;
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        // Get total count
+        let total_query = "SELECT COUNT(*) as total
+            FROM employee_responsibilities er
+            JOIN responsibilities r ON r.responsibility_id = er.responsibility_id
+            WHERE er.school_id = $1 AND er.employee_id = $2";
+        
+        let total_row = sqlx::query(total_query)
+            .bind(school_id)
+            .bind(employee_id)
+            .fetch_one(&mut *conn)
+            .await?;
+        let total: i64 = total_row.get::<i64, _>("total");
+
+        // Get paginated data
+        let rows = sqlx::query(
+            "SELECT r.*, er.space_ids as assigned_space_ids
+             FROM responsibilities r
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id
+             WHERE er.school_id = $1 AND er.employee_id = $2
+             ORDER BY r.name
+             LIMIT $3 OFFSET $4"
+        )
+        .bind(school_id)
+        .bind(employee_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let data: Vec<Value> = rows.into_iter().map(|r| json!({
+            "responsibilityId": r.get::<String, _>("responsibility_id"),
+            "name": r.get::<String, _>("name"),
+            "description": r.get::<Option<String>, _>("description"),
+            "spaceId": r.get::<Option<String>, _>("space_id"), // Base spaceId for the role
+            "assignedSpaceIds": r.get::<Option<Value>, _>("assigned_space_ids").unwrap_or_else(|| json!([])), // Specific spaces for this assignment
+            "employeeType": r.get::<Option<String>, _>("employee_type"),
+            "monthlyPrice": r.get::<bigdecimal::BigDecimal, _>("monthly_price").to_f64().unwrap_or(0.0),
+            "perDayPrice": r.get::<bigdecimal::BigDecimal, _>("per_day_price").to_f64().unwrap_or(0.0),
+            "studentFee": r.get::<bigdecimal::BigDecimal, _>("student_fee").to_f64().unwrap_or(0.0)
+        })).collect();
+
+        let pages = ((total as f64) / (limit as f64)).ceil() as i32;
+
+        Ok(json!({
+            "data": data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": pages
+            }
+        }))
     }
 }

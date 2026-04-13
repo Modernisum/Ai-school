@@ -1,0 +1,135 @@
+{
+  "version": "1",
+  "name": "OCR & Document Processing APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Extract Text from Document",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/ocr-routes/extract",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "multipart/form-data"
+          },
+          {
+            "name": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "document",
+              "type": "file",
+              "src": "/path/to/sample_document.pdf"
+            },
+            {
+              "key": "language",
+              "value": "eng",
+              "type": "text"
+            },
+            {
+              "key": "output_format",
+              "value": "json",
+              "type": "text"
+            },
+            {
+              "key": "extract_tables",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "detect_handwriting",
+              "value": "false",
+              "type": "text"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Extract Text from Document (Alternative JSON)",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/ocr-routes/extract",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_url\": \"https://example.com/sample_document.pdf\",\n  \"language\": \"eng\",\n  \"output_format\": \"json\",\n  \"extract_tables\": true,\n  \"detect_handwriting\": false,\n  \"confidence_threshold\": 0.8,\n  \"preprocess_options\": {\n    \"deskew\": true,\n    \"denoise\": true,\n    \"binarize\": true\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "3. Extract Text with Advanced Options",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/ocr-routes/extract",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "multipart/form-data"
+          },
+          {
+            "name": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "document",
+              "type": "file",
+              "src": "/path/to/handwritten_note.jpg"
+            },
+            {
+              "key": "language",
+              "value": "eng+hin",
+              "type": "text"
+            },
+            {
+              "key": "output_format",
+              "value": "structured",
+              "type": "text"
+            },
+            {
+              "key": "extract_tables",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "detect_handwriting",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "preserve_layout",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "extract_signatures",
+              "value": "true",
+              "type": "text"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

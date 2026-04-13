@@ -1,0 +1,171 @@
+{
+  "version": "1",
+  "name": "Exam Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Create Exam",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"examName\": \"First Term Examination\",\n  \"examType\": \"term\",\n  \"academicYear\": \"2024-2025\",\n  \"startDate\": \"2025-03-01\",\n  \"endDate\": \"2025-03-15\",\n  \"classes\": [\"Class 10\", \"Class 11\", \"Class 12\"],\n  \"subjects\": [\"Mathematics\", \"Science\", \"English\"],\n  \"totalMarks\": 100,\n  \"passingMarks\": 40,\n  \"description\": \"First term examination for all classes\",\n  \"schedule\": [\n    {\n      \"date\": \"2025-03-01\",\n      \"subject\": \"Mathematics\",\n      \"time\": \"10:00-13:00\",\n      \"venue\": \"Main Hall\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "2. List Exams",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. List Exams by Student",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}?studentId={{sampleStudentId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4. AI Generate Exam Questions",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}/ai/generate",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"subject\": \"Mathematics\",\n  \"classLevel\": \"Class 10\",\n  \"questionTypes\": [\"mcq\", \"short_answer\", \"problem_solving\"],\n  \"difficulty\": \"medium\",\n  \"numQuestions\": 20,\n  \"syllabusTopics\": [\"Algebra\", \"Geometry\", \"Trigonometry\"],\n  \"includeAnswerKey\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "5. Get Exam Details",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "6. Update Exam",
+      "type": "http-request",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"examName\": \"First Term Examination Updated\",\n  \"endDate\": \"2025-03-20\",\n  \"description\": \"Updated exam schedule with extended dates\"\n}"
+        }
+      }
+    },
+    {
+      "name": "7. Delete Exam",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "8. Publish Exam Results",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}/publish",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"publishDate\": \"2025-03-25\",\n  \"notifyStudents\": true,\n  \"notifyParents\": true\n}"
+        }
+      }
+    }
+  ]
+}

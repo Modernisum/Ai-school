@@ -1,0 +1,485 @@
+{
+  "version": "1",
+  "name": "Leave Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "POST /api/leave/:schoolId - Create Leave",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"employeeName\": \"Rajesh Kumar\",\n  \"leaveType\": \"casual\",\n  \"startDate\": \"2025-04-15\",\n  \"endDate\": \"2025-04-17\",\n  \"duration\": 3,\n  \"reason\": \"Family function\",\n  \"contactDuringLeave\": \"+919876543210\",\n  \"emergencyContact\": \"+919876543211\",\n  \"responsibilities\": [\"Class 10A Mathematics\", \"Exam Coordinator\"],\n  \"documents\": [\n    {\n      \"type\": \"medical\",\n      \"url\": \"https://example.com/medical_certificate.pdf\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId - List Leaves",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/approve - Approve Leave",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/approve",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/reject - Reject Leave",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/reject",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/extend - Extend Leave",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/extend",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"days\": 2,\n  \"reason\": \"Medical extension required\"\n}"
+        }
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/reduce - Reduce Leave",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/reduce",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"days\": 1,\n  \"reason\": \"Employee returning early\"\n}"
+        }
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/:leaveId/pdf - Download Leave PDF",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/pdf",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/balance/:employeeId - Get Leave Balance",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/balance/{{employeeId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/queue - Get Leave Queue",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/queue",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/details/:leaveId - Get Leave Details",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/details/{{leaveId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/conditional/approve - Apply Conditional Approval",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/conditional/approve",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"conditions\": [\n    {\n      \"type\": \"document_upload\",\n      \"description\": \"Upload medical certificate\",\n      \"deadline\": \"2025-04-20\"\n    },\n    {\n      \"type\": \"coverage_arranged\",\n      \"description\": \"Arrange coverage for classes\",\n      \"deadline\": \"2025-04-14\"\n    }\n  ],\n  \"approvalDeadline\": \"2025-04-14\"\n}"
+        }
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/conditional/respond - Respond to Conditions",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/conditional/respond",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"responses\": [\n    {\n      \"conditionId\": \"cond-123\",\n      \"status\": \"completed\",\n      \"evidence\": \"https://example.com/medical_certificate_uploaded.pdf\",\n      \"notes\": \"Medical certificate uploaded\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/conditional/templates - Get Conditional Templates",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/conditional/templates",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/conditional/templates - Create Conditional Template",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/conditional/templates",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"name\": \"Medical Leave Template\",\n  \"description\": \"Standard conditions for medical leaves\",\n  \"conditions\": [\n    {\n      \"type\": \"document_upload\",\n      \"description\": \"Medical certificate from registered doctor\",\n      \"required\": true\n    },\n    {\n      \"type\": \"coverage_arranged\",\n      \"description\": \"Class coverage arranged for duration\",\n      \"required\": true\n    }\n  ],\n  \"applicableTo\": [\"medical\", \"sick\"]\n}"
+        }
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/coverage/assign - Assign Coverage",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/coverage/assign",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"coverageEmployeeId\": \"emp-123457\",\n  \"coverageEmployeeName\": \"Amit Patel\",\n  \"responsibilities\": [\"Class 10A Mathematics\"],\n  \"startDate\": \"2025-04-15\",\n  \"endDate\": \"2025-04-17\",\n  \"notes\": \"Coverage for mathematics classes\"\n}"
+        }
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/:leaveId/coverage/available - Get Available Coverages",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/coverage/available",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/coverage/:coverageId/accept - Accept Coverage",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/coverage/{{coverageId}}/accept",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/:leaveId/workload/assess - Assess Workload",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/workload/assess",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/:leaveId/workload/assessment - Get Workload Assessment",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/{{leaveId}}/workload/assessment",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/notifications - Get Notifications",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/notifications",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/notifications/:notificationId/read - Mark Notification Read",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/notifications/{{notificationId}}/read",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/leave/:schoolId/feature-flags - Get Feature Flags",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/feature-flags",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/leave/:schoolId/feature-flags - Update Feature Flags",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/leave/{{schoolId}}/feature-flags",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"conditionalApproval\": true,\n  \"workloadAssessment\": true,\n  \"autoCoverage\": false,\n  \"notifications\": true\n}"
+        }
+      }
+    }
+  ]
+}

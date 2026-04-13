@@ -1,0 +1,157 @@
+{
+  "version": "1",
+  "name": "Attendance Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "POST /api/operations/attendance/:schoolId/:role/:userId/present - Mark Present",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/{{studentId}}/present",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"date\": \"{{currentDate}}\",\n  \"status\": \"present\",\n  \"remarks\": \"Present in class\",\n  \"in_time\": \"09:00:00\",\n  \"out_time\": \"15:00:00\"\n}"
+        }
+      }
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/:role/:userId/holiday - Mark Holiday",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/{{studentId}}/holiday",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"date\": \"{{currentDate}}\",\n  \"status\": \"holiday\",\n  \"remarks\": \"Public holiday\"\n}"
+        }
+      }
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/:role/:userId - List Attendance",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/{{studentId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/student/date/:date - List Attendance by Date",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/date/{{currentDate}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/reports/daily-summary - Daily Summary",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/daily-summary?date={{currentDate}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/reports/monthly-stats - Monthly Stats",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/monthly-stats?month=1&year=2024",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/bulk-attendance - Bulk Mark Attendance",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/bulk-attendance",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"class_name\": \"10th\",\n  \"attendances\": [\n    {\n      \"user_id\": \"{{studentId}}\",\n      \"role\": \"student\",\n      \"date\": \"{{currentDate}}\",\n      \"status\": \"present\",\n      \"remarks\": \"Present\"\n    },\n    {\n      \"user_id\": \"{{studentId2}}\",\n      \"role\": \"student\",\n      \"date\": \"{{currentDate}}\",\n      \"status\": \"absent\",\n      \"remarks\": \"Sick\"\n    }\n  ]\n}"
+        }
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ use std::sync::Arc;
 mod chat_handler;
 mod analysis;
 mod prediction;
+pub mod providers;
 
 pub use chat_handler::ChatHandler;
 pub use analysis::AnalysisEngine;

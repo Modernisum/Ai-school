@@ -1,0 +1,51 @@
+{
+  "version": "1",
+  "name": "Document Upload APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "POST /api/document/upload/:schoolId - Upload Document Metadata",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/document/upload/{{schoolId}}",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          },
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"student_id\": \"{{studentId}}\",\n  \"document_type\": \"report_card\",\n  \"title\": \"Annual Report Card 2024\",\n  \"description\": \"Annual academic performance report for student\",\n  \"file_url\": \"https://storage.example.com/reports/student_001_report_2024.pdf\",\n  \"file_name\": \"student_001_report_2024.pdf\",\n  \"file_size\": 204800,\n  \"mime_type\": \"application/pdf\",\n  \"tags\": [\"academic\", \"report\", \"2024\"],\n  \"visibility\": \"student\",\n  \"expiry_date\": \"2025-12-31\"\n}"
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/document/upload/:schoolId/:documentId - Delete Document",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/document/upload/{{schoolId}}/1",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

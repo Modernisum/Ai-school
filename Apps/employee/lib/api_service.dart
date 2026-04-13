@@ -337,6 +337,107 @@ class ApiService {
     }
   }
 
+  // Responsibility Analytics Methods
+  Future<Map<String, dynamic>?> getResponsibilityAnalytics(String schoolId, String responsibilityId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      
+      final response = await http.get(
+        Uri.parse('$apiBase/responsibility/$schoolId/$responsibilityId/analytics'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get Responsibility Analytics Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getEmployeeWorkloadMetrics(String schoolId, String employeeId, {String? startDate, String? endDate}) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      
+      String url = '$apiBase/responsibility/$schoolId/metrics/workload?employee_id=$employeeId';
+      if (startDate != null) url += '&start_date=$startDate';
+      if (endDate != null) url += '&end_date=$endDate';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get Employee Workload Metrics Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getResponsibilityUtilizationMetrics(String schoolId, String responsibilityId, {String? startDate, String? endDate}) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      
+      String url = '$apiBase/responsibility/$schoolId/metrics/utilization?responsibility_id=$responsibilityId';
+      if (startDate != null) url += '&start_date=$startDate';
+      if (endDate != null) url += '&end_date=$endDate';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get Responsibility Utilization Metrics Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getTeacherResponsibilityOverview(String schoolId, String employeeId) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      
+      final response = await http.get(
+        Uri.parse('$apiBase/responsibility/$schoolId/overview/analytics?employee_id=$employeeId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get Teacher Responsibility Overview Error: $e");
+      return null;
+    }
+  }
+
   Future<bool> completeTask(String schoolId, String taskId) async {
     try {
       final token = await storage.read(key: 'jwt_token');
@@ -543,6 +644,106 @@ class ApiService {
     } catch (e) {
       debugPrint("Mark Notification Read Error: $e");
       return false;
+    }
+  }
+
+  // Mobile Attendance Methods
+  Future<Map<String, dynamic>?> getQrAttendanceToken() async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      final url = '$apiBase/operations/attendance/$sid/qr-attendance';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          "duration_minutes": 15,
+          "class_name": "10-A"
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Get QR Attendance Token Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> markMobileAttendance({
+    required String studentId,
+    required String status,
+    required double latitude,
+    required double longitude,
+    String? qrToken,
+  }) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      final url = '$apiBase/operations/attendance/$sid/mobile-attendance';
+
+      final body = {
+        "student_id": studentId,
+        "status": status,
+        "latitude": latitude,
+        "longitude": longitude,
+        "qr_token": qrToken,
+      };
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Mark Mobile Attendance Error: $e");
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>?> syncOfflineAttendance(
+      List<Map<String, dynamic>> records) async {
+    try {
+      final token = await storage.read(key: 'jwt_token');
+      final sid = await storage.read(key: 'school_id');
+      final url = '$apiBase/operations/attendance/$sid/offline-sync';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          "records": records,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data['data'] as List<dynamic>?)
+            ?.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Sync Offline Attendance Error: $e");
+      return null;
     }
   }
 }

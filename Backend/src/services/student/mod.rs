@@ -7,10 +7,12 @@ use std::sync::Arc;
 mod crud;
 mod queries;
 mod validation;
+mod encrypted_service;
 
 pub use crud::StudentCrud;
 pub use queries::StudentQueries;
 pub use validation::StudentValidation;
+pub use encrypted_service::EncryptedStudentService;
 
 pub struct PostgresStudentService {
     pub repos: Arc<Repositories>,
@@ -51,6 +53,27 @@ impl StudentService for PostgresStudentService {
         school_id: &str,
     ) -> AppResult<Vec<Value>> {
         self.crud.list_students(school_id).await
+    }
+
+    async fn list_students_paginated(
+        &self,
+        school_id: &str,
+        page: i32,
+        limit: i32,
+        class_name: Option<&str>,
+        section: Option<&str>,
+        status: Option<&str>,
+        search: Option<&str>,
+    ) -> AppResult<(Vec<Value>, i64)> {
+        self.repos.student.get_students_paginated(
+            school_id,
+            page,
+            limit,
+            class_name,
+            section,
+            status,
+            search,
+        ).await.map_err(AppError::from)
     }
 
     async fn list_students_by_class(

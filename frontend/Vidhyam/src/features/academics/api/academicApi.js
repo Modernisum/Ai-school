@@ -224,6 +224,80 @@ export const academicApi = createApi({
             }),
             invalidatesTags: ['Attendance'],
         }),
+        
+        // Bulk attendance operations
+        bulkMarkAttendance: builder.mutation({
+            query: ({ schoolId, body }) => ({
+                url: `/operations/attendance/${schoolId}/bulk-attendance`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Attendance'],
+        }),
+        
+        getClassAttendance: builder.query({
+            query: ({ schoolId, className, date }) => ({
+                url: `/operations/attendance/${schoolId}/class-attendance`,
+                params: { class_name: className, date },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || [],
+        }),
+
+        // Attendance Reports
+        getDailySummary: builder.query({
+            query: ({ schoolId, date }) => ({
+                url: `/operations/attendance/${schoolId}/reports/daily-summary`,
+                params: { date },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || res,
+        }),
+
+        getMonthlyStats: builder.query({
+            query: ({ schoolId, month, year }) => ({
+                url: `/operations/attendance/${schoolId}/reports/monthly-stats`,
+                params: { month, year },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || res,
+        }),
+
+        getStudentReport: builder.query({
+            query: ({ schoolId, studentId, startDate, endDate, status }) => ({
+                url: `/operations/attendance/${schoolId}/reports/student`,
+                params: { student_id: studentId, start_date: startDate, end_date: endDate, status },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || res,
+        }),
+
+        getClassReport: builder.query({
+            query: ({ schoolId, className, startDate, endDate }) => ({
+                url: `/operations/attendance/${schoolId}/reports/class`,
+                params: { class_name: className, start_date: startDate, end_date: endDate },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || res,
+        }),
+
+        getEmployeeReport: builder.query({
+            query: ({ schoolId, employeeId, startDate, endDate }) => ({
+                url: `/operations/attendance/${schoolId}/reports/employee`,
+                params: { employee_id: employeeId, start_date: startDate, end_date: endDate },
+            }),
+            providesTags: ['Attendance'],
+            transformResponse: (res) => res.data || res,
+        }),
+
+        generateCustomReport: builder.mutation({
+            query: ({ schoolId, body }) => ({
+                url: `/operations/attendance/${schoolId}/reports/custom`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Attendance'],
+        }),
     }),
 });
 
@@ -259,4 +333,18 @@ export const {
     useMarkHolidayMutation,
     useUpdateAttendanceMutation,
     useDeleteAttendanceMutation,
+    useBulkMarkAttendanceMutation,
+    useGetClassAttendanceQuery,
+    useLazyGetClassAttendanceQuery,
+    useGetDailySummaryQuery,
+    useLazyGetDailySummaryQuery,
+    useGetMonthlyStatsQuery,
+    useLazyGetMonthlyStatsQuery,
+    useGetStudentReportQuery,
+    useLazyGetStudentReportQuery,
+    useGetClassReportQuery,
+    useLazyGetClassReportQuery,
+    useGetEmployeeReportQuery,
+    useLazyGetEmployeeReportQuery,
+    useGenerateCustomReportMutation,
 } = academicApi;

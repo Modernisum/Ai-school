@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:chatra/features/attendance/bloc/attendance_history_bloc.dart';
 import 'package:chatra/features/attendance/bloc/attendance_history_event.dart';
 import 'package:chatra/features/attendance/bloc/attendance_history_state.dart';
+import 'package:chatra/features/attendance/screens/qr_scanner_screen.dart';
+import 'package:chatra/features/attendance/services/offline_sync_service.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/widgets/animated_gradient_bg.dart';
 import 'package:chatra/core/network/api_service.dart';
@@ -25,6 +27,33 @@ class AttendanceCalendarScreen extends StatefulWidget {
 
 class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
   DateTime _focusedMonth = DateTime.now();
+  int _pendingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingCount();
+  }
+
+  Future<void> _loadPendingCount() async {
+    final count = await OfflineSyncService.instance.getPendingCount();
+    if (mounted) setState(() => _pendingCount = count);
+  }
+
+  Future<void> _syncOffline() async {
+    final (synced, failed) = await OfflineSyncService.instance.syncPending();
+    await _loadPendingCount();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(synced > 0
+              ? '$synced records synced${failed > 0 ? ', $failed failed' : ''}'
+              : 'No records to sync'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +67,49 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
           elevation: 0,
           title: const Text("Attendance Record", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            // Offline sync indicator
+            if (_pendingCount > 0)
+              IconButton(
+                icon: Stack(
+                  children: [
+                    const Icon(Icons.sync_rounded, color: Colors.amberAccent),
+                    Positioned(
+                      right: 0, top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                        child: Text('$_pendingCount', style: const TextStyle(color: Colors.white, fontSize: 9)),
+                      ),
+                    )
+                  ],
+                ),
+                tooltip: 'Sync offline records',
+                onPressed: _syncOffline,
+              ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(builder: (_) => const QrAttendanceScreen()),
+            );
+            if (result == true) {
+              // Refresh attendance after successful scan
+              if (context.mounted) {
+                context.read<AttendanceHistoryBloc>().add(
+                  AttendanceHistoryFetchStarted(
+                    schoolId: widget.schoolId,
+                    studentId: widget.studentId,
+                  ),
+                );
+              }
+            }
+          },
+          icon: const Icon(Icons.qr_code_scanner_rounded),
+          label: const Text('Scan QR'),
+          backgroundColor: Colors.indigoAccent,
         ),
         body: AnimatedGradientBg(
           child: BlocBuilder<AttendanceHistoryBloc, AttendanceHistoryState>(

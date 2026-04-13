@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Download, Upload, Database, AlertTriangle, CheckCircle, Loader, FileJson } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 import { downloadExport, importSchoolData, listSchools, manualBackup } from '../api.js'
+import { API_ROOT } from '../config.js'
 
 export default function BackupPage() {
     const toast = useContext(ToastCtx)
@@ -17,8 +18,7 @@ export default function BackupPage() {
 
     const handleGeoExport = async () => {
         try {
-            const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-            const res = await fetch(`http://${HOST}:8080/api/geo/export`);
+            const res = await fetch(`${API_ROOT}/geo/export`);
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -39,8 +39,7 @@ export default function BackupPage() {
         try {
             const text = await file.text();
             const data = JSON.parse(text);
-            const HOST = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-            const res = await fetch(`http://${HOST}:8080/api/geo/import`, {
+            const res = await fetch(`${API_ROOT}/geo/import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

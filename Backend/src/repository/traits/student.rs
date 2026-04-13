@@ -8,6 +8,16 @@ use super::{AppError, JsonList};
 pub trait StudentRepository: Send + Sync {
     async fn add_student(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_students(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_students_paginated(
+        &self,
+        school_id: &str,
+        page: i32,
+        limit: i32,
+        class_name: Option<&str>,
+        section: Option<&str>,
+        status: Option<&str>,
+        search: Option<&str>,
+    ) -> Result<(JsonList, i64), AppError>;
     async fn get_students_by_class(
         &self,
         school_id: &str,

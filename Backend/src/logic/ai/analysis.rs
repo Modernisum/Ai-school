@@ -1,13 +1,17 @@
+use crate::error::AppResult;
+use crate::logic::ai::providers::{google_gemini::GoogleGeminiProvider, LLMProvider, ProviderConfig};
 use crate::repository::Repositories;
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde_json::{json, Value};
 use sqlx::Row;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 pub struct AnalysisEngine {
     pub repos: Arc<Repositories>,
     pub http_client: Client,
+    pub gemini_provider: Option<GoogleGeminiProvider>,
 }
 
 impl AnalysisEngine {
@@ -15,6 +19,7 @@ impl AnalysisEngine {
         Self {
             repos,
             http_client: Client::new(),
+            gemini_provider: None,
         }
     }
 
@@ -28,8 +33,37 @@ impl AnalysisEngine {
             None => Err(anyhow!("GEMINI_API_KEY not found in system_config. Please update settings.")),
         }
     }
+    
+    /// Initialize the Gemini provider with configuration from database
+    pub async fn initialize_provider(&mut self) -> Result<()> {
+        let api_key = self.fetch_api_key().await?;
+        
+        let config = ProviderConfig {
+            provider_type: "google_gemini".to_string(),
+            provider_name: "Google Gemini".to_string(),
+            config: {
+                let mut map = HashMap::new();
+                map.insert("api_key".to_string(), api_key);
+                map.insert("model".to_string(), "text-embedding-004".to_string());
+                map
+            },
+            is_active: true,
+            default_model: Some("gemini-pro".to_string()),
+            embedding_model: Some("text-embedding-004".to_string()),
+        };
+        
+        self.gemini_provider = Some(GoogleGeminiProvider::new(config)?);
+        Ok(())
+    }
 
     pub async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>> {
+        // Try to use the provider if available
+        if let Some(provider) = &self.gemini_provider {
+            return provider.generate_embedding(text).await
+                .map_err(|e| anyhow!("Provider error: {}", e));
+        }
+        
+        // Fallback to direct API call (legacy code)
         let api_key = self.fetch_api_key().await?;
         let url = format!(
             "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={}",

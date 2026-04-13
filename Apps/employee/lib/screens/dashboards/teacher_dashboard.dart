@@ -143,6 +143,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         _buildClassCard(context, "Class 10-A", "Physics • Mathematics", "Class Teacher"),
         _buildClassCard(context, "Class 11-B", "Advanced Physics", "Subject Teacher"),
         const SizedBox(height: 24),
+        
+        // Responsibility Analytics Section
+        const Text("RESPONSIBILITY ANALYTICS", style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        const SizedBox(height: 12),
+        _buildResponsibilityAnalyticsSection(context),
+        const SizedBox(height: 24),
+        
         const Text("QUICK ACCESS", style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         const SizedBox(height: 12),
         GridView.count(
@@ -240,6 +247,174 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsibilityAnalyticsSection(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.5,
+      children: [
+        // Total Responsibilities Card
+        GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.assignment, size: 24, color: Colors.blueAccent),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Total", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text("5", style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text("Responsibilities", style: TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
+        ),
+        
+        // Assigned Spaces Card
+        GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.greenAccent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.location_on, size: 24, color: Colors.greenAccent),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Spaces", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text("3", style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text("Assigned", style: TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
+        ),
+        
+        // Revenue Impact Card
+        GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.attach_money, size: 24, color: Colors.amber),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Revenue", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text("₹12.5K", style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text("Monthly Impact", style: TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
+        ),
+        
+        // Workload Distribution Card
+        GlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.purpleAccent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.pie_chart, size: 24, color: Colors.purpleAccent),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Workload", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text("65%", style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text("Utilization", style: TextStyle(fontSize: 12, color: Colors.white70)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -1,0 +1,227 @@
+{
+  "version": "1",
+  "name": "AI & Content Generation APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Generate Exam Questions",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/generate/exam",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Mathematics\",\n  \"grade\": \"10\",\n  \"topic\": \"Algebra\",\n  \"question_count\": 10,\n  \"difficulty\": \"medium\",\n  \"question_types\": [\"multiple_choice\", \"short_answer\"],\n  \"include_answer_key\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Generate Lesson Plan",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/generate/lesson-plan",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Science\",\n  \"grade\": \"8\",\n  \"topic\": \"Photosynthesis\",\n  \"duration_minutes\": 45,\n  \"learning_objectives\": [\"Understand the process of photosynthesis\", \"Identify the reactants and products\"],\n  \"materials_needed\": [\"Whiteboard\", \"Markers\", \"Plant diagram\"]\n}"
+        }
+      }
+    },
+    {
+      "name": "3. Generate Study Materials",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/generate/study-materials",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"History\",\n  \"grade\": \"11\",\n  \"topic\": \"World War II\",\n  \"content_type\": \"summary\",\n  \"length\": \"medium\",\n  \"include_timeline\": true,\n  \"include_key_figures\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "4. Generate Practice Problems",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/generate/practice-problems",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Physics\",\n  \"grade\": \"12\",\n  \"topic\": \"Newton's Laws of Motion\",\n  \"problem_count\": 15,\n  \"difficulty_levels\": [\"easy\", \"medium\", \"hard\"],\n  \"include_solutions\": true,\n  \"include_step_by_step\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "5. Summarize Content",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/summarize",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a byproduct. The process is vital for life on Earth as it provides the primary source of oxygen in the atmosphere and the energy source for most ecosystems.\",\n  \"summary_length\": \"short\",\n  \"include_key_points\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "6. Enhanced Generate Exam",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/content/{{schoolId}}/enhanced/generate-exam",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Chemistry\",\n  \"grade\": \"11\",\n  \"topics\": [\"Atomic Structure\", \"Chemical Bonding\", \"Periodic Table\"],\n  \"total_marks\": 100,\n  \"time_minutes\": 180,\n  \"sections\": [\n    {\n      \"name\": \"Multiple Choice\",\n      \"marks_per_question\": 1,\n      \"question_count\": 20\n    },\n    {\n      \"name\": \"Short Answer\",\n      \"marks_per_question\": 3,\n      \"question_count\": 10\n    },\n    {\n      \"name\": \"Long Answer\",\n      \"marks_per_question\": 10,\n      \"question_count\": 3\n    }\n  ],\n  \"include_rubric\": true,\n  \"include_answer_sheet\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "7. AI Generate Exam",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/exam/ai/{{schoolId}}/generate",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Biology\",\n  \"class\": \"10\",\n  \"chapter\": \"Cell Structure and Function\",\n  \"exam_type\": \"unit_test\",\n  \"total_questions\": 25,\n  \"difficulty\": \"mixed\",\n  \"include_diagrams\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "8. AI Query",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/ai/{{schoolId}}/query",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Explain the water cycle in simple terms for a 5th grade student\",\n  \"context\": \"science_education\",\n  \"response_format\": \"explanation\",\n  \"complexity\": \"simple\"\n}"
+        }
+      }
+    },
+    {
+      "name": "9. AI Generate Tasks",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/task/ai/{{schoolId}}/generate",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"project\": \"School Science Fair\",\n  \"description\": \"Organize and execute the annual school science fair\",\n  \"timeline_days\": 30,\n  \"team_size\": 5,\n  \"include_milestones\": true,\n  \"include_responsibilities\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "10. AI Reorganize Tasks",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/task/ai/{{schoolId}}/reorganize",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tasks\": [\n    \"Prepare lesson plan for Monday\",\n    \"Grade student assignments\",\n    \"Attend staff meeting\",\n    \"Prepare exam questions\",\n    \"Meet with parents\"\n  ],\n  \"priority_levels\": [\"high\", \"medium\", \"low\"],\n  \"time_available_hours\": 8,\n  \"optimize_for\": \"productivity\"\n}"
+        }
+      }
+    }
+  ]
+}

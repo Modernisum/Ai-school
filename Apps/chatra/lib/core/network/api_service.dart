@@ -265,4 +265,27 @@ class ApiService {
       return ApiError(e.toString());
     }
   }
+
+  Future<ApiResponse<Map<String, dynamic>>> registerDevice(String token) async {
+    try {
+      final sid = await storage.read(key: 'school_id');
+      final uid = await storage.read(key: 'user_id');
+      if (sid == null || uid == null) return ApiError("Registration error: Missing session info");
+      
+      final response = await http.post(
+        Uri.parse('$apiBase/auth/register-device'),
+        headers: await _headers(),
+        body: jsonEncode({
+          'school_id': sid,
+          'user_id': uid,
+          'token': token,
+          'platform': kIsWeb ? 'web' : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android'),
+        }),
+      );
+      if (response.statusCode == 200) return ApiSuccess(jsonDecode(response.body));
+      return ApiError("Device registration error: ${response.statusCode}", statusCode: response.statusCode);
+    } catch (e) {
+      return ApiError(e.toString());
+    }
+  }
 }

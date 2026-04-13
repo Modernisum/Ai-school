@@ -1,4 +1,4 @@
-// Responsibility Permission Middleware
+ // Responsibility Permission Middleware
 // Validates user permissions for responsibility operations
 
 use axum::{

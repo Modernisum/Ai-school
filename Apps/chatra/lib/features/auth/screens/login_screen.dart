@@ -83,8 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final role = profile['userType'].toString();
       
       await apiService.storage.write(key: 'school_id', value: profile['schoolId'].toString());
+      await apiService.storage.write(key: 'user_id', value: studentId);
       await apiService.storage.write(key: 'student_id', value: studentId);
       await apiService.storage.write(key: 'user_role', value: role);
+
+      // 🔔 Register for push notifications
+      NotificationService.instance.registerWithBackend(apiService);
       
       if (!mounted) return;
       context.read<AuthBloc>().add(LoggedIn(token: token, role: role));

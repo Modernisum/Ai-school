@@ -1,0 +1,43 @@
+{
+  "version": "1",
+  "name": "Document Box APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "GET /api/documentbox/:schoolId - List All Documents",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/documentbox/{{schoolId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GET /api/documentbox/:schoolId?student_id=:studentId - List Documents for Student",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/documentbox/{{schoolId}}?student_id={{studentId}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

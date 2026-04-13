@@ -35,4 +35,21 @@ pub trait AttendanceRepository: Send + Sync {
         action: &str,
         data: Value,
     ) -> Result<(), AppError>;
+    
+    // Bulk operations
+    async fn bulk_mark_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        date: &str,
+        class_name: Option<&str>,
+        attendances: Vec<(String, Value)>,
+    ) -> Result<(usize, Vec<(String, String)>), AppError>;
+    
+    async fn get_class_attendance(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        date: &str,
+    ) -> Result<JsonList, AppError>;
 }

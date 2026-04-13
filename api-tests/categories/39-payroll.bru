@@ -1,0 +1,246 @@
+{
+  "version": "1",
+  "name": "Employee Payroll",
+  "type": "collection",
+  "items": [
+    {
+      "name": "Set Base Salary",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/payroll/:schoolId/:employeeId/set-base-salary",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "baseSalary": 50000,
+            "currency": "INR",
+            "effectiveFrom": "2024-04-01",
+            "payGrade": "PG-5",
+            "allowances": {
+              "housing": 10000,
+              "transport": 5000,
+              "medical": 3000
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Salary parameters updated"
+        }
+      }
+    },
+    {
+      "name": "Get Salary Breakdown",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/payroll/:schoolId/:employeeId/salary-breakdown",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "employeeId": "EMP001",
+            "employeeName": "John Doe",
+            "baseSalary": 50000,
+            "currency": "INR",
+            "payGrade": "PG-5",
+            "allowances": {
+              "housing": 10000,
+              "transport": 5000,
+              "medical": 3000,
+              "total": 18000
+            },
+            "deductions": {
+              "tax": 5000,
+              "providentFund": 3000,
+              "insurance": 1000,
+              "total": 9000
+            },
+            "bonuses": [
+              {
+                "id": "BON001",
+                "amount": 5000,
+                "reason": "Performance Bonus",
+                "date": "2024-03-15"
+              }
+            ],
+            "aids": [
+              {
+                "id": "AID001",
+                "amount": 2000,
+                "reason": "Medical Emergency",
+                "date": "2024-03-10"
+              }
+            ],
+            "netSalary": 59000,
+            "paymentStatus": "pending",
+            "lastPaymentDate": "2024-03-01"
+          }
+        }
+      }
+    },
+    {
+      "name": "Add Bonus",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/payroll/:schoolId/:employeeId/add-bonus",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "amount": 7500,
+            "reason": "Exceptional Performance Q1",
+            "effectiveMonth": "2024-04",
+            "taxable": true,
+            "notes": "Awarded for exceeding quarterly targets"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "bonusId": "{{$random.uuid}}",
+            "employeeId": "EMP001",
+            "amount": 7500,
+            "reason": "Exceptional Performance Q1",
+            "effectiveMonth": "2024-04",
+            "addedBy": "{{adminId}}",
+            "addedAt": "{{$timestamp.iso}}"
+          }
+        }
+      }
+    },
+    {
+      "name": "Add Aid",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/payroll/:schoolId/:employeeId/add-aid",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "amount": 3000,
+            "reason": "Family Emergency Support",
+            "aidType": "emergency",
+            "repayable": false,
+            "notes": "Provided for urgent family medical needs"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "aidId": "{{$random.uuid}}",
+            "employeeId": "EMP001",
+            "amount": 3000,
+            "reason": "Family Emergency Support",
+            "aidType": "emergency",
+            "addedBy": "{{adminId}}",
+            "addedAt": "{{$timestamp.iso}}"
+          }
+        }
+      }
+    },
+    {
+      "name": "Auto Close Month",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/payroll/:schoolId/:employeeId/auto-close-month",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Month closed successfully"
+        }
+      }
+    }
+  ]
+}

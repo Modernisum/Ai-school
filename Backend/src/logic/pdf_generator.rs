@@ -35,7 +35,7 @@ impl PdfGenerator {
 
                 // Headers
                 let mut x_pos = 20.0;
-                let col_width = 170.0 / headers.len() as f32;
+                let col_width = 170.0 / headers.len() as f64;
 
                 for head in &headers {
                     current_layer.use_text(head, 12.0, Mm(x_pos), Mm(y_pos), &font_bold);

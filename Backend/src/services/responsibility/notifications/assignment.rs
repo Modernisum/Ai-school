@@ -1,7 +1,8 @@
 use crate::error::{AppError, AppResult};
 use crate::repository::Repositories;
+use crate::logic::EmailService;
 use serde_json::{json, Value};
-use chrono::Utc;
+use chrono::{Utc, Datelike};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -29,11 +30,12 @@ impl ResponsibilityNotificationType {
 
 pub struct AssignmentNotifier {
     repos: Arc<Repositories>,
+    email_service: Arc<EmailService>,
 }
 
 impl AssignmentNotifier {
-    pub fn new(repos: Arc<Repositories>) -> Self {
-        Self { repos }
+    pub fn new(repos: Arc<Repositories>, email_service: Arc<EmailService>) -> Self {
+        Self { repos, email_service }
     }
 
     pub async fn send_assignment_notification(
@@ -73,8 +75,22 @@ impl AssignmentNotifier {
             )
             .await;
 
-        // TODO: Send email notification if enabled
-        // self.send_email_notification(employee_id, &notification).await;
+        // Send email notification if enabled
+        if let Err(e) = self.send_email_notification(school_id, employee_id, responsibility_name, assigned_by).await {
+            // Log email failure but don't fail the whole operation
+            let _ = self
+                .repos
+                .audit
+                .log_action(
+                    school_id,
+                    assigned_by,
+                    "EMAIL_NOTIFICATION",
+                    responsibility_id,
+                    "FAILED",
+                    json!({"error": e.to_string()}),
+                )
+                .await;
+        }
 
         Ok(())
     }
@@ -115,6 +131,78 @@ impl AssignmentNotifier {
                 notification.clone(),
             )
             .await;
+
+        Ok(())
+    }
+
+    async fn send_email_notification(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        responsibility_name: &str,
+        assigned_by: &str,
+    ) -> AppResult<()> {
+        // Get employee email from repository
+        let employee: Option<serde_json::Value> = self.repos.employee.get_employee(school_id, employee_id).await?;
+        
+        let email = match employee.as_ref().and_then(|e| e.get("email")).and_then(|v| v.as_str()) {
+            Some(email) if !email.is_empty() => email,
+            _ => {
+                // No email found, skip sending
+                return Ok(());
+            }
+        };
+
+        let subject = format!("New Responsibility Assigned: {}", responsibility_name);
+        
+        let html_body = format!(
+            r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Responsibility Assignment</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+        .content {{ background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }}
+        .footer {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #777; }}
+        .button {{ display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Responsibility Assigned</h1>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>You have been assigned a new responsibility: <strong>{}</strong>.</p>
+            <p>This responsibility was assigned by: <strong>{}</strong>.</p>
+            <p>You can view and manage your responsibilities in the Vidhyam employee portal.</p>
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="https://app.vidhyam.com/employee/responsibilities" class="button">View Responsibilities</a>
+            </p>
+            <p>If you have any questions about this assignment, please contact your administrator.</p>
+            <p>Best regards,<br>The Vidhyam Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this message.</p>
+            <p>© {} Vidhyam School Management System</p>
+        </div>
+    </div>
+</body>
+</html>"#,
+            responsibility_name,
+            assigned_by,
+            chrono::Utc::now().year()
+        );
+
+        // Send HTML email
+        self.email_service
+            .send_html_email(email, &subject, &html_body, None)
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to send email: {}", e)))?;
 
         Ok(())
     }

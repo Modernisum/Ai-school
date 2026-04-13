@@ -56,4 +56,43 @@ pub trait AttendanceService: Send + Sync {
     async fn create_school_holiday(&self, school_id: &str, data: Value) -> AppResult<Value>;
     async fn delete_school_holiday(&self, school_id: &str, holiday_id: &str) -> AppResult<()>;
     async fn check_school_holiday(&self, school_id: &str, date: &str) -> AppResult<Value>;
+    
+    // Bulk operations
+    async fn bulk_mark_attendance(
+        &self,
+        school_id: &str,
+        role: &str,
+        admin_id: &str,
+        date: &str,
+        class_name: Option<&str>,
+        attendances: Vec<Value>,
+    ) -> AppResult<Value>;
+    
+    async fn get_class_attendance(
+        &self,
+        school_id: &str,
+        class_name: &str,
+        date: &str,
+    ) -> AppResult<Vec<Value>>;
+    
+    // Automation features
+    async fn auto_mark_absent_after_cutoff(
+        &self,
+        school_id: &str,
+        cutoff_time: &str,
+        date: &str,
+    ) -> AppResult<Value>;
+    
+    async fn generate_daily_attendance_report(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> AppResult<Value>;
+    
+    async fn get_unmarked_attendance_count(
+        &self,
+        school_id: &str,
+        date: &str,
+        role: Option<&str>,
+    ) -> AppResult<Value>;
 }

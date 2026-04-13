@@ -343,7 +343,10 @@ pub async fn bulk_assign_responsibility(
     };
     
     // Create notification service
-    let notification_service = ResponsibilityNotificationService::new(state.repos.clone());
+    let notification_service = ResponsibilityNotificationService::new(
+        state.repos.clone(),
+        std::sync::Arc::new(crate::logic::EmailService::new())
+    );
     
     // Send bulk assignment notifications
     let _ = notification_service.send_bulk_update_notification(
@@ -403,7 +406,10 @@ pub async fn bulk_remove_responsibility(
     };
     
     // Create notification service
-    let notification_service = ResponsibilityNotificationService::new(state.repos.clone());
+    let notification_service = ResponsibilityNotificationService::new(
+        state.repos.clone(),
+        std::sync::Arc::new(crate::logic::EmailService::new())
+    );
     
     // Send bulk removal notifications
     let _ = notification_service.send_bulk_update_notification(

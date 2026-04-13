@@ -255,3 +255,36 @@ pub async fn verify_otp_handler(
     .into_response()
 }
 
+
+#[derive(serde::Deserialize)]
+pub struct DeviceRegistrationRequest {
+    pub school_id: String,
+    pub user_id: String,
+    pub token: String,
+    pub platform: Option<String>,
+}
+
+pub async fn register_device_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<DeviceRegistrationRequest>,
+) -> impl IntoResponse {
+    let q = "INSERT INTO user_device_tokens (user_id, school_id, token, platform) 
+             VALUES ($1, $2, $3, $4) 
+             ON CONFLICT (user_id, school_id, token) 
+             DO UPDATE SET last_seen_at = NOW()";
+    
+    match sqlx::query(q)
+        .bind(&payload.user_id)
+        .bind(&payload.school_id)
+        .bind(&payload.token)
+        .bind(&payload.platform)
+        .execute(&state.db.pool)
+        .await
+    {
+        Ok(_) => Json(json!({"success": true, "message": "Device registered successfully"})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
+}

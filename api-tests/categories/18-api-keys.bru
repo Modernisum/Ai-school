@@ -1,0 +1,269 @@
+{
+  "version": "1",
+  "name": "API Key Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Generate API Key",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/api-keys",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"name\": \"Test API Key\",\n  \"scopes\": [\"students:read\", \"attendance:write\"]\n}"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"key_id\": \"{{expectedKeyId}}\",\n  \"api_key\": \"vk_{{expectedKeyId}}_{{expectedKeySecret}}\",\n  \"message\": \"Store this key safely! It will not be shown again.\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns key_id field",
+          "type": "javascript",
+          "script": "pm.response.json().hasOwnProperty('key_id');"
+        },
+        {
+          "name": "Returns api_key field",
+          "type": "javascript",
+          "script": "pm.response.json().hasOwnProperty('api_key');"
+        },
+        {
+          "name": "API key format is correct",
+          "type": "javascript",
+          "script": "const apiKey = pm.response.json().api_key;\napiKey.startsWith('vk_') && apiKey.split('_').length === 3;"
+        }
+      ],
+      "variables": {
+        "set": [
+          {
+            "name": "generatedKeyId",
+            "value": "{{response.body.key_id}}"
+          },
+          {
+            "name": "generatedApiKey",
+            "value": "{{response.body.api_key}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2. List API Keys",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/api-keys",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"api_keys\": [\n    {\n      \"id\": 1,\n      \"key_id\": \"{{generatedKeyId}}\",\n      \"name\": \"Test API Key\",\n      \"scopes\": [\"students:read\", \"attendance:write\"],\n      \"status\": \"active\",\n      \"last_used_at\": null,\n      \"created_at\": \"2024-01-01T00:00:00Z\"\n    }\n  ]\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns api_keys array",
+          "type": "javascript",
+          "script": "Array.isArray(pm.response.json().api_keys);"
+        },
+        {
+          "name": "Contains created API key",
+          "type": "javascript",
+          "script": "const keys = pm.response.json().api_keys;\nkeys.some(key => key.key_id === pm.variables.get('generatedKeyId'));"
+        },
+        {
+          "name": "Key has correct scopes",
+          "type": "javascript",
+          "script": "const keys = pm.response.json().api_keys;\nconst key = keys.find(k => k.key_id === pm.variables.get('generatedKeyId'));\nkey && Array.isArray(key.scopes) && key.scopes.includes('students:read');"
+        }
+      ]
+    },
+    {
+      "name": "3. Revoke API Key",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/api-keys/{{generatedKeyId}}",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"message\": \"API key revoked\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns confirmation message",
+          "type": "javascript",
+          "script": "pm.response.json().message === 'API key revoked';"
+        }
+      ]
+    },
+    {
+      "name": "4. Verify API Key Authentication (Middleware Test)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/students",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "{{generatedApiKey}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"students\": []\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "API key authentication works",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Returns valid response",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        }
+      ]
+    },
+    {
+      "name": "5. Test Invalid API Key",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/students",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "vk_invalid_key_1234567890abcdef"
+          }
+        ]
+      },
+      "response": {
+        "status": 401,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Invalid key returns 401",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(401);"
+        },
+        {
+          "name": "Response indicates failure",
+          "type": "javascript",
+          "script": "pm.response.json().success === false;"
+        }
+      ]
+    }
+  ]
+}

@@ -24,6 +24,7 @@ pub mod analytics;
 pub mod audit;
 pub mod global_user;
 pub mod storage;
+pub mod grading;
 
 // Re-export all traits for convenience
 pub use auth::AuthRepository;
@@ -45,3 +46,4 @@ pub use analytics::AnalyticsRepository;
 pub use audit::AuditRepository;
 pub use global_user::GlobalUserRepository;
 pub use storage::StorageRepository;
+pub use grading::GradingRepository;

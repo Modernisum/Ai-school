@@ -1,0 +1,403 @@
+{
+  "version": "1",
+  "name": "Fee Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Create School Fee",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"feeName\": \"Tuition Fee\",\n  \"amount\": 5000.00,\n  \"dueDate\": \"2025-03-31\",\n  \"feeType\": \"regular\",\n  \"description\": \"Monthly tuition fee for all students\",\n  \"applicableClasses\": [\"Class 10\", \"Class 11\", \"Class 12\"],\n  \"discountPercentage\": 10.0\n}"
+        }
+      }
+    },
+    {
+      "name": "2. Get School Fees",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. Get Pending Fees",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/pending?minPercentage=50&className=Class+10",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4. Get Student Fee Details",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "5. Pay Student Fee",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/pay",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"amount\": 4500.00,\n  \"paymentMethod\": \"cash\",\n  \"transactionId\": \"TXN-001\",\n  \"notes\": \"Paid in full\"\n}"
+        }
+      }
+    },
+    {
+      "name": "6. Add Fee to Student",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/add",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"amount\": 1000.00,\n  \"feeId\": \"{{sampleFeeId}}\",\n  \"description\": \"Library fee\"\n}"
+        }
+      }
+    },
+    {
+      "name": "7. Apply Discount to Student",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/discount",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"discount\": 500.00\n}"
+        }
+      }
+    },
+    {
+      "name": "8. Create Custom Fee",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/custom",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"feeName\": \"Sports Equipment Fee\",\n  \"amount\": 1500.00,\n  \"description\": \"Annual sports equipment maintenance\",\n  \"applicableTo\": \"selected_students\",\n  \"studentIds\": [\"{{sampleStudentId}}\"]\n}"
+        }
+      }
+    },
+    {
+      "name": "9. List Custom Fees",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/custom",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "10. Delete Custom Fee",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/custom/{{sampleCustomFeeId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "11. Apply Custom Fee to School",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/custom/{{sampleCustomFeeId}}/apply",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "12. Get Student Profile with Fees",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/profile",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "13. Create Coupon",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"couponName\": \"WELCOME2025\",\n  \"discountAmount\": 1000.00,\n  \"validUntil\": \"2025-12-31\",\n  \"maxUses\": 100,\n  \"description\": \"Welcome discount for new admissions\"\n}"
+        }
+      }
+    },
+    {
+      "name": "14. List Coupons",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "15. Delete Coupon",
+      "type": "http-request",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons/{{sampleCouponId}}",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "16. Block/Unblock Coupon",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons/{{sampleCouponId}}/block",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"blocked\": true\n}"
+        }
+      }
+    },
+    {
+      "name": "17. Validate Coupon",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons/validate",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"couponName\": \"WELCOME2025\"\n}"
+        }
+      }
+    },
+    {
+      "name": "18. Use Coupon",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/coupons/{{sampleCouponId}}/use",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"studentId\": \"{{sampleStudentId}}\",\n  \"discount\": 1000.00\n}"
+        }
+      }
+    },
+    {
+      "name": "19. Generate Fee Reminder",
+      "type": "http-request",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/reminder",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20. Get Student Fee Summary",
+      "type": "http-request",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/fees/{{schoolId}}/student/{{sampleStudentId}}/summary",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

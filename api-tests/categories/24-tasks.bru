@@ -1,0 +1,107 @@
+{
+  "version": "1",
+  "name": "24-tasks",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. List Tasks",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/task/SCH001",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "SCH001"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "admin001"
+          }
+        ],
+        "query": {
+          "start_date": "2024-01-01",
+          "end_date": "2024-12-31"
+        }
+      }
+    },
+    {
+      "name": "2. Update Task Status",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/task/SCH001/task123/status",
+        "method": "PUT",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "SCH001"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "admin001"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"status\": \"completed\"\n}"
+        }
+      }
+    },
+    {
+      "name": "3. AI Generate Tasks",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/task/ai/SCH001/generate",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "SCH001"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "admin001"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"employeeId\": \"EMP001\"\n}"
+        }
+      }
+    },
+    {
+      "name": "4. AI Reorganize Tasks",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/task/ai/SCH001/reorganize",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "SCH001"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "admin001"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"employeeId\": \"EMP001\"\n}"
+        }
+      }
+    }
+  ]
+}

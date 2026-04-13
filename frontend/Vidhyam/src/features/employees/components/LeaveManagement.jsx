@@ -1,223 +1,403 @@
-// LeaveManagement.jsx – Admin view for leave applications
-import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Loader, RefreshCw, Calendar, User } from 'lucide-react';
-import { callApiWithBackoff } from '../../../utils/api';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { getSchoolIdFromStorage, API_BASE_URL } from '../../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FileText, Plus, Calendar, CheckCircle, XCircle, Clock, AlertTriangle,
+  User, Loader, ChevronDown, ChevronUp, MessageSquare, Shield, RefreshCw
+} from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const getSchoolId = () => getSchoolIdFromStorage() || '';
+const getToken = () => localStorage.getItem('accessToken') || '';
+
+const LEAVE_TYPES = [
+  { id: 'casual', label: 'Casual Leave', description: 'For personal reasons or short-notice' },
+  { id: 'sick', label: 'Sick Leave', description: 'Medical reasons / health emergencies' },
+  { id: 'annual', label: 'Annual Leave', description: 'Pre-planned leave for vacation/travel' },
+  { id: 'emergency', label: 'Emergency Leave', description: 'Urgent unforeseen family situations' },
+  { id: 'maternity', label: 'Maternity Leave', description: 'Post/pre-delivery time off' },
+];
 
 const STATUS_COLORS = {
-    pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    approved: 'bg-green-100 text-green-800 border-green-300',
-    rejected: 'bg-red-100 text-red-800 border-red-300',
+  PENDING: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  APPROVED: 'bg-green-500/20 text-green-400 border-green-500/30',
+  approved: 'bg-green-500/20 text-green-400 border-green-500/30',
+  REJECTED: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+  rejected: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+  conditionally_approved: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
 };
 
-const getSchoolId = () => {
-    for (const k of ['schoolId', 'school_id', 'currentSchoolId']) {
-        const v = localStorage.getItem(k);
-        if (v && v !== 'undefined') return v;
+const STATUS_ICONS = {
+  PENDING: Clock,
+  pending: Clock,
+  APPROVED: CheckCircle,
+  approved: CheckCircle,
+  REJECTED: XCircle,
+  rejected: XCircle,
+  conditionally_approved: Shield,
+};
+
+function Badge({ status }) {
+  const cls = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
+  const Icon = STATUS_ICONS[status] || Clock;
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full border ${cls}`}>
+      <Icon size={10} />{status?.replace('_', ' ').toUpperCase()}
+    </span>
+  );
+}
+
+// ── Apply Leave Form ──────────────────────────────────────────────────────────
+function ApplyLeaveForm({ onSuccess }) {
+  const schoolId = getSchoolId();
+  const [form, setForm] = useState({
+    type: 'casual',
+    from_date: '',
+    to_date: '',
+    reason: '',
+    contact_during_leave: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.from_date || !form.to_date || !form.reason.trim()) {
+      setError('Please fill in all required fields');
+      return;
     }
-    return "";
-};
+    setSaving(true); setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/leaves/${schoolId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          ...form,
+          leaveType: form.type,
+          fromDate: form.from_date,
+          toDate: form.to_date,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success !== false) {
+        onSuccess?.();
+      } else {
+        setError(data.message || 'Failed to apply for leave');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-const ProxySuggestions = ({ schoolId, leave }) => {
-    const [suggestions, setSuggestions] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [open, setOpen] = useState(false);
-
-    const fetchSuggestions = async () => {
-        setLoading(true);
-        try {
-            // Day of week (1=Mon) - for demo using Mon=1
-            const res = await callApiWithBackoff(`${API_BASE_URL}/dashboard/${schoolId}/leaves/proxy-suggestions?day=1&period=1&subject=Math`, { method: 'GET' });
-            if (res.success) setSuggestions(res.data.suggestions || []);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="mt-1">
-            <button 
-                onClick={() => { setOpen(!open); if (!open) fetchSuggestions(); }}
-                className="text-[10px] text-blue-600 hover:underline flex items-center"
-            >
-                {open ? 'Hide AI Proxies' : 'View AI Proxies'}
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      {/* Leave Type */}
+      <div>
+        <label className="text-xs text-slate-400 mb-2 block">Leave Type *</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {LEAVE_TYPES.map(type => (
+            <button key={type.id} type="button" onClick={() => set('type', type.id)}
+              className={`text-left p-3 rounded-xl border text-sm transition-all ${form.type === type.id ? 'bg-primary/20 border-primary/40 text-white' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
+              <p className="font-semibold">{type.label}</p>
+              <p className="text-[11px] opacity-70 mt-0.5">{type.description}</p>
             </button>
-            {open && (
-                <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-100 text-[10px]">
-                    <p className="font-bold mb-1 text-blue-800">Top Recommended Substitutes:</p>
-                    {loading ? (
-                        <Loader size={12} className="animate-spin text-blue-600" />
-                    ) : suggestions.length > 0 ? (
-                        <ul className="space-y-1">
-                            {suggestions.slice(0, 3).map(s => (
-                                <li key={s.employee_id} className="flex justify-between items-center">
-                                    <span className="text-gray-700 font-medium">{s.name} ({s.subject})</span>
-                                    <span className="bg-blue-200 text-blue-800 px-1 rounded font-bold">Score: {s.score}%</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-gray-500 italic">No free teachers found.</p>
-                    )}
-                </div>
-            )}
+          ))}
         </div>
-    );
-};
+      </div>
 
-export default function LeaveManagement({ schoolId: propSchoolId }) {
-    const schoolId = propSchoolId || getSchoolId();
-    const [leaves, setLeaves] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [actionLoading, setActionLoading] = useState({});
+      {/* Dates */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-slate-400 mb-1.5 block">From Date *</label>
+          <input type="date" className="input-dark w-full" value={form.from_date}
+            min={new Date().toISOString().split('T')[0]}
+            onChange={e => set('from_date', e.target.value)} required />
+        </div>
+        <div>
+          <label className="text-xs text-slate-400 mb-1.5 block">To Date *</label>
+          <input type="date" className="input-dark w-full" value={form.to_date}
+            min={form.from_date || new Date().toISOString().split('T')[0]}
+            onChange={e => set('to_date', e.target.value)} required />
+        </div>
+      </div>
 
-    const fetchLeaves = async () => {
-        if (!schoolId) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await callApiWithBackoff(`${API_BASE_URL}/leave/${schoolId}`, { method: 'GET' });
-            if (Array.isArray(res)) setLeaves(res);
-            else if (res.leaves) setLeaves(res.leaves);
-        } catch (e) {
-            setError('Failed to fetch leave applications: ' + e.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+      {/* Reason */}
+      <div>
+        <label className="text-xs text-slate-400 mb-1.5 block">Reason *</label>
+        <textarea className="input-dark w-full resize-none" rows={3}
+          placeholder="Please explain the reason for your leave..."
+          value={form.reason} onChange={e => set('reason', e.target.value)} required />
+      </div>
 
-    useEffect(() => { fetchLeaves(); }, [schoolId]);
+      {/* Contact */}
+      <div>
+        <label className="text-xs text-slate-400 mb-1.5 block">Contact During Leave (optional)</label>
+        <input className="input-dark w-full" placeholder="Phone number or alternate contact..."
+          value={form.contact_during_leave} onChange={e => set('contact_during_leave', e.target.value)} />
+      </div>
 
-    const updateStatus = async (leaveId, action) => {
-        setActionLoading(prev => ({ ...prev, [leaveId]: action }));
-        try {
-            await callApiWithBackoff(`${API_BASE_URL}/leave/${schoolId}/${leaveId}/${action}`, { method: 'POST' });
-            setLeaves(prev => prev.map(l => l.leaveId === leaveId ? { ...l, status: action === 'approve' ? 'approved' : 'rejected' } : l));
-        } catch (e) {
-            setError(`Failed to ${action} leave: ${e.message}`);
-        } finally {
-            setActionLoading(prev => ({ ...prev, [leaveId]: null }));
-        }
-    };
+      {error && (
+        <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+          <AlertTriangle size={14} />{error}
+        </div>
+      )}
 
+      <button type="submit" disabled={saving}
+        className="btn-primary w-full justify-center">
+        {saving ? <Loader size={14} className="animate-spin" /> : <FileText size={14} />}
+        {saving ? 'Submitting…' : 'Submit Leave Application'}
+      </button>
+    </form>
+  );
+}
+
+// ── Leave List ────────────────────────────────────────────────────────────────
+function LeaveList({ leaves, onRefresh, isAdmin = false }) {
+  const schoolId = getSchoolId();
+  const [expandedId, setExpandedId] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const handleAction = async (leaveId, action) => {
+    setActionLoading(`${leaveId}-${action}`);
+    try {
+      // Different endpoints might be used depending on the backend structure
+      // Supporting both /leaves and /leave (legacy)
+      const url = `${API_BASE_URL}/leaves/${schoolId}/${leaveId}/${action}`;
+      const res = await fetch(url, {
+        method: action === 'approve' || action === 'reject' ? 'PUT' : 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) onRefresh?.();
+      else {
+        // Try fallback legacy endpoint if /leaves fails
+        const fallbackUrl = `${API_BASE_URL}/leave/${schoolId}/${leaveId}/${action}`;
+        const res2 = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (res2.ok) onRefresh?.();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (!leaves || leaves.length === 0) {
     return (
-        <div className="p-4">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-                    <Calendar className="mr-2 text-blue-600" size={28} />
-                    Leave Management
-                </h1>
-                <button
-                    onClick={fetchLeaves}
-                    disabled={loading}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                    {loading ? <Loader size={16} className="animate-spin mr-2" /> : <RefreshCw size={16} className="mr-2" />}
-                    Refresh
+      <div className="glass-card p-10 text-center">
+        <FileText size={40} className="text-slate-600 mx-auto mb-3" />
+        <p className="text-slate-500">{isAdmin ? 'No leave requests' : 'No leave applications yet'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {leaves.map(leave => {
+        const id = leave.id || leave.leaveId;
+        const isExpanded = expandedId === id;
+        const status = leave.status || 'PENDING';
+        const StatusIcon = STATUS_ICONS[status] || Clock;
+        return (
+          <div key={id} className="glass-card overflow-hidden">
+            <button className="w-full p-4 flex items-center gap-3 text-left" onClick={() => setExpandedId(isExpanded ? null : id)}>
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <StatusIcon size={16} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white capitalize">
+                  {isAdmin ? `${leave.employeeName || leave.employeeId || 'Employee'} - ` : ''}
+                  {(leave.leaveType || leave.type || 'casual').replace('_', ' ')} Leave
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">{leave.fromDate || leave.from_date} → {leave.toDate || leave.to_date}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge status={status} />
+                {isExpanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                  <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-3">
+                    <p className="text-sm text-slate-400">{leave.reason || 'No reason provided'}</p>
+                    {leave.contact_during_leave && (
+                      <p className="text-xs text-slate-500">Contact: {leave.contact_during_leave}</p>
+                    )}
+
+                    {/* Admin actions */}
+                    {isAdmin && (status.toLowerCase() === 'pending') && (
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={() => handleAction(id, 'approve')}
+                          disabled={!!actionLoading}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold hover:bg-green-500/20 transition-colors disabled:opacity-50">
+                          {actionLoading === `${id}-approve` ? <Loader size={11} className="animate-spin" /> : <CheckCircle size={11} />}
+                          Approve
+                        </button>
+                        <button onClick={() => handleAction(id, 'reject')}
+                          disabled={!!actionLoading}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition-colors disabled:opacity-50">
+                          {actionLoading === `${id}-reject` ? <Loader size={11} className="animate-spin" /> : <XCircle size={11} />}
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Main Leave Management Page ────────────────────────────────────────────────
+export default function LeaveManagement({ isAdmin = false }) {
+  const schoolId = getSchoolId();
+  const [activeTab, setActiveTab] = useState(isAdmin ? 'queue' : 'my');
+  const [leaves, setLeaves] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const fetchLeaves = useCallback(async () => {
+    if (!schoolId) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/leaves/${schoolId}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.data || data.leaves || []);
+      
+      // Fallback to legacy endpoint if /leaves is empty but expected data
+      if (list.length === 0) {
+        const res2 = await fetch(`${API_BASE_URL}/leave/${schoolId}`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        const data2 = await res2.json();
+        const list2 = Array.isArray(data2) ? data2 : (data2.data || data2.leaves || []);
+        setLeaves(list2);
+      } else {
+        setLeaves(list);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [schoolId]);
+
+  useEffect(() => { 
+    fetchLeaves(); 
+  }, [fetchLeaves]);
+
+  const pendingLeaves = leaves.filter(l => (l.status || 'pending').toLowerCase() === 'pending');
+  const approvedLeaves = leaves.filter(l => (l.status || '').toLowerCase() === 'approved');
+  const rejectedLeaves = leaves.filter(l => (l.status || '').toLowerCase() === 'rejected');
+
+  return (
+    <div className="space-y-5 p-4 md:p-6 min-h-screen bg-[#0a0a0c]">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <FileText size={20} className="text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Leave Management</h2>
+            <p className="text-sm text-slate-500">
+              {isAdmin ? 'Review and approved leave requests' : 'Apply and track your leaves'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+            <button onClick={fetchLeaves} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all">
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            </button>
+            {!isAdmin && (
+                <button onClick={() => setShowForm(f => !f)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 transition-all">
+                    <Plus size={16} /> Apply Leave
                 </button>
-            </div>
-
-            {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm">{error}</div>
-            )}
-
-            {loading && leaves.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                    <Loader size={40} className="animate-spin text-blue-600" />
-                </div>
-            ) : leaves.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="font-medium">No leave applications found</p>
-                </div>
-            ) : (
-                <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Employee</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Leave Type</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">From</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">To</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Reason</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                            {leaves.map(leave => (
-                                <tr key={leave.leaveId} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center">
-                                            <User size={14} className="mr-2 text-gray-400" />
-                                            <div>
-                                                <p className="font-medium text-gray-800">{leave.employeeName || leave.employeeId}</p>
-                                                <p className="text-xs text-gray-400">{leave.employeeId}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 capitalize text-gray-700">{leave.leaveType}</td>
-                                    <td className="px-4 py-3 text-gray-700">{leave.fromDate}</td>
-                                    <td className="px-4 py-3 text-gray-700">{leave.toDate}</td>
-                                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{leave.reason}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold border capitalize ${STATUS_COLORS[leave.status] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                                            {leave.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {leave.status === 'pending' ? (
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => updateStatus(leave.leaveId, 'approve')}
-                                                        disabled={!!actionLoading[leave.leaveId]}
-                                                        className="flex items-center px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs disabled:opacity-50"
-                                                    >
-                                                        {actionLoading[leave.leaveId] === 'approve'
-                                                            ? <Loader size={12} className="animate-spin mr-1" />
-                                                            : <CheckCircle size={12} className="mr-1" />}
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => updateStatus(leave.leaveId, 'reject')}
-                                                        disabled={!!actionLoading[leave.leaveId]}
-                                                        className="flex items-center px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs disabled:opacity-50"
-                                                    >
-                                                        {actionLoading[leave.leaveId] === 'reject'
-                                                            ? <Loader size={12} className="animate-spin mr-1" />
-                                                            : <XCircle size={12} className="mr-1" />}
-                                                        Reject
-                                                    </button>
-                                                </div>
-                                                <ProxySuggestions 
-                                                    schoolId={schoolId} 
-                                                    leave={leave} 
-                                                />
-                                            </div>
-                                        ) : leave.status === 'approved' ? (
-                                            <a
-                                                href={`${API_BASE_URL}/leave/${schoolId}/${leave.leaveId}/pdf`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs"
-                                            >
-                                                Download PDF
-                                            </a>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs italic">—</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
             )}
         </div>
-    );
+      </div>
+
+      {/* Apply Form */}
+      <AnimatePresence>
+        {showForm && !isAdmin && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+            <div className="glass-card p-5">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-white">New Leave Application</h3>
+                <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white">
+                    <XCircle size={18} />
+                </button>
+              </div>
+              <ApplyLeaveForm onSuccess={() => { setShowForm(false); fetchLeaves(); }} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { label: 'Pending Requests', count: pendingLeaves.length, color: 'border-amber-500 text-amber-400' },
+          { label: 'Approved', count: approvedLeaves.length, color: 'border-green-500 text-green-400' },
+          { label: 'Rejected', count: rejectedLeaves.length, color: 'border-rose-500 text-rose-400' },
+        ].map(s => (
+          <div key={s.label} className={`glass-card p-4 border-l-4 ${s.color.split(' ')[0]}`}>
+            <p className={`text-3xl font-black ${s.color.split(' ')[1]}`}>{s.count}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
+        {isAdmin ? (
+          [['queue', 'Pending Queue', pendingLeaves.length], ['all', 'All History', leaves.length]].map(([id, label, cnt]) => (
+            <button key={id} onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap relative ${activeTab === id ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}>
+              {label}
+              {cnt > 0 && <span className="bg-accent/20 text-accent text-[10px] px-1.5 py-0.5 rounded-full font-bold">{cnt}</span>}
+            </button>
+          ))
+        ) : (
+          [['my', 'All Leaves'], ['pending', 'Waitlisted'], ['approved', 'Approved']].map(([id, label]) => (
+            <button key={id} onClick={() => setActiveTab(id)}
+              className={`px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap relative ${activeTab === id ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}>
+              {label}
+            </button>
+          ))
+        )}
+      </div>
+
+      {loading && leaves.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Loader size={32} className="animate-spin text-primary" />
+          <p className="text-slate-500 text-sm animate-pulse">Fetching leave records...</p>
+        </div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          {isAdmin && activeTab === 'queue' && <LeaveList leaves={pendingLeaves} onRefresh={fetchLeaves} isAdmin />}
+          {isAdmin && activeTab === 'all' && <LeaveList leaves={leaves} onRefresh={fetchLeaves} isAdmin />}
+          {!isAdmin && activeTab === 'my' && <LeaveList leaves={leaves} onRefresh={fetchLeaves} />}
+          {!isAdmin && activeTab === 'pending' && <LeaveList leaves={pendingLeaves} onRefresh={fetchLeaves} />}
+          {!isAdmin && activeTab === 'approved' && <LeaveList leaves={approvedLeaves} onRefresh={fetchLeaves} />}
+        </motion.div>
+      )}
+    </div>
+  );
 }

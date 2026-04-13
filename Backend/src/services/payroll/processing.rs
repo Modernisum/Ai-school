@@ -219,4 +219,221 @@ impl PayrollProcessing {
         }
         delta
     }
+
+    /// Calculate salary deductions based on attendance for a given month
+    pub async fn calculate_attendance_deductions(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        month: i32,
+        year: i32,
+    ) -> AppResult<Value> {
+        use chrono::{NaiveDate, Datelike};
+        
+        // Get employee details
+        let emp = self.repos.employee.get_employee(school_id, employee_id).await?
+            .ok_or_else(|| AppError::NotFound("Employee not found".to_string()))?;
+        
+        let base_salary = emp["baseSalary"].as_f64().unwrap_or(0.0);
+        let daily_rate = base_salary / 30.0; // Assuming 30-day month
+        
+        // Calculate date range for the month
+        let start_date = NaiveDate::from_ymd_opt(year, month as u32, 1)
+            .ok_or_else(|| AppError::Validation("Invalid month/year".to_string()))?;
+        
+        let end_date = if month == 12 {
+            NaiveDate::from_ymd_opt(year + 1, 1, 1)
+        } else {
+            NaiveDate::from_ymd_opt(year, month as u32 + 1, 1)
+        }.ok_or_else(|| AppError::Validation("Invalid month/year".to_string()))?;
+        
+        // Get attendance records for the month
+        let attendance_query = "
+            SELECT date, status, in_time, out_time, total_time, reason
+            FROM attendance
+            WHERE school_id = $1 AND user_id = $2 AND date >= $3 AND date < $4
+            ORDER BY date
+        ";
+        
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(attendance_query)
+            .bind(school_id)
+            .bind(employee_id)
+            .bind(start_date)
+            .bind(end_date)
+            .fetch_all(&mut *conn)
+            .await?;
+        
+        let mut total_days = 0;
+        let mut present_days = 0;
+        let mut absent_days = 0;
+        let mut half_days = 0;
+        let mut late_days = 0;
+        let mut total_deduction = 0.0;
+        let mut attendance_details = Vec::new();
+        
+        // Calculate working days in the month (excluding weekends)
+        let mut current_date = start_date;
+        while current_date < end_date {
+            let weekday = current_date.weekday();
+            if weekday != chrono::Weekday::Sat && weekday != chrono::Weekday::Sun {
+                total_days += 1;
+            }
+            current_date = current_date.succ_opt()
+                .ok_or_else(|| AppError::Internal("Date calculation error".to_string()))?;
+        }
+        
+        // Process attendance records
+        for row in rows {
+            let date: NaiveDate = sqlx::Row::get(&row, "date");
+            let status: Option<String> = sqlx::Row::get(&row, "status");
+            let reason: Option<String> = sqlx::Row::get(&row, "reason");
+            
+            let status_str = status.unwrap_or_default();
+            let mut deduction = 0.0;
+            let mut day_type = "present";
+            
+            match status_str.as_str() {
+                "present" => {
+                    present_days += 1;
+                }
+                "absent" => {
+                    absent_days += 1;
+                    deduction = daily_rate;
+                    day_type = "absent";
+                    total_deduction += deduction;
+                }
+                "half_day" => {
+                    half_days += 1;
+                    deduction = daily_rate * 0.5;
+                    day_type = "half_day";
+                    total_deduction += deduction;
+                }
+                "late" => {
+                    late_days += 1;
+                    deduction = daily_rate * 0.25; // 25% deduction for late
+                    day_type = "late";
+                    total_deduction += deduction;
+                }
+                _ => {}
+            }
+            
+            attendance_details.push(json!({
+                "date": date.format("%Y-%m-%d").to_string(),
+                "status": status_str,
+                "reason": reason,
+                "deduction": deduction,
+                "day_type": day_type
+            }));
+        }
+        
+        let working_days_present = present_days + (half_days as f64 * 0.5) as i32;
+        let attendance_percentage = if total_days > 0 {
+            (working_days_present as f64 / total_days as f64) * 100.0
+        } else {
+            0.0
+        };
+        
+        let net_salary = base_salary - total_deduction;
+        
+        Ok(json!({
+            "employee_id": employee_id,
+            "month": month,
+            "year": year,
+            "base_salary": base_salary,
+            "daily_rate": daily_rate,
+            "attendance_summary": {
+                "total_working_days": total_days,
+                "present_days": present_days,
+                "absent_days": absent_days,
+                "half_days": half_days,
+                "late_days": late_days,
+                "working_days_present": working_days_present,
+                "attendance_percentage": attendance_percentage
+            },
+            "deductions": {
+                "total_deduction": total_deduction,
+                "absent_deduction": absent_days as f64 * daily_rate,
+                "half_day_deduction": half_days as f64 * daily_rate * 0.5,
+                "late_deduction": late_days as f64 * daily_rate * 0.25
+            },
+            "salary_calculation": {
+                "gross_salary": base_salary,
+                "total_deductions": total_deduction,
+                "net_salary": net_salary
+            },
+            "attendance_details": attendance_details,
+            "calculated_at": Local::now().to_rfc3339()
+        }))
+    }
+
+    /// Apply attendance-based deductions to payroll
+    pub async fn apply_attendance_deductions(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        month: i32,
+        year: i32,
+        admin_id: &str,
+    ) -> AppResult<Value> {
+        // Calculate deductions
+        let calculation = self.calculate_attendance_deductions(school_id, employee_id, month, year).await?;
+        
+        let total_deduction = calculation["deductions"]["total_deduction"].as_f64().unwrap_or(0.0);
+        let net_salary = calculation["salary_calculation"]["net_salary"].as_f64().unwrap_or(0.0);
+        
+        if total_deduction > 0.0 {
+            // Create deduction record
+            let deduction_data = json!({
+                "type": "attendance_deduction",
+                "amount": total_deduction,
+                "month": month,
+                "year": year,
+                "reason": "Attendance-based salary deduction",
+                "details": calculation["attendance_summary"].clone(),
+                "applied_by": admin_id,
+                "applied_at": Local::now().to_rfc3339()
+            });
+            
+            self.repos.payroll.add_payroll_salary(school_id, employee_id, deduction_data).await?;
+            
+            // Update employee salary for the month
+            let salary_data = json!({
+                "month": month,
+                "year": year,
+                "base_salary": calculation["base_salary"].as_f64().unwrap_or(0.0),
+                "deductions": total_deduction,
+                "net_salary": net_salary,
+                "status": "calculated",
+                "calculated_at": Local::now().to_rfc3339(),
+                "attendance_summary": calculation["attendance_summary"].clone()
+            });
+            
+            self.repos.payroll.add_payroll_salary(school_id, employee_id, salary_data).await?;
+            
+            // Log the action
+            let _ = self.repos.audit.log_action(
+                school_id,
+                admin_id,
+                "PAYROLL_ATTENDANCE_DEDUCTION",
+                employee_id,
+                "APPLY",
+                json!({
+                    "month": month,
+                    "year": year,
+                    "deduction": total_deduction,
+                    "net_salary": net_salary,
+                    "attendance_summary": calculation["attendance_summary"].clone()
+                })
+            ).await;
+        }
+        
+        Ok(json!({
+            "success": true,
+            "message": format!("Attendance deductions applied: ₹{:.2}", total_deduction),
+            "deduction": total_deduction,
+            "net_salary": net_salary,
+            "calculation": calculation
+        }))
+    }
 }

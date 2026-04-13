@@ -1,0 +1,285 @@
+{
+  "version": "1",
+  "name": "Public Developer API",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Generate API Key for Testing",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/api-keys",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"name\": \"Public API Test Key\",\n  \"scopes\": [\"read:students\", \"read:attendance\"]\n}"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"key_id\": \"{{publicApiKeyId}}\",\n  \"api_key\": \"vk_{{publicApiKeyId}}_{{publicApiKeySecret}}\",\n  \"message\": \"Store this key safely! It will not be shown again.\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Returns API key with required scopes",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        }
+      ],
+      "variables": {
+        "set": [
+          {
+            "name": "publicApiKey",
+            "value": "{{response.body.api_key}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2. Get Students via Public API",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/v1/public/students",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "{{publicApiKey}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"student_id\": \"stu_123\",\n      \"name\": \"John Doe\",\n      \"class\": \"10A\",\n      \"roll_number\": 1,\n      \"status\": \"active\"\n    },\n    {\n      \"student_id\": \"stu_456\",\n      \"name\": \"Jane Smith\",\n      \"class\": \"10B\",\n      \"roll_number\": 2,\n      \"status\": \"active\"\n    }\n  ]\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns students array",
+          "type": "javascript",
+          "script": "Array.isArray(pm.response.json().data);"
+        },
+        {
+          "name": "Students have required fields",
+          "type": "javascript",
+          "script": "const students = pm.response.json().data;\nstudents.length > 0 && students.every(s => \n  s.hasOwnProperty('student_id') && \n  s.hasOwnProperty('name') && \n  s.hasOwnProperty('class')\n);"
+        }
+      ]
+    },
+    {
+      "name": "3. Get Attendance via Public API",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/v1/public/attendance/2024-01-15",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "{{publicApiKey}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"date\": \"2024-01-15\",\n  \"attendance\": [\n    {\n      \"user_id\": \"stu_123\",\n      \"role\": \"student\",\n      \"status\": \"present\",\n      \"remarks\": null\n    },\n    {\n      \"user_id\": \"stu_456\",\n      \"role\": \"student\",\n      \"status\": \"absent\",\n      \"remarks\": \"Sick\"\n    }\n  ]\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns attendance data for specified date",
+          "type": "javascript",
+          "script": "pm.response.json().date === '2024-01-15';"
+        },
+        {
+          "name": "Attendance array has required fields",
+          "type": "javascript",
+          "script": "const attendance = pm.response.json().attendance;\nattendance.length > 0 && attendance.every(a => \n  a.hasOwnProperty('user_id') && \n  a.hasOwnProperty('status') && \n  a.hasOwnProperty('role')\n);"
+        }
+      ]
+    },
+    {
+      "name": "4. Test Missing Scope (Forbidden)",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/v1/public/students",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "vk_testkey_1234567890abcdef"
+          }
+        ]
+      },
+      "response": {
+        "status": 403,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": false,\n  \"message\": \"Missing required scope: read:students\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 403 Forbidden",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(403);"
+        },
+        {
+          "name": "Response indicates missing scope",
+          "type": "javascript",
+          "script": "pm.response.json().message.includes('Missing required scope');"
+        }
+      ]
+    },
+    {
+      "name": "5. Test Invalid API Key",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/v1/public/students",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "invalid_key_123"
+          }
+        ]
+      },
+      "response": {
+        "status": 401,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 401 Unauthorized",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(401);"
+        },
+        {
+          "name": "Response indicates unauthorized",
+          "type": "javascript",
+          "script": "pm.response.json().success === false;"
+        }
+      ]
+    },
+    {
+      "name": "6. Cleanup - Revoke Test API Key",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/api-keys/{{publicApiKeyId}}",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"message\": \"API key revoked\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Key revoked successfully",
+          "type": "javascript",
+          "script": "pm.response.json().message === 'API key revoked';"
+        }
+      ]
+    }
+  ]
+}

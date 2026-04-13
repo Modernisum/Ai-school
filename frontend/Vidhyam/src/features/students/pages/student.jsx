@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { getSchoolIdFromStorage } from '../../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,12 +10,10 @@ import {
   X, UserX, Info, Download, Upload, RefreshCw, UploadCloud,
   Plus, Edit3, Loader, AlertTriangle, GraduationCap,
   TrendingUp, UserCheck, CalendarCheck, ClipboardList,
-  DollarSign, Zap
+  DollarSign, Zap, FilterX, Activity, Cpu, ShieldCheck, Database
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, LineChart, Line,
-  PieChart, Pie, Cell, AreaChart, Area
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from 'recharts';
 import AddStudentPage from '../components/addstudent';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
@@ -23,6 +21,7 @@ import { useGetStudentsQuery, useDeleteStudentMutation, useUpdateStudentMutation
 import { academicApi } from '../../academics/api/academicApi';
 const { useGetClassesQuery } = academicApi;
 import { selectPollingInterval } from '../../settings/settingsSlice';
+import { setOnline } from "../../settings/settingsSlice";
 
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => getSchoolIdFromStorage() || ''; 
@@ -34,56 +33,75 @@ const fmtDate = (date) => {
     return isNaN(d) ? 'N/A' : d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-const COLORS = { 
-    regular: 'var(--primary-color)', 
-    private: 'var(--secondary-color)', 
-    present: 'var(--success-color)', 
-    absent: 'var(--accent-color)' 
+// ─── Animation Presets ──────────────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }
 };
 
-// ─── Mini Pie Chart Card ──────────────────────────────────────────────────────
-function MiniPieCard({ title, subtitle, data, loading, extra }) {
-    const total = data.reduce((s, d) => s + (d.value || 0), 0);
-    return (
-        <div className="glass-card p-3 flex flex-col gap-1 min-w-[180px] flex-1">
-            <div className="flex items-center justify-between mb-0.5">
-                <div>
-                    <p className="text-[10px] font-semibold text-white">{title}</p>
-                    <p className="text-[8px] text-slate-500 uppercase tracking-wider">{subtitle}</p>
-                </div>
-                <div className="text-right">
-                    <p className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>{total}</p>
-                    {extra}
-                </div>
-            </div>
-            {loading ? (
-                <div className="h-[80px] flex items-center justify-center"><Loader size={16} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>
-            ) : (
-                <>
-                    <ResponsiveContainer width="100%" height={80}>
-                        <PieChart>
-                            <Pie data={data} cx="50%" cy="50%" innerRadius={18} outerRadius={35} paddingAngle={3} dataKey="value" animationBegin={0} animationDuration={700}>
-                                {data.map((entry, i) => <Cell key={i} fill={entry.color} opacity={0.9} />)}
-                            </Pie>
-                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 9 }} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                        {data.map((d, i) => (
-                            <div key={i} className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
-                                <span className="text-[9px] text-slate-400">{d.name}</span>
-                                <span className="text-[9px] font-medium text-slate-300">{d.value}</span>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
-        </div>
-    );
-}
+const stagger = {
+  visible: { transition: { staggerChildren: 0.05 } }
+};
 
-// ─── Profile Fee Summary (used in profile drawer) ──────────────────────────
+// ─── Premium Glass Card ──────────────────────────────────────────────────────
+const GlassCard = ({ children, className = "", glowColor = "primary" }) => {
+  const glowStyles = {
+    primary: "hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]",
+    success: "hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+    accent: "hover:shadow-[0_0_20px_rgba(244,63,94,0.15)]",
+    warning: "hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]",
+  };
+
+  return (
+    <div className={`
+      relative overflow-hidden
+      bg-white/[0.03] backdrop-blur-xl
+      border border-white/10
+      rounded-3xl transition-all duration-500
+      ${glowStyles[glowColor] || ""}
+      ${className}
+    `}>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none" />
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+};
+
+// ─── Premium KPI Tile ────────────────────────────────────────────────────────
+const KPITile = ({ label, value, sub, icon: Icon, color = "primary", trend = null }) => {
+  const colorMap = {
+    primary: "from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30",
+    success: "from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30",
+    accent: "from-rose-500/20 to-pink-500/20 text-rose-400 border-rose-500/30",
+    warning: "from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30",
+    purple: "from-purple-500/20 to-fuchsia-500/20 text-purple-400 border-purple-500/30",
+  };
+
+  return (
+    <GlassCard className="p-5 group hover:-translate-y-1" glowColor={color}>
+      <div className="flex justify-between items-start">
+        <div className={`p-3 rounded-2xl bg-gradient-to-br ${colorMap[color]} border shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+          <Icon size={20} />
+        </div>
+        {trend && (
+          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-white/5 border border-white/10 ${trend > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {trend > 0 ? <TrendingUp size={10} /> : <Activity size={10} />}
+            {Math.abs(trend)}%
+          </div>
+        )}
+      </div>
+      <div className="mt-4">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
+        <h3 className="text-2xl font-black text-white mt-1 tracking-tight">{value}</h3>
+        <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1.5 opacity-70">
+           {sub}
+        </p>
+      </div>
+    </GlassCard>
+  );
+};
+
+// ─── Profile Fee Summary ────────────────────────────────────────────────────
 function ProfileFeeSummary({ studentId, schoolId }) {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -98,67 +116,50 @@ function ProfileFeeSummary({ studentId, schoolId }) {
             .finally(() => setLoading(false));
     }, [studentId, schoolId]);
 
-    if (loading) return <div className="flex justify-center py-4"><Loader size={18} className="animate-spin" style={{ color: 'var(--primary-color)' }} /></div>;
+    if (loading) return <div className="flex justify-center py-10"><Loader size={24} className="animate-spin text-indigo-500" /></div>;
     if (!profile) return null;
 
     return (
-        <div className="space-y-3">
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <DollarSign size={13} className="text-success" /> Fee Summary
-            </h4>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                  <DollarSign size={16} className="text-emerald-400" /> Financial Pulse
+              </h4>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20 font-black uppercase">Verified</span>
+            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-4">
                 {[
-                    ['Subjects', profile.totalSubjects, 'text-primary', 'bg-primary/10'],
-                    ['Subject Fees', fmtMoney(profile.subjectFees), 'text-secondary', 'bg-violet-500/10'],
-                    ['Custom Fees', fmtMoney(profile.totalCustomFees), 'text-teal-400', 'bg-teal-500/10'],
-                    ['Penalty', fmtMoney(profile.totalPenalty), 'text-accent', 'bg-rose-500/10'],
-                    ['Discount', fmtMoney(profile.discount), 'text-accent', 'bg-amber-500/10'],
-                    ['Total Paid', fmtMoney(profile.totalPaid), 'text-success', 'bg-emerald-500/10'],
-                ].map(([label, val, color, bg]) => (
-                    <div key={label} className={`${bg} rounded-xl px-3 py-2.5 border border-white/5`}>
-                        <p className="text-[10px] text-slate-500">{label}</p>
-                        <p className={`text-sm font-bold ${color}`}>{val}</p>
+                    ['Subject Fees', fmtMoney(profile.subjectFees), 'text-blue-400', 'bg-blue-500/5', 'border-blue-500/10'],
+                    ['Custom Fees', fmtMoney(profile.totalCustomFees), 'text-indigo-400', 'bg-indigo-500/5', 'border-indigo-500/10'],
+                    ['Penalties', fmtMoney(profile.totalPenalty), 'text-rose-400', 'bg-rose-500/5', 'border-rose-500/10'],
+                    ['Discounts', fmtMoney(profile.discount), 'text-amber-400', 'bg-amber-500/5', 'border-amber-500/10'],
+                ].map(([label, val, color, bg, border]) => (
+                    <div key={label} className={`${bg} ${border} border rounded-2xl p-4 transition-all hover:scale-105`}>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mb-1">{label}</p>
+                        <p className={`text-lg font-black ${color}`}>{val}</p>
                     </div>
                 ))}
             </div>
 
-            {/* Grand Total */}
-            <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl p-3 flex justify-between items-center">
-                <div>
-                    <p className="text-[10px] text-slate-500">Grand Total</p>
-                    <p className="text-lg font-bold text-white">{fmtMoney(profile.totalAmount)}</p>
+            <GlassCard className="p-5 border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-transparent">
+                <div className="flex justify-between items-end">
+                    <div>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Net Liability</p>
+                        <p className="text-2xl font-black text-white">{fmtMoney(profile.totalAmount)}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Pending</p>
+                        <p className="text-xl font-black text-rose-400">{fmtMoney(profile.totalPending)}</p>
+                    </div>
                 </div>
-                <div className="text-right">
-                    <p className="text-[10px] text-slate-500">Pending</p>
-                    <p className="text-lg font-bold text-accent">{fmtMoney(profile.totalPending)}</p>
+                <div className="mt-4 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                   <motion.div 
+                     initial={{ width: 0 }} animate={{ width: `${Math.min(100, (profile.totalPaid / (profile.totalAmount || 1)) * 100)}%` }}
+                     className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                 </div>
-            </div>
-
-            {/* Custom Fees List */}
-            {profile.customFees && profile.customFees.length > 0 && (
-                <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Applied Custom Fees</p>
-                    {profile.customFees.map((cf, i) => (
-                        <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-slate-800/40 rounded-lg border border-white/5">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <Zap size={11} className="text-success flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-[11px] text-white truncate">{cf.feeName}</p>
-                                    {cf.hasPenalty && cf.penalty > 0 && (
-                                        <p className="text-[9px] text-accent">+{fmtMoney(cf.penalty)} penalty</p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="text-right flex-shrink-0 ml-2">
-                                <p className={`text-[11px] font-medium ${cf.status === 'paid' ? 'text-success' : 'text-accent'}`}>{fmtMoney(cf.amount)}</p>
-                                <span className={`text-[8px] px-1 py-0.5 rounded ${cf.status === 'paid' ? 'bg-success/15 text-success' : 'bg-accent/15 text-accent'}`}>{cf.status}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                <p className="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-widest text-center">Settled: {fmtMoney(profile.totalPaid)}</p>
+            </GlassCard>
         </div>
     );
 }
@@ -166,39 +167,25 @@ function ProfileFeeSummary({ studentId, schoolId }) {
 // ─── Student Management (main) ─────────────────────────────────────────────
 export default function StudentManagement() {
     const location = useLocation();
+    const dispatch = useDispatch();
     const schoolId = getSchoolId();
     const pollingInterval = useSelector(selectPollingInterval);
 
     const { data: sData, isLoading: sLoading } = useGetStudentsQuery(schoolId, { pollingInterval });
+    const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
     const [deleteStudent] = useDeleteStudentMutation();
     const [updateStudent] = useUpdateStudentMutation();
+    
     const students = useMemo(() => sData?.data || sData?.students || [], [sData]);
 
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'attendance'
-    const [classes, setClasses] = useState([]);
+    const [activeTab, setActiveTab] = useState('overview'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterClass, setFilterClass] = useState('All');
-    const [lineFilter, setLineFilter] = useState('year');
     const [toast, setToast] = useState(null);
     const [showAddForm, setShowAddForm] = useState(new URLSearchParams(location.search).get('add') === '1');
     const [editStudentId, setEditStudentId] = useState(null);
-
-    const [confirmAction, setConfirmAction] = useState(null); // { type: 'delete' | 'block', student: any }
-
-    // Sync showAddForm with URL search params
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        if (params.get('add') === '1') {
-            setShowAddForm(true);
-        } else if (params.get('add') === null && showAddForm && !params.toString().includes('add=')) {
-            // Only hide if we specifically came from an 'add' state and now it's gone
-            // However, usually we want it to stay if manually toggled, but here 
-            // the user specifically complained about sidebar navigation.
-            // If they click "All Students" (no ?add=1), we should probably show the list.
-            setShowAddForm(false);
-        }
-    }, [location.search]);
     const [profileDrawer, setProfileDrawer] = useState(null);
+    const [confirmAction, setConfirmAction] = useState(null); 
 
     // Attendance state
     const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
@@ -209,156 +196,61 @@ export default function StudentManagement() {
     const [marking, setMarking] = useState({});
     const [holidays, setHolidays] = useState([]);
 
-    const isHoliday = useMemo(() => {
-        const d = new Date(attDate);
-        if (d.getUTCDay() === 0) return { isHoliday: true, reason: 'Sunday' };
-        const h = holidays.find(h => attDate >= h.fromDate && attDate <= (h.toDate || h.fromDate));
-        if (h) return { isHoliday: true, reason: h.title };
-        return { isHoliday: false };
-    }, [attDate, holidays]);
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        setShowAddForm(params.get('add') === '1');
+    }, [location.search]);
 
     const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
 
-    // Load classes using RTK Query
-    const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
-
-    useEffect(() => {
-        if (classData.length > 0) {
-            setClasses(classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
-        }
-    }, [classData]);
-
-    // Fetch present IDs for selected date
     const fetchAttendance = useCallback(async () => {
         setAttLoading(true);
         try {
-            // GET /api/operations/attendance/:schoolId/student/date/:date
             const r = await fetch(`${API}/operations/attendance/${schoolId}/student/date/${attDate}`);
             if (r.ok) {
                 const d = await r.json();
                 setPresentIds(new Set(d.presentIds || []));
-            } else {
-                setPresentIds(new Set());
-            }
+            } else { setPresentIds(new Set()); }
         } catch (e) { setPresentIds(new Set()); }
         finally { setAttLoading(false); }
     }, [schoolId, attDate]);
 
-    const fetchHolidays = useCallback(async () => {
-        if (!schoolId) return;
-        try {
-            const token = localStorage.getItem('accessToken');
-            const headers = {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            };
-            const r = await fetch(`${API}/operations/attendance/${schoolId}/holidays`, { headers });
-            const d = await r.json();
-            if (d.success) setHolidays(d.data || []);
-        } catch (e) { console.error(e); }
-    }, [schoolId]);
-
-    useEffect(() => {
-        if (!schoolId) return;
-        fetchHolidays();
-    }, [schoolId, fetchHolidays]);
     useEffect(() => { if (activeTab === 'attendance') fetchAttendance(); }, [activeTab, attDate, fetchAttendance]);
 
     const togglePresent = async (student) => {
         const sid = student.studentId || student.student_id;
         const isPresent = presentIds.has(sid);
-        // Optimistic
         setPresentIds(prev => { const n = new Set(prev); isPresent ? n.delete(sid) : n.add(sid); return n; });
         setMarking(m => ({ ...m, [sid]: true }));
         try {
             const token = localStorage.getItem('accessToken');
             const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
             if (isPresent) {
-                // DELETE /api/operations/attendance/:schoolId/:role/:userId/:date
                 await fetch(`${API}/operations/attendance/${schoolId}/student/${sid}/${attDate}`, { method: 'DELETE', headers });
             } else {
-                // POST /api/operations/attendance/:schoolId/:role/:userId/present
                 await fetch(`${API}/operations/attendance/${schoolId}/student/${sid}/present`, {
                     method: 'POST', headers, body: JSON.stringify({ date: attDate })
                 });
             }
         } catch (e) {
-            // Revert
             setPresentIds(prev => { const n = new Set(prev); isPresent ? n.add(sid) : n.delete(sid); return n; });
-            showToast('error', 'Failed to mark attendance');
-        } finally {
-            setMarking(m => { const n = { ...m }; delete n[sid]; return n; });
-        }
-    };
-
-    const markAllPresent = async () => {
-        const targets = attStudents.filter(s => !presentIds.has(s.studentId || s.student_id));
-        if (!targets.length) return;
-        const token = localStorage.getItem('accessToken');
-        const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-        const newSet = new Set(presentIds);
-        targets.forEach(s => newSet.add(s.studentId || s.student_id));
-        setPresentIds(newSet);
-        await Promise.all(targets.map(s =>
-            fetch(`${API}/operations/attendance/${schoolId}/student/${s.studentId || s.student_id}/present`, {
-                method: 'POST', headers, body: JSON.stringify({ date: attDate })
-            }).catch(() => null)
-        ));
-        showToast('success', `${targets.length} students marked present`);
+            showToast('error', 'Communication Error with Node');
+        } finally { setMarking(m => { const n = { ...m }; delete n[sid]; return n; }); }
     };
 
     const handleDeleteStudent = async (sid) => {
         try {
             const res = await deleteStudent({ schoolId, studentId: sid }).unwrap();
-            if (res.success) {
-                showToast('success', 'Student deleted successfully');
-            } else {
-                throw new Error(res.message);
-            }
-        } catch (e) {
-            showToast('error', e.message || 'Failed to delete student');
-        } finally {
-            setConfirmAction(null);
-        }
+            if (res.success) showToast('success', 'Node Decommissioned');
+            else throw new Error(res.message);
+        } catch (e) { showToast('error', 'Operation Restricted'); }
+        finally { setConfirmAction(null); }
     };
 
-    const handleBlockStudent = async (sid) => {
-        try {
-            const res = await updateStudent({ schoolId, studentId: sid, studentData: { status: 'blocked' } }).unwrap();
-            if (res.success) {
-                showToast('success', 'Student blocked successfully');
-            } else {
-                throw new Error(res.message);
-            }
-        } catch (e) {
-            showToast('error', e.message || 'Failed to block student');
-        } finally {
-            setConfirmAction(null);
-        }
-    };
-
-    // ── Derived data ──────────────────────────────────────────────────────────
-    const regularStudents = useMemo(() => students.filter(s => (s.type || s.studentType || '').toLowerCase() !== 'private'), [students]);
-    const privateStudents = useMemo(() => students.filter(s => (s.type || s.studentType || '').toLowerCase() === 'private'), [students]);
-
-    const pieData1 = [
-        { name: 'Regular', value: regularStudents.length, color: COLORS.regular },
-        { name: 'Private', value: privateStudents.length, color: COLORS.private },
-    ];
-
-    const enrollmentData = useMemo(() => {
-        const byY = {};
-        students.forEach(s => {
-            const d = s.createdAt || s.created_at;
-            if (!d) return;
-            const dt = d._seconds ? new Date(d._seconds * 1000) : new Date(d);
-            if (isNaN(dt)) return;
-            const y = dt.getMonth() >= 3 ? dt.getFullYear() : dt.getFullYear() - 1;
-            const key = `${y}-${String(y + 1).slice(2)}`;
-            byY[key] = (byY[key] || 0) + 1;
-        });
-        return Object.entries(byY).sort().map(([k, v]) => ({ session: k, students: v }));
-    }, [students]);
+    // ── Derived Data ──────────────────────────────────────────────────────────
+    const classes = useMemo(() => classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')), [classData]);
+    const regularStudents = students.filter(s => (s.type || s.studentType || '').toLowerCase() !== 'private');
+    const privateStudents = students.filter(s => (s.type || s.studentType || '').toLowerCase() === 'private');
 
     const filtered = useMemo(() => students.filter(s => {
         const name = (s.name || s.studentName || '').toLowerCase();
@@ -376,11 +268,7 @@ export default function StudentManagement() {
     }), [students, attClass, attSearch]);
 
     const presentCount = attStudents.filter(s => presentIds.has(s.studentId || s.student_id)).length;
-    const absentCount = attStudents.length - presentCount;
-    const pct = attStudents.length > 0 ? Math.round((presentCount / attStudents.length) * 100) : 0;
-
-    const GRID = { stroke: 'rgba(255,255,255,0.04)' };
-    const AXIS = { fill: '#64748b', fontSize: 11 };
+    const attPct = attStudents.length > 0 ? Math.round((presentCount / attStudents.length) * 100) : 0;
 
     if (showAddForm) {
         return (
@@ -388,293 +276,349 @@ export default function StudentManagement() {
                 mode={editStudentId ? 'edit' : 'add'}
                 studentId={editStudentId}
                 onBack={() => { setShowAddForm(false); setEditStudentId(null); }}
-                onSuccess={() => { setShowAddForm(false); setEditStudentId(null); showToast('success', editStudentId ? 'Profile updated!' : 'Student added!'); }}
+                onSuccess={() => { setShowAddForm(false); setEditStudentId(null); showToast('success', 'Profile Synchronized'); }}
             />
         );
     }
 
     return (
-        <div className="min-h-full">
-            {/* ─── Header ── */}
-            <div className="flex items-center justify-between px-4 py-2.5">
-                <div className="flex items-center gap-2">
-                    {/* Compact Switch Header */}
-                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 backdrop-blur-md relative min-w-[140px] h-8">
+        <div className="min-h-screen bg-[#020617] text-slate-200 p-4 lg:p-8 selection:bg-indigo-500/30">
+            <div className="max-w-7xl mx-auto space-y-8">
+                
+                {/* ─── Header Section ─── */}
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                        <div className="flex items-center gap-3 text-indigo-400 mb-2">
+                            <Cpu size={18} className="animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Personnel Management Active</span>
+                        </div>
+                        <h1 className="text-4xl font-black text-white tracking-tight">
+                            Student <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">Directory</span>
+                        </h1>
+                        <p className="text-slate-500 text-sm mt-1 font-medium">Monitoring {students.length} unified intelligence nodes.</p>
+                    </motion.div>
+
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl relative min-w-[220px]">
                         <motion.div
-                            className="absolute inset-y-1 bg-primary rounded-md shadow-lg shadow-primary/20"
+                            className="absolute inset-y-1.5 bg-indigo-500 rounded-xl shadow-lg shadow-indigo-500/20"
                             initial={false}
-                            animate={{
-                                x: activeTab === 'overview' ? 0 : 66,
-                                width: activeTab === 'overview' ? 66 : 74
-                            }}
+                            animate={{ x: activeTab === 'overview' ? 0 : 100, width: activeTab === 'overview' ? 100 : 110 }}
                             transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         />
-                        <button
-                            onClick={() => setActiveTab('overview')}
-                            className={`relative flex-1 z-10 text-[9px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'overview' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            General
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('attendance')}
-                            className={`relative flex-1 z-10 text-[9px] font-black uppercase tracking-wider transition-colors duration-300 ${activeTab === 'attendance' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            Attendance
-                        </button>
+                        <button onClick={() => setActiveTab('overview')} className={`relative flex-1 z-10 py-2 text-[10px] font-black uppercase tracking-widest transition-colors ${activeTab === 'overview' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>General</button>
+                        <button onClick={() => setActiveTab('attendance')} className={`relative flex-1 z-10 py-2 text-[10px] font-black uppercase tracking-widest transition-colors ${activeTab === 'attendance' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>Attendance</button>
                     </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => { setEditStudentId(null); setShowAddForm(true); }} className="btn-primary py-1.5 px-3 text-[10px]"><Plus size={12} /> Admission</button>
-                </div>
-            </div>
+                </header>
 
-            {/* ─── OVERVIEW TAB ── */}
-            {activeTab === 'overview' && (
-                <div className="p-4 space-y-4 flex-col">
-                    {/* Pie charts row */}
-                    <div>
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Network Overview</p>
-                        <div className="flex gap-3 overflow-x-auto pb-1">
-                            <MiniPieCard title="Total Enrollment" data={pieData1} loading={sLoading} />
-                        </div>
-                    </div>
+                {/* ─── KPI Grid ─── */}
+                <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <KPITile label="Total Active" value={students.length} sub={`${regularStudents.length} Regular Nodes`} icon={GraduationCap} color="primary" trend={2.4} />
+                    <KPITile label="Private Sector" value={privateStudents.length} sub="Independent Study Units" icon={ShieldCheck} color="accent" />
+                    <KPITile label="Daily Network Pulse" value={`${attPct}%`} sub={`${presentCount} Nodes Online`} icon={Activity} color="success" />
+                    <KPITile label="Cloud Registry" value={classes.length} sub="Categorized Clusters" icon={Database} color="warning" />
+                </motion.div>
 
-                    {/* Student table */}
-                    <div className="space-y-3">
-                        <div className="flex gap-3">
-                            <div className="relative flex-1">
-                                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input className="input-standard pl-9 w-full text-xs py-1.5" placeholder="Search students..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                {/* ─── MAIN OVERVIEW ─── */}
+                {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row gap-4 items-center">
+                            <div className="relative flex-1 group w-full">
+                                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                                <input 
+                                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.05] transition-all font-medium" 
+                                  placeholder="Scan for student name or serial hash..." 
+                                  value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
+                                />
                             </div>
-                            <div className="w-40">
-                                <select className="input-standard bg-slate-900 text-xs py-1.5" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
-                                    <option value="All">All Classes</option>
+                            <div className="w-full md:w-56 shrink-0">
+                                <select 
+                                  className="w-full bg-slate-900/50 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-slate-300 font-black uppercase tracking-widest focus:outline-none focus:border-indigo-500/40 transition-all cursor-pointer" 
+                                  value={filterClass} onChange={e => setFilterClass(e.target.value)}
+                                >
+                                    <option value="All">All Clusters</option>
                                     {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
                                 </select>
                             </div>
-                        </div>
-                        <div className="glass-card overflow-hidden">
-                            {sLoading ? <div className="flex items-center justify-center py-16"><Loader size={22} className="animate-spin text-primary" /></div>
-                                : filtered.length === 0 ? (
-                                    <div className="text-center py-12"><GraduationCap size={28} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500 text-xs">No students found</p></div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="dark-table">
-                                            <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Class</th><th>Type</th><th>Joined</th><th>Actions</th></tr></thead>
-                                            <tbody>
-                                                {filtered.map((s, i) => (
-                                                    <motion.tr key={s.studentId || s.student_id || i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}>
-                                                        <td className="text-slate-500 text-[10px]">{i + 1}</td>
-                                                        <td>
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-7 h-7 rounded-lg bg-slate-800 border border-white/5 overflow-hidden flex items-center justify-center shadow-inner">
-                                                                    {s.profileImageUrl ? (
-                                                                        <img src={s.profileImageUrl} alt="" className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-violet-600/20 flex items-center justify-center text-primary text-[9px] font-bold">
-                                                                            {(s.studentName || s.name || 'S')[0].toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs font-semibold text-white">{s.studentName || s.student_name || s.name || 'N/A'}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td><span className="font-mono text-[10px] text-indigo-400">{s.studentId || s.student_id || 'N/A'}</span></td>
-                                                        <td><span className="badge bg-primary/10 border-indigo-500/20 text-indigo-300 text-[10px]">{s.classId || s.class_id || s.className || 'N/A'}</span></td>
-                                                        <td><span className={`badge text-[9px] ${(s.type || s.studentType || '').toLowerCase() === 'private' ? 'bg-secondary/10 border-violet-500/20 text-violet-300' : 'bg-slate-500/10 border-slate-500/20 text-slate-400'}`}>{s.type || s.studentType || 'Regular'}</span></td>
-                                                        <td className="text-[10px] text-slate-500">{fmtDate(s.createdAt || s.created_at)}</td>
-                                                        <td><div className="flex gap-0.5">
-                                                            <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-colors"><Eye size={12} /></button>
-                                                            <button onClick={() => { setEditStudentId(s.studentId || s.student_id); setShowAddForm(true); }} className="p-1.5 rounded-lg text-slate-500 hover:text-success hover:bg-emerald-500/10 transition-colors"><Edit3 size={12} /></button>
-                                                            <button onClick={() => setConfirmAction({ type: 'block', student: s })} className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-amber-500/10 transition-colors"><UserX size={12} /></button>
-                                                            <button onClick={() => setConfirmAction({ type: 'delete', student: s })} className="p-1.5 rounded-lg text-slate-500 hover:text-accent hover:bg-rose-500/10 transition-colors"><X size={12} /></button>
-                                                        </div></td>
-                                                    </motion.tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <button 
+                              onClick={() => { setEditStudentId(null); setShowAddForm(true); }} 
+                              className="w-full md:w-auto shrink-0 bg-indigo-500 hover:bg-indigo-400 text-white px-8 py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+                            >
+                                <Plus size={16} /> New Admission
+                            </button>
+                        </motion.div>
 
-            {/* ─── ATTENDANCE TAB ── */}
-            {activeTab === 'attendance' && (
-                <div className="p-4 space-y-4">
-                    {/* Controls */}
-                    <div className="flex flex-wrap gap-3 items-center">
-                        <div className="flex items-center gap-2 bg-slate-800/60 border border-white/10 rounded-lg px-2.5 py-1.5">
-                            <Calendar size={12} className="text-slate-500" />
-                            <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="bg-transparent text-xs text-white focus:outline-none" />
-                        </div>
-                        <select value={attClass} onChange={e => setAttClass(e.target.value)} className="input-dark sm:w-36 text-xs py-1.5">
-                            <option value="All">All Classes</option>
-                            {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                        </select>
-                        <div className="relative flex-1 min-w-[150px]">
-                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input className="input-dark pl-8 w-full text-xs py-1.5" placeholder="Search name..." value={attSearch} onChange={e => setAttSearch(e.target.value)} />
-                        </div>
-                        <button onClick={markAllPresent} disabled={isHoliday.isHoliday} className={`btn-primary py-1.5 px-3 text-[10px] ${isHoliday.isHoliday ? 'bg-slate-700 cursor-not-allowed' : 'bg-emerald-600/80 hover:bg-emerald-500/80'} ml-auto`}>
-                            <CheckCircle size={12} /> Mark All
-                        </button>
-                    </div>
-
-                    {isHoliday.isHoliday && (
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-center gap-3 text-accent">
-                            <AlertTriangle size={16} />
-                            <div>
-                                <p className="text-xs font-bold">School Closed</p>
-                                <p className="text-[10px] opacity-80">{isHoliday.reason}</p>
+                        <GlassCard className="overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-white/[0.02] border-b border-white/5">
+                                            <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Index</th>
+                                            <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Entity</th>
+                                            <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Serial ID</th>
+                                            <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Cluster</th>
+                                            <th className="px-6 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Operations</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.02]">
+                                        <AnimatePresence>
+                                        {filtered.map((s, i) => (
+                                            <motion.tr 
+                                              key={s.studentId || s.student_id || i}
+                                              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                                              className="hover:bg-white/[0.02] transition-colors group"
+                                            >
+                                                <td className="px-6 py-4 text-xs font-mono text-slate-600">{i + 1}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-600/20 border border-white/10 flex items-center justify-center text-indigo-400 text-sm font-black shadow-inner">
+                                                          {s.profileImageUrl ? <img src={s.profileImageUrl} alt="" className="w-full h-full object-cover rounded-xl" /> : (s.studentName || s.name || 'S')[0].toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-black text-white">{s.studentName || s.name || 'N/A'}</p>
+                                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{s.gender || 'Unknown'}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-xs font-black text-indigo-400 font-mono tracking-tighter bg-indigo-500/5 px-2.5 py-1.5 rounded-lg border border-indigo-500/20">
+                                                      {s.studentId || s.student_id || 'X-000'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[10px] font-black text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                                                      {s.classId || s.className || 'Unassigned'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => setProfileDrawer({ student: s, mode: 'view' })} className="p-2.5 rounded-xl text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"><Eye size={16} /></button>
+                                                        <button onClick={() => { setEditStudentId(s.studentId || s.student_id); setShowAddForm(true); }} className="p-2.5 rounded-xl text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"><Edit3 size={16} /></button>
+                                                        <button onClick={() => setConfirmAction({ type: 'delete', student: s })} className="p-2.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"><Trash2 size={16} /></button>
+                                                    </div>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                        </AnimatePresence>
+                                    </tbody>
+                                </table>
                             </div>
+                        </GlassCard>
+                    </div>
+                )}
+
+                {/* ─── ATTENDANCE TAB ─── */}
+                {activeTab === 'attendance' && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                          
+                          {/* Controller Panel */}
+                          <div className="xl:col-span-4 space-y-6">
+                              <GlassCard className="p-6 border-indigo-500/20">
+                                  <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3">
+                                    <Clock className="text-indigo-400" /> Temporal Control
+                                  </h3>
+                                  <div className="space-y-4">
+                                      <div>
+                                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">System Date</label>
+                                          <input 
+                                            type="date" value={attDate} onChange={e => setAttDate(e.target.value)} 
+                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:border-indigo-500/50 transition-all font-black" 
+                                          />
+                                      </div>
+                                      <div>
+                                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block">Cluster Scan</label>
+                                          <select 
+                                            value={attClass} onChange={e => setAttClass(e.target.value)} 
+                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white uppercase tracking-widest font-black"
+                                          >
+                                              <option value="All">Full Network</option>
+                                              {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                                          </select>
+                                      </div>
+                                      <button 
+                                        onClick={fetchAttendance}
+                                        className="w-full py-4 mt-6 rounded-2xl bg-white/[0.02] border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/[0.05] transition-all"
+                                      >
+                                        Refresh Registry
+                                      </button>
+                                  </div>
+                              </GlassCard>
+
+                              <GlassCard className="p-6 bg-gradient-to-br from-indigo-500/10 to-transparent">
+                                  <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xs font-black text-white uppercase tracking-widest">Network Health</h3>
+                                    <Activity size={16} className="text-indigo-400 animate-pulse" />
+                                  </div>
+                                  <div className="space-y-4">
+                                      <div className="flex justify-between items-end">
+                                        <p className="text-[10px] font-black text-slate-500 uppercase">Synchronization</p>
+                                        <p className="text-xl font-black text-white">{attPct}%</p>
+                                      </div>
+                                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <motion.div initial={{ width: 0 }} animate={{ width: `${attPct}%` }} className="h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-500 font-bold uppercase text-center mt-2 tracking-widest">
+                                        {presentCount} Nodes online • {attStudents.length - presentCount} Signal Interrupts
+                                      </p>
+                                  </div>
+                              </GlassCard>
+                          </div>
+
+                          {/* Registry List */}
+                          <div className="xl:col-span-8">
+                              <GlassCard className="h-[600px] flex flex-col p-6">
+                                  <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+                                      <div>
+                                        <h3 className="text-xl font-black text-white">Registry Nodes</h3>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Scanning Cluster: {attClass}</p>
+                                      </div>
+                                      <div className="relative group">
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                        <input 
+                                          className="bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-indigo-500/30 transition-all font-medium" 
+                                          placeholder="Find node..." value={attSearch} onChange={e => setAttSearch(e.target.value)} 
+                                        />
+                                      </div>
+                                  </div>
+
+                                  <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                                      {attLoading ? <div className="flex justify-center py-20"><Loader className="animate-spin text-indigo-500" /></div> : 
+                                       attStudents.map((s, i) => {
+                                          const sid = s.studentId || s.student_id;
+                                          const isPresent = presentIds.has(sid);
+                                          const name = s.studentName || s.name || 'N/A';
+                                          return (
+                                              <motion.div 
+                                                key={sid || i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
+                                                className={`p-4 rounded-3xl border transition-all flex items-center justify-between group ${isPresent ? 'bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]' : 'bg-white/[0.01] border-white/5'}`}
+                                              >
+                                                  <div className="flex items-center gap-4">
+                                                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xs font-black transition-all ${isPresent ? 'bg-emerald-500/20 border-emerald-500/20 text-emerald-400' : 'bg-slate-800 border-white/5 text-slate-500'}`}>
+                                                        {name[0].toUpperCase()}
+                                                      </div>
+                                                      <div>
+                                                          <h4 className="text-sm font-black text-white">{name}</h4>
+                                                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{sid}</p>
+                                                      </div>
+                                                  </div>
+                                                  <button onClick={() => togglePresent(s)} disabled={marking[sid]}
+                                                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isPresent ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}
+                                                  >
+                                                    {isPresent ? 'Verified' : 'Offline'}
+                                                  </button>
+                                              </motion.div>
+                                          );
+                                      })}
+                                  </div>
+                              </GlassCard>
+                          </div>
+                      </div>
+                  </div>
+                )}
+
+                {/* ─── Profile Drawer ─── */}
+                <AnimatePresence>
+                    {profileDrawer && (
+                        <>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]" onClick={() => setProfileDrawer(null)} />
+                            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0f172a] border-l border-white/10 z-[110] shadow-2xl p-8 overflow-y-auto custom-scrollbar">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3 text-indigo-400">
+                                      <Info size={16} />
+                                      <span className="text-[10px] font-black uppercase tracking-widest">Intelligence Node Profile</span>
+                                    </div>
+                                    <button onClick={() => setProfileDrawer(null)} className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"><X size={20} /></button>
+                                </div>
+
+                                <div className="flex flex-col items-center text-center mb-10">
+                                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500/30 to-violet-600/30 border border-white/10 p-1 mb-6 shadow-2xl">
+                                      <div className="w-full h-full rounded-2xl bg-[#0f172a] flex items-center justify-center overflow-hidden">
+                                        {profileDrawer.student.profileImageUrl ? <img src={profileDrawer.student.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl font-black text-indigo-400">{(profileDrawer.student.studentName || 'S')[0]}</span>}
+                                      </div>
+                                    </div>
+                                    <h2 className="text-2xl font-black text-white tracking-tight">{profileDrawer.student.studentName || 'Unknown Entity'}</h2>
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mt-2 group cursor-pointer hover:text-indigo-400 transition-colors">{profileDrawer.student.studentId || 'X-000'}</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6 mb-10">
+                                    {[
+                                      ['Gender', profileDrawer.student.gender, Users],
+                                      ['Cluster', profileDrawer.student.className || profileDrawer.student.classId, Layers],
+                                      ['Join Date', fmtDate(profileDrawer.student.createdAt || profileDrawer.student.created_at), CalendarCheck],
+                                      ['Status', 'Active Integrity', ShieldCheck],
+                                    ].map(([label, val, Icon]) => (
+                                      <div key={label}>
+                                          <div className="flex items-center gap-2 mb-1.5 opacity-50">
+                                            <Icon size={12} className="text-slate-500" />
+                                            <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                                          </div>
+                                          <p className="text-sm font-bold text-white px-1 whitespace-nowrap overflow-hidden text-ellipsis">{val || 'N/A'}</p>
+                                      </div>
+                                    ))}
+                                </div>
+
+                                {/* Dynamic Fee Summary Section */}
+                                <ProfileFeeSummary studentId={profileDrawer.student.studentId || profileDrawer.student.student_id} schoolId={schoolId} />
+
+                                <div className="mt-10 pt-8 border-t border-white/5 grid grid-cols-2 gap-4">
+                                  <button onClick={() => { setEditStudentId(profileDrawer.student.studentId); setShowAddForm(true); }} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/10 transition-all">Deep Edit</button>
+                                  <button onClick={() => setConfirmAction({type:'delete', student: profileDrawer.student})} className="px-6 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-rose-500/20 transition-all">Deactivate</button>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                {/* Confirmation Modal */}
+                <AnimatePresence>
+                    {confirmAction && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmAction(null)} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm bg-[#0f172a] border border-white/10 p-8 rounded-[2.5rem] relative z-20 shadow-2xl">
+                                <div className="w-16 h-16 rounded-3xl bg-rose-500/20 text-rose-500 flex items-center justify-center mb-6">
+                                    <AlertTriangle size={32} />
+                                </div>
+                                <h3 className="text-xl font-black text-white mb-3">Critical Action Request</h3>
+                                <p className="text-sm text-slate-400 mb-8 leading-relaxed font-medium">
+                                    {confirmAction.type === 'delete'
+                                        ? `Are you sure you wish to permanently terminate node instance [${confirmAction.student.name}]? This operation cannot be reversed.`
+                                        : "Warning: Blocking this node will restrict all network access for this personnel."}
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setConfirmAction(null)} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-300">Abort</button>
+                                    <button
+                                        onClick={() => handleDeleteStudent(confirmAction.student.studentId || confirmAction.student.student_id)}
+                                        className="px-6 py-4 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        Execute
+                                    </button>
+                                </div>
+                            </motion.div>
                         </div>
                     )}
+                </AnimatePresence>
 
-                    {/* Stats */}
-                    <div className="flex gap-2 flex-wrap items-center">
-                        {[['slate', <Users size={11} />, 'Total', attStudents.length], ['emerald', <UserCheck size={11} />, 'Present', presentCount], ['rose', <UserX size={11} />, 'Absent', absentCount]].map(([color, icon, label, val]) => (
-                            <div key={label} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] text-${color}-400 bg-${color}-500/10 border-${color}-500/20 font-bold`}>
-                                {icon}<span className="text-[9px] text-slate-500 uppercase">{label}</span><span>{val}</span>
+                {/* Toasts */}
+                <AnimatePresence>
+                    {toast && (
+                        <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                            className={`fixed bottom-8 right-8 z-[300] flex items-center gap-4 px-6 py-4 rounded-2xl backdrop-blur-2xl shadow-2xl border ${toast.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 border-rose-500/20 text-rose-400'}`}>
+                            {toast.type === 'success' ? <ShieldCheck size={20} /> : <AlertTriangle size={20} />}
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-black uppercase tracking-widest opacity-50">{toast.type}</span>
+                              <span className="text-xs font-black">{toast.msg}</span>
                             </div>
-                        ))}
-                        <div className="ml-auto flex items-center gap-2">
-                            <span className="text-base font-black text-success">{pct}%</span>
-                            <span className="text-[9px] text-slate-500 uppercase font-black">Attendance</span>
-                        </div>
-                    </div>
-
-                    {/* Student attendance list */}
-                    <div className="glass-card overflow-hidden">
-                        {(sLoading || attLoading) ? (
-                            <div className="flex items-center justify-center py-16"><Loader size={22} className="animate-spin text-success" /></div>
-                        ) : attStudents.length === 0 ? (
-                            <div className="text-center py-12"><ClipboardList size={28} className="text-slate-600 mx-auto mb-2" /><p className="text-slate-500 text-xs">No students found</p></div>
-                        ) : (
-                            <div className="divide-y divide-white/[0.04]">
-                                <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-3 px-4 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/[0.02]">
-                                    <span>#</span><span>Student</span><span>Class</span><span>Status</span>
-                                </div>
-                                {attStudents.map((s, i) => {
-                                    const sid = s.studentId || s.student_id;
-                                    const isPresent = presentIds.has(sid);
-                                    const isLoad = !!marking[sid];
-                                    const name = s.studentName || s.name || 'N/A';
-                                    const cls = s.className || s.classId || '—';
-                                    return (
-                                        <motion.div key={sid || i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.01, 0.2) }}
-                                            className={`grid grid-cols-[2rem_1fr_auto_auto] gap-3 items-center px-4 py-2.5 transition-colors ${isPresent ? 'bg-emerald-500/5' : ''}`}>
-                                            <span className="text-[10px] text-slate-600">{i + 1}</span>
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isPresent ? 'bg-success/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{name[0]?.toUpperCase()}</div>
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-white truncate">{name}</p>
-                                                    <p className="text-[9px] text-slate-500 font-mono truncate">{sid}</p>
-                                                </div>
-                                            </div>
-                                            <span className="badge bg-primary/10 border-indigo-500/20 text-indigo-300 text-[9px] whitespace-nowrap">{cls}</span>
-                                            <button onClick={() => togglePresent(s)} disabled={isLoad || isHoliday.isHoliday}
-                                                className={`w-10 h-5 rounded-full relative transition-all ${isPresent ? 'bg-success/20 border-emerald-500/40' : 'bg-slate-700/50 border-white/5'} border ${(isLoad || isHoliday.isHoliday) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}>
-                                                <div className={`absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full transition-all shadow-lg ${isPresent ? 'right-0.5 bg-emerald-400' : 'left-0.5 bg-slate-500'}`} />
-                                            </button>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )
-            }
-
-            {/* ─── Profile Drawer ── */}
-            <AnimatePresence>
-                {profileDrawer && (
-                    <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setProfileDrawer(null)} />
-                        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="drawer-panel p-6 space-y-5">
-                            <div className="flex items-center justify-between">
-                                <h2 className="font-bold text-white">Student Profile</h2>
-                                <div className="flex gap-2">
-                                    <button onClick={() => setProfileDrawer(p => ({ ...p, mode: p.mode === 'view' ? 'edit' : 'view' }))} className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 ${profileDrawer.mode === 'edit' ? 'bg-success/20 text-emerald-300' : 'bg-primary/20 text-indigo-300'}`}>
-                                        {profileDrawer.mode === 'edit' ? <><CheckCircle size={12} /> View</> : <><Edit3 size={12} /> Edit</>}
-                                    </button>
-                                    <button onClick={() => setProfileDrawer(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg"><X size={18} /></button>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-white/10 overflow-hidden flex items-center justify-center shadow-xl">
-                                    {profileDrawer.student.profileImageUrl ? (
-                                        <img src={profileDrawer.student.profileImageUrl} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/30 to-violet-600/30 flex items-center justify-center text-2xl font-bold text-primary">
-                                            {(profileDrawer.student.studentName || profileDrawer.student.name || 'S')[0]}
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-lg">{profileDrawer.student.studentName || profileDrawer.student.name}</h3>
-                                    <p className="text-xs text-primary font-mono">{profileDrawer.student.studentId || profileDrawer.student.student_id}</p>
-                                    <span className="badge bg-primary/15 border-indigo-500/25 text-indigo-300 mt-1">{profileDrawer.student.classId || profileDrawer.student.className || 'N/A'}</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                {[['Gender', profileDrawer.student.gender], ['Date of Birth', fmtDate(profileDrawer.student.dob)], ['Father', profileDrawer.student.fatherName || profileDrawer.student.parentName], ['Mother', profileDrawer.student.motherName], ['Contact', profileDrawer.student.contact || profileDrawer.student.phone], ['Address', profileDrawer.student.permanentAddress || profileDrawer.student.address], ['Type', profileDrawer.student.type || profileDrawer.student.studentType || 'Regular'], ['Joined', fmtDate(profileDrawer.student.createdAt || profileDrawer.student.created_at)]]
-                                    .filter(([, v]) => v).map(([k, v]) => (
-                                        <div key={k} className="flex justify-between items-start py-2 border-b border-white/5 gap-3">
-                                            <span className="text-slate-500 text-xs w-28 flex-shrink-0">{k}</span>
-                                            <span className="text-xs text-white text-right">{v}</span>
-                                        </div>
-                                    ))}
-                            </div>
-
-                            {/* Fee Breakdown Section */}
-                            <ProfileFeeSummary studentId={profileDrawer.student.studentId || profileDrawer.student.student_id} schoolId={schoolId} />
-
-                            {profileDrawer.mode === 'edit' && (
-                                <button onClick={() => { setProfileDrawer(null); setShowAddForm(true); }} className="btn-primary w-full justify-center"><Edit3 size={14} /> Open Full Edit Form</button>
-                            )}
                         </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>
 
-            {/* Toast */}
-            <AnimatePresence>
-                {toast && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-success/20 border border-emerald-500/30 text-emerald-300' : 'bg-accent/20 border border-rose-500/30 text-rose-300'}`}>
-                        {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
-                        {toast.msg}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            </div>
 
-
-
-            {/* Confirmation Modal */}
-            <AnimatePresence>
-                {confirmAction && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmAction(null)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card max-w-sm w-full p-6 relative z-10 border-white/10 shadow-2xl">
-                            <div className={`w-12 h-12 rounded-2xl mb-4 flex items-center justify-center ${confirmAction.type === 'delete' ? 'bg-accent/20 text-accent' : 'bg-accent/20 text-accent'}`}>
-                                {confirmAction.type === 'delete' ? <AlertTriangle size={24} /> : <UserX size={24} />}
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">
-                                {confirmAction.type === 'delete' ? 'Confirm Delete' : 'Confirm Block'}
-                            </h3>
-                            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-                                {confirmAction.type === 'delete'
-                                    ? `Are you sure you want to permanently delete ${confirmAction.student.name || 'this student'}? This action cannot be undone.`
-                                    : "kya app student ka name or class ko delete karna chate hai?"}
-                            </p>
-                            <div className="flex gap-3">
-                                <button onClick={() => setConfirmAction(null)} className="btn-secondary flex-1 justify-center">No</button>
-                                <button
-                                    onClick={() => confirmAction.type === 'delete' ? handleDeleteStudent(confirmAction.student.studentId || confirmAction.student.student_id) : handleBlockStudent(confirmAction.student.studentId || confirmAction.student.student_id)}
-                                    className={`flex-1 justify-center py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${confirmAction.type === 'delete' ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }`}</style>
+        </div>
+    );
+}
+l shadow-lg ${confirmAction.type === 'delete' ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}
                                 >
                                     Yes
                                 </button>

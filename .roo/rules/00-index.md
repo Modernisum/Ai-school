@@ -15,7 +15,7 @@ Do NOT read all files. Only read the one that matches the user's current request
 
 ### Backend Development
 - **When**: Working on Rust backend, APIs, database, services
-- **Read**: `.ai-docs/backend-arch.md`
+- **Read**: `.ai-docs/backend-rule.md`
 
 ### Mobile Apps (Flutter)
 - **When**: Working on Chatra or Employee mobile apps
@@ -25,20 +25,8 @@ Do NOT read all files. Only read the one that matches the user's current request
 - **When**: Need overview of project structure, components, relationships
 - **Read**: `.ai-docs/project-map.md`
 
-### Feature Tracking & Progress
-- **When**: Need to check feature completion status, pending tasks, or progress tracking
-- **Read**: `.ai-docs/feature-tracking/feature-progress.md`
-
 ## How to Use This System
 1. When user gives a task, determine which category it falls into
 2. Use `read_file` tool to read ONLY the corresponding `.ai-docs/` file
 3. Do NOT read any other rule files unless specifically needed
 4. Keep context window clean - only load what's necessary
-5. Token-saver rules apply to all prompts (automatically loaded from `.roo/rules/token-saver.md`)
-
-## Benefits
-- Zero input token waste on new sessions
-- On-demand reading based on task
-- Clean context window with only relevant rules
-- Faster AI response times
-- Lower token costs

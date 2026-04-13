@@ -1,5 +1,6 @@
 use crate::error::AppError;
 use anyhow::{anyhow, Result};
+use chrono::Datelike;
 use lettre::{
     message::{header, MultiPart, SinglePart},
     transport::smtp::authentication::Credentials,
@@ -154,15 +155,8 @@ impl EmailService {
                 MultiPart::mixed()
                     .singlepart(SinglePart::plain(body.to_string()))
                     .singlepart(
-                        SinglePart::builder()
-                            .header(header::ContentType::parse("application/pdf").unwrap())
-                            .header(header::ContentDisposition {
-                                disposition: lettre::message::header::ContentDispositionType::Attachment,
-                                parameters: vec![lettre::message::header::ContentDispositionParam::Filename(
-                                    filename.to_string(),
-                                )],
-                            })
-                            .body(pdf_data.to_vec()),
+                        lettre::message::Attachment::new(filename.to_string())
+                            .body(pdf_data.to_vec(), "application/pdf".parse().unwrap())
                     ),
             )?;
 

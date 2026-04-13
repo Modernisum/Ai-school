@@ -1,0 +1,278 @@
+{
+  "version": "1",
+  "name": "Webhook Management APIs",
+  "type": "collection",
+  "items": [
+    {
+      "name": "1. Register Webhook",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/webhooks",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"url\": \"https://webhook.example.com/callback\",\n  \"secret\": \"my-secret-token-123\",\n  \"event_types\": [\"student.created\", \"attendance.marked\"]\n}"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"id\": 1\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns webhook ID",
+          "type": "javascript",
+          "script": "pm.response.json().hasOwnProperty('id') && typeof pm.response.json().id === 'number';"
+        }
+      ],
+      "variables": {
+        "set": [
+          {
+            "name": "webhookId",
+            "value": "{{response.body.id}}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2. List Webhooks",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/webhooks",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"webhooks\": [\n    {\n      \"id\": {{webhookId}},\n      \"url\": \"https://webhook.example.com/callback\",\n      \"event_types\": [\"student.created\", \"attendance.marked\"],\n      \"status\": \"active\",\n      \"created_at\": \"2024-01-01T00:00:00Z\"\n    }\n  ]\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns webhooks array",
+          "type": "javascript",
+          "script": "Array.isArray(pm.response.json().webhooks);"
+        },
+        {
+          "name": "Contains registered webhook",
+          "type": "javascript",
+          "script": "const webhooks = pm.response.json().webhooks;\nwebhooks.some(wh => wh.id === parseInt(pm.variables.get('webhookId')));"
+        },
+        {
+          "name": "Webhook has correct event types",
+          "type": "javascript",
+          "script": "const webhooks = pm.response.json().webhooks;\nconst webhook = webhooks.find(wh => wh.id === parseInt(pm.variables.get('webhookId')));\nwebhook && Array.isArray(webhook.event_types) && webhook.event_types.includes('student.created');"
+        }
+      ]
+    },
+    {
+      "name": "3. Get Webhook Logs",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/webhooks/{{webhookId}}/logs",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"logs\": [\n    {\n      \"id\": 1,\n      \"event_type\": \"student.created\",\n      \"status_code\": 200,\n      \"attempt_count\": 1,\n      \"last_attempt_at\": \"2024-01-01T12:00:00Z\",\n      \"status\": \"delivered\"\n    },\n    {\n      \"id\": 2,\n      \"event_type\": \"attendance.marked\",\n      \"status_code\": 500,\n      \"attempt_count\": 3,\n      \"last_attempt_at\": \"2024-01-01T13:00:00Z\",\n      \"status\": \"failed\"\n    }\n  ]\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns logs array",
+          "type": "javascript",
+          "script": "Array.isArray(pm.response.json().logs);"
+        },
+        {
+          "name": "Logs have required fields",
+          "type": "javascript",
+          "script": "const logs = pm.response.json().logs;\nlogs.length > 0 && logs.every(log => \n  log.hasOwnProperty('event_type') && \n  log.hasOwnProperty('status_code') && \n  log.hasOwnProperty('status')\n);"
+        }
+      ]
+    },
+    {
+      "name": "4. Delete Webhook",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/webhooks/{{webhookId}}",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"message\": \"Webhook deleted\"\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Response has success true",
+          "type": "javascript",
+          "script": "pm.response.json().success === true;"
+        },
+        {
+          "name": "Returns confirmation message",
+          "type": "javascript",
+          "script": "pm.response.json().message === 'Webhook deleted';"
+        }
+      ]
+    },
+    {
+      "name": "5. Verify Webhook Deletion",
+      "type": "http-request",
+      "request": {
+        "url": "{{baseUrl}}/api/school/{{schoolId}}/webhooks",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "type": "json",
+          "raw": "{\n  \"success\": true,\n  \"webhooks\": []\n}"
+        }
+      },
+      "tests": [
+        {
+          "name": "Status is 200",
+          "type": "javascript",
+          "script": "pm.response.to.have.status(200);"
+        },
+        {
+          "name": "Webhook list is empty",
+          "type": "javascript",
+          "script": "pm.response.json().webhooks.length === 0;"
+        },
+        {
+          "name": "Deleted webhook not in list",
+          "type": "javascript",
+          "script": "const webhooks = pm.response.json().webhooks;\n!webhooks.some(wh => wh.id === parseInt(pm.variables.get('webhookId')));"
+        }
+      ]
+    }
+  ]
+}

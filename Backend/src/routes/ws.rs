@@ -47,8 +47,8 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
         Err(_) => return, 
     };
 
-    let mut pubsub_conn = match redis_client.get_async_pubsub().await {
-        Ok(conn) => conn,
+    let mut pubsub_conn: redis::aio::PubSub = match redis_client.get_async_connection().await {
+        Ok(conn) => conn.into_pubsub(),
         Err(_) => return,
     };
 

@@ -1,0 +1,356 @@
+{
+  "version": "1",
+  "name": "Developer Access",
+  "type": "collection",
+  "items": [
+    {
+      "name": "Request Access",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/developer-access/:developerId/request",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "developer_email": "developer@example.com",
+            "target_school_id": "{{schoolId}}",
+            "requested_role": "data-analyst",
+            "justification": "Need access to student performance data for analytics dashboard development",
+            "requested_tables": ["students", "attendance", "exam_results"],
+            "duration_minutes": 480
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Access request submitted successfully",
+          "request": {
+            "request_id": 101,
+            "developer_id": "DEV001",
+            "target_school_id": "{{schoolId}}",
+            "requested_role": "data-analyst",
+            "status": "pending",
+            "justification": "Need access to student performance data for analytics dashboard development",
+            "created_at": "{{$timestamp.iso}}",
+            "expires_at": "{{$timestamp.addDays 7 iso}}"
+          }
+        }
+      }
+    },
+    {
+      "name": "Approve Access Request",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/developer-access/requests/:requestId/approve",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "approver_id": "{{adminId}}",
+            "approver_email": "admin@school.com",
+            "approval_notes": "Access approved for analytics project",
+            "override_duration_minutes": 720
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Access request approved",
+          "data": {
+            "grant_id": 201,
+            "developer_id": "DEV001",
+            "school_id": "{{schoolId}}",
+            "role": "data-analyst",
+            "approved_by": "{{adminId}}",
+            "approved_at": "{{$timestamp.iso}}",
+            "expires_at": "{{$timestamp.addDays 30 iso}}",
+            "tables": ["students", "attendance", "exam_results"]
+          }
+        }
+      }
+    },
+    {
+      "name": "Revoke Access",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/developer-access/grants/:grantId/revoke",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "revoker_id": "{{adminId}}",
+            "revoker_email": "admin@school.com",
+            "reason": "Project completed, access no longer required"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Access revoked successfully"
+        }
+      }
+    },
+    {
+      "name": "Get Pending Requests",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/developer-access/requests/pending",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "requests": [
+            {
+              "request_id": 102,
+              "developer_id": "DEV002",
+              "developer_email": "dev2@example.com",
+              "target_school_id": "{{schoolId}}",
+              "requested_role": "read-only",
+              "justification": "Debugging production issue",
+              "status": "pending",
+              "created_at": "2024-03-14T09:15:00Z",
+              "requested_tables": ["logs", "errors"]
+            },
+            {
+              "request_id": 103,
+              "developer_id": "DEV003",
+              "developer_email": "dev3@example.com",
+              "target_school_id": "{{schoolId}}",
+              "requested_role": "admin",
+              "justification": "System maintenance",
+              "status": "pending",
+              "created_at": "2024-03-13T14:30:00Z",
+              "requested_tables": ["*"]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Developer Access",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/developer-access/:developerId",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "access": {
+            "developer_id": "DEV001",
+            "current_role": "data-analyst",
+            "active_until": "{{$timestamp.addDays 25 iso}}",
+            "schools_with_access": ["{{schoolId}}"],
+            "total_requests": 5,
+            "approved_requests": 3,
+            "active_grants": [
+              {
+                "grant_id": 201,
+                "school_id": "{{schoolId}}",
+                "role": "data-analyst",
+                "approved_at": "2024-03-01T10:00:00Z",
+                "expires_at": "{{$timestamp.addDays 25 iso}}",
+                "tables": ["students", "attendance", "exam_results"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Developer Activity",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/developer-access/:developerId/activity",
+        "headers": [
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "activities": [
+            {
+              "activity_id": 301,
+              "developer_id": "DEV001",
+              "action_type": "query",
+              "target_school_id": "{{schoolId}}",
+              "details": {
+                "table": "students",
+                "operation": "SELECT",
+                "rows_returned": 150
+              },
+              "ip_address": "192.168.1.50",
+              "user_agent": "PostmanRuntime/7.36.0",
+              "created_at": "2024-03-15T11:30:00Z"
+            },
+            {
+              "activity_id": 302,
+              "developer_id": "DEV001",
+              "action_type": "access_request",
+              "target_school_id": "{{schoolId}}",
+              "details": {
+                "request_id": 101,
+                "status": "approved"
+              },
+              "ip_address": "192.168.1.50",
+              "user_agent": "Chrome/122.0.0.0",
+              "created_at": "2024-03-14T15:45:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Emergency Access",
+      "type": "http",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/developer-access/:developerId/emergency",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "name": "X-School-ID",
+            "value": "{{schoolId}}"
+          },
+          {
+            "name": "X-Admin-ID",
+            "value": "{{adminId}}"
+          }
+        ],
+        "body": {
+          "mode": "json",
+          "json": {
+            "developer_email": "emergency@example.com",
+            "target_school_id": "{{schoolId}}",
+            "requested_role": "emergency",
+            "justification": "Production system down, need immediate access to diagnose",
+            "requested_tables": ["system_logs", "error_logs", "database_tables"],
+            "duration_minutes": 60
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "message": "Emergency access requested",
+          "request": {
+            "request_id": 104,
+            "developer_id": "DEV001",
+            "target_school_id": "{{schoolId}}",
+            "requested_role": "emergency",
+            "status": "pending",
+            "justification": "Production system down, need immediate access to diagnose",
+            "created_at": "{{$timestamp.iso}}",
+            "expires_at": "{{$timestamp.addHours 1 iso}}"
+          }
+        }
+      }
+    }
+  ]
+}

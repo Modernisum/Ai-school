@@ -1,87 +1,87 @@
 [
   {
     "id": 1,
-    "state_id": 1,
-    "name": "New Delhi"
+    "name": "New Delhi",
+    "state_id": 1
   },
   {
     "id": 2,
-    "state_id": 1,
-    "name": "Central Delhi"
+    "name": "Central Delhi",
+    "state_id": 1
   },
   {
     "id": 3,
-    "state_id": 1,
-    "name": "South Delhi"
+    "name": "South Delhi",
+    "state_id": 1
   },
   {
     "id": 4,
-    "state_id": 2,
-    "name": "Mumbai"
+    "name": "Mumbai",
+    "state_id": 2
   },
   {
     "id": 5,
-    "state_id": 2,
-    "name": "Pune"
+    "name": "Pune",
+    "state_id": 2
   },
   {
     "id": 6,
-    "state_id": 2,
-    "name": "Nagpur"
+    "name": "Nagpur",
+    "state_id": 2
   },
   {
     "id": 7,
-    "state_id": 3,
-    "name": "Bengaluru"
+    "name": "Bengaluru",
+    "state_id": 3
   },
   {
     "id": 8,
-    "state_id": 3,
-    "name": "Mysuru"
+    "name": "Mysuru",
+    "state_id": 3
   },
   {
     "id": 9,
-    "state_id": 3,
-    "name": "Mangaluru"
+    "name": "Mangaluru",
+    "state_id": 3
   },
   {
     "id": 10,
-    "state_id": 4,
-    "name": "Los Angeles"
+    "name": "Los Angeles",
+    "state_id": 4
   },
   {
     "id": 11,
-    "state_id": 4,
-    "name": "San Francisco"
+    "name": "San Francisco",
+    "state_id": 4
   },
   {
     "id": 12,
-    "state_id": 5,
-    "name": "Manhattan"
+    "name": "Manhattan",
+    "state_id": 5
   },
   {
     "id": 13,
-    "state_id": 5,
-    "name": "Brooklyn"
+    "name": "Brooklyn",
+    "state_id": 5
   },
   {
     "id": 14,
-    "state_id": 5,
-    "name": "Queens"
+    "name": "Queens",
+    "state_id": 5
   },
   {
     "id": 15,
-    "state_id": 6,
-    "name": "London"
+    "name": "London",
+    "state_id": 6
   },
   {
     "id": 16,
-    "state_id": 6,
-    "name": "Manchester"
+    "name": "Manchester",
+    "state_id": 6
   },
   {
     "id": 17,
-    "state_id": 6,
-    "name": "Birmingham"
+    "name": "Birmingham",
+    "state_id": 6
   }
 ]
