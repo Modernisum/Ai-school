@@ -618,15 +618,3 @@ export default function StudentManagement() {
         </div>
     );
 }
-l shadow-lg ${confirmAction.type === 'delete' ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'}`}
-                                >
-                                    Yes
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div >
-    );
-}

@@ -19,9 +19,11 @@ import SupportPage from './pages/SupportPage.jsx'
 import BillingPage from './pages/Billing/BillingPage.jsx'
 import PromoPage from './pages/PromoPage.jsx'
 import AISettings from './pages/AISettings.jsx'
+import Monitoring from './pages/Monitoring.jsx'
 
 import SpotlightSearch from './components/SpotlightSearch.jsx'
-import { RBACProvider, useRBAC, PermissionGuard, PERMISSIONS } from './contexts/RBACContext.jsx'
+import { RBACProvider, useRBAC, PermissionGuard } from './contexts/RBACContext.jsx'
+import { PERMISSIONS } from './rbac.js'
 
 export const ToastCtx = createContext(null)
 
@@ -122,6 +124,22 @@ function PrivateLayout() {
         return true
     })
 
+    const [health, setHealth] = useState('checking')
+    
+    useEffect(() => {
+        const check = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/health`)
+                setHealth(res.ok ? 'healthy' : 'error')
+            } catch (e) {
+                setHealth('offline')
+            }
+        }
+        check()
+        const itv = setInterval(check, 60000)
+        return () => clearInterval(itv)
+    }, [])
+
     return (
         <ToastCtx.Provider value={showToast}>
             <SpotlightSearch />
@@ -185,6 +203,20 @@ function PrivateLayout() {
                             <span>Search for schools or features...</span>
                             <kbd className="kbd">⌘K</kbd>
                         </div>
+
+                        <div style={{ display: 'flex', itemsCenter: 'center', gap: '8px', padding: '0 16px' }}>
+                            <div style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: health === 'healthy' ? '#10b981' : health === 'checking' ? '#6366f1' : '#f43f5e',
+                                boxShadow: health === 'healthy' ? '0 0 8px #10b981' : 'none',
+                                animation: health === 'healthy' ? 'pulse 2s infinite' : 'none'
+                            }} />
+                            <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text3)', letterSpacing: '0.05em' }}>
+                                Backend: {health === 'healthy' ? 'Operational' : health === 'checking' ? 'Syncing...' : 'Signal Lost'}
+                            </span>
+                        </div>
                     </header>
 
                     <main className="main">
@@ -201,6 +233,7 @@ function PrivateLayout() {
                                 <Route path="promos" element={<PromoPage />} />
                                 <Route path="backup" element={<BackupPage />} />
                                 <Route path="ai-settings" element={<AISettings />} />
+                                <Route path="monitoring" element={<Monitoring />} />
                                 <Route index element={<Navigate to="dashboard" replace />} />
                             </Routes>
                         </AnimatePresence>
