@@ -1,0 +1,12 @@
+{
+    "custom_models": [
+        {
+            "model_display_name": "agentrouter-glm5",
+            "model": "glm-5.1",
+            "base_url": "https://agentrouter.org/v1",
+            "api_key": "sk-DVsr6OqUSn6BgyR91p2gkRV7i9nqmMfPMeMWh51Doy8BKH9L",
+            "provider": "generic-chat-completion-api",
+            "max_tokens": 1800000
+        }
+    ]
+}

@@ -1,8 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:chatra/core/network/api_service.dart';
 import 'package:chatra/features/dashboard/bloc/dashboard_bloc.dart';
@@ -50,7 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _refreshDashboard();
+      if (mounted) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _refreshDashboard();
+        });
+      }
     });
   }
 
@@ -77,19 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.primaryBrand,
       extendBodyBehindAppBar: true,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primaryBrand, const Color(0xFF1E1440), AppColors.primaryBrand],
-          ),
-        ),
-        child: Stack(
-          children: [
-            BlocListener<NoticeBloc, NoticeState>(
+      body: Stack(
+        children: [
+          RepaintBoundary(
+            child: BlocListener<NoticeBloc, NoticeState>(
               listener: (context, state) {
                 if (state is NoticeConnected && state.latestUnread != null) {
                   final notice = state.latestUnread!;
@@ -115,58 +107,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-            _buildGlassAppBar(),
-            if (_isSearchOpen)
-              SpotlightSearchWidget(
-                isSearchOpen: _isSearchOpen,
-                searchController: _searchController,
-                searchFocusNode: _searchFocusNode,
-                searchQuery: _searchQuery,
-                searchItems: _searchItems,
-                onSearchToggle: (v) => setState(() => _isSearchOpen = v),
-                onSearchQueryChanged: (v) => setState(() => _searchQuery = v),
-              ),
-          ],
-        ),
+          ),
+          _buildAppBar(),
+          if (_isSearchOpen)
+            SpotlightSearchWidget(
+              isSearchOpen: _isSearchOpen,
+              searchController: _searchController,
+              searchFocusNode: _searchFocusNode,
+              searchQuery: _searchQuery,
+              searchItems: _searchItems,
+              onSearchToggle: (v) => setState(() => _isSearchOpen = v),
+              onSearchQueryChanged: (v) => setState(() => _searchQuery = v),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildGlassAppBar() {
+  Widget _buildAppBar() {
     return Positioned(
-      top: 0, left: 0, right: 0,
+      top: 0,
+      left: 0,
+      right: 0,
       child: RepaintBoundary(
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          height: 110,
+          padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
+          ),
+          child: GestureDetector(
+            onTap: () {
+              setState(() => _isSearchOpen = true);
+              _searchFocusNode.requestFocus();
+            },
             child: Container(
-              height: 110,
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
-                border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
-              child: GestureDetector(
-                onTap: () {
-                  setState(() => _isSearchOpen = true);
-                  _searchFocusNode.requestFocus();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: Colors.white60, size: 20),
-                      const SizedBox(width: 10),
-                      Text('Spotlight Search', style: GoogleFonts.outfit(color: Colors.white38, fontSize: 15)),
-                    ],
-                  ),
-                ),
-              ).animate().fadeIn(duration: 400.ms),
+              child: const Row(
+                children: [
+                  Icon(Icons.search_rounded, color: Colors.white60, size: 20),
+                  SizedBox(width: 10),
+                  Text('Spotlight Search', style: TextStyle(color: Colors.white38, fontSize: 15)),
+                ],
+              ),
             ),
           ),
         ),
@@ -184,24 +173,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 125, 16, 120),
-      child: Column(
-        children: [
-          HomeGreetingWidget(profile: state.profile),
-          const SizedBox(height: 16),
-          RepaintBoundary(child: DashboardStatsWidget(dashboardData: dashboardData)),
-          const SizedBox(height: 16),
-          RepaintBoundary(child: TimetableWidget(timetable: state.timetable)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: RepaintBoundary(child: AttendanceRadarWidget(attendance: state.attendance))),
-              const SizedBox(width: 16),
-              Expanded(child: RepaintBoundary(child: FeesPreviewWidget(fees: state.fees))),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const RepaintBoundary(child: QuickActionGrid()),
-        ],
+      child: RepaintBoundary(
+        child: Column(
+          children: [
+            HomeGreetingWidget(profile: state.profile),
+            const SizedBox(height: 16),
+            DashboardStatsWidget(dashboardData: dashboardData),
+            const SizedBox(height: 16),
+            TimetableWidget(timetable: state.timetable),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: AttendanceRadarWidget(attendance: state.attendance)),
+                const SizedBox(width: 16),
+                Expanded(child: FeesPreviewWidget(fees: state.fees)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const QuickActionGrid(),
+          ],
+        ),
       ),
     );
   }
@@ -227,9 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(Icons.campaign_rounded, color: AppColors.accentTeal, size: 48),
                       const SizedBox(height: 16),
-                      Text(title, style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Text(message, textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14)),
+                      Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 24),
                       TextButton(
                         onPressed: () => Navigator.pop(context),

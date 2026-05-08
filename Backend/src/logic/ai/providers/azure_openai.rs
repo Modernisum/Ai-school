@@ -341,8 +341,6 @@ impl LLMProvider for AzureOpenAIProvider {
     fn get_max_tokens(&self) -> usize {
         if self.text_deployment.contains("gpt-4") {
             8192
-        } else if self.text_deployment.contains("gpt-35") || self.text_deployment.contains("gpt-3.5") {
-            4096
         } else {
             4096
         }

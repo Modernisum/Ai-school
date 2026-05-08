@@ -21,7 +21,7 @@ pub mod fee_service;
 pub mod gradebook_service;
 pub mod grading_service;
 pub mod leave_service;
-pub mod ocr_service;
+
 pub mod operations_service;
 pub mod payroll;
 pub mod payroll_service;
@@ -63,7 +63,6 @@ use crate::services::fee_service::PostgresFeeService;
 use crate::services::gradebook_service::GradebookService;
 use crate::services::grading_service::GradingService;
 use crate::services::leave_service::PostgresLeaveService;
-use crate::services::ocr_service::PostgresOCRService;
 use crate::services::operations_service::PostgresOperationsService;
 use crate::services::payroll_service::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
@@ -92,7 +91,6 @@ pub struct Services {
     pub payroll: Arc<dyn PayrollService>,
     pub coupon: Arc<dyn CouponService>,
     pub resource: Arc<dyn ResourceService>,
-    pub ocr: Arc<dyn OCRService>,
     pub award: Arc<dyn AwardService>,
     pub complain: Arc<dyn ComplainService>,
     pub reminder: Arc<dyn ReminderService>,
@@ -115,14 +113,15 @@ pub struct Services {
     pub fcm: Arc<crate::logic::FcmService>,
 }
 
-pub fn initialize_services(repos: Arc<Repositories>) -> Services {
-    let ai_orchestrator = Arc::new(crate::logic::ai_orchestrator::AiOrchestrator::new(
+pub fn initialize_services(
+    repos: Arc<Repositories>,
+    responsibility_cache: Arc<crate::logic::cache_service::ResponsibilityCacheService>,
+) -> Services {
+    let ai_orchestrator = Arc::new(crate::logic::AiOrchestrator::new(
         repos.clone(),
     ));
     let ai_service = Arc::new(PostAiService::new(ai_orchestrator));
     let embedding_service = Arc::new(PostgresEmbeddingService::new(repos.clone()));
-    let ocr_service = Arc::new(PostgresOCRService::new(repos.clone()));
-
     let fee_service = Arc::new(PostgresFeeService {
         repos: repos.clone(),
     });
@@ -141,16 +140,13 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
     let plagiarism_service = Arc::new(PlagiarismService::new(repos.clone()));
     let gradebook_service = Arc::new(GradebookService::new(repos.clone()));
     let admin_automation_service = Arc::new(AdminAutomationService::new(repos.clone()));
-    let content_generation_service = Arc::new(ContentGenerationServiceImpl::new(repos.clone()));
+    let content_generation_service = Arc::new(ContentGenerationServiceImpl::new(repos.clone(), ai_service.clone()));
     
     // Create FCM config
     let fcm_service = Arc::new(crate::logic::FcmService::new());
     
     // Create AI config service
     let ai_config_service = Arc::new(SchoolAiConfigService::new(repos.db_client.clone()));
-
-    // Create cache service
-    let responsibility_cache = Arc::new(crate::logic::cache_service::ResponsibilityCacheService::new(repos.db_client.redis.clone()));
 
     // Create attendance analytics service
     let attendance_analytics_service = Arc::new(PostgresAttendanceAnalyticsService::new(repos.clone(), responsibility_cache.clone()));
@@ -180,7 +176,6 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         payroll: Arc::new(PostgresPayrollService::new(repos.clone())),
         coupon: fee_service,
         resource: Arc::new(PostgresResourceService::new(repos.clone())),
-        ocr: ocr_service.clone(),
         award: Arc::new(PostgresAwardService {
             repos: repos.clone(),
         }),
@@ -192,7 +187,6 @@ pub fn initialize_services(repos: Arc<Repositories>) -> Services {
         }),
         document_box: Arc::new(PostgresDocumentBoxService {
             repos: repos.clone(),
-            ocr: ocr_service.clone(),
             ai: ai_service.clone(),
         }),
         school: Arc::new(PostgresSchoolService {

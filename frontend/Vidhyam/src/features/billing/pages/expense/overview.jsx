@@ -10,6 +10,8 @@ import {
     ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import StandardButton from '../../../../components/ui/StandardButton';
+import SwitchButton from '../../../../components/ui/SwitchButton';
 
 const ExpenseOverview = () => {
     const navigate = useNavigate();
@@ -44,70 +46,64 @@ const ExpenseOverview = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-2 text-slate-400">
             {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-                    {['daily', 'weekly', 'monthly', 'yearly'].map((range) => (
-                        <button
-                            key={range}
-                            onClick={() => setTimeRange(range)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                                timeRange === range ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'
-                            }`}
-                        >
-                            {range}
-                        </button>
-                    ))}
-                </div>
-                <div className="flex gap-2">
-                    <button className="btn-secondary py-2 px-4 text-xs flex items-center gap-2">
-                        <Download size={14} /> Export Excel
-                    </button>
-                    <button className="btn-primary py-2 px-4 text-xs flex items-center gap-2">
-                        <FileText size={14} /> PDF Report
-                    </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-white/[0.02] p-1 rounded-lg border border-white/5">
+                <SwitchButton 
+                    tabs={[
+                        { id: 'daily', label: 'DAILY' },
+                        { id: 'weekly', label: 'WEEKLY' },
+                        { id: 'monthly', label: 'MONTHLY' },
+                        { id: 'yearly', label: 'YEARLY' }
+                    ]}
+                    activeTab={timeRange}
+                    onChange={setTimeRange}
+                />
+                <div className="flex gap-1">
+                    <StandardButton variant="secondary" size="xs" icon={Download} onClick={() => {}} label="EXPORT_XLS" />
+                    <StandardButton variant="primary" size="xs" icon={FileText} onClick={() => {}} label="GENERATE_PDF" />
                 </div>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
                 {metrics.map((m, i) => (
                     <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="glass-card p-4 border-white/5 bg-white/[0.02] relative overflow-hidden group"
+                        transition={{ delay: i * 0.05 }}
+                        className="glass-card p-2 border-white/5 bg-white/[0.01] hover:border-white/10 transition-all flex flex-col justify-between"
                     >
-                        <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 ${m.bg}`} />
-                        <div className="flex items-start justify-between mb-3">
-                            <div className={`p-2.5 rounded-xl ${m.bg} ${m.color}`}>
-                                <m.icon size={20} />
+                        <div className="flex items-start justify-between mb-1">
+                            <div className={`p-1 rounded bg-white/5 ${m.color}`}>
+                                <m.icon size={12} />
                             </div>
-                            <div className={`flex items-center gap-1 text-[10px] font-bold ${m.change.startsWith('+') ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                {m.change.startsWith('+') ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                            <div className={`flex items-center gap-0.5 text-[7px] font-black uppercase italic ${m.change.startsWith('+') ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                {m.change.startsWith('+') ? <ArrowUpRight size={8} /> : <ArrowDownRight size={8} />}
                                 {m.change}
                             </div>
                         </div>
-                        <h3 className="text-2xl font-black text-white tracking-tight">{m.value}</h3>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{m.label}</p>
+                        <div>
+                            <h3 className="text-sm font-black text-white tracking-tighter leading-none italic">{m.value}</h3>
+                            <p className="text-[7px] text-slate-700 font-black uppercase tracking-widest mt-0.5">{m.label.replace(' ', '_')}</p>
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-1">
                 {/* Monthly Trend Bar Chart */}
-                <div className="lg:col-span-2 glass-card p-6 border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-black text-white uppercase tracking-widest">Expense Outflow Trend</h3>
-                        <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500" /> Expense</span>
-                            <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-700" /> Budget</span>
+                <div className="lg:col-span-2 glass-card p-2 border-white/5 bg-white/[0.01]">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[10px] font-black text-white italic uppercase tracking-tight">EXPENSE_OUTFLOW_TREND</h3>
+                        <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest text-slate-700">
+                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-500" /> DEBIT</span>
+                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-slate-800" /> BUDGET</span>
                         </div>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[180px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyTrend}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
@@ -115,49 +111,49 @@ const ExpenseOverview = () => {
                                     dataKey="name" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} 
-                                    dy={10}
+                                    tick={{ fill: '#334155', fontSize: 8, fontWeight: 900 }} 
+                                    dy={5}
                                 />
                                 <YAxis 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    tick={{ fill: '#334155', fontSize: 8, fontWeight: 900 }}
                                     tickFormatter={(v) => `₹${v/1000}k`}
                                 />
                                 <Tooltip 
-                                    cursor={{ fill: '#ffffff05' }}
+                                    cursor={{ fill: '#ffffff02' }}
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className="bg-slate-900 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-xl">
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{payload[0].payload.name}</p>
-                                                    <p className="text-sm font-black text-white">₹{payload[0].value.toLocaleString('en-IN')}</p>
+                                                <div className="bg-slate-950/80 border border-white/10 p-1.5 rounded shadow-2xl backdrop-blur-md">
+                                                    <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{payload[0].payload.name}_SYNC</p>
+                                                    <p className="text-[10px] font-black text-white italic">₹{payload[0].value.toLocaleString('en-IN')}</p>
                                                 </div>
                                             );
                                         }
                                         return null;
                                     }}
                                 />
-                                <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={32} />
-                                <Bar dataKey="target" fill="#334155" radius={[4, 4, 0, 0]} barSize={8} />
+                                <Bar dataKey="expense" fill="#f43f5e" radius={[2, 2, 0, 0]} barSize={16} />
+                                <Bar dataKey="target" fill="#1e293b" radius={[2, 2, 0, 0]} barSize={4} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Category Breakdown Pie Chart */}
-                <div className="glass-card p-6 border-white/5 bg-white/[0.02]">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 text-center">Expense Allocation</h3>
-                    <div className="h-[240px] w-full">
+                <div className="glass-card p-2 border-white/5 bg-white/[0.01]">
+                    <h3 className="text-[10px] font-black text-white italic uppercase tracking-tight mb-2 text-center">ALLOCATION_MAP</h3>
+                    <div className="h-[140px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
                                 <Pie
                                     data={categoryBreakdown}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={8}
+                                    innerRadius={35}
+                                    outerRadius={50}
+                                    paddingAngle={4}
                                     dataKey="value"
                                     onClick={(data) => handlePieClick(data)}
                                     cursor="pointer"
@@ -170,8 +166,8 @@ const ExpenseOverview = () => {
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className="bg-slate-900 border border-white/10 p-2 rounded-lg shadow-xl">
-                                                    <p className="text-[10px] font-bold text-white uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
+                                                <div className="bg-slate-950/80 border border-white/10 p-1 rounded shadow-xl backdrop-blur-md">
+                                                    <p className="text-[8px] font-black text-white italic uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
                                                 </div>
                                             );
                                         }
@@ -181,18 +177,18 @@ const ExpenseOverview = () => {
                             </RePieChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-1 space-y-0.5">
                         {categoryBreakdown.map((c, i) => (
                             <button 
                                 key={i} 
                                 onClick={() => navigate(c.path)}
-                                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group"
+                                className="w-full flex items-center justify-between p-1 rounded hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-1 h-1 rounded-full" style={{ backgroundColor: c.color }} />
+                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
                                 </div>
-                                <ArrowRight size={12} className="text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                                <ArrowRight size={8} className="text-slate-700 group-hover:text-white transition-all transform group-hover:translate-x-0.5" />
                             </button>
                         ))}
                     </div>

@@ -1,0 +1,78 @@
+{
+  "info": {
+    "name": "Dashboard APIs",
+    "description": "Converted from 02-dashboard.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/dashboard/:schoolId/stats - School Dashboard Stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard/{{schoolId}}/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "dashboard",
+            "{{schoolId}}",
+            "stats"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/dashboard/:schoolId/leaves/proxy-suggestions - Leave Proxy Suggestions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard/{{schoolId}}/leaves/proxy-suggestions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "dashboard",
+            "{{schoolId}}",
+            "leaves",
+            "proxy-suggestions"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:camera/camera.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:flutter/services.dart';
 import '../../core/widgets/animated_gradient_bg.dart';
 import '../../core/widgets/glass_card.dart';
@@ -22,7 +21,6 @@ class SmartScannerScreen extends StatefulWidget {
 
 class _SmartScannerScreenState extends State<SmartScannerScreen> {
   CameraController? _cameraController;
-  DocumentScanner? _documentScanner;
   bool _isCameraInitialized = false;
   bool _isScanning = false;
   bool _isAutoScan = false;
@@ -36,13 +34,6 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
   void initState() {
     super.initState();
     _initializeCamera();
-    _documentScanner = GoogleMlKit.vision.documentScanner(
-      options: DocumentScannerOptions(
-        mode: DocumentScannerMode.fast,
-        numPages: 1,
-        isGalleryImport: false,
-      ),
-    );
   }
 
   Future<void> _initializeCamera() async {
@@ -75,17 +66,8 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
   @override
   void dispose() {
     _cameraController?.dispose();
-    _documentScanner?.close();
     _scanTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _processCameraFrame(CameraImage image) async {
-    // This will be implemented in Step 2 for real-time edge detection
-    // For now, it prevents multiple frames from processing at once
-    _isProcessingFrame = true;
-    await Future.delayed(const Duration(milliseconds: 500));
-    _isProcessingFrame = false;
   }
 
   @override

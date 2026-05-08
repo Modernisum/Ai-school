@@ -7,6 +7,7 @@ mod chat_handler;
 mod analysis;
 mod prediction;
 pub mod providers;
+mod utils;
 
 pub use chat_handler::ChatHandler;
 pub use analysis::AnalysisEngine;

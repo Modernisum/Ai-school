@@ -52,7 +52,7 @@ export default function PromoPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
                     <h1 className="page-title">Promo Codes</h1>
-                    <p style={{ color: 'var(--text3)', fontSize: 13 }}>Manage institutional discounts and incentives</p>
+                    <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>Manage institutional discounts and incentives</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
                     <Plus size={16} /> Create Code
@@ -78,7 +78,7 @@ export default function PromoPage() {
                         <tbody>
                             {promos.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: 30, color: 'var(--text3)' }}>No promo codes found</td>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: 30, color: 'var(--text-tertiary)' }}>No promo codes found</td>
                                 </tr>
                             ) : promos.map(p => (
                                 <tr key={p.id}>
@@ -86,8 +86,8 @@ export default function PromoPage() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <div style={{
                                                 padding: '4px 8px',
-                                                background: 'var(--glass)',
-                                                border: '1px dashed var(--accent)',
+                                                background: 'var(--surface-overlay)',
+                                                border: '1px dashed var(--color-primary)',
                                                 borderRadius: 4,
                                                 fontWeight: 700,
                                                 fontSize: 12,
@@ -99,28 +99,28 @@ export default function PromoPage() {
                                     </td>
                                     <td>
                                         <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column' }}>
-                                            {Number(p.creditAmount) > 0 && <span style={{ color: 'var(--green)' }}>₹{p.creditAmount} Credit</span>}
-                                            {Number(p.discountPercentage) > 0 && <span style={{ color: 'var(--accent)' }}>{p.discountPercentage}% Discount</span>}
-                                            {p.freeDays > 0 && <span style={{ color: 'var(--blue)' }}>{p.freeDays} Days Free</span>}
-                                            {Number(p.creditAmount) === 0 && Number(p.discountPercentage) === 0 && p.freeDays === 0 && <span style={{ color: 'var(--text3)' }}>No Incentive</span>}
+                                            {Number(p.creditAmount) > 0 && <span style={{ color: 'var(--color-success)' }}>₹{p.creditAmount} Credit</span>}
+                                            {Number(p.discountPercentage) > 0 && <span style={{ color: 'var(--color-primary)' }}>{p.discountPercentage}% Discount</span>}
+                                            {p.freeDays > 0 && <span style={{ color: 'var(--color-info)' }}>{p.freeDays} Days Free</span>}
+                                            {Number(p.creditAmount) === 0 && Number(p.discountPercentage) === 0 && p.freeDays === 0 && <span style={{ color: 'var(--text-tertiary)' }}>No Incentive</span>}
                                         </div>
                                     </td>
                                     <td>
                                         <div style={{ fontSize: 11 }}>
                                             <span style={{ fontWeight: 600 }}>{p.currentUses}</span>
-                                            <span style={{ color: 'var(--text3)' }}> / {p.maxUses}</span>
-                                            <div style={{ width: 60, height: 4, background: 'var(--glass-border)', borderRadius: 2, marginTop: 4 }}>
+                                            <span style={{ color: 'var(--text-tertiary)' }}> / {p.maxUses}</span>
+                                            <div style={{ width: 60, height: 4, background: 'var(--border-default)', borderRadius: 2, marginTop: 4 }}>
                                                 <div style={{
                                                     width: `${Math.min(100, (p.currentUses / p.maxUses) * 100)}%`,
                                                     height: '100%',
-                                                    background: 'var(--accent)',
+                                                    background: 'var(--color-primary)',
                                                     borderRadius: 2
                                                 }} />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                                             {p.expiresAt ? new Date(p.expiresAt).toLocaleDateString() : 'Never'}
                                         </div>
                                     </td>
@@ -138,7 +138,7 @@ export default function PromoPage() {
                                             >
                                                 <Layers size={13} />
                                             </button>
-                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} title="Delete">
+                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--color-danger)' }} title="Delete">
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
@@ -241,7 +241,7 @@ export default function PromoPage() {
                             </div>
 
                             {usageData.length === 0 ? (
-                                <p style={{ color: 'var(--text3)', textAlign: 'center', padding: 20 }}>No usage data found.</p>
+                                <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: 20 }}>No usage data found.</p>
                             ) : (
                                 <table className="table">
                                     <thead>
@@ -253,8 +253,8 @@ export default function PromoPage() {
                                     <tbody>
                                         {usageData.map((u, i) => (
                                             <tr key={i}>
-                                                <td>{u.schoolName} <span style={{ color: 'var(--text3)', fontSize: 10 }}>({u.schoolId})</span></td>
-                                                <td style={{ fontSize: 12, color: 'var(--text3)' }}>{new Date(u.appliedAt).toLocaleString()}</td>
+                                                <td>{u.schoolName} <span style={{ color: 'var(--text-tertiary)', fontSize: 10 }}>({u.schoolId})</span></td>
+                                                <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{new Date(u.appliedAt).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -266,7 +266,7 @@ export default function PromoPage() {
             </AnimatePresence>
             <style>{`
                 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-                .card-modal { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+                .card-modal { background: var(--surface-layer1); border: 1px solid var(--border-default); padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
                 @keyframes spin{to{transform:rotate(360deg)}}
             `}</style>
         </motion.div>

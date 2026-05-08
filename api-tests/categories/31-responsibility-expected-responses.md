@@ -7,20 +7,44 @@
   - `X-Admin-ID`: Valid admin identifier within the school
 - **Permissions:** School administrators with responsibility management privileges
 
+---
+
+## API Overview
+
+| # | Method | Route | Purpose |
+|---|--------|-------|---------|
+| 1 | GET | `/api/responsibility/:schoolId` | List responsibilities with filters |
+| 2 | POST | `/api/responsibility/:schoolId` | Create responsibility |
+| 3 | GET | `/api/responsibility/:schoolId/:responsibilityId` | Get single responsibility |
+| 4 | PATCH | `/api/responsibility/:schoolId/:responsibilityId` | Update responsibility |
+| 5 | DELETE | `/api/responsibility/:schoolId/:responsibilityId` | Delete responsibility |
+| 6 | GET | `/api/responsibility/:schoolId/:responsibilityId/analytics` | Get responsibility analytics |
+| 7 | GET | `/api/responsibility/:schoolId/overview/analytics` | Get school-wide analytics |
+| 8 | GET | `/api/responsibility/:schoolId/employees/:employeeId/responsibilities` | Get employee's responsibilities |
+| 9 | POST | `/api/responsibility/:schoolId/responsibilities/:responsibilityId/bulk-assign` | Bulk assign employees |
+| 10 | GET | `/api/responsibility/:schoolId/metrics/utilization` | Get utilization metrics |
+
+> **Note:** Pagination, sorting, CSV export, version history, and rollback are handled on the **frontend**. The backend returns the full filtered dataset.
+
+---
+
 ## 1. GET /api/responsibility/:schoolId - List Responsibilities
-**Purpose:** Retrieve all responsibilities for a school with optional filtering
+**Purpose:** Retrieve all responsibilities for a school with optional filters for analytics and display
 
 ### Request Parameters
 - **Path:** `schoolId` (string) - School identifier
 - **Query Parameters (optional):**
-  - `employeeType` (string) - Filter by employee type (teacher, staff, etc.)
-  - `simple` (boolean) - Return simplified response with only ID and name
-  - `paginated` (boolean) - Enable pagination
-  - `page` (integer) - Page number (when paginated=true)
-  - `limit` (integer) - Items per page (when paginated=true)
-  - `idsOnly` (boolean) - Return only responsibility IDs
+  - `employeeType` (string) - Filter by employee type (`teacher`, `staff`, `administrator`)
+  - `isActive` (boolean) - Filter by active status (`true` / `false`)
+  - `priority` (string) - Filter by priority level (`high`, `medium`, `low`)
+  - `startDate` (string `YYYY-MM-DD`) - Filter responsibilities starting from this date
+  - `endDate` (string `YYYY-MM-DD`) - Filter responsibilities ending before this date
+  - `simple` (boolean) - Return simplified response with only `id` and `name` (for dropdowns)
+  - `idsOnly` (boolean) - Return only responsibility IDs (for lightweight lookups)
 
-### Success Response (200 OK)
+> **Removed:** `paginated`, `page`, `limit` — pagination is handled by the frontend.
+
+### Success Response (200 OK) - Full List
 ```json
 {
   "success": true,
@@ -44,24 +68,30 @@
 }
 ```
 
-### Paginated Success Response (200 OK)
+### Success Response (200 OK) - Simple Mode (`?simple=true`)
 ```json
 {
   "success": true,
-  "data": [...],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 45,
-    "pages": 5
-  }
+  "data": [
+    { "responsibilityId": "responsibility-001", "name": "Class Monitor" }
+  ]
+}
+```
+
+### Success Response (200 OK) - IDs Only (`?idsOnly=true`)
+```json
+{
+  "success": true,
+  "data": ["responsibility-001", "responsibility-002"]
 }
 ```
 
 ### Error Responses
-- **400 Bad Request:** Invalid query parameters
+- **400 Bad Request:** Invalid query parameters (e.g., bad date format)
 - **401 Unauthorized:** Missing or invalid RLS headers
 - **404 Not Found:** School not found
+
+---
 
 ## 2. POST /api/responsibility/:schoolId - Create Responsibility
 **Purpose:** Create a new responsibility definition
@@ -108,8 +138,10 @@
 - **401 Unauthorized:** Missing or invalid RLS headers
 - **409 Conflict:** Responsibility with same name already exists
 
+---
+
 ## 3. GET /api/responsibility/:schoolId/:responsibilityId - Get Responsibility Definition
-**Purpose:** Retrieve detailed information about a specific responsibility
+**Purpose:** Retrieve detailed information about a specific responsibility including currently assigned employees
 
 ### Success Response (200 OK)
 ```json
@@ -145,8 +177,10 @@
 - **401 Unauthorized:** Missing or invalid RLS headers
 - **404 Not Found:** Responsibility not found
 
+---
+
 ## 4. PATCH /api/responsibility/:schoolId/:responsibilityId - Update Responsibility
-**Purpose:** Update an existing responsibility definition
+**Purpose:** Partial update of an existing responsibility definition
 
 ### Request Body (partial update)
 ```json
@@ -183,6 +217,8 @@
 - **401 Unauthorized:** Missing or invalid RLS headers
 - **404 Not Found:** Responsibility not found
 
+---
+
 ## 5. DELETE /api/responsibility/:schoolId/:responsibilityId - Delete Responsibility
 **Purpose:** Delete a responsibility definition
 
@@ -199,8 +235,14 @@
 - **404 Not Found:** Responsibility not found
 - **409 Conflict:** Responsibility has active assignments
 
+---
+
 ## 6. GET /api/responsibility/:schoolId/:responsibilityId/analytics - Get Responsibility Analytics
 **Purpose:** Get analytics and metrics for a specific responsibility
+
+### Query Parameters (optional)
+- `startDate` (string `YYYY-MM-DD`) - Analytics period start
+- `endDate` (string `YYYY-MM-DD`) - Analytics period end
 
 ### Success Response (200 OK)
 ```json
@@ -225,8 +267,16 @@
 }
 ```
 
+---
+
 ## 7. GET /api/responsibility/:schoolId/overview/analytics - Get Overview Analytics
-**Purpose:** Get overview analytics for all responsibilities in a school
+**Purpose:** Get school-wide aggregated analytics for all responsibilities
+
+### Query Parameters (optional)
+- `startDate` (string `YYYY-MM-DD`) - Analytics period start
+- `endDate` (string `YYYY-MM-DD`) - Analytics period end
+- `employeeType` (string) - Filter analytics by employee type
+- `isActive` (boolean) - Include only active/inactive responsibilities
 
 ### Success Response (200 OK)
 ```json
@@ -253,6 +303,8 @@
 }
 ```
 
+---
+
 ## 8. GET /api/responsibility/:schoolId/employees/:employeeId/responsibilities - List Employee Responsibilities
 **Purpose:** Get all responsibilities assigned to a specific employee
 
@@ -273,8 +325,10 @@
 }
 ```
 
-## 9. POST /api/responsibility/:schoolId/responsibilities/:responsibilityId/bulk-assign - Bulk Assign Responsibility
-**Purpose:** Assign responsibility to multiple employees at once
+---
+
+## 9. POST /api/responsibility/:schoolId/responsibilities/:responsibilityId/bulk-assign - Bulk Assign
+**Purpose:** Assign a responsibility to multiple employees at once
 
 ### Request Body
 ```json
@@ -298,77 +352,15 @@
 }
 ```
 
-## 10. GET /api/responsibility/:schoolId/responsibilities/:responsibilityId/history - Get Responsibility History
-**Purpose:** Get assignment history for a responsibility
+---
 
-### Success Response (200 OK)
-```json
-{
-  "success": true,
-  "data": {
-    "responsibilityId": "responsibility-001",
-    "assignments": [
-      {
-        "assignmentId": "assignment-001",
-        "employeeId": "employee-001",
-        "employeeName": "John Doe",
-        "assignmentDate": "2026-01-15",
-        "removalDate": null,
-        "status": "active",
-        "assignedBy": "admin-001"
-      }
-    ]
-  }
-}
-```
-
-## 11. GET /api/responsibility/:schoolId/responsibilities/:responsibilityId/versions - Get Responsibility Versions
-**Purpose:** Get version history of responsibility definition changes
-
-### Success Response (200 OK)
-```json
-{
-  "success": true,
-  "data": {
-    "responsibilityId": "responsibility-001",
-    "versions": [
-      {
-        "version": 2,
-        "changes": {
-          "name": "Class Monitor → Class Monitor - Updated",
-          "priority": "medium → high"
-        },
-        "updatedBy": "admin-001",
-        "updatedAt": "2026-01-02T14:30:00Z"
-      },
-      {
-        "version": 1,
-        "changes": "Initial creation",
-        "updatedBy": "admin-001",
-        "updatedAt": "2026-01-01T10:00:00Z"
-      }
-    ]
-  }
-}
-```
-
-## 12. POST /api/responsibility/:schoolId/responsibilities/:responsibilityId/rollback/:version - Rollback Responsibility
-**Purpose:** Rollback responsibility to a previous version
-
-### Success Response (200 OK)
-```json
-{
-  "success": true,
-  "message": "Responsibility rolled back to version 2"
-}
-```
-
-## 13. GET /api/responsibility/:schoolId/metrics/utilization - Get Utilization Metrics
-**Purpose:** Get utilization metrics for responsibilities
+## 10. GET /api/responsibility/:schoolId/metrics/utilization - Get Utilization Metrics
+**Purpose:** Get utilization metrics for a date range (used by analytics/dashboard views)
 
 ### Query Parameters
-- `startDate` (required) - Start date in YYYY-MM-DD format
-- `endDate` (required) - End date in YYYY-MM-DD format
+- `startDate` (required) - Start date in `YYYY-MM-DD` format
+- `endDate` (required) - End date in `YYYY-MM-DD` format
+- `employeeType` (optional) - Filter by employee type
 
 ### Success Response (200 OK)
 ```json
@@ -395,40 +387,22 @@
 }
 ```
 
-## 14. GET /api/responsibility/:schoolId/reports/utilization/:startDate/:endDate - Generate Utilization Report
-**Purpose:** Generate detailed utilization report
+---
 
-### Success Response (200 OK)
-```json
-{
-  "success": true,
-  "data": {
-    "reportId": "report-001",
-    "type": "utilization",
-    "period": {
-      "startDate": "2026-01-01",
-      "endDate": "2026-01-31"
-    },
-    "generatedAt": "2026-02-01T10:00:00Z",
-    "summary": {
-      "totalResponsibilities": 45,
-      "totalHoursLogged": 1250,
-      "averageUtilization": 78.3,
-      "mostUtilized": "responsibility-001",
-      "leastUtilized": "responsibility-045"
-    },
-    "details": [...]
-  }
-}
-```
+## Removed APIs (Handled by Frontend)
 
-## 15. GET /api/responsibility/:schoolId/export/csv - Export Responsibilities CSV
-**Purpose:** Export all responsibilities as CSV file
+The following APIs were **removed** from the backend to reduce load. The frontend handles these using already-fetched data:
 
-### Success Response (200 OK)
-- **Content-Type:** `text/csv`
-- **Content-Disposition:** `attachment; filename="responsibilities_2026-01-01.csv"`
-- **Body:** CSV file content
+| Removed Route | Reason | Frontend Alternative |
+|---|---|---|
+| `GET .../versions` | Version history is a display concern | Frontend tracks local edit history |
+| `POST .../rollback/:version` | Version rollback logic unnecessary | Frontend re-submits via PATCH |
+| `GET .../history` | Assignment history available via list API | Frontend filters/sorts assignment data |
+| `GET /reports/utilization/:startDate/:endDate` | Duplicates `/metrics/utilization` | Use `#10` with date params |
+| `GET /export/csv` | CSV generation is a UI concern | Frontend generates CSV from list data |
+| `paginated`, `page`, `limit` query params | Pagination is a UI concern | Frontend paginates fetched array |
+
+---
 
 ## Error Response Patterns
 
@@ -438,14 +412,8 @@
   "success": false,
   "message": "Validation failed",
   "errors": [
-    {
-      "field": "name",
-      "message": "Name is required"
-    },
-    {
-      "field": "estimatedHoursPerWeek",
-      "message": "Must be a positive number"
-    }
+    { "field": "name", "message": "Name is required" },
+    { "field": "estimatedHoursPerWeek", "message": "Must be a positive number" }
   ]
 }
 ```
@@ -482,15 +450,17 @@
 }
 ```
 
+---
+
 ## Testing Notes
 1. **Dependencies:** Requires existing school and admin IDs
 2. **Test Data:** Create test responsibilities before testing assignment endpoints
 3. **Order:** Test CRUD operations in sequence (create → read → update → delete)
-4. **Bulk Operations:** Test with both valid and invalid employee IDs
-5. **Reports:** Date parameters must be in YYYY-MM-DD format
+4. **Filters:** Test GET list with each filter independently and in combination
+5. **Bulk Operations:** Test with both valid and invalid employee IDs
+6. **Date Filters:** All date parameters must be in `YYYY-MM-DD` format
 
 ## Performance Expectations
 - List endpoints: < 500ms for up to 1000 responsibilities
 - Analytics endpoints: < 1000ms for 30-day period
 - Bulk operations: < 2000ms for up to 100 employees
-- CSV export: < 3000ms for up to 5000 records

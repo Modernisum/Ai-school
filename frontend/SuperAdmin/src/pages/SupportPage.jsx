@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageSquare, CheckCircle, Clock, Loader } from 'lucide-react'
+import { MessageSquare, CheckCircle, Clock } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 import { listSupportRequests, resolveSupportRequest } from '../api.js'
+import { PageHeader, StatusBadge, GlassCard, StandardButton } from '../components/ui/index.js'
 
 export default function SupportPage() {
     const [requests, setRequests] = useState([])
@@ -41,22 +42,21 @@ export default function SupportPage() {
     }
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page">
-            <h1 className="page-title">Support Requests</h1>
-            <p className="page-sub">Messages from schools needing assistance (Forgot Password/ID)</p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page-container">
+            <PageHeader title="Support Requests" description="Messages from schools needing assistance (Forgot Password/ID)" />
 
-            <div style={{ marginTop: 24 }}>
+            <div className="mt-4">
                 {loading ? (
-                    <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-                        <Loader size={26} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
-                    </div>
+                    <GlassCard className="text-center" style={{ padding: 60 }}>
+                        <div className="spinner" />
+                    </GlassCard>
                 ) : requests.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--text3)' }}>
-                        <CheckCircle size={32} style={{ margin: '0 auto 12px', color: 'var(--green)' }} />
+                    <GlassCard className="text-center text-tertiary" style={{ padding: 40 }}>
+                        <CheckCircle size={32} className="text-success" style={{ margin: '0 auto 12px' }} />
                         <p>No pending support requests. All caught up!</p>
-                    </div>
+                    </GlassCard>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div className="flex flex-col gap-4">
                         <AnimatePresence>
                             {requests.map(req => (
                                 <motion.div
@@ -64,54 +64,46 @@ export default function SupportPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="elevated-card"
+                                    className="glass-card"
                                     style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 16,
-                                        borderLeft: req.status === 'pending' ? '4px solid var(--amber)' : `4px solid var(--border)`,
+                                        borderLeft: req.status === 'pending' ? '4px solid var(--color-warning)' : '4px solid var(--border-default)',
                                         opacity: req.status === 'resolved' ? 0.7 : 1
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div className="flex justify-between items-start">
                                         <div>
-                                            <h3 style={{ margin: 0, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <MessageSquare size={16} color="var(--accent)" />
+                                            <h3 className="text-md font-bold flex items-center gap-2">
+                                                <MessageSquare size={16} className="text-primary" />
                                                 {req.schoolName}
                                             </h3>
-                                            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
-                                                Contact Info: <span style={{ color: 'var(--text2)' }}>{req.contactInfo}</span>
+                                            <div className="text-xs text-tertiary mt-1">
+                                                Contact Info: <span className="text-secondary">{req.contactInfo}</span>
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            <div style={{ fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xs text-tertiary flex items-center gap-1">
                                                 <Clock size={12} /> {timeAgo(req.createdAt)}
                                             </div>
-                                            <span className={`badge badge-${req.status === 'pending' ? 'warning' : 'active'}`}>
-                                                {req.status}
-                                            </span>
+                                            <StatusBadge status={req.status === 'pending' ? 'pending' : 'active'} label={req.status} />
                                         </div>
                                     </div>
 
-                                    <div style={{ padding: 16, background: 'rgba(0,0,0,0.2)', borderRadius: 8, fontSize: 14, color: 'var(--text)' }}>
-                                        {req.message}
+                                    <div className="mt-3" style={{ padding: 16, background: 'color-mix(in srgb, black 20%, transparent)', borderRadius: 'var(--radius-md)' }}>
+                                        <span className="text-sm">{req.message}</span>
                                     </div>
 
                                     {req.status === 'pending' && (
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                                            <button
-                                                className="btn btn-primary btn-sm"
+                                        <div className="flex justify-end mt-2">
+                                            <StandardButton
+                                                variant="success"
+                                                size="sm"
+                                                icon={CheckCircle}
+                                                isLoading={busyId === req.id}
                                                 onClick={() => handleResolve(req.id)}
                                                 disabled={busyId === req.id}
-                                                style={{ background: 'var(--green)' }}
                                             >
-                                                {busyId === req.id ? (
-                                                    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                                                ) : (
-                                                    <CheckCircle size={14} />
-                                                )}
                                                 Mark as Resolved
-                                            </button>
+                                            </StandardButton>
                                         </div>
                                     )}
                                 </motion.div>

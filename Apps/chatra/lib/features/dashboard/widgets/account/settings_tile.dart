@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/widgets/glass_card.dart';
 
@@ -41,7 +40,7 @@ class SettingsTile extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.outfit(
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,

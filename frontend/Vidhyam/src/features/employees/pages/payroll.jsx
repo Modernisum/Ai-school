@@ -17,9 +17,9 @@ const SalaryRow = ({ label, value, type = 'normal', prefix = '' }) => {
     const valueClass = type === 'total' ? 'text-white font-bold' : type === 'net' ? 'text-indigo-400 font-black text-lg' : 'text-white font-medium';
     
     return (
-        <div className={`flex justify-between text-sm ${type === 'net' ? 'mt-2 pt-2 border-t border-white/10' : ''}`}>
-            <span className={colorClass}>{label}</span>
-            <span className={valueClass}>
+        <div className={`flex justify-between text-micro ${type === 'net' ? 'mt-1.5 pt-1.5 border-t border-white/10' : ''}`}>
+            <span className={`${colorClass} uppercase font-black tracking-widest`}>{label}</span>
+            <span className={`${valueClass} font-mono italic`}>
                 {prefix} {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value)}
             </span>
         </div>
@@ -54,32 +54,32 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
             className="modal-box max-w-lg w-full" 
             onClick={e => e.stopPropagation()}
         >
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-2">
                 <div>
-                    <h3 className="font-bold text-white text-lg">Salary Breakdown</h3>
-                    <p className="text-slate-500 text-xs">{employee.name} • {employee.employeeId}</p>
+                    <h3 className="font-black text-white text-micro uppercase italic tracking-widest">SETTLEMENT_CORE</h3>
+                    <p className="text-slate-700 text-micro font-black uppercase">{employee.name} • {employee.employeeId}</p>
                 </div>
                 <button 
                     onClick={onClose} 
-                    className="text-slate-500 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"
+                    className="text-slate-700 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-all"
                 >
-                    <X size={20} />
+                    <X size={16} />
                 </button>
             </div>
 
             {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <Loader size={32} className="animate-spin text-indigo-400" />
-                    <p className="text-slate-400 text-sm font-medium">Calculating components...</p>
+                <div className="flex flex-col items-center justify-center py-10 gap-2">
+                    <Loader size={24} className="animate-spin text-indigo-400" />
+                    <p className="text-slate-700 text-micro font-black uppercase tracking-widest">Computing...</p>
                 </div>
             ) : error ? (
-                <div className="py-10 text-center">
-                    <AlertTriangle size={32} className="text-rose-500 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">Could not load salary data.</p>
+                <div className="py-8 text-center">
+                    <AlertTriangle size={24} className="text-rose-500 mx-auto mb-2" />
+                    <p className="text-slate-700 text-micro font-black uppercase">Data Link Error</p>
                 </div>
             ) : breakdown ? (
-                <div className="space-y-6">
-                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-4">
+                <div className="space-y-4">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 space-y-1.5">
                         <SalaryRow label="Base Salary" value={breakdown.baseSalary} />
                         
                         {breakdown.spacesComponent > 0 && (
@@ -98,37 +98,39 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
                             <SalaryRow label="Financial Aid" value={breakdown.aid} type="bonus" prefix="+" />
                         )}
 
-                        <div className="pt-2 border-t border-white/10">
+                        <div className="pt-1.5 border-t border-white/5">
                             <SalaryRow label="Gross Salary" value={breakdown.grossSalary} type="total" />
                         </div>
 
                         {breakdown.absentDays > 0 && (
                             <SalaryRow 
-                                label={`Absence Deductions (${breakdown.absentDays} days)`} 
+                                label={`Absence (${breakdown.absentDays}D)`} 
                                 value={breakdown.deductions} 
                                 type="deduction" 
                                 prefix="-" 
                             />
                         )}
 
-                        <SalaryRow label="Net Monthly Pay" value={breakdown.netMonthlySalary} type="net" />
+                        <SalaryRow label="Net Pay" value={breakdown.netMonthlySalary} type="net" />
                     </div>
 
-                    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-4 rounded-xl text-xs flex gap-3">
-                        <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
-                        <p className="leading-relaxed">
-                            Closing the month will lock this salary, record a payroll transaction, and mark any unsettled advance balances against the employee.
+                    <div className="bg-amber-500/5 border border-amber-500/10 text-amber-500/60 p-2 rounded-lg text-micro flex gap-2">
+                        <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+                        <p className="leading-tight font-bold uppercase">
+                            Closing month will lock node ledger and record transaction.
                         </p>
                     </div>
 
-                    <button 
-                        onClick={handleCloseMonth} 
+                    <StandardButton
+                        variant="primary"
+                        size="xs"
+                        onClick={handleCloseMonth}
                         disabled={isClosing}
-                        className="btn-primary w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 group"
+                        icon={isClosing ? Loader : RefreshCw}
+                        className="w-full"
                     >
-                        {isClosing ? <Loader size={18} className="animate-spin" /> : <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />}
-                        Generate Salary & Close Month
-                    </button>
+                        {isClosing ? 'SYNCING...' : 'FINALIZE_MONTHLY_LEDGER'}
+                    </StandardButton>
                 </div>
             ) : null}
         </motion.div>
@@ -161,75 +163,73 @@ export default function PayrollManagement() {
     }).format(val || 0);
 
     return (
-        <div className="min-h-full">
-            <div className="flex items-center justify-between px-6 py-3">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 shadow-md">
-                        <CreditCard size={16} className="text-indigo-400" />
+        <div className="max-w-full p-1 space-y-2 text-slate-400">
+            <div className="flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-lg">
+                        <CreditCard size={14} className="text-blue-400" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white leading-tight">Payroll <span className="text-indigo-400">Automation</span></h1>
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mt-0.5">Monthly closing system</p>
+                        <h1 className="text-sm font-black text-white leading-none uppercase italic">PAYROLL_LAB</h1>
+                        <p className="text-micro uppercase tracking-widest font-bold text-slate-600 mt-0.5">Automated settlement system</p>
                     </div>
                 </div>
                 <button 
                     onClick={refetch} 
-                    className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all border border-white/5"
-                    title="Refresh List"
+                    className="p-1 bg-white/5 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all border border-white/5"
                 >
-                    <RefreshCw size={13} />
+                    <RefreshCw size={12} />
                 </button>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="space-y-2">
                 <div className="relative group">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-blue-400 transition-colors" />
                     <input 
-                        className="w-full bg-slate-900/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 transition-all shadow-inner" 
-                        placeholder="Search employees by name or ID..." 
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-blue-500/30 transition-all"
+                        placeholder="SEARCH_PAYROLL_DATABASE..." 
                         value={search} 
                         onChange={e => setSearch(e.target.value)} 
                     />
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-32 gap-4">
-                        <Loader size={40} className="animate-spin text-indigo-500" />
-                        <p className="text-slate-500 font-medium animate-pulse">Syncing employee records...</p>
+                    <div className="flex flex-col items-center justify-center py-20 gap-2">
+                        <Loader size={24} className="animate-spin text-blue-500" />
+                        <p className="text-micro text-slate-600 font-medium animate-pulse">Syncing nodes...</p>
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="text-center py-24 bg-white/5 rounded-3xl border-2 border-dashed border-white/5">
-                        <Box size={48} className="text-slate-700 mx-auto mb-4" />
-                        <p className="text-slate-400 font-bold">No employees found matching your search</p>
+                    <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/5">
+                        <Box size={32} className="text-slate-800 mx-auto mb-2" />
+                        <p className="text-micro text-slate-500 font-black uppercase tracking-widest">No matching records</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
                         {filtered.map((emp) => (
                             <motion.div
                                 key={emp.employeeId}
-                                initial={{ opacity: 0, y: 20 }} 
+                                initial={{ opacity: 0, y: 8 }} 
                                 animate={{ opacity: 1, y: 0 }}
-                                whileHover={{ y: -5 }}
-                                className="glass-card p-6 hover:bg-white/5 transition-all cursor-pointer group border-white/5 flex flex-col justify-between"
+                                className="bg-white/5 border border-white/5 rounded-xl p-2 hover:border-blue-500/30 transition-all cursor-pointer group flex flex-col justify-between"
                                 onClick={() => setSelectedEmployee(emp)}
                             >
                                 <div>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 font-black text-xl border border-white/5">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-blue-400 font-black text-sm border border-white/5">
                                             {emp.name?.charAt(0)}
                                         </div>
-                                        <span className="text-[10px] font-black uppercase px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                        <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                             {formatCurr(emp.baseSalary)}
                                         </span>
                                     </div>
-                                    <h3 className="text-white font-bold text-lg mb-1 group-hover:text-indigo-300 transition-colors">{emp.name}</h3>
-                                    <p className="text-slate-500 text-xs font-mono tracking-tighter uppercase">{emp.employeeId}</p>
+                                    <h3 className="text-white font-black text-micro uppercase italic truncate max-w-full group-hover:text-blue-300 transition-colors">{emp.name}</h3>
+                                    <p className="text-slate-700 text-micro font-mono tracking-tighter uppercase">{emp.employeeId}</p>
                                 </div>
-                                <div className="mt-6 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{emp.role || 'Staff'}</span>
-                                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-400 group-hover:gap-3 transition-all">
-                                        BROAKDOWN
-                                        <FileText size={14} />
+                                <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-1.5">
+                                    <span className="text-micro font-black text-slate-800 uppercase tracking-widest">{emp.role || 'STAFF'}</span>
+                                    <div className="flex items-center gap-1 text-micro font-black text-indigo-400">
+                                        SETTLE
+                                        <FileText size={10} />
                                     </div>
                                 </div>
                             </motion.div>

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:chatra/theme/app_theme.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
+import 'package:chatra/core/network/api_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class QuickActionGrid extends StatelessWidget {
   const QuickActionGrid({super.key});
@@ -16,25 +16,25 @@ class QuickActionGrid extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.0, // Updated to 1.0 per architectural guidelines
+      childAspectRatio: 1.0,
       children: [
         _buildActionItem(
           Icons.gps_fixed_rounded,
           "Track Bus",
           AppColors.accentSage,
-          () => context.go('/tracking'),
+          () => _navigateToTracking(context),
         ),
         _buildActionItem(
           Icons.calendar_month_rounded,
           "History",
           AppColors.accentTeal,
-          () => context.go('/attendance'),
+          () => _navigateToAttendance(context),
         ),
         _buildActionItem(
           Icons.inventory_2_rounded,
           "Vault",
           AppColors.accentCream,
-          () => context.go('/vault'),
+          () => _navigateToVault(context),
         ),
         _buildActionItem(
           Icons.support_agent_rounded,
@@ -52,6 +52,33 @@ class QuickActionGrid extends StatelessWidget {
     );
   }
 
+  void _navigateToTracking(BuildContext context) async {
+    final api = context.read<ApiService>();
+    final schoolId = await api.storage.read(key: 'school_id') ?? '';
+    final vehicleId = await api.storage.read(key: 'vehicle_id') ?? '';
+    if (schoolId.isNotEmpty && vehicleId.isNotEmpty) {
+      context.go('/tracking/$schoolId/$vehicleId');
+    }
+  }
+
+  void _navigateToAttendance(BuildContext context) async {
+    final api = context.read<ApiService>();
+    final schoolId = await api.storage.read(key: 'school_id') ?? '';
+    final studentId = await api.storage.read(key: 'student_id') ?? '';
+    if (schoolId.isNotEmpty && studentId.isNotEmpty) {
+      context.go('/attendance/$schoolId/$studentId');
+    }
+  }
+
+  void _navigateToVault(BuildContext context) async {
+    final api = context.read<ApiService>();
+    final schoolId = await api.storage.read(key: 'school_id') ?? '';
+    final studentId = await api.storage.read(key: 'student_id') ?? '';
+    if (schoolId.isNotEmpty && studentId.isNotEmpty) {
+      context.go('/vault/$schoolId/$studentId');
+    }
+  }
+
   Widget _buildActionItem(IconData icon, String label, Color color, [VoidCallback? onTap]) {
     return InkWell(
       onTap: onTap,
@@ -63,7 +90,7 @@ class QuickActionGrid extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.outfit(
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -71,7 +98,7 @@ class QuickActionGrid extends StatelessWidget {
             ),
           ],
         ),
-      ).animate().fadeIn(delay: 200.ms),
+      ),
     );
   }
 }

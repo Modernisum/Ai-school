@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/theme/app_theme.dart';
 
-/// Personalized greeting card shown at the top of the home screen.
 class HomeGreetingWidget extends StatelessWidget {
   final Map<String, dynamic>? profile;
 
@@ -64,6 +61,6 @@ class HomeGreetingWidget extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.3, end: 0);
+    );
   }
 }

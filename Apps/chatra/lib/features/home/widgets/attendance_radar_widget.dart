@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/theme/app_theme.dart';
 
-/// Displays a radial attendance overview card.
 class AttendanceRadarWidget extends StatelessWidget {
   final Map<String, dynamic> attendance;
 
@@ -25,13 +22,9 @@ class AttendanceRadarWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Attendance',
-            style: GoogleFonts.outfit(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           Center(
@@ -50,7 +43,7 @@ class AttendanceRadarWidget extends StatelessWidget {
                 ),
                 Text(
                   '${pct.toStringAsFixed(0)}%',
-                  style: GoogleFonts.outfit(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -63,11 +56,11 @@ class AttendanceRadarWidget extends StatelessWidget {
           Center(
             child: Text(
               '${data.length} total days',
-              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms);
+    );
   }
 }

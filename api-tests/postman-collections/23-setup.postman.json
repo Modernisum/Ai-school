@@ -1,0 +1,79 @@
+{
+  "info": {
+    "name": "23-setup",
+    "description": "Converted from 23-setup.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get Setup Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/setup/SCH001",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "setup",
+            "SCH001"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "2. Setup New School",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/setup/school",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "setup",
+            "school"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"New Test School\",\n  \"address\": \"123 Test Street\",\n  \"phone\": \"9876543210\",\n  \"email\": \"test@school.com\",\n  \"principal_name\": \"Test Principal\",\n  \"established_year\": 2024,\n  \"password\": \"school123\",\n  \"school_type\": \"private\",\n  \"board\": \"CBSE\",\n  \"medium\": \"english\",\n  \"classes\": [\"1\", \"2\", \"3\", \"4\", \"5\"],\n  \"subjects\": [\"Math\", \"Science\", \"English\"],\n  \"admin_name\": \"Admin User\",\n  \"admin_email\": \"admin@school.com\",\n  \"admin_phone\": \"9876543211\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

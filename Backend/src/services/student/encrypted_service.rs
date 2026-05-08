@@ -243,7 +243,7 @@ impl StudentService for EncryptedStudentService {
             
             for field in sensitive_fields {
                 // If field is not being updated, preserve existing value (which might be encrypted)
-                if !data.get(field).is_some() {
+                if data.get(field).is_none() {
                     if let Some(existing_value) = existing.get(field) {
                         updated_data[field] = existing_value.clone();
                     }

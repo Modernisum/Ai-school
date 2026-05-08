@@ -48,6 +48,13 @@ const settingsSlice = createSlice({
       state.screenScale = scale;
       localStorage.setItem('screenScale', scale.toString());
     },
+    toggleTheme: (state) => {
+      state.theme = {
+        ...state.theme,
+        mode: state.theme.mode === 'dark' ? 'light' : 'dark'
+      };
+      localStorage.setItem('theme', JSON.stringify(state.theme));
+    },
     resetScreenScale: (state) => {
       state.screenScale = 1.0;
       localStorage.setItem('screenScale', '1.0');
@@ -55,7 +62,7 @@ const settingsSlice = createSlice({
   },
 });
 
-export const { setPollingInterval, setOnline, setTheme, resetTheme, setScreenScale, resetScreenScale } = settingsSlice.actions;
+export const { setPollingInterval, setOnline, setTheme, resetTheme, setScreenScale, resetScreenScale, toggleTheme } = settingsSlice.actions;
 export default settingsSlice.reducer;
 
 export const selectPollingInterval = (state) => state.settings.isOnline ? state.settings.pollingInterval : 0;

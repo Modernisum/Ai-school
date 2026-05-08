@@ -132,10 +132,6 @@ This document outlines the expected responses for space and material management 
 ```json
 {
   "space_name": "Classroom 102",
-  "capacity": 45,
-  "area_sqft": 550,
-  "floor": 1,
-  "building": "Main Building",
   "description": "New classroom for Grade 5"
 }
 ```

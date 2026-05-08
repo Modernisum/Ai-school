@@ -4,18 +4,11 @@ use serde_json::Value;
 
 #[async_trait]
 pub trait AttendanceAnalyticsService: Send + Sync {
-    /// Get daily attendance summary for a specific date
-    async fn get_daily_summary(
+    /// Get advanced attendance statistics with flexible filtering
+    async fn get_advanced_attendance_stats(
         &self,
         school_id: &str,
-        date: &str,
-    ) -> AppResult<Value>;
-
-    /// Get monthly attendance statistics for a specific month
-    async fn get_monthly_stats(
-        &self,
-        school_id: &str,
-        month: &str, // Format: "YYYY-MM"
+        query: crate::routes::attendance::AttendanceQuery,
     ) -> AppResult<Value>;
 
     /// Get attendance report for a specific student

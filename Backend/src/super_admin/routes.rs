@@ -69,6 +69,16 @@ macro_rules! err_json {
     };
 }
 
+macro_rules! not_found_json {
+    ($msg:expr) => {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"success": false, "message": $msg})),
+        )
+            .into_response()
+    };
+}
+
 pub async fn get_admin_profile(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -391,7 +401,14 @@ pub async fn get_school_notification(
     let svc = make_admin_service(&state);
     match svc.get_notification(&school_id).await {
         Ok(data) => ok_json!(data),
-        Err(e) => err_json!(e),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("not found") {
+                not_found_json!(msg)
+            } else {
+                err_json!(e)
+            }
+        }
     }
 }
 

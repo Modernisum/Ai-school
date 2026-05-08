@@ -35,7 +35,6 @@ pub struct Repositories {
     pub payroll: Arc<dyn PayrollRepository + Send + Sync>,
     pub transaction: Arc<dyn TransactionRepository + Send + Sync>,
     pub resource: Arc<dyn ResourceRepository + Send + Sync>,
-    pub ocr: Arc<dyn OCRRepository + Send + Sync>,
     pub award: Arc<dyn AwardRepository + Send + Sync>,
     pub complain: Arc<dyn ComplainRepository + Send + Sync>,
     pub reminder: Arc<dyn ReminderRepository + Send + Sync>,
@@ -53,19 +52,9 @@ pub struct Repositories {
 }
 
 pub async fn initialize_repositories(
-    ocr_pipeline: Arc<crate::logic::ocr_pipeline::OcrPipeline>,
+    db_client: Arc<crate::db::DbClient>,
+    responsibility_cache: Arc<crate::logic::cache_service::ResponsibilityCacheService>,
 ) -> Repositories {
-    let db_client: Arc<crate::db::DbClient> = Arc::new(
-        crate::db::init()
-            .await
-            .expect("Failed to initialize database"),
-    );
-
-    let ocr_repo: Arc<dyn traits::OCRRepository + Send + Sync> = Arc::new(misc_repo::PostgresOCRRepository {
-        client: db_client.clone(),
-        pipeline: ocr_pipeline,
-    });
-
     let auth_repo: Arc<dyn traits::AuthRepository + Send + Sync> = Arc::new(auth_repo::PostgresAuthRepository {
         client: db_client.clone(),
     });
@@ -113,16 +102,12 @@ pub async fn initialize_repositories(
     let school_repo: Arc<dyn traits::SchoolRepository + Send + Sync> = Arc::new(misc_repo::PostgresSchoolRepository {
         client: db_client.clone(),
     });
-    // Create the base responsibility repository
+
     let base_responsibility_repo = misc_repo::PostgresResponsibilityRepository {
         client: db_client.clone(),
     };
-    
-    let responsibility_cache = Arc::new(crate::logic::cache_service::ResponsibilityCacheService::new(
-        db_client.redis.clone()
-    ));
 
-    // Create cached responsibility repository with Redis caching
+    // Create cached responsibility repository with shared Redis cache
     let responsibility_repo: Arc<dyn traits::ResponsibilityRepository + Send + Sync> =
         Arc::new(crate::logic::cache_service::CachedResponsibilityRepository::new(
             Arc::new(base_responsibility_repo),
@@ -163,7 +148,6 @@ pub async fn initialize_repositories(
         payroll: payroll_repo,
         transaction: transaction_repo,
         resource: resource_repo,
-        ocr: ocr_repo,
         award: award_repo,
         complain: complain_repo,
         reminder: reminder_repo,

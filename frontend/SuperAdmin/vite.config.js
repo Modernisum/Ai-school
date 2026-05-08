@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
     plugins: [react()],
+    resolve: {
+        alias: {
+            '@vidhyam-ui': path.resolve(__dirname, '../Vidhyam/src/components/ui'),
+            '@vidhyam-utils': path.resolve(__dirname, '../Vidhyam/src/utils'),
+        },
+    },
     server: {
         port: 3001,
         host: '0.0.0.0',
@@ -16,6 +23,10 @@ export default defineConfig({
         },
         proxy: {
             '/api': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+            },
+            '/health': {
                 target: 'http://localhost:8080',
                 changeOrigin: true,
             }

@@ -180,7 +180,6 @@ impl SchoolManagementService {
         // Comprehensive list of tables with school_id partitioning
         // Ordered roughly from leaf to root to avoid FK violations
         let tables = [
-            "ocr_logs",
             "system_audit_logs",
             "audit_logs",
             "auth_logs",

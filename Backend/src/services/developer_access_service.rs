@@ -28,7 +28,7 @@ impl DeveloperAccessService {
         duration_hours: i32,
     ) -> AppResult<Value> {
         // Validate role
-        let valid_roles = vec!["readonly", "emergency", "audit", "data_engineer"];
+        let valid_roles = ["readonly", "emergency", "audit", "data_engineer"];
         if !valid_roles.contains(&requested_role) {
             return Err(AppError::Validation(format!("Invalid role: {}", requested_role)));
         }

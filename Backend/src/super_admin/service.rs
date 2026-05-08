@@ -30,7 +30,7 @@ impl AdminService {
                 Ok(true) => {
                     println!("[DEBUG] Password verified SUCCESSFULLY");
                     let secret = std::env::var("SUPER_ADMIN_SECRET")
-                    .unwrap_or_else(|_| "superadminsecret2024".to_string());
+                    .expect("SUPER_ADMIN_SECRET environment variable must be set");
                 let ts = chrono::Utc::now().timestamp();
                 let raw = format!("{}:{}:{}", username, ts, secret);
                 use base64::{engine::general_purpose, Engine as _};
@@ -69,10 +69,7 @@ impl AdminService {
         if let Some(r) = row {
             let hash: String = r.try_get("password_hash")?;
             old_photo = r.try_get("profile_image_url").ok();
-            match bcrypt::verify(current_password, &hash) {
-                Ok(true) => { authorized = true; },
-                _ => {}
-            }
+            if let Ok(true) = bcrypt::verify(current_password, &hash) { authorized = true; }
         }
 
         if !authorized {
@@ -148,7 +145,7 @@ impl AdminService {
 
     pub fn verify_admin_token(&self, token: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let secret = std::env::var("SUPER_ADMIN_SECRET")
-            .unwrap_or_else(|_| "superadminsecret2024".to_string());
+            .expect("SUPER_ADMIN_SECRET environment variable must be set");
         use base64::{engine::general_purpose, Engine as _};
         let decoded = general_purpose::STANDARD
             .decode(token)
@@ -474,7 +471,6 @@ impl AdminService {
         // Comprehensive list of tables with school_id partitioning
         // Ordered roughly from leaf to root to avoid FK violations
         let tables = [
-            "ocr_logs",
             "system_audit_logs",
             "audit_logs",
             "auth_logs",
@@ -1159,7 +1155,7 @@ impl AdminService {
             .execute(&mut *tx)
             .await?;
 
-            balance = balance + &credit;
+            balance += &credit;
 
             sqlx::query(
                 "INSERT INTO billing_ledger (school_id, amount, transaction_type, description, balance_after)
@@ -1234,9 +1230,9 @@ impl AdminService {
         let mut conn = self.db.acquire_super_admin_connection().await?;
 
         // 1. School Metrics
-        let school_metrics = sqlx::query!(
+        let school_metrics = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 COUNT(*) as total_schools,
                 COUNT(*) FILTER (WHERE status = 'Active') as active_schools,
                 COUNT(*) FILTER (WHERE status = 'Trial') as trial_schools
@@ -1248,9 +1244,9 @@ impl AdminService {
 
         // 2. Revenue (Last 30 days) - Based on deductions from schools
         // We take the sum of absolute values of 'monthly_usage' transactions
-        let revenue_metrics = sqlx::query!(
+        let revenue_metrics = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 ABS(COALESCE(SUM(amount), 0)) as total_revenue
             FROM billing_ledger
             WHERE transaction_type = 'monthly_usage'
@@ -1261,7 +1257,7 @@ impl AdminService {
         .await?;
 
         // 3. System Load (Simplified)
-        let system_load = sqlx::query!(
+        let system_load = sqlx::query(
             r#"
             SELECT
                 (SELECT COUNT(*) FROM students) as total_students,
@@ -1273,16 +1269,16 @@ impl AdminService {
 
         Ok(json!({
             "schools": {
-                "total": school_metrics.total_schools,
-                "active": school_metrics.active_schools,
-                "trial": school_metrics.trial_schools
+                "total": school_metrics.try_get::<i64, _>("total_schools").unwrap_or(0),
+                "active": school_metrics.try_get::<i64, _>("active_schools").unwrap_or(0),
+                "trial": school_metrics.try_get::<i64, _>("trial_schools").unwrap_or(0)
             },
             "revenue": {
-                "thirty_days": revenue_metrics.total_revenue.unwrap_or_else(|| bigdecimal::BigDecimal::from(0)).to_string()
+                "thirty_days": revenue_metrics.try_get::<bigdecimal::BigDecimal, _>("total_revenue").unwrap_or_else(|_| bigdecimal::BigDecimal::from(0)).to_string()
             },
             "load": {
-                "students": system_load.total_students,
-                "employees": system_load.total_employees
+                "students": system_load.try_get::<i64, _>("total_students").unwrap_or(0),
+                "employees": system_load.try_get::<i64, _>("total_employees").unwrap_or(0)
             }
         }))
     }

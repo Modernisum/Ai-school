@@ -1,9 +1,10 @@
+use crate::logic::ai::utils;
 use crate::repository::Repositories;
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde_json::{json, Value};
-use sqlx::Row;
 use sqlx::Column;
+use sqlx::Row;
 use std::sync::Arc;
 
 pub struct ChatHandler {
@@ -19,37 +20,8 @@ impl ChatHandler {
         }
     }
 
-    pub async fn fetch_api_key(&self) -> Result<String> {
-        let row = sqlx::query("SELECT config_value FROM system_config WHERE config_key = 'GEMINI_API_KEY'")
-            .fetch_optional(&self.repos.db_client.pool)
-            .await?;
-        
-        match row {
-            Some(r) => Ok(r.get::<String, _>("config_value")),
-            None => Err(anyhow!("GEMINI_API_KEY not found in system_config. Please update settings.")),
-        }
-    }
-
-    /// Helper to calculate Cosine Similarity between two arrays
-    pub fn calculate_similarity(vec1: &[f32], vec2: &[f32]) -> f32 {
-        if vec1.len() != vec2.len() || vec1.is_empty() {
-            return 0.0;
-        }
-        let mut dot_product = 0.0;
-        let mut norm_a = 0.0;
-        let mut norm_b = 0.0;
-        for (a, b) in vec1.iter().zip(vec2.iter()) {
-            dot_product += a * b;
-            norm_a += a * a;
-            norm_b += b * b;
-        }
-        if norm_a == 0.0 || norm_b == 0.0 { return 0.0; }
-        dot_product / (norm_a.sqrt() * norm_b.sqrt())
-    }
-
-    /// Helper to generate embeddings via Gemini Embeddings API
     pub async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>> {
-        let api_key = self.fetch_api_key().await?;
+        let api_key = utils::fetch_api_key(&self.repos).await?;
         let url = format!(
             "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={}",
             api_key
@@ -66,10 +38,10 @@ impl ChatHandler {
     }
 
     pub async fn process_query(&self, school_id: &str, query: &str) -> Result<Value> {
-        let api_key = self.fetch_api_key().await?;
-        
+        let api_key = utils::fetch_api_key(&self.repos).await?;
+
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
+
         // 1. Fetch Chat History
         let history_rows = sqlx::query("SELECT role, content FROM ai_chat_history WHERE school_id = $1 ORDER BY created_at DESC LIMIT 10")
             .bind(school_id).fetch_all(&mut *conn).await.unwrap_or_default();
@@ -77,7 +49,7 @@ impl ChatHandler {
             "role": r.get::<String, _>("role"),
             "parts": [{ "text": r.get::<String, _>("content") }]
         })).collect::<Vec<_>>();
-        
+
         // 2. Cache Hit Logic
         let query_embedding = self.generate_embedding(query).await?;
         let cache_rows = sqlx::query("SELECT generated_sql, question_embedding FROM ai_query_cache")
@@ -85,11 +57,11 @@ impl ChatHandler {
         let mut best_match: Option<(f32, String)> = None;
         for row in cache_rows {
             let cached_emb: Vec<f32> = row.get("question_embedding");
-            let sim = Self::calculate_similarity(&query_embedding, &cached_emb);
-            if sim > 0.95 {
-                if best_match.as_ref().map_or(true, |(s, _)| sim > *s) {
-                    best_match = Some((sim, row.get("generated_sql")));
-                }
+            let sim = utils::calculate_similarity(&query_embedding, &cached_emb);
+            if sim > 0.95
+                && best_match.as_ref().is_none_or(|(s, _)| sim > *s)
+            {
+                best_match = Some((sim, row.get("generated_sql")));
             }
         }
         if let Some((_, sql)) = best_match {
@@ -105,12 +77,12 @@ impl ChatHandler {
             }
             return Ok(json!({"success": true, "cached": true, "data": results}));
         }
-        
+
         // 3. Save User Message
         let _ = sqlx::query("INSERT INTO ai_chat_history (school_id, user_id, role, content) VALUES ($1, 'default', 'user', $2)")
             .bind(school_id).bind(query).execute(&mut *conn).await;
         contents.push(json!({ "role": "user", "parts": [{ "text": query }] }));
-        
+
         // 4. Tools and Gemini Loop
         let tools = json!([{
             "function_declarations": [
@@ -120,11 +92,11 @@ impl ChatHandler {
                 { "name": "generate_pdf", "description": "Export report to PDF.", "parameters": { "type": "object", "properties": { "title": { "type": "string" } }, "required": ["title"] } }
             ]
         }]);
-        
+
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={}", api_key);
         let mut turn = 0;
         let mut last_answer = json!({});
-        
+
         while turn < 10 {
             let body = json!({
                 "contents": contents,
@@ -135,7 +107,7 @@ impl ChatHandler {
             let content = res["candidates"][0]["content"].clone();
             if content.is_null() { break; }
             contents.push(content.clone());
-            
+
             let mut tool_results = vec![];
             if let Some(parts) = content["parts"].as_array() {
                 for part in parts {
@@ -145,23 +117,19 @@ impl ChatHandler {
                         let result_data = match name {
                             "execute_sql" => {
                                 let sql = args["sql"].as_str().unwrap_or("");
-                                if sql.to_uppercase().contains("INSERT") || sql.to_uppercase().contains("UPDATE") {
-                                    json!({"error": "Read-only access."})
-                                } else {
-                                    match sqlx::query(sql).fetch_all(&mut *conn).await {
-                                        Ok(recs) => {
-                                            let _ = sqlx::query("INSERT INTO ai_query_cache (school_id, question_text, question_embedding, generated_sql) VALUES ($1, $2, $3, $4)")
-                                                .bind(school_id).bind(query).bind(&query_embedding).bind(sql).execute(&mut *conn).await;
-                                            let mut rvec = vec![];
-                                            for r in recs {
-                                                let mut m = serde_json::Map::new();
-                                                for c in r.columns() { m.insert(c.name().to_string(), json!(r.get::<Option<String>, _>(c.ordinal()))); }
-                                                rvec.push(json!(m));
-                                            }
-                                            json!(rvec)
-                                        },
-                                        Err(e) => json!({"error": e.to_string()})
-                                    }
+                                match validate_and_execute_sql(&mut *conn, sql).await {
+                                    Ok(recs) => {
+                                        let _ = sqlx::query("INSERT INTO ai_query_cache (school_id, question_text, question_embedding, generated_sql) VALUES ($1, $2, $3, $4)")
+                                            .bind(school_id).bind(query).bind(&query_embedding).bind(sql).execute(&mut *conn).await;
+                                        let mut rvec = vec![];
+                                        for r in recs {
+                                            let mut m = serde_json::Map::new();
+                                            for c in r.columns() { m.insert(c.name().to_string(), json!(r.get::<Option<String>, _>(c.ordinal()))); }
+                                            rvec.push(json!(m));
+                                        }
+                                        json!(rvec)
+                                    },
+                                    Err(e) => json!({"error": e})
                                 }
                             },
                             "search_docs" => {
@@ -170,7 +138,7 @@ impl ChatHandler {
                                 let doc_rows = sqlx::query("SELECT content, embedding FROM document_embeddings").fetch_all(&mut *conn).await.unwrap_or_default();
                                 let mut dmatches = vec![];
                                 for dr in doc_rows {
-                                    let sim = Self::calculate_similarity(&semb, &dr.get::<Vec<f32>, _>("embedding"));
+                                    let sim = utils::calculate_similarity(&semb, &dr.get::<Vec<f32>, _>("embedding"));
                                     if sim > 0.7 { dmatches.push((sim, dr.get::<String, _>("content"))); }
                                 }
                                 dmatches.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
@@ -183,7 +151,7 @@ impl ChatHandler {
                     }
                 }
             }
-            
+
             if tool_results.is_empty() {
                 last_answer = content.clone();
                 let ans_text = content["parts"][0]["text"].as_str().unwrap_or("");
@@ -196,4 +164,51 @@ impl ChatHandler {
         }
         Ok(last_answer)
     }
+}
+
+async fn validate_and_execute_sql(
+    conn: &mut sqlx::PgConnection,
+    sql: &str,
+) -> Result<Vec<sqlx::postgres::PgRow>, String> {
+    let trimmed = sql.trim();
+    let upper = trimmed.to_uppercase();
+
+    // Only allow read-only statements
+    if !upper.starts_with("SELECT") && !upper.starts_with("WITH") && !upper.starts_with("EXPLAIN") {
+        return Err("Only SELECT, WITH, and EXPLAIN queries are allowed".to_string());
+    }
+
+    // Block dangerous keywords anywhere in the query
+    let forbidden = [
+        "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE",
+        "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY",
+        "VACUUM", "REINDEX", "DISCARD", "LOCK", "SET", "SHOW",
+        "LISTEN", "NOTIFY", "UNLISTEN", "MOVE", "FETCH", "CLOSE",
+        "PREPARE", "DEALLOCATE", "IMPORT", "EXPORT",
+        "/*", "--", ";",
+    ];
+
+    for keyword in &forbidden {
+        if upper.contains(keyword) {
+            return Err(format!("Forbidden SQL keyword detected: {}", keyword));
+        }
+    }
+
+    // Enforce LIMIT to prevent unbounded result sets
+    if !upper.contains("LIMIT") {
+        return Err("Query must include a LIMIT clause (max 200)".to_string());
+    }
+
+    // Execute in read-only transaction
+    sqlx::query("SET TRANSACTION READ ONLY")
+        .execute(&mut *conn)
+        .await
+        .map_err(|e| format!("Query error: {}", e))?;
+
+    let rows = sqlx::query(trimmed)
+        .fetch_all(&mut *conn)
+        .await
+        .map_err(|e| format!("Query error: {}", e))?;
+
+    Ok(rows)
 }

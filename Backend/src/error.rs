@@ -5,7 +5,7 @@ use axum::{
 };
 use serde_json::json;
 use thiserror::Error;
-use anyhow;
+
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -40,13 +40,29 @@ pub enum AppError {
     Repository(String),
 }
 
+impl AppError {
+    pub fn error_code(&self) -> &'static str {
+        match self {
+            AppError::Database(_) => "DB_ERR",
+            AppError::Redis(_) => "CACHE_ERR",
+            AppError::Json(_) => "PARSE_ERR",
+            AppError::Validation(_) => "VALIDATION_ERR",
+            AppError::NotFound(_) => "NOT_FOUND",
+            AppError::Unauthorized(_) => "UNAUTHORIZED",
+            AppError::Forbidden(_) => "FORBIDDEN",
+            AppError::Internal(_) => "INTERNAL_ERR",
+            AppError::Conflict(_) => "CONFLICT",
+            AppError::Repository(_) => "REPO_ERR",
+        }
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, message) = match self {
+        let (status, message) = match &self {
             AppError::Database(ref e) => {
-                eprintln!("DATABASE ERROR: {:?}", e);
                 tracing::error!("Database error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e))
+                (StatusCode::INTERNAL_SERVER_ERROR, "An internal database error occurred".to_string())
             }
             AppError::Redis(ref e) => {
                 tracing::error!("Redis error: {:?}", e);
@@ -54,26 +70,26 @@ impl IntoResponse for AppError {
             }
             AppError::Json(ref e) => {
                 tracing::error!("JSON error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("JSON error: {}", e))
+                (StatusCode::INTERNAL_SERVER_ERROR, "Invalid data format".to_string())
             }
-            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone()),
             AppError::Internal(msg) => {
                 tracing::error!("Internal error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, msg)
+                (StatusCode::INTERNAL_SERVER_ERROR, "An internal error occurred".to_string())
             }
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::Repository(msg) => {
-                eprintln!("REPOSITORY ERROR: {}", msg);
                 tracing::error!("Repository error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, format!("Repository error: {}", msg))
+                (StatusCode::INTERNAL_SERVER_ERROR, "An internal error occurred".to_string())
             }
         };
 
         let body = Json(json!({
             "success": false,
+            "error_code": self.error_code(),
             "message": message,
         }));
 

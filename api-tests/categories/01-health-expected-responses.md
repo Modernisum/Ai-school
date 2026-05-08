@@ -41,25 +41,42 @@ This document outlines the expected responses for each health check API endpoint
 
 ## 3. GET /health/ready - Readiness Check
 
+**Purpose:** Checks if the app is fully initialized and ready to handle user requests (Database connected, cache loaded).
+
 **Expected Response:**
 - **Status Code:** 200 OK if ready, 503 Service Unavailable if not ready
-- **Content-Type:** text/plain or application/json
-- **Response Body:** `"ready"` or JSON with readiness status
+- **Content-Type:** application/json
+- **Response Body Structure:**
+```json
+{
+  "status": "ready"
+}
+```
+**Error Response Body (503):**
+```json
+{
+  "status": "not_ready",
+  "database": "disconnected",
+  "redis": "ok"
+}
+```
 
-**Validation Criteria:**
-- Should return 200 when all dependencies are ready
-- Should return 503 if any critical dependency is unavailable
+**When it is used:**
+- **Deployment Rollouts:** Kubernetes uses this during a "Rolling Update". If the new version of your app says it's not ready, K8s won't send traffic to it yet, preventing users from seeing errors while the app is still starting up.
+- **Dependency Failure:** If the Database goes down, this should return 503 so that the Load Balancer stops sending traffic to this specific instance.
 
 ## 4. GET /health/alive - Liveness Check
+
+**Purpose:** Checks if the application process is running (not crashed or deadlocked).
 
 **Expected Response:**
 - **Status Code:** 200 OK
 - **Content-Type:** text/plain
 - **Response Body:** `"alive"` or similar
 
-**Validation Criteria:**
-- Always returns 200 if the application process is running
-- Used by Kubernetes/container orchestrators
+**When it is used:**
+- **Auto-Healing:** Container orchestrators (Kubernetes/Docker) call this every few seconds. If the app stops responding (e.g., due to a memory leak or deadlock), the orchestrator will automatically **Kill and Restart** the container.
+- **Process Monitoring:** Used as a heartbeat to ensure the web server hasn't "hanged".
 
 ## Common Error Responses
 

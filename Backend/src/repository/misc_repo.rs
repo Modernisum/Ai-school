@@ -8,40 +8,6 @@ use serde_json::{json, Value};
 use sqlx::{Acquire, Row};
 use std::sync::Arc;
 
-// --- OCR Repository ---
-pub struct PostgresOCRRepository {
-    pub client: Arc<DbClient>,
-    pub pipeline: Arc<crate::logic::ocr_pipeline::OcrPipeline>,
-}
-
-#[async_trait]
-impl crate::repository::traits::OCRRepository for PostgresOCRRepository {
-    async fn process_ocr(
-        &self,
-        file_path: &str,
-        _engine: &str,
-    ) -> Result<Value, crate::repository::traits::AppError> {
-        self.pipeline
-            .process_image(file_path)
-            .await
-            .map_err(|e| e.into())
-    }
-
-    async fn save_ocr_result(
-        &self,
-        school_id: &str,
-        result_data: Value,
-    ) -> Result<(), crate::repository::traits::AppError> {
-        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO ocr_logs (school_id, result_data) VALUES ($1, $2)")
-            .bind(school_id)
-            .bind(result_data)
-            .execute(&mut *conn)
-            .await?;
-        Ok(())
-    }
-}
-
 // --- Award Repository ---
 pub struct PostgresAwardRepository {
     pub client: Arc<DbClient>,
@@ -387,7 +353,7 @@ impl crate::repository::traits::SchoolRepository for PostgresSchoolRepository {
 mod responsibility_repository_tests {
     use super::*;
     use crate::db::DbClient;
-    use sqlx::{Pool, Postgres};
+    use sqlx::{Execute, Pool, Postgres};
     use std::sync::Arc;
     use mockall::predicate::*;
     use mockall::mock;
@@ -404,7 +370,7 @@ mod responsibility_repository_tests {
     #[test]
     fn test_query_builder_integration() {
         // Test that query builder creates correct SQL
-        let query = query_builder::build_responsibility_query(
+        let mut query = query_builder::build_responsibility_query(
             "school123",
             Some("teacher"),
             Some("space456"),
@@ -463,7 +429,7 @@ mod responsibility_repository_tests {
     #[test]
     fn test_query_builder_helpers() {
         // Test build_responsibility_query with various parameters
-        let query1 = query_builder::build_responsibility_query(
+        let mut query1 = query_builder::build_responsibility_query(
             "school1",
             None,
             None,
@@ -472,8 +438,8 @@ mod responsibility_repository_tests {
             None,
         );
         assert!(query1.build().sql().contains("WHERE school_id = $1"));
-        
-        let query2 = query_builder::build_responsibility_query(
+
+        let mut query2 = query_builder::build_responsibility_query(
             "school2",
             Some("teacher"),
             Some("space1"),
@@ -491,7 +457,7 @@ mod responsibility_repository_tests {
 
     #[test]
     fn test_employee_responsibility_query_builder() {
-        let query = query_builder::build_employee_responsibility_query(
+        let mut query = query_builder::build_employee_responsibility_query(
             "school123",
             "emp456",
             Some("space789"),

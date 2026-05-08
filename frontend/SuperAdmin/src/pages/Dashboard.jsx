@@ -1,243 +1,275 @@
-import { useEffect, useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { School, Ban, CheckCircle, TrendingUp, CalendarDays, Loader, Search, ArrowRight, Activity } from 'lucide-react'
-import { listSchools } from '../api.js'
-import ChurnRadar from '../components/ChurnRadar.jsx'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { motion } from 'framer-motion';
+import {
+  School, Ban, CheckCircle, TrendingUp, Users, CreditCard,
+  Activity, AlertTriangle, ArrowRight, RefreshCw, DollarSign,
+  Zap, Globe, CalendarDays, PieChart, ShieldCheck
+} from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, PieChart as RPieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
+} from 'recharts';
+import { listSchools, getChurnRadar, getHealth } from '../api.js';
+import { StatCard, ChartCard, StatusBadge, DataTable, formatCurrency, formatDate, HealthDot } from '../components/ui/index.js';
+import { useRBAC } from '../contexts/RBACContext.jsx';
 
-export default function Dashboard() {
-    const [schools, setSchools] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
+const CHART_COLORS = ['var(--color-primary)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)', 'var(--color-info)', 'var(--color-secondary)'];
 
-    useEffect(() => {
-        listSchools().then(r => {
-            setSchools(r.data || [])
-            setLoading(false)
-        }).catch(() => setLoading(false))
-    }, [])
+export default function CommandCenter() {
+  const [schools, setSchools] = useState([]);
+  const [churnData, setChurnData] = useState(null);
+  const [health, setHealth] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-    const filteredSchools = useMemo(() => {
-        if (!searchQuery) return schools;
-        const q = searchQuery.toLowerCase();
-        return schools
-            .filter(s => 
-                s.schoolName.toLowerCase().includes(q) ||
-                s.schoolId.toLowerCase().includes(q)
-            )
-            .sort((a, b) => {
-                const aName = a.schoolName.toLowerCase();
-                const bName = b.schoolName.toLowerCase();
-                const aStarts = aName.startsWith(q);
-                const bStarts = bName.startsWith(q);
-                
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
-                return aName.localeCompare(bName);
-            });
-    }, [schools, searchQuery]);
+  const fetchAll = useCallback(async () => {
+    try {
+      const [schoolsRes, churnRes, healthRes] = await Promise.allSettled([
+        listSchools(),
+        getChurnRadar(),
+        getHealth(),
+      ]);
+      if (schoolsRes.status === 'fulfilled') setSchools(schoolsRes.value.data || []);
+      if (churnRes.status === 'fulfilled') setChurnData(churnRes.value.data || churnRes.value);
+      if (healthRes.status === 'fulfilled') setHealth(healthRes.value);
+    } catch (e) {
+      console.error('Dashboard fetch error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      setLastRefresh(new Date());
+    }
+  }, []);
 
-    const now = Date.now()
-    const msPerDay = 86400000
-    const total = schools.length
-    const active = schools.filter(s => s.status === 'active').length
-    const blocked = schools.filter(s => s.isBlocked).length
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const iv = setInterval(fetchAll, 30000);
+    return () => clearInterval(iv);
+  }, [fetchAll]);
+
+  const refresh = () => { setRefreshing(true); fetchAll(); };
+
+  // ── Compute Metrics ──────────────────────────────────────────────────────────
+  const now = Date.now();
+  const msPerDay = 86400000;
+
+  const metrics = useMemo(() => {
+    const total = schools.length;
+    const active = schools.filter(s => s.status === 'active').length;
+    const blocked = schools.filter(s => s.isBlocked).length;
+    const trial = schools.filter(s => s.status === 'trial').length;
+    const thisWeek = schools.filter(s => {
+      const created = s.createdAt ? new Date(s.createdAt).getTime() : 0;
+      return now - created < 7 * msPerDay;
+    }).length;
     const thisMonth = schools.filter(s => {
-        const created = s.createdAt ? new Date(s.createdAt).getTime() : 0
-        return now - created < 30 * msPerDay
-    }).length
+      const created = s.createdAt ? new Date(s.createdAt).getTime() : 0;
+      return now - created < 30 * msPerDay;
+    }).length;
+    const churnRisk = churnData?.atRiskCount || schools.filter(s => s.churnRisk === 'high').length;
+    const revenue = active * 499; // placeholder - should come from backend
+    const growthRate = total > 0 && thisMonth > 0 ? ((thisMonth / total) * 100).toFixed(1) : 0;
 
-    const stats = [
-        { label: 'Total Schools', value: total, color: '#6366f1', icon: <School size={18} /> },
-        { label: 'Active', value: active, color: '#10b981', icon: <CheckCircle size={18} /> },
-        { label: 'Blocked', value: blocked, color: '#ef4444', icon: <Ban size={18} /> },
-        { label: 'New this Month', value: thisMonth, color: '#f59e0b', icon: <TrendingUp size={18} /> },
-    ]
+    return { total, active, blocked, trial, thisWeek, thisMonth, churnRisk, revenue, growthRate };
+  }, [schools, churnData, now]);
 
-    // Registration & Activity data for chart
-    const dailyActivityData = useMemo(() => {
-        const last7Days = [...Array(7)].map((_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            return d.toISOString().split('T')[0];
-        });
+  // ── Chart Data ───────────────────────────────────────────────────────────────
+  const registrationData = useMemo(() => {
+    const days = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (13 - i));
+      return d.toISOString().split('T')[0];
+    });
+    return days.map(date => {
+      const registrations = schools.filter(s => s.createdAt?.startsWith(date)).length;
+      const activeCount = schools.filter(s => s.status === 'active' && s.createdAt <= date).length;
+      return { date: date.slice(5), registrations, active: activeCount };
+    });
+  }, [schools]);
 
-        return last7Days.map(date => {
-            // Number of schools registered on this day
-            const registrations = schools.filter(s => s.createdAt && s.createdAt.startsWith(date)).length;
-            // Number of schools marked as active on this day (if we had history, we'd use it, but for now we'll simulate activity based on status and created date)
-            const activeSchools = schools.filter(s => s.status === 'active' && s.createdAt && s.createdAt <= date).length;
-            
-            return { 
-                date: date.split('-').slice(1).join('/'), 
-                count: registrations,
-                active: activeSchools 
-            };
-        });
-    }, [schools]);
+  const statusDistribution = useMemo(() => {
+    const dist = {};
+    schools.forEach(s => { const st = s.status || 'unknown'; dist[st] = (dist[st] || 0) + 1; });
+    return Object.entries(dist).map(([name, value]) => ({ name, value }));
+  }, [schools]);
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            className="page"
+  const recentSchools = useMemo(() =>
+    [...schools].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 8),
+    [schools]
+  );
+
+  const healthStatus = health?.status || 'checking';
+  const deps = health?.dependencies || {};
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="page-container">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold" style={{ letterSpacing: '-0.02em' }}>Command Center</h1>
+          <p className="text-sm text-secondary mt-1">
+            Real-time SaaS ecosystem overview · Updated {formatDate(lastRefresh, 'relative')}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-tertiary">
+            <HealthDot status={healthStatus} size={7} />
+            System {healthStatus}
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={refresh} disabled={refreshing}>
+            <RefreshCw size={14} className={refreshing ? 'spin' : ''} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Row */}
+      <div className="stats-grid mb-6">
+        <StatCard label="Total Schools" value={metrics.total} icon={School} color="primary" trend={metrics.growthRate} trendLabel="growth" />
+        <StatCard label="Active Schools" value={metrics.active} icon={CheckCircle} color="success" />
+        <StatCard label="Blocked / At Risk" value={`${metrics.blocked} / ${metrics.churnRisk}`} icon={AlertTriangle} color="danger" />
+        <StatCard label="New This Week" value={metrics.thisWeek} icon={TrendingUp} color="info" />
+        <StatCard label="Est. MRR" value={formatCurrency(metrics.revenue)} icon={DollarSign} color="warning" />
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        {/* Registration & Active Schools Chart */}
+        <ChartCard
+          className="col-span-2"
+          title="School Registration & Active Growth"
+          subtitle="Last 14 days"
+          actions={
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1"><span style={{ width: 10, height: 2, background: 'var(--color-primary)', borderRadius: 1, display: 'inline-block' }} /> <span className="text-xs text-tertiary">Registrations</span></div>
+              <div className="flex items-center gap-1"><span style={{ width: 10, height: 2, background: 'var(--color-success)', borderRadius: 1, display: 'inline-block' }} /> <span className="text-xs text-tertiary">Active</span></div>
+            </div>
+          }
         >
-            {/* Daily Registration & Activity Graph - MOVED TO TOP */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="lg:col-span-2 card" style={{ padding: 24 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                        <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Activity size={18} color="var(--accent)" />
-                            Daily Active Schools & Registration
-                        </h3>
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text3)' }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} /> Registrations
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text3)' }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} /> Active Schools
-                            </div>
-                            <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>Last 7 Days</span>
-                        </div>
-                    </div>
-                    <div style={{ height: 240, width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={dailyActivityData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                <XAxis 
-                                    dataKey="date" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} 
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }}
-                                />
-                                <Tooltip 
-                                    contentStyle={{ background: 'var(--bg2)', border: '1px solid var(--glass-border)', borderRadius: 12 }}
-                                    itemStyle={{ fontSize: 12, fontWeight: 700 }}
-                                />
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="count" 
-                                    stroke="var(--accent)" 
-                                    strokeWidth={3} 
-                                    name="Registrations"
-                                    dot={{ r: 4, fill: 'var(--accent)', strokeWidth: 2, stroke: 'var(--bg)' }} 
-                                    activeDot={{ r: 6, strokeWidth: 0 }}
-                                />
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="active" 
-                                    stroke="#10b981" 
-                                    strokeWidth={3} 
-                                    name="Active Schools"
-                                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: 'var(--bg)' }} 
-                                    activeDot={{ r: 6, strokeWidth: 0 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={registrationData}>
+              <defs>
+                <linearGradient id="gradActive" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-success)" stopOpacity={0.2} /><stop offset="100%" stopColor="var(--color-success)" stopOpacity={0} /></linearGradient>
+                <linearGradient id="gradReg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.3} /><stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} /></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontWeight: 600 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontWeight: 600 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: 'var(--surface-layer2)', border: '1px solid var(--border-default)', borderRadius: 12, fontSize: 12 }} />
+              <Area type="monotone" dataKey="active" stroke="var(--color-success)" strokeWidth={2} fill="url(#gradActive)" name="Active Schools" />
+              <Bar dataKey="registrations" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="New Registrations" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        {/* Status Distribution & Health */}
+        <div className="flex flex-col gap-6">
+          {/* Status Pie */}
+          <ChartCard title="School Status Distribution" style={{ flex: 1 }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <RPieChart>
+                <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="value">
+                  {statusDistribution.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="transparent" />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: 'var(--surface-layer2)', border: '1px solid var(--border-default)', borderRadius: 12 }} />
+              </RPieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap gap-3 justify-center mt-2">
+              {statusDistribution.slice(0, 4).map((s, i) => (
+                <div key={s.name} className="flex items-center gap-1">
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: CHART_COLORS[i], display: 'inline-block' }} />
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{s.name} ({s.value})</span>
                 </div>
-                <div className="lg:col-span-1">
-                    <ChurnRadar />
-                </div>
+              ))}
             </div>
+          </ChartCard>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div>
-                    <h1 className="page-title">Network Overview</h1>
-                    <p className="page-sub">Real-time health and registration analytics</p>
-                </div>
-                <div style={{ position: 'relative', width: 300 }}>
-                    <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} size={16} />
-                    <input 
-                        type="text" 
-                        placeholder="Search schools by name or ID..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%',
-                            background: 'var(--bg2)',
-                            border: '1px solid var(--glass-border)',
-                            borderRadius: 10,
-                            padding: '10px 14px 10px 38px',
-                            color: 'var(--text)',
-                            fontSize: 13,
-                            outline: 'none'
-                        }}
-                    />
-                </div>
+          {/* System Health Mini */}
+          <div className="glass-card dense">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold flex items-center gap-2"><ShieldCheck size={14} color="var(--color-success)" />System Health</h3>
+              <StatusBadge status={healthStatus} label={healthStatus} />
             </div>
-
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                    <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+            <div className="flex flex-col gap-2">
+              {Object.entries(deps).slice(0, 4).map(([name, dep]) => (
+                <div key={name} className="flex items-center justify-between" style={{ padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <span className="text-xs text-secondary capitalize">{name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs mono text-tertiary">{dep.latency_ms}ms</span>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: dep.status === 'healthy' ? 'var(--color-success)' : 'var(--color-danger)' }} />
+                  </div>
                 </div>
-            ) : (
-                <>
-                    {/* Stats Grid */}
-                    <div className="stats-grid" style={{ marginBottom: 24 }}>
-                        {stats.map((s, i) => (
-                            <motion.div
-                                key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.07 }}
-                                className="stat-card"
-                            >
-                                <div style={{ color: s.color, marginBottom: 8 }}>{s.icon}</div>
-                                <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
-                                <div className="stat-label">{s.label}</div>
-                            </motion.div>
-                        ))}
-                    </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
-                    {/* Recently Registered with Search Filter */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                            <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>
-                                {searchQuery ? `Search Results (${filteredSchools.length})` : 'Recently Registered Schools'}
-                            </h3>
-                            {searchQuery && (
-                                <button 
-                                    onClick={() => setSearchQuery('')}
-                                    style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
-                                >
-                                    Clear Search
-                                </button>
-                            )}
-                        </div>
-                        {filteredSchools.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <Search size={32} style={{ color: 'var(--text3)', marginBottom: 12, opacity: 0.5 }} />
-                                <p style={{ color: 'var(--text3)', fontSize: 13 }}>No schools match "{searchQuery}"</p>
-                            </div>
-                        ) : (
-                            filteredSchools.slice(0, 10).map(s => (
-                                <div key={s.schoolId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--glass-border)' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            {s.schoolName}
-                                            {s.isBlocked && <Ban size={12} color="var(--red)" />}
-                                        </div>
-                                        <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'monospace', marginTop: 2 }}>{s.schoolId}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <span className={`badge badge-${s.status}`} style={{ fontSize: 10 }}>{s.status}</span>
-                                        <button 
-                                            className="icon-btn" 
-                                            onClick={() => window.location.href = `/schools/${s.schoolId}`}
-                                            style={{ padding: 6, borderRadius: 6, background: 'var(--bg2)', border: '1px solid var(--glass-border)', color: 'var(--text2)' }}
-                                        >
-                                            <ArrowRight size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </>
-            )}
-        </motion.div>
-    )
+      {/* Churn Radar & Recent Schools */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Churn Risk */}
+        <div className="glass-card danger-border">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <AlertTriangle size={14} color="var(--color-danger)" />Churn Risk Radar
+            </h3>
+            <span className="text-xs" style={{ color: 'var(--color-danger)' }}>{metrics.churnRisk} at risk</span>
+          </div>
+          {churnData?.atRiskSchools?.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {churnData.atRiskSchools.slice(0, 5).map((s, i) => (
+                <div key={i} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div>
+                    <div className="text-sm font-semibold">{s.schoolName}</div>
+                    <div className="text-xs text-tertiary mono">{s.schoolId}</div>
+                  </div>
+                  <StatusBadge status={s.status || 'inactive'} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-tertiary text-sm">No at-risk schools detected</div>
+          )}
+          <button className="btn btn-ghost btn-sm w-full mt-3" onClick={() => window.location.href = '/schools?filter=at-risk'}>
+            View All <ArrowRight size={12} />
+          </button>
+        </div>
+
+        {/* Recent Registrations */}
+        <div className="glass-card col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold">Recent Registrations</h3>
+            <button className="btn btn-ghost btn-xs" onClick={() => window.location.href = '/schools'}>View All <ArrowRight size={12} /></button>
+          </div>
+          {recentSchools.length === 0 ? (
+            <div className="text-center py-8 text-tertiary text-sm">No schools registered yet</div>
+          ) : (
+            <div className="flex flex-col gap-0">
+              {recentSchools.map(s => (
+                <div key={s.schoolId} className="flex items-center justify-between" style={{ padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div>
+                    <div className="text-sm font-semibold">{s.schoolName}</div>
+                    <div className="text-xs text-tertiary mono">{s.schoolId}</div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <StatusBadge status={s.status} />
+                    <span className="text-xs text-tertiary">{formatDate(s.createdAt, 'relative')}</span>
+                    <button className="btn btn-ghost btn-xs btn-icon" onClick={() => window.location.href = `/schools/${s.schoolId}`}>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
 }

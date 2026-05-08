@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/theme/app_theme.dart';
 
@@ -22,21 +21,14 @@ class IdentifierStepWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        const Text(
           "Welcome Back",
-          style: GoogleFonts.outfit(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 8),
         Text(
           "Enter your registered phone number to verify",
-          style: GoogleFonts.outfit(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
         ),
         const SizedBox(height: 32),
         TextField(
@@ -46,24 +38,15 @@ class IdentifierStepWidget extends StatelessWidget {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
           ],
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 18,
-            letterSpacing: 2,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 2, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
             labelText: "Phone Number",
-            labelStyle: GoogleFonts.outfit(color: AppColors.accentTeal),
+            labelStyle: const TextStyle(color: AppColors.accentTeal),
             hintText: "10-digit mobile number",
-            hintStyle: GoogleFonts.outfit(color: Colors.white.withOpacity(0.1)),
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.1)),
             prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.accentTeal),
             prefixText: "+91 ",
-            prefixStyle: GoogleFonts.outfit(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            prefixStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             filled: true,
             fillColor: Colors.white.withOpacity(0.05),
             border: OutlineInputBorder(
@@ -97,10 +80,7 @@ class IdentifierStepWidget extends StatelessWidget {
                   width: 24,
                   child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                 )
-              : Text(
-                  "Get OTP",
-                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+              : const Text("Get OTP", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
@@ -127,21 +107,14 @@ class OtpStepWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        const Text(
           "Verification",
-          style: GoogleFonts.outfit(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 8),
         Text(
           "Enter the 6-digit code sent to your phone",
-          style: GoogleFonts.outfit(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
         ),
         const SizedBox(height: 32),
         TextField(
@@ -151,15 +124,10 @@ class OtpStepWidget extends StatelessWidget {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(6),
           ],
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 18,
-            letterSpacing: 4,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 4, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             labelText: "OTP Code",
-            labelStyle: GoogleFonts.outfit(color: AppColors.accentTeal),
+            labelStyle: const TextStyle(color: AppColors.accentTeal),
             prefixIcon: Icon(Icons.shield_rounded, color: AppColors.accentTeal),
             filled: true,
             fillColor: Colors.white.withOpacity(0.05),
@@ -184,18 +152,12 @@ class OtpStepWidget extends StatelessWidget {
           ),
           child: isLoading
               ? const CircularProgressIndicator(color: Colors.black)
-              : Text(
-                  "Verify & Continue",
-                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+              : const Text("Verify & Continue", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 12),
         TextButton(
           onPressed: onChangeIdentifier,
-          child: Text(
-            "Change Phone Number",
-            style: GoogleFonts.outfit(color: AppColors.accentTeal),
-          ),
+          child: const Text("Change Phone Number", style: TextStyle(color: AppColors.accentTeal)),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0);
@@ -222,21 +184,14 @@ class ProfileSelectionWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        const Text(
           "Multiple Profiles",
-          style: GoogleFonts.outfit(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 8),
         Text(
           "Found ${profiles.length} profiles linked to this number",
-          style: GoogleFonts.outfit(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
         ),
         const SizedBox(height: 24),
         Flexible(
@@ -248,7 +203,7 @@ class ProfileSelectionWidget extends StatelessWidget {
               final profile = profiles[index] as Map<String, dynamic>;
               final name = profile['name'] ?? 'Student';
               final className = profile['className'] ?? 'N/A';
-              
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
@@ -262,16 +217,16 @@ class ProfileSelectionWidget extends StatelessWidget {
                     backgroundColor: AppColors.accentTeal.withOpacity(0.2),
                     child: Text(
                       name[0].toUpperCase(),
-                      style: GoogleFonts.outfit(color: AppColors.accentTeal, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: AppColors.accentTeal, fontWeight: FontWeight.bold),
                     ),
                   ),
                   title: Text(
                     name,
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     "Class: $className",
-                    style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
                   ),
                   trailing: Icon(Icons.chevron_right_rounded, color: AppColors.accentTeal),
                   onTap: isLoading ? null : () => onSelect(profile),
@@ -284,7 +239,7 @@ class ProfileSelectionWidget extends StatelessWidget {
         TextButton(
           onPressed: onBack,
           style: TextButton.styleFrom(foregroundColor: Colors.white54),
-          child: Text("Switch Account", style: GoogleFonts.outfit()),
+          child: const Text("Switch Account"),
         ),
       ],
     );

@@ -1,68 +1,4 @@
-import { useState, useContext, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Loader, CheckCircle, Copy, X, MapPin, School, BookOpen, ChevronRight, ChevronLeft, Shield, Upload } from 'lucide-react'
-import { ToastCtx } from '../App.jsx'
-import { uploadFile, deleteFileByUrl } from '../api'
-
-import { API_ROOT as API_BASE } from '../config.js'
-
-const Field = ({ label, field, type = 'text', required, placeholder, form, set, error, maxLength }) => (
-    <div className="input-group">
-        <label>{label}{required && <span style={{ color: 'var(--red)' }}> *</span>}</label>
-        <input
-            type={type} value={form[field]}
-            onChange={e => set(field, e.target.value)}
-            placeholder={placeholder}
-            required={required}
-            maxLength={maxLength}
-            className={error ? 'input-error' : ''}
-        />
-        {error && <span className="error-text">{error}</span>}
-    </div>
-)
-
-export default function SetupPage() {
-    const toast = useContext(ToastCtx)
-    const [step, setStep] = useState(1)
-    const [countries, setCountries] = useState([])
-    const [statesList, setStatesList] = useState([])
-    const [districts, setDistricts] = useState([])
-    const [form, setForm] = useState({
-        schoolName: '',
-        password: '',
-        principalName: '',
-        addressLine: '',
-        countryId: '',
-        stateId: '',
-        districtId: '',
-        pincode: '',
-        phone: '',
-        email: '',
-        affiliatedBoard: '',
-        medium: 'English',
-        classLevelStart: 'Pre-Nursery',
-        classLevelEnd: 'Class 12',
-        schoolType: 'Co-Ed',
-        schoolLogoUrl: '',
-    })
-
-    const [errors, setErrors] = useState({})
-    const [loading, setLoading] = useState(false)
-    const [logoLoading, setLogoLoading] = useState(false)
-    const [localLogoPreview, setLocalLogoPreview] = useState('')
-    const [pendingLogoFile, setPendingLogoFile] = useState(null)
-    const [success, setSuccess] = useState(null)
-
-    useEffect(() => {
-        fetch(`${API_BASE}/geo/countries`).then(res => res.json()).then(setCountries).catch(console.error)
-    }, [])
-
-    useEffect(() => {
-        if (form.countryId) {
-            setStatesList([])
-            setDistricts([])
-            fetch(`${API_BASE}/geo/states/${form.countryId}`).then(res => res.json()).then(setStatesList).catch(console.error)
-        }
+ 
     }, [form.countryId])
 
     useEffect(() => {
@@ -204,7 +140,7 @@ export default function SetupPage() {
     return (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="page">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <Plus size={22} style={{ color: 'var(--accent)' }} />
+                <Plus size={22} style={{ color: 'var(--color-primary)' }} />
                 <h1 className="page-title">Add New School</h1>
             </div>
             <p className="page-sub">Step {step} of 3 • {step === 1 ? 'School Details & Address' : step === 2 ? 'Security & Admin' : 'Academic Setup'}</p>
@@ -279,7 +215,7 @@ export default function SetupPage() {
                                                     disabled={logoLoading}
                                                 />
                                                 {logoLoading ? (
-                                                    <Loader size={20} className="spin" style={{ color: 'var(--accent)' }} />
+                                                    <Loader size={20} className="spin" style={{ color: 'var(--color-primary)' }} />
                                                 ) : (
                                                     <>
                                                         <Upload size={20} />
@@ -378,7 +314,7 @@ export default function SetupPage() {
                                         <select value={form.classLevelStart} onChange={e => set('classLevelStart', e.target.value)} style={{ flex: 1 }}>
                                             {classes.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
-                                        <span style={{ color: 'var(--text3)' }}>to</span>
+                                        <span style={{ color: 'var(--text-tertiary)' }}>to</span>
                                         <select value={form.classLevelEnd} onChange={e => set('classLevelEnd', e.target.value)} style={{ flex: 1 }}>
                                             {classes.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
@@ -415,8 +351,8 @@ export default function SetupPage() {
                         <motion.div initial={{ y: 30, scale: 0.95 }} animate={{ y: 0, scale: 1 }} className="modal" style={{ maxWidth: 450 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <CheckCircle size={24} style={{ color: '#10b981' }} />
-                                    <h3 style={{ margin: 0, color: '#10b981', fontSize: 18 }}>School Created</h3>
+                                    <CheckCircle size={24} style={{ color: 'var(--color-success)' }} />
+                                    <h3 style={{ margin: 0, color: 'var(--color-success)', fontSize: 18 }}>School Created</h3>
                                 </div>
                                 <X size={18} style={{ cursor: 'pointer' }} onClick={() => setSuccess(null)} />
                             </div>
@@ -438,22 +374,22 @@ export default function SetupPage() {
 
             <style>{`
                 .stepper-box { display: flex; justify-content: space-between; margin: 24px 0 32px; padding: 0 40px; position: relative; }
-                .step-item { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; z-index: 1; color: var(--text3); }
-                .step-item.active { color: var(--accent); }
+                .step-item { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; z-index: 1; color: var(--text-tertiary); }
+                .step-item.active { color: var(--color-primary); }
                 .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justifyContent: center; border: 2px solid transparent; transition: 0.3s; }
-                .active .step-num { background: var(--accent); color: white; border-color: rgba(255,255,255,0.2); box-shadow: 0 0 15px rgba(99,102,241,0.3); }
+                .active .step-num { background: var(--color-primary); color: white; border-color: rgba(255,255,255,0.2); box-shadow: 0 0 15px rgba(99,102,241,0.3); }
                 .step-item span { font-size: 12px; font-weight: 600; }
                 .step-line { position: absolute; top: 16px; left: 100%; width: calc(200% - 32px); height: 2px; background: var(--bg3); z-index: -1; }
-                .active .step-line { background: var(--accent); opacity: 0.3; }
-                .section-title { display: flex; alignItems: center; gap: 10; margin: 0 0 20px; font-size: 14px; color: var(--accent); }
+                .active .step-line { background: var(--color-primary); opacity: 0.3; }
+                .section-title { display: flex; alignItems: center; gap: 10; margin: 0 0 20px; font-size: 14px; color: var(--color-primary); }
                 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 .setup-footer { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bg3); }
-                .phone-input-wrap { display: flex; border: 1px solid var(--bg3); border-radius: 8px; overflow: hidden; background: var(--bg2); }
-                .country-code { background: var(--bg3); padding: 0 12px; display: flex; align-items: center; font-size: 13px; color: var(--text2); font-weight: 600; border-right: 1px solid var(--bg3); }
+                .phone-input-wrap { display: flex; border: 1px solid var(--bg3); border-radius: 8px; overflow: hidden; background: var(--surface-layer2); }
+                .country-code { background: var(--bg3); padding: 0 12px; display: flex; align-items: center; font-size: 13px; color: var(--text-secondary); font-weight: 600; border-right: 1px solid var(--bg3); }
                 .phone-input-wrap input { border: none !important; }
-                .input-error { border-color: var(--red) !important; }
-                .error-text { font-size: 11px; color: var(--red); margin-top: 4px; }
-                .success-box { background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; }
+                .input-error { border-color: var(--color-danger) !important; }
+                .error-text { font-size: 11px; color: var(--color-danger); margin-top: 4px; }
+                .success-box { background: color-mix(in srgb, black 20%, transparent); padding: 16px; border-radius: 12px; }
                 .success-box .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
                 .spin { animation: spin 1s linear infinite; }
                 @keyframes spin { to { transform: rotate(360deg); } }
@@ -462,11 +398,11 @@ export default function SetupPage() {
                 .logo-preview { position: relative; width: 80px; height: 80px; border-radius: 12px; overflow: hidden; border: 2px solid var(--bg3); }
                 .logo-preview img { width: 100%; height: 100%; object-fit: cover; }
                 .remove-logo { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.5); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(4px); }
-                .logo-placeholder { width: 80px; height: 80px; border-radius: 12px; border: 2px dashed var(--bg3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: 0.3s; color: var(--text3); }
-                .logo-placeholder:hover { border-color: var(--accent); color: var(--accent); background: rgba(99,102,241,0.05); }
+                .logo-placeholder { width: 80px; height: 80px; border-radius: 12px; border: 2px dashed var(--bg3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: 0.3s; color: var(--text-tertiary); }
+                .logo-placeholder:hover { border-color: var(--color-primary); color: var(--color-primary); background: rgba(99,102,241,0.05); }
                 .logo-placeholder span { font-size: 10px; font-weight: 600; }
                 .logo-placeholder.loading { cursor: default; border-style: solid; border-color: var(--bg3); }
-                .logo-loading-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent); animation: loading-shimmer 2s infinite linear; border-radius: 0 0 12px 12px; }
+                .logo-loading-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--color-primary); animation: loading-shimmer 2s infinite linear; border-radius: 0 0 12px 12px; }
                 @keyframes loading-shimmer { 0% { width: 0%; opacity: 0.5; } 50% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
             `}</style>
         </motion.div>

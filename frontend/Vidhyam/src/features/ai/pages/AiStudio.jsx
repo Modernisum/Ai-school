@@ -80,69 +80,65 @@ export default function AiStudio() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] p-4 lg:p-6 gap-6 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-100px)] p-1 gap-1 overflow-hidden">
       {/* Header Info */}
       <motion.div 
-        initial={{ opacity: 0, y: -20 }} 
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4 flex items-center justify-between"
+        initial={{ opacity: 0, scale: 0.98 }} 
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-card p-2 flex items-center justify-between border-white/5 bg-white/[0.02]"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Sparkles size={20} className="text-white" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <Sparkles size={14} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">AI Studio <span className="text-[10px] bg-indigo-500 px-2 py-0.5 rounded-full uppercase ml-2">Beta</span></h1>
-            <p className="text-xs text-slate-400">NotebookLM-powered Academic Assistant</p>
+            <h1 className="text-lg font-black text-white tracking-widest uppercase italic leading-none">COGNITIVE_ENGINE</h1>
+            <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">ACADEMIC_INTELLIGENCE • V2.0_STABLE</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="icon-btn bg-white/5 hover:bg-white/10 text-slate-300"><Info size={18} /></button>
-          <button className="icon-btn bg-rose-500/10 hover:bg-rose-500/20 text-rose-400" onClick={() => setChat([])}><Trash2 size={18} /></button>
+        <div className="flex gap-1">
+          <StandardButton variant="ghost" size="xs" icon={Info} />
+          <StandardButton variant="ghost" size="xs" icon={Trash2} onClick={() => setChat([])} className="text-rose-500" />
         </div>
       </motion.div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-1 overflow-hidden">
         {/* Left Panel: Research Context */}
         <motion.div 
-          initial={{ opacity: 0, x: -20 }} 
+          initial={{ opacity: 0, x: -10 }} 
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="w-full lg:w-72 flex flex-col gap-4"
+          className="w-full lg:w-48 flex flex-col gap-1"
         >
-          <div className="glass-card p-5 flex-1 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-colors" />
-            <p className="section-label mb-4">Source Documents</p>
+          <div className="glass-card p-3 flex-1 relative overflow-hidden group border-white/5 bg-white/[0.02]">
+            <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] mb-3">SOURCE_NODES</p>
             
-            <div className="space-y-3 mb-6">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:bg-white/5 hover:border-indigo-500/30 transition-all">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            <div className="space-y-1 mb-4">
+              <label className="flex flex-col items-center justify-center w-full h-20 border border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/5 hover:border-primary/30 transition-all">
+                <div className="flex flex-col items-center justify-center">
                   {uploading ? (
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      <Upload className="w-8 h-8 mb-2 text-slate-500" />
-                      <p className="text-xs text-slate-400 font-medium tracking-tight">Drop school PDF or Image</p>
+                      <Upload className="w-4 h-4 mb-1 text-slate-700" />
+                      <p className="text-[8px] text-slate-700 font-black uppercase tracking-widest text-center">INDEX_SOURCE</p>
                     </>
                   )}
                 </div>
                 <input type="file" className="hidden" accept=".pdf,image/*" onChange={handleFileUpload} disabled={uploading} />
               </label>
             </div>
-
-            <p className="section-label mb-3">Quick Actions</p>
-            <div className="grid grid-cols-1 gap-2">
-              <button className="quick-action-btn flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/20 text-slate-300 text-xs transition-all">
-                <Brain size={16} className="text-indigo-400" />
-                Generate Quiz
+ 
+            <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.2em] mb-2">QUICK_OPS</p>
+            <div className="grid grid-cols-1 gap-1">
+              <button className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5 hover:border-primary/20 text-slate-400 text-[10px] font-black uppercase italic tracking-widest transition-all">
+                <Brain size={12} className="text-primary" /> GEN_QUIZ
               </button>
-              <button className="quick-action-btn flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-violet-500/10 border border-white/5 hover:border-violet-500/20 text-slate-300 text-xs transition-all">
-                <Download size={16} className="text-violet-400" />
-                Report as PDF
+              <button className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5 hover:border-blue-500/20 text-slate-400 text-[10px] font-black uppercase italic tracking-widest transition-all">
+                <Download size={12} className="text-violet-400" /> EXPORT_PDF
               </button>
-              <button className="quick-action-btn flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-emerald-500/10 border border-white/5 hover:border-emerald-500/20 text-slate-300 text-xs transition-all">
-                <Zap size={16} className="text-emerald-400" />
-                Extract Facts
+              <button className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5 hover:border-emerald-500/20 text-slate-400 text-[10px] font-black uppercase italic tracking-widest transition-all">
+                <Zap size={12} className="text-emerald-400" /> SYNC_FACTS
               </button>
             </div>
           </div>
@@ -150,40 +146,37 @@ export default function AiStudio() {
 
         {/* Center: Chat Window */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+          initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex-1 glass-card flex flex-col overflow-hidden relative"
+          className="flex-1 glass-card flex flex-col overflow-hidden relative border-white/5 bg-white/[0.01]"
         >
-          {/* Chat Background Decor */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(99,102,241,0.05),transparent)] pointer-events-none" />
-          
           <div 
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 custom-scrollbar scroll-smooth relative"
+            className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-4 custom-scrollbar scroll-smooth relative"
           >
             {chat.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto opacity-50">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6">
-                  <MessageSquare size={32} className="text-slate-400" />
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto opacity-30">
+                <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center mb-4">
+                  <MessageSquare size={24} className="text-slate-700" />
                 </div>
-                <h2 className="text-lg font-bold text-white mb-2">How can I help you today?</h2>
-                <p className="text-sm text-slate-400">Ask about student performance, fees, or search through uploaded school documents.</p>
+                <h2 className="text-micro font-black text-white uppercase italic tracking-[0.2em] mb-1">WAITING_FOR_INPUT</h2>
+                <p className="text-[8px] text-slate-700 font-black uppercase tracking-widest italic">QUERY_ACADEMIC_DATA_MATRIX</p>
               </div>
             ) : (
               chat.map((msg, i) => (
                 <motion.div 
-                  initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+                  initial={{ opacity: 0, x: msg.role === 'user' ? 10 : -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   key={i} 
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${msg.role === 'system' ? 'justify-center' : ''}`}
                 >
                   {msg.role === 'system' ? (
-                     <span className="text-[10px] uppercase tracking-widest text-slate-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">{msg.text}</span>
+                     <span className="text-[8px] uppercase tracking-[0.2em] text-slate-700 bg-white/5 px-2 py-0.5 rounded border border-white/5 font-black italic">{msg.text}</span>
                   ) : (
-                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-lg ${
+                    <div className={`max-w-[90%] px-3 py-2 rounded-lg text-micro leading-relaxed shadow-lg font-black uppercase italic tracking-widest ${
                       msg.role === 'user' 
-                        ? 'bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white rounded-tr-none' 
+                        ? 'bg-primary text-white border border-primary/20 rounded-tr-none' 
                         : 'bg-white/5 text-slate-100 border border-white/5 rounded-tl-none backdrop-blur-sm'
                     }`}>
                       {msg.text}
@@ -194,11 +187,11 @@ export default function AiStudio() {
             )}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white/5 px-4 py-3 rounded-2xl rounded-tl-none border border-white/5">
-                  <div className="flex gap-1.5 size-1.5">
-                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
+                <div className="bg-white/5 px-3 py-2 rounded-lg rounded-tl-none border border-white/5">
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce" />
                   </div>
                 </div>
               </div>
@@ -206,24 +199,23 @@ export default function AiStudio() {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-slate-900/40 border-t border-white/[0.03]">
+          <div className="p-2 border-t border-white/[0.03] bg-white/[0.01]">
             <form onSubmit={handleSend} className="relative group">
               <input 
                 type="text" 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask me anything about your school..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-24 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all group-hover:border-white/20"
+                placeholder="PROMPT_NEURAL_QUERY..."
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg h-10 pl-4 pr-24 text-micro text-white placeholder-slate-700 focus:outline-none focus:border-primary/50 transition-all font-black uppercase italic tracking-widest"
               />
-              <div className="absolute right-2 top-2 flex gap-1">
-                <button type="button" className="p-2 text-slate-500 hover:text-indigo-400 transition-colors"><Mic size={18} /></button>
-                <button 
+              <div className="absolute right-1 top-1 flex gap-1 items-center">
+                <button type="button" className="p-1 px-2 text-slate-700 hover:text-primary transition-colors"><Mic size={14} /></button>
+                <StandardButton 
                   type="submit" 
                   disabled={!query.trim() || loading}
-                  className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:hover:bg-indigo-500 p-2.5 rounded-xl text-white transition-all shadow-lg shadow-indigo-500/20"
-                >
-                  <Send size={18} />
-                </button>
+                  icon={Send}
+                  size="xs"
+                />
               </div>
             </form>
           </div>

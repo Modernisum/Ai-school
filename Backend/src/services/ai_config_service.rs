@@ -49,7 +49,7 @@ impl SchoolAiConfigService {
         .bind(school_id)
         .fetch_all(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         let mut configs = Vec::new();
         for row in rows {
@@ -79,7 +79,7 @@ impl SchoolAiConfigService {
         .bind(config.provider_id)
         .fetch_one(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         if !provider_exists {
             return Err(AppError::NotFound(format!(
@@ -110,7 +110,7 @@ impl SchoolAiConfigService {
         .bind(config.features_enabled.unwrap_or_else(|| Value::Object(Default::default())))
         .fetch_one(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         Ok(SchoolAiConfig {
             school_id: row.get("school_id"),
@@ -131,7 +131,7 @@ impl SchoolAiConfigService {
         .bind(provider_id)
         .execute(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         Ok(result.rows_affected() > 0)
     }
@@ -149,7 +149,7 @@ impl SchoolAiConfigService {
         .bind(school_id)
         .fetch_all(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         let mut providers = Vec::new();
         for row in rows {
@@ -182,7 +182,7 @@ impl SchoolAiConfigService {
         .bind(school_id)
         .fetch_optional(&self.db_client.pool)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
 
         if let Some(row) = row {
             Ok(Some(json!({
@@ -203,7 +203,7 @@ impl SchoolAiConfigService {
             )
             .fetch_optional(&self.db_client.pool)
             .await
-            .map_err(|e| AppError::Database(e))?;
+            .map_err(AppError::Database)?;
 
             if let Some(row) = row {
                 Ok(Some(json!({

@@ -1,0 +1,415 @@
+{
+  "info": {
+    "name": "Student Management APIs",
+    "description": "Converted from 04-students.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /api/students/:schoolId - Create Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_id\": \"STU001\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"date_of_birth\": \"2010-05-15\",\n  \"gender\": \"male\",\n  \"class_name\": \"10th\",\n  \"section\": \"A\",\n  \"father_name\": \"Robert Doe\",\n  \"mother_name\": \"Jane Doe\",\n  \"contact_number\": \"+919876543210\",\n  \"address\": \"123 Main Street, Delhi\",\n  \"aadhaar_number\": \"123456789012\",\n  \"enrollment_date\": \"2024-01-15\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/students/:schoolId/validate - Validate Student Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/validate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "validate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_id\": \"STU001\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"date_of_birth\": \"2010-05-15\",\n  \"gender\": \"male\",\n  \"class_name\": \"10th\",\n  \"section\": \"A\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/students/:schoolId/bulk - Bulk Import Students",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/bulk",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "bulk"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"students\": [\n    {\n      \"student_id\": \"STU001\",\n      \"first_name\": \"John\",\n      \"last_name\": \"Doe\",\n      \"date_of_birth\": \"2010-05-15\",\n      \"gender\": \"male\",\n      \"class_name\": \"10th\",\n      \"section\": \"A\"\n    },\n    {\n      \"student_id\": \"STU002\",\n      \"first_name\": \"Jane\",\n      \"last_name\": \"Smith\",\n      \"date_of_birth\": \"2010-08-20\",\n      \"gender\": \"female\",\n      \"class_name\": \"10th\",\n      \"section\": \"B\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/students/:schoolId - List All Students",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/students/:schoolId/paginated - List Students Paginated",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/paginated?page=1&limit=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "paginated?page=1&limit=20"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": ""
+            },
+            {
+              "key": "limit",
+              "value": "20",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/students/:schoolId/class/:className - List Students by Class",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/class/10th",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "class",
+            "10th"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/students/:schoolId/studentIds - List Student IDs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/studentIds",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "studentIds"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/students/:schoolId/:studentId - Get Student Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/{{studentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "{{studentId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/students/:schoolId/:studentId - Update Student",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/{{studentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "{{studentId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"John Updated\",\n  \"last_name\": \"Doe Updated\",\n  \"class_name\": \"11th\",\n  \"section\": \"B\",\n  \"contact_number\": \"+919876543211\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/students/:schoolId/:studentId - Delete Student",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/students/{{schoolId}}/{{studentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "students",
+            "{{schoolId}}",
+            "{{studentId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

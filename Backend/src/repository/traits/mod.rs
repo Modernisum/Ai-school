@@ -15,7 +15,7 @@ pub mod coupon;
 pub mod payroll;
 pub mod transaction;
 pub mod resource;
-pub mod ocr;
+
 pub mod auxiliary;
 pub mod responsibility;
 pub mod task;
@@ -37,7 +37,7 @@ pub use coupon::CouponRepository;
 pub use payroll::PayrollRepository;
 pub use transaction::TransactionRepository;
 pub use resource::ResourceRepository;
-pub use ocr::OCRRepository;
+
 pub use auxiliary::{AwardRepository, ComplainRepository, ReminderRepository, DocumentBoxRepository, SchoolRepository};
 pub use responsibility::ResponsibilityRepository;
 pub use task::TaskRepository;

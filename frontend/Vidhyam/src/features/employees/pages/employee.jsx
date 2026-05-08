@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
     Users, Plus, Search, Eye, Edit3, Trash2, Loader,
     CheckCircle, AlertTriangle, X, User, GraduationCap,
-    Star, Building, RefreshCw, Briefcase, Phone, Mail, BookOpen, UploadCloud
+    Star, Building, RefreshCw, Briefcase, Phone, Mail, BookOpen, UploadCloud, Activity
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BulkImportModal from '../../../components/ui/BulkImportModal';
-import AddEmployeePage from '../components/addemployee';
+import AddEmployeePage from '../components/AddEmployeePage';
+import StandardButton from '../../../components/ui/StandardButton';
+import DropdownWidget from '../../../components/ui/DropdownWidget';
+import ChartWidget from '../../../components/ui/ChartWidget';
+import KPIWidget from '../../../components/ui/KPIWidget';
+import SkeletonLoader from '../../../components/ui/SkeletonLoader';
+import GlassCard from '../../../components/ui/GlassCard';
 import { useGetEmployeesQuery, useDeleteEmployeeMutation, useBulkImportEmployeesMutation } from '../api/employeeApi';
+import { useGetAdvancedAttendanceQuery } from '../../academics/api/academicApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => localStorage.getItem('schoolId') || "";
@@ -34,6 +41,49 @@ const getTypeStyle = (t) => {
   return { backgroundColor: backgrounds[t] || backgrounds.default };
 };
 
+// ─── Profile Attendance Pulse ───────────────────────────────────────────────
+function AttendancePulse({ userId, schoolId }) {
+    const { data: attData, isLoading } = useGetAdvancedAttendanceQuery({
+        school_id: schoolId,
+        user_ids: userId,
+        period: 'month',
+        fields: 'date,present'
+    }, { skip: !userId || !schoolId });
+
+    if (isLoading) return <div className="h-32 bg-white/5 rounded-xl animate-pulse" />;
+
+    const trend = (attData?.records || []).map(r => ({
+        label: r.date.split('-').slice(2).join('/'),
+        value: r.present ? 1 : 0
+    }));
+
+    const attendancePct = attData?.summary?.attendance_percentage || 0;
+
+    return (
+        <div className="space-y-3 mt-4 pt-4 border-t border-white/5">
+            <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                    <Activity size={12} className="text-primary" /> Attendance History
+                </h4>
+                <span className={`text-[10px] font-black uppercase ${attendancePct >= 90 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    Rate: {attendancePct.toFixed(1)}%
+                </span>
+            </div>
+            
+            <ChartWidget
+                type="line"
+                data={trend}
+                categories={trend.map(t => t.label)}
+                title=""
+                className="!p-0 h-28 border-none bg-transparent"
+                options={{ height: 90 }}
+                showLegend={false}
+                showGrid={false}
+            />
+        </div>
+    );
+}
+
 export default function EmployeeManagement() {
     const location = useLocation();
     const schoolId = getSchoolId();
@@ -49,18 +99,10 @@ export default function EmployeeManagement() {
     const [filterType, setFilterType] = useState('All');
     const [toast, setToast] = useState(null);
     const [viewEmp, setViewEmp] = useState(null);
-    const [showAddForm, setShowAddForm] = useState(new URLSearchParams(location.search).get('add') === '1');
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
     // Sync showAddForm with URL search params
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        if (params.get('add') === '1') {
-            setShowAddForm(true);
-        } else if (params.get('add') === null && showAddForm && !params.toString().includes('add=')) {
-            setShowAddForm(false);
-        }
-    }, [location.search]);
+    const navigate = useNavigate();
 
     const showToast = (type, msg) => {
         setToast({ type, msg });
@@ -91,68 +133,81 @@ export default function EmployeeManagement() {
 
     const getTypeClass = (t) => typeColor[t] || typeColor.default;
 
-    // Show add form page
-    if (showAddForm) {
-        return (
-            <AddEmployeePage
-                onBack={() => setShowAddForm(false)}
-                onSuccess={() => { setShowAddForm(false); fetchEmployees(); showToast('success', 'Employee registered!'); }}
-            />
-        );
-    }
+
 
     return (
-        <div className="min-h-full">
-            <div className="flex items-center justify-between px-6 py-3">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-md">
-                        <Users size={16} style={{ color: 'var(--primary-color)' }} />
+        <div className="max-w-full p-1 space-y-1 pb-10">
+            <header className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                        <Users size={14} className="text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white tracking-tight leading-tight">Employees</h1>
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{employees.length} staff members</p>
+                        <h1 className="text-xl font-black text-white tracking-widest uppercase italic leading-none">PERSONNEL_CORE</h1>
+                        <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">{employees.length}_DATA_NODES</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={fetchEmployees} className="btn-secondary p-1.5"><RefreshCw size={13} /></button>
-                    <button onClick={() => setBulkModalOpen(true)} className="btn-secondary py-1.5 px-3 text-[11px] whitespace-nowrap hidden sm:flex">
-                        <UploadCloud size={13} /> Import
-                    </button>
-                    <button onClick={() => setShowAddForm(true)} className="btn-primary py-1.5 px-3 text-[11px]"><Plus size={13} /> Add Employee</button>
+                <div className="flex gap-1">
+                    <StandardButton
+                        variant="ghost"
+                        size="xs"
+                        onClick={fetchEmployees}
+                        icon={RefreshCw}
+                    />
+                    <StandardButton
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => setBulkModalOpen(true)}
+                        icon={UploadCloud}
+                        label="IMPORT"
+                        className="hidden sm:flex"
+                    />
+                    <StandardButton
+                        variant="primary"
+                        size="xs"
+                        onClick={() => navigate('/dashboard/employee/add')}
+                        icon={Plus}
+                        label="ADD_MEMBER"
+                    />
                 </div>
-            </div>
+            </header>
 
-            <div className="p-6 space-y-5">
-                {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {types.filter(t => t !== 'All').map(t => {
-                        const count = employees.filter(e => (e.employeeType || e.type) === t).length;
-                        return (
-                            <div key={t} className="glass-card p-4">
-                                <p className="text-lg font-bold text-white">{count}</p>
-                                <p className="text-slate-500 text-xs">{t}</p>
-                            </div>
-                        );
-                    })}
-                </div>
-
+            <div className="space-y-2">
+                <KPIWidget 
+                    columns={4} 
+                    gap="gap-1" 
+                    kpis={types.filter(t => t !== 'All').map(t => ({
+                        label: t.toUpperCase().replace(' ', '_'),
+                        value: employees.filter(e => (e.employeeType || e.type) === t).length,
+                        sub: "STAFF_UNITS",
+                        icon: t === 'Teacher' ? GraduationCap : Briefcase,
+                        color: t === 'Teacher' ? "primary" : "accent"
+                    }))}
+                />
+ 
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="relative flex-1">
-                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input className="input-standard pl-10" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
+                <div className="flex flex-col sm:flex-row gap-1 items-center">
+                    <div className="relative flex-1 group w-full">
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-primary transition-colors" />
+                        <input className="w-full bg-white/[0.03] border border-white/10 rounded-lg h-8 pl-9 pr-3 text-micro text-white focus:outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-800 font-black uppercase tracking-widest" 
+                            placeholder="SCAN_STAFF_DATABASE..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
-                    <div className="sm:w-48">
-                        <select className="input-standard bg-slate-900" value={filterType} onChange={e => setFilterType(e.target.value)}>
-                            {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
-                        </select>
+                    <div className="w-full sm:w-40">
+                        <DropdownWidget
+                            dense
+                            options={types.map(t => ({
+                                label: t === 'All' ? 'ALL_TYPES' : t.toUpperCase().replace(' ', '_'),
+                                value: t
+                            }))}
+                            value={filterType}
+                            onChange={setFilterType}
+                        />
                     </div>
                 </div>
 
-                {/* Grid */}
                 {empLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <Loader size={28} className="animate-spin text-primary" />
+                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <SkeletonLoader key={i} variant="card" className="h-24" />)}
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16">
@@ -160,41 +215,51 @@ export default function EmployeeManagement() {
                         <p className="text-slate-500">No employees found</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
                         {filtered.map((emp, i) => {
                             const id = emp.employeeId || emp.employee_id || emp.id;
                             const name = emp.employeeName || emp.employee_name || emp.name || 'Unknown';
                             const type = emp.employeeType || emp.employee_type || emp.type || 'Staff';
                             return (
-                                <motion.div
+                                <GlassCard
                                     key={id || i}
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.04 }}
-                                    className="glass-card p-5 hover-card"
+                                    className="p-2 bg-white/[0.02] border-white/5 hover:border-primary/30 group"
+                                    hover
+                                    delay={i * 0.02}
+                                    dense
                                 >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                                                <span className="text-white font-bold text-base">{name[0]}</span>
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <div className="w-6 h-6 rounded bg-slate-900 flex items-center justify-center border border-white/5 flex-shrink-0">
+                                                <span className="text-white font-black text-[10px] uppercase italic">{name[0]}</span>
                                             </div>
-                                            <div>
-                                                <p className="font-semibold text-white text-sm">{name}</p>
-                                                <p className="font-mono text-xs text-slate-500">{id}</p>
+                                            <div className="min-w-0">
+                                                <p className="font-black text-white text-[10px] uppercase italic truncate leading-none group-hover:text-primary transition-colors">{name}</p>
+                                                <p className="text-[8px] font-black text-slate-700 font-mono tracking-tighter leading-none mt-1">{id}</p>
                                             </div>
                                         </div>
-                                        <span className={`badge ${getTypeClass(type)}`}>{type}</span>
                                     </div>
-                                    {emp.subject && <p className="text-xs text-slate-500 mb-1"><BookOpen size={11} className="inline mr-1" />{emp.subject}</p>}
-                                    <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                                        <button onClick={() => setViewEmp(emp)} className="flex-1 btn-secondary py-1.5 text-xs justify-center">
-                                            <Eye size={13} /> View
-                                        </button>
-                                        <button onClick={() => deleteEmployee(emp)} className="btn-danger py-1.5 text-xs">
-                                            <Trash2 size={13} />
-                                        </button>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="px-1 py-0.5 rounded bg-white/5 border border-white/5 text-[8px] font-black uppercase tracking-widest text-slate-700">{type}</span>
                                     </div>
-                                </motion.div>
+                                    <div className="flex items-center gap-1 pt-2 border-t border-white/5">
+                                        <StandardButton 
+                                            variant="ghost" 
+                                            size="xs" 
+                                            onClick={() => setViewEmp(emp)} 
+                                            icon={Eye} 
+                                            label="VIEW" 
+                                            className="flex-1"
+                                        />
+                                        <StandardButton
+                                            variant="ghost"
+                                            size="xs"
+                                            onClick={() => deleteEmployee(emp)}
+                                            icon={Trash2}
+                                            className="hover:text-rose-500"
+                                        />
+                                    </div>
+                                </GlassCard>
                             );
                         })}
                     </div>
@@ -246,6 +311,7 @@ export default function EmployeeManagement() {
                                     </div>
                                 ) : null)}
                             </div>
+                            <AttendancePulse userId={viewEmp.employeeId || viewEmp.employee_id} schoolId={schoolId} />
                         </motion.div>
                     </>
                 )}
@@ -266,7 +332,8 @@ export default function EmployeeManagement() {
                 )}
             </AnimatePresence>
 
-            {/* Modals */}
+
+
             <BulkImportModal
                 isOpen={bulkModalOpen}
                 onClose={() => setBulkModalOpen(false)}

@@ -99,7 +99,8 @@ impl AuthService for PostgresAuthService {
         }
 
         // 2. Try JWT verification (for student/employee apps)
-        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        let secret = std::env::var("JWT_SECRET")
+            .expect("JWT_SECRET environment variable must be set");
         match decode::<Claims>(
             token,
             &DecodingKey::from_secret(secret.as_ref()),
@@ -119,7 +120,8 @@ impl AuthService for PostgresAuthService {
 
     async fn logout(&self, token: &str) -> AppResult<()> {
         // Log logout for JWT if possible, or just revoke legacy token
-        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        let secret = std::env::var("JWT_SECRET")
+            .expect("JWT_SECRET environment variable must be set");
         if let Ok(token_data) = decode::<Claims>(
             token,
             &DecodingKey::from_secret(secret.as_ref()),
@@ -263,7 +265,8 @@ impl AuthService for PostgresAuthService {
             .max()
             .unwrap_or(24); // Default to 24 hours
 
-        let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
+        let secret = std::env::var("JWT_SECRET")
+            .expect("JWT_SECRET environment variable must be set");
         let expiration = chrono::Utc::now()
             .checked_add_signed(chrono::Duration::hours(max_hours))
             .expect("valid timestamp")

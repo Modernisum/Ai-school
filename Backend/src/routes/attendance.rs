@@ -203,47 +203,33 @@ pub async fn get_class_attendance(
 
 // ==================== ATTENDANCE REPORT ENDPOINTS ====================
 
-#[derive(Deserialize)]
-pub struct DailySummaryQuery {
-    pub date: String,
+#[derive(Deserialize, Debug)]
+pub struct AttendanceQuery {
+    pub date: Option<String>,
+    pub period: Option<String>, // day, week, month, year
+    pub incoming_after: Option<String>,
+    pub outgoing_before: Option<String>,
+    pub user_type: Option<String>,
+    pub class_name: Option<String>,
+    pub space_name: Option<String>,
+    pub user_ids: Option<String>, // comma separated
+    pub fields: Option<String>,   // comma separated fields to return (e.g., "user_id,name,image_url")
 }
 
-// GET /:schoolId/reports/daily-summary
-pub async fn get_daily_summary(
+// GET /api/operations/attendance/:schoolId/
+pub async fn get_school_attendance(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
-    Query(q): Query<DailySummaryQuery>,
+    Query(q): Query<AttendanceQuery>,
 ) -> AppResult<impl IntoResponse> {
-    let summary = state.services.attendance_analytics.get_daily_summary(
+    let result = state.services.attendance_analytics.get_advanced_attendance_stats(
         &school_id,
-        &q.date,
+        q,
     ).await?;
     
     Ok(Json(json!({
         "success": true,
-        "data": summary
-    })))
-}
-
-#[derive(Deserialize)]
-pub struct MonthlyStatsQuery {
-    pub month: String, // Format: "YYYY-MM"
-}
-
-// GET /:schoolId/reports/monthly-stats
-pub async fn get_monthly_stats(
-    State(state): State<AppState>,
-    Path(school_id): Path<String>,
-    Query(q): Query<MonthlyStatsQuery>,
-) -> AppResult<impl IntoResponse> {
-    let stats = state.services.attendance_analytics.get_monthly_stats(
-        &school_id,
-        &q.month,
-    ).await?;
-    
-    Ok(Json(json!({
-        "success": true,
-        "data": stats
+        "data": result
     })))
 }
 
@@ -472,7 +458,7 @@ pub async fn mobile_mark_attendance(
         "date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
         "in_time": chrono::Utc::now().format("%H:%M").to_string(),
         "status": "present",
-        "remarks": "Mobile attendance via QR code",
+        "reason": "Mobile attendance via QR code",
         "location": {
             "latitude": payload.latitude,
             "longitude": payload.longitude,
@@ -522,7 +508,7 @@ pub struct OfflineAttendanceRecord {
     pub status: String,
     pub in_time: Option<String>,
     pub out_time: Option<String>,
-    pub remarks: Option<String>,
+    pub reason: Option<String>,
     pub location: Option<serde_json::Value>,
     pub device_id: Option<String>,
     pub sync_timestamp: Option<i64>,
@@ -568,8 +554,8 @@ pub async fn offline_sync_attendance(
         if let Some(out_time) = record.out_time {
             attendance_payload["out_time"] = serde_json::Value::String(out_time);
         }
-        if let Some(remarks) = record.remarks {
-            attendance_payload["remarks"] = serde_json::Value::String(remarks);
+        if let Some(reason) = record.reason {
+            attendance_payload["reason"] = serde_json::Value::String(reason);
         }
         if let Some(location) = record.location {
             attendance_payload["location"] = location;

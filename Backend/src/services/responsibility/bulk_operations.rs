@@ -51,10 +51,10 @@ impl ResponsibilityBulkOperations {
                  SET space_ids = $1, updated_at = NOW()
                  WHERE school_id = $2 AND responsibility_id = $3 AND employee_id = $4"
             )
-            .bind(&space_ids)
+            .bind(space_ids)
             .bind(school_id)
             .bind(responsibility_id)
-            .bind(&employee_id)
+            .bind(employee_id)
             .execute(&mut *conn)
             .await?;
 
@@ -125,9 +125,9 @@ impl ResponsibilityBulkOperations {
                  VALUES ($1, $2, $3, $4, NOW(), NOW())"
             )
             .bind(school_id)
-            .bind(&employee_id)
-            .bind(&responsibility_id)
-            .bind(&space_ids)
+            .bind(employee_id)
+            .bind(responsibility_id)
+            .bind(space_ids)
             .execute(&mut *conn)
             .await?;
 
@@ -167,8 +167,8 @@ impl ResponsibilityBulkOperations {
                  WHERE school_id = $1 AND employee_id = $2 AND responsibility_id = $3"
             )
             .bind(school_id)
-            .bind(&employee_id)
-            .bind(&responsibility_id)
+            .bind(employee_id)
+            .bind(responsibility_id)
             .execute(&mut *conn)
             .await?;
 

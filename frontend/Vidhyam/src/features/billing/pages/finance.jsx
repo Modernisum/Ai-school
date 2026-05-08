@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     CreditCard, DollarSign, Users, Search, Filter, CheckCircle, AlertTriangle, Loader,
     User, BookOpen, PieChart, Percent, Receipt, X, RefreshCw, Trash2, Zap, Calendar,
-    Shield, Target, School, IndianRupee, FileText, Box, Plus
+    Shield, Target, School, IndianRupee, FileText, Box, Plus, TrendingUp
 } from 'lucide-react';
 import { getClassesByLevel } from '../../../utils/academicUtils';
 import { useSelector } from 'react-redux';
@@ -320,267 +320,171 @@ export default function FinanceManagement() {
     const scopeColor = (s) => ({ school: 'text-primary bg-primary/15 border-primary/25', class: 'text-secondary bg-secondary/15 border-secondary/25', student: 'text-accent bg-accent/15 border-accent/25' }[s] || '');
 
     return (
-        <div className="min-h-full page-bg text-slate-300">
-            <div className="container mx-auto p-3 max-w-[2000px]">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-md">
-                            <CreditCard size={16} className="text-success" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-black text-white tracking-tight">Finance Dashboard</h1>
-                            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-[0.2em] mt-0.5">
-                                {activeMainTab === 'fees' ? `${fees.length} fee records • ${customFees.length} fee definitions` : `${employees.length} employees • ${fmt(payrollAnalytics.totalSalary)} total payroll`}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-1">
-                        <button onClick={() => { 
-                            if (activeMainTab === 'fees') { refetchFees(); refetchCustom(); } 
-                            else { refetchEmployees(); }
-                        }} className="p-1.5 rounded-md bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200 text-xs">
-                            <RefreshCw size={14} />
-                        </button>
-                        {activeMainTab === 'fees' && activeFeesTab === 'custom' && (
-                            <button onClick={() => setShowAddCustom(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-white font-bold hover:brightness-110 shadow-md shadow-primary/20 transition-all duration-200 active:scale-95 text-xs">
-                                <Plus size={14} /> Create Fee
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Main Content Tabs */}
-                <div className="px-2 pt-2 flex gap-1 mb-2">
-                    {[
-                        { id: 'fees', icon: DollarSign, label: 'Fees Management' },
-                        { id: 'salary', icon: IndianRupee, label: 'Salary & Payroll' }
-                    ].map(({ id, icon: Icon, label }) => (
-                        <button key={id} onClick={() => setActiveMainTab(id)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-[0.2em] transition-all border
-                                ${activeMainTab === id 
-                                    ? 'bg-success/10 text-success border-success/25 shadow-md shadow-success/5' 
-                                    : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'}`}>
-                            <Icon size={9} />{label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Fees Management Section */}
-                {activeMainTab === 'fees' && (
-                    <div className="space-y-3">
-                        {/* Fees Sub-tabs */}
-                        <div className="px-2 flex gap-1 mb-2">
-                            {[
-                                { id: 'student', icon: DollarSign, label: 'Collection' },
-                                { id: 'custom', icon: Zap, label: 'Custom Fees' }
-                            ].map(({ id, icon: Icon, label }) => (
-                                <button key={id} onClick={() => setActiveFeesTab(id)}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-[0.2em] transition-all border
-                                        ${activeFeesTab === id 
-                                            ? 'bg-primary/10 text-primary border-primary/25 shadow-md shadow-primary/5' 
-                                            : 'text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5'}`}>
-                                    <Icon size={9} />{label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Fees Stats Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-2">
-                            {[
-                                { label: 'Collected', value: fmt(feesAnalytics.collected), icon: CheckCircle, color: 'text-success', bg: 'bg-success/15' },
-                                { label: 'Overdue', value: fmt(feesAnalytics.pending), icon: AlertTriangle, color: 'text-accent', bg: 'bg-accent/15' },
-                                { label: 'Students', value: feesAnalytics.count, icon: Users, color: 'text-primary', bg: 'bg-primary/15' },
-                                { label: 'Fulfillment', value: `${feesAnalytics.rate}%`, icon: Percent, color: 'text-secondary', bg: 'bg-secondary/15' },
-                            ].map(({ label, value, icon: Icon, color, bg }, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                                    className="glass-card p-2 flex flex-col items-center text-center">
-                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center mb-0.5 border border-white/5 ${bg}`}>
-                                        <Icon size={10} className={color} />
-                                    </div>
-                                    <p className={`text-xs font-black ${color}`}>{value}</p>
-                                    <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{label}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-
-                        {/* Student Fees View */}
-                        {activeFeesTab === 'student' && (
-                            <div className="p-2 space-y-2">
-                                {/* Filter Engine */}
-                                <div className="flex flex-col sm:flex-row gap-1 mb-2">
-                                    <div className="relative flex-1">
-                                        <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500" />
-                                        <input className="input-standard pl-8 h-9 bg-slate-900/50 text-xs" 
-                                            placeholder="Search records by student name or ID..." value={search} onChange={e => setSearch(e.target.value)} />
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <select className="input-standard sm:w-32 h-9 bg-slate-900/50 text-[9px] font-bold uppercase tracking-widest" 
-                                            value={filter} onChange={e => setFilter(e.target.value)}>
-                                            <option value="All">All Status</option>
-                                            <option value="Paid">Fully Paid</option>
-                                            <option value="Partial">Partial Pay</option>
-                                            <option value="Pending">Outstanding</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Unified Ledger Table */}
-                                {loading ? (
-                                    <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                                        <div className="w-8 h-8 border-3 border-success/20 border-t-success rounded-full animate-spin" />
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">Syncing Ledger Data...</p>
-                                    </div>
-                                ) : (
-                                    <FeesListBox feesList={filteredFees} onPaymentClick={(s) => setSelectedStudent(s)} />
-                                )}
+        <div className="max-w-full p-1 space-y-2 text-slate-400">
+                {/* ─── Combined Header with Primary Analytics ─── */}
+                <div className="space-y-2">
+                    <header className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded bg-white/5 border border-white/10 flex items-center justify-center">
+                                <CreditCard size={12} className="text-success" />
                             </div>
-                        )}
-
-                        {/* Custom Fees Inventory */}
-                        {activeFeesTab === 'custom' && (
-                            <div className="p-3 space-y-3">
-                                {customLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                                        <Loader size={20} className="animate-spin text-success" />
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loading Definitions...</p>
-                                    </div>
-                                ) : customFees.length === 0 ? (
-                                    <div className="text-center py-8 bg-white/[0.01] rounded-xl border border-dashed border-white/5">
-                                        <Zap size={24} className="text-slate-800 mx-auto mb-2" />
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Inventory is empty</p>
-                                        <button onClick={() => setShowAddCustom(true)} className="btn-primary mt-3 px-4 py-1.5 text-xs">Configure First Fee</button>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                        {customFees.map((cf, i) => (
-                                            <motion.div key={cf.feeId || i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                                                className="glass-card p-2 border-white/5 bg-white/[0.02] hover:border-success/30 transition-all group relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 p-1">
-                                                    <span className={`px-0.5 py-0.5 rounded text-[5px] font-black border uppercase tracking-[0.15em] ${scopeColor(cf.scope)}`}>
-                                                        {scopeLabel(cf.scope)}
-                                                    </span>
-                                                </div>
-                                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-success/20 to-primary/10 flex items-center justify-center mb-1 border border-success/10 shadow-lg shadow-success/5">
-                                                    <Zap size={12} className="text-success" />
-                                                </div>
-                                                <h3 className="text-[10px] font-black text-white uppercase tracking-tight mb-0.5">{cf.feeName}</h3>
-                                                {cf.description && <p className="text-[9px] text-slate-500 font-medium line-clamp-2 mb-1">{cf.description}</p>}
-                                                
-                                                <div className="space-y-1 pt-1.5 border-t border-white/5">
-                                                    <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400">
-                                                        <div className="p-0.5 rounded bg-success/10 text-success"><DollarSign size={8} /></div>
-                                                        <span className="uppercase tracking-widest">{fmt(cf.amount)} • {cf.feeType === 'one_time' ? 'One-time' : 'Recurring'}</span>
-                                                    </div>
-                                                    {cf.dueDate && (
-                                                        <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400">
-                                                            <div className="p-0.5 rounded bg-primary/10 text-primary"><Calendar size={8} /></div>
-                                                            <span className="uppercase tracking-widest">Valid Until: {fmtDate(cf.dueDate)}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="mt-2 pt-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                                    <button onClick={() => handleDeleteCustomFee(cf.feeId)} className="w-full py-0.5 rounded-md bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[7px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
-                                                        Revoke Definition
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Salary & Payroll Section */}
-                {activeMainTab === 'salary' && (
-                    <div className="space-y-3">
-                        {/* Payroll Stats Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 px-2">
-                            {[
-                                { label: 'Total Payroll', value: fmt(payrollAnalytics.totalSalary), icon: IndianRupee, color: 'text-success', bg: 'bg-success/15' },
-                                { label: 'Active Staff', value: payrollAnalytics.activeEmployees, icon: Users, color: 'text-primary', bg: 'bg-primary/15' },
-                                { label: 'Total Staff', value: payrollAnalytics.totalEmployees, icon: User, color: 'text-secondary', bg: 'bg-secondary/15' },
-                                { label: 'Avg Salary', value: fmt(payrollAnalytics.avgSalary), icon: PieChart, color: 'text-accent', bg: 'bg-accent/15' },
-                            ].map(({ label, value, icon: Icon, color, bg }, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                                    className="glass-card p-2 flex flex-col items-center text-center">
-                                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center mb-0.5 border border-white/5 ${bg}`}>
-                                        <Icon size={10} className={color} />
-                                    </div>
-                                    <p className={`text-xs font-black ${color}`}>{value}</p>
-                                    <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{label}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-
-                        {/* Search and Filter */}
-                        <div className="p-3">
-                            <div className="relative">
-                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input className="input-standard pl-9 h-10 bg-slate-900/50 text-xs w-full" 
-                                    placeholder="Search employees by name or ID..." value={search} onChange={e => setSearch(e.target.value)} />
+                            <div>
+                                <h1 className="text-sm font-black text-white tracking-tight uppercase italic leading-none">FINANCE_COMMAND</h1>
+                                <p className="text-[7px] font-bold text-slate-700 uppercase tracking-widest mt-0.5 whitespace-nowrap">
+                                    {activeMainTab === 'fees' ? `LOAD: ${fees.length} ENTRIES` : `LOAD: ${employees.length} NODES`}
+                                </p>
                             </div>
                         </div>
-
-                        {/* Employees List */}
-                        {employeesLoading ? (
-                            <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                                <Loader size={20} className="animate-spin text-indigo-400" />
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loading Payroll Data...</p>
-                            </div>
-                        ) : filteredEmployees.length === 0 ? (
-                            <div className="text-center py-8 bg-white/[0.01] rounded-xl border border-dashed border-white/5">
-                                <Users size={24} className="text-slate-800 mx-auto mb-2" />
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">No employees found</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
-                                {filteredEmployees.map((emp, i) => (
-                                    <motion.div key={emp.employeeId || i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                                        className="glass-card p-2 border-white/5 bg-white/[0.02] hover:border-indigo-500/30 transition-all group">
-                                        <div className="flex items-start justify-between mb-1">
-                                            <div>
-                                                <h3 className="text-[10px] font-black text-white uppercase tracking-tight">{emp.name}</h3>
-                                                <p className="text-[9px] text-slate-500 font-medium">{emp.employeeId}</p>
-                                            </div>
-                                            <span className={`px-1 py-0.5 rounded text-[6px] font-black border uppercase tracking-[0.15em] ${emp.status === 'active' ? 'text-green-400 bg-green-400/15 border-green-400/25' : 'text-slate-500 bg-slate-500/15 border-slate-500/25'}`}>
-                                                {emp.status || 'unknown'}
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="space-y-1 mb-2">
-                                            <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400">
-                                                <div className="p-0.5 rounded bg-indigo-500/10 text-indigo-400"><IndianRupee size={8} /></div>
-                                                <span className="uppercase tracking-widest">Base Salary: {fmt(emp.baseSalary || 0)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400">
-                                                <div className="p-0.5 rounded bg-primary/10 text-primary"><User size={8} /></div>
-                                                <span className="uppercase tracking-widest">{emp.employeeType || 'Not specified'}</span>
-                                            </div>
-                                            {emp.subject && (
-                                                <div className="flex items-center gap-1 text-[7px] font-bold text-slate-400">
-                                                    <div className="p-0.5 rounded bg-secondary/10 text-secondary"><BookOpen size={8} /></div>
-                                                    <span className="uppercase tracking-widest">{emp.subject}</span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <button 
-                                            onClick={() => setSelectedEmployee(emp)}
-                                            className="w-full py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[7px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
-                                        >
-                                            View Salary Breakdown
-                                        </button>
-                                    </motion.div>
+                        <div className="flex items-center gap-1.5">
+                            {/* Main Context Switcher */}
+                            <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
+                                {[
+                                    { id: 'fees', label: 'FEES' },
+                                    { id: 'salary', label: 'PAYROLL' }
+                                ].map(({ id, label }) => (
+                                    <button 
+                                        key={id} 
+                                        onClick={() => setActiveMainTab(id)}
+                                        className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${activeMainTab === id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-600 hover:text-slate-400'}`}
+                                    >
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
+                            <StandardButton 
+                                variant="ghost" 
+                                size="xs" 
+                                onClick={() => activeMainTab === 'fees' ? (refetchFees(), refetchCustom()) : refetchEmployees()} 
+                                icon={RefreshCw} 
+                            />
+                        </div>
+                    </header>
+
+                    {/* ─── Global Analytics Grid ─── */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                        {activeMainTab === 'fees' ? (
+                            <>
+                                <KPITile label="Total Collected" value={fmt(feesAnalytics.collected)} sub="L_SYNC_OK" icon={CheckCircle} color="success" dense />
+                                <KPITile label="Total Overdue" value={fmt(feesAnalytics.pending)} sub="BACKLOG_ALRT" icon={AlertTriangle} color="warning" dense />
+                                <KPITile label="Active Segments" value={feesAnalytics.count} sub="REGISTERD" icon={Users} color="primary" dense />
+                                <KPITile label="Fill Velocity" value={`${feesAnalytics.rate}%`} sub="ACCEL_LOAD" icon={TrendingUp} color="accent" dense />
+                            </>
+                        ) : (
+                            <>
+                                <KPITile label="Global Payroll" value={fmt(payrollAnalytics.totalSalary)} sub="LOAD_V_PULSE" icon={IndianRupee} color="success" dense />
+                                <KPITile label="Active Nodes" value={payrollAnalytics.activeEmployees} sub="V_SYNC_LIVE" icon={Users} color="primary" dense />
+                                <KPITile label="Total Nodes" value={payrollAnalytics.totalEmployees} sub="NET_CLUSTER" icon={User} color="secondary" dense />
+                                <KPITile label="Avg Allocation" value={fmt(payrollAnalytics.avgSalary)} sub="ALLOC_MEAN" icon={PieChart} color="accent" dense />
+                            </>
                         )}
                     </div>
-                )}
-            </div>
+                </div>
+
+                {/* ─── OPERATIONAL VIEWPORT ─── */}
+                <div className="space-y-1">
+                    {activeMainTab === 'fees' && (
+                        <>
+                            <div className="flex items-center justify-between gap-1">
+                                <div className="flex gap-1 overflow-x-auto custom-scrollbar no-scrollbar">
+                                    {[
+                                        { id: 'student', label: 'LEDGER_VIEW' },
+                                        { id: 'custom', label: 'PROTOCOLS' }
+                                    ].map(({ id, label }) => (
+                                        <button 
+                                            key={id} 
+                                            onClick={() => setActiveFeesTab(id)}
+                                            className={`px-3 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest border transition-all ${activeFeesTab === id ? 'bg-white/10 text-white border-white/20' : 'text-slate-700 border-transparent hover:text-slate-500'}`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                    {activeFeesTab === 'custom' && (
+                                        <StandardButton variant="primary" size="xs" onClick={() => setShowAddCustom(true)} icon={Plus}>INITIALIZE</StandardButton>
+                                    )}
+                                </div>
+                            </div>
+
+                            {activeFeesTab === 'student' ? (
+                                <div className="space-y-1">
+                                    <div className="flex gap-1 items-center">
+                                        <div className="relative flex-1 group">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700" />
+                                            <input 
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-primary/20 transition-all font-black uppercase tracking-widest" 
+                                                placeholder="SCAN_HASH..." value={search} onChange={e => setSearch(e.target.value)} 
+                                            />
+                                        </div>
+                                        <div className="w-32 shrink-0">
+                                            <DropdownWidget
+                                                dense
+                                                options={[
+                                                    { label: 'ALL_STATUS', value: 'All' },
+                                                    { label: 'PAID', value: 'Paid' },
+                                                    { label: 'PENDING', value: 'Pending' }
+                                                ]}
+                                                value={filter}
+                                                onChange={setFilter}
+                                            />
+                                        </div>
+                                    </div>
+                                    <GlassCard className="border border-white/5" dense>
+                                        {loading ? <div className="py-20 flex justify-center"><RefreshCw size={16} className="animate-spin text-slate-800" /></div> : <FeesListBox feesList={filteredFees} onPaymentClick={setSelectedStudent} />}
+                                    </GlassCard>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-1">
+                                    {customFees.map((cf, i) => (
+                                        <GlassCard key={i} delay={i * 0.01} className="p-1.5 border border-white/5 bg-white/[0.01] hover:border-success/30" dense hover>
+                                            <div className="flex items-start justify-between mb-1">
+                                                <div className="w-5 h-5 rounded bg-success/10 flex items-center justify-center text-success"><Zap size={10} /></div>
+                                                <StandardButton variant="ghost" size="xs" icon={Trash2} onClick={() => handleDeleteCustomFee(cf.feeId)} className="text-rose-500 opacity-0 group-hover:opacity-100" />
+                                            </div>
+                                            <h3 className="text-[9px] font-black text-white italic truncate uppercase leading-none">{cf.feeName}</h3>
+                                            <p className="text-[7px] font-bold text-slate-700 uppercase tracking-widest mt-1">{fmt(cf.amount)} • {cf.feeType}</p>
+                                        </GlassCard>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {activeMainTab === 'salary' && (
+                        <div className="space-y-1">
+                            <div className="flex gap-1 items-center">
+                                <div className="relative flex-1 group">
+                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700" />
+                                    <input 
+                                        className="w-full bg-white/[0.02] border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-blue-500/20 transition-all font-black uppercase tracking-widest"
+                                        placeholder="SCAN_STAFF_NODE..." value={search} onChange={e => setSearch(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
+                                {filteredEmployees.map((emp, i) => (
+                                    <GlassCard key={i} delay={i * 0.01} className="p-1.5 border border-white/5 bg-white/[0.01]" dense hover>
+                                        <div className="flex items-start justify-between mb-1">
+                                            <div className="w-5 h-5 rounded bg-blue-500/10 flex items-center justify-center text-blue-400 font-black text-[8px] uppercase">{emp.name?.[0]}</div>
+                                            <div className={`px-1 py-0 rounded text-[6px] font-black uppercase tracking-widest border ${emp.status === 'active' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-slate-800 border-white/5 text-slate-500'}`}>
+                                                {emp.status}
+                                            </div>
+                                        </div>
+                                        <h3 className="text-[9px] font-black text-white italic truncate uppercase leading-none mt-0.5">{emp.name}</h3>
+                                        <p className="text-[7px] font-bold text-slate-700 uppercase tracking-widest truncate mt-0.5">{emp.employeeId}</p>
+                                        <div className="mt-1 pt-1 border-t border-white/5 space-y-0.5">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[7px] font-black text-slate-800 uppercase tracking-widest">ALLOC</span>
+                                                <span className="text-[8px] font-black text-slate-400 italic">{fmt(emp.baseSalary)}</span>
+                                            </div>
+                                            <StandardButton variant="ghost" size="xs" onClick={() => setSelectedEmployee(emp)} label="BREAKDOWN" className="w-full py-0 !h-4 text-[7px]" />
+                                        </div>
+                                    </GlassCard>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>    </div>
 
             {/* Modals */}
             <AnimatePresence>

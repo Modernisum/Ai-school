@@ -3,13 +3,29 @@ target/
 Cargo.lock
 
 # Node / React
+node_modules/
 Admin/node_modules/
-Admin/.env
 Admin/frontend.log
 Admin/build/
+frontend/*/build/
+frontend/*/dist/
+
+# Environment files (NEVER commit secrets)
+*.env
+*.env.local
+*.env.production
+!*.env.example
 
 # Misc
 *.log
 backend.log
-*.env.local
 .DS_Store
+*.timestamp-*.mjs
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+.aider*

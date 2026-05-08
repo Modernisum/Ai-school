@@ -152,7 +152,7 @@ impl GradebookServiceTrait for GradebookService {
     
     async fn export_gradebook(&self, class_id: i32, term: &str, format: &str) -> crate::error::AppResult<Vec<u8>> {
         // Mock implementation - returns CSV data
-        let csv_data = format!("Student ID,Student Name,Assignment 1,Assignment 2,Assignment 3,Overall Grade\n501,John Doe,85,92,78,A\n502,Jane Smith,88,95,82,A\n");
+        let csv_data = "Student ID,Student Name,Assignment 1,Assignment 2,Assignment 3,Overall Grade\n501,John Doe,85,92,78,A\n502,Jane Smith,88,95,82,A\n".to_string();
         
         Ok(csv_data.into_bytes())
     }

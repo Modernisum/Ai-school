@@ -8,6 +8,7 @@ use std::net::SocketAddr;
 mod background_jobs;
 mod backup;
 mod db;
+mod domain;
 mod error;
 mod extractors;
 mod logic;
@@ -17,7 +18,10 @@ mod repository;
 mod routes;
 mod services;
 pub mod super_admin;
+pub mod query;
+pub mod response;
 
+use middleware::rate_limiter::RateLimiter;
 use repository::{initialize_repositories, Repositories};
 use services::{initialize_services, Services};
 use std::sync::Arc;
@@ -29,6 +33,9 @@ pub struct AppState {
     pub services: Arc<Services>,
     pub backup: Arc<backup::BackupService>,
     pub storage: Arc<crate::logic::storage_engine::StorageEngine>,
+    pub general_limiter: RateLimiter,
+    pub auth_limiter: RateLimiter,
+    pub ai_limiter: RateLimiter,
 }
 
 #[tokio::main]
@@ -51,32 +58,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("=============");
     }));
 
-    #[allow(unused_mut)]
-    let mut ocr_pipeline = logic::ocr_pipeline::OcrPipeline::new()?;
+    // Record process start time for health uptime tracking
+    crate::routes::health::record_start_time();
 
-    #[cfg(feature = "ocr")]
-    {
-        let skip_ocr = std::env::var("SKIP_OCR_INIT")
-            .map(|v| v == "true")
-            .unwrap_or(false);
-        if skip_ocr {
-            println!("OCR Initialization Bypassed (Fast Development Mode)");
-        } else {
-            println!("Initializing OCR Pipeline models (TrOCR + Phi-3)...");
-            ocr_pipeline.init_models().await?;
-        }
-    }
-    #[cfg(not(feature = "ocr"))]
-    {
-        println!("OCR feature disabled at compile-time.");
-    }
-
-    let ocr_pipeline = Arc::new(ocr_pipeline);
-
-    println!("Initializing Repositories and Database...");
+    println!("Initializing Database...");
     let db_client = Arc::new(db::init().await?);
-    let repos = Arc::new(initialize_repositories(ocr_pipeline.clone()).await);
-    let services = Arc::new(initialize_services(repos.clone()));
+
+    // Create shared cache service (used by both repos and services)
+    let responsibility_cache = Arc::new(
+        crate::logic::cache_service::ResponsibilityCacheService::new(db_client.redis.clone())
+    );
+
+    println!("Initializing Repositories...");
+    let repos = Arc::new(initialize_repositories(db_client.clone(), responsibility_cache.clone()).await);
+
+    println!("Initializing Services...");
+    let services = Arc::new(initialize_services(repos.clone(), responsibility_cache));
 
     let storage = Arc::new(crate::logic::storage_engine::StorageEngine::new().await);
     
@@ -89,6 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         services,
         backup: backup_svc.clone(),
         storage,
+        general_limiter: RateLimiter::general(),
+        auth_limiter: RateLimiter::auth(),
+        ai_limiter: RateLimiter::ai(),
     };
 
     // Trigger auto-restore if DB is empty
@@ -110,12 +110,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = routes::router::create_router(state);
 
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8080);
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     println!("listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to install Ctrl+C handler");
+            println!("Shutting down gracefully...");
+        })
+        .await?;
 
     Ok(())
 }

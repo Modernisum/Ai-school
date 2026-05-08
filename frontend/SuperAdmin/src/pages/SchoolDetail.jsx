@@ -142,12 +142,12 @@ export default function SchoolDetail() {
 
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
-            <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+            <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-primary)' }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
     )
 
-    if (!school) return <div className="page" style={{ color: 'var(--text3)' }}>School not found.</div>
+    if (!school) return <div className="page" style={{ color: 'var(--text-tertiary)' }}>School not found.</div>
 
     const projected = Number(school.perStudentRate || 1) * (school.activeStudentCount || 0);
     const balance = Number(school.walletBalance || 0);
@@ -169,13 +169,13 @@ export default function SchoolDetail() {
                     )}
                     <div>
                         <h1 className="page-title">{school.schoolName}</h1>
-                        <code style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>ID: {school.schoolId}</code>
+                        <code style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 600 }}>ID: {school.schoolId}</code>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <span className={`badge badge-${school.status}`}>{school.status}</span>
                     <span className={`badge ${school.billingStatus || 'active'}`} style={{
-                        backgroundColor: school.billingStatus === 'suspended' ? '#991b1b' : school.billingStatus === 'warning' ? '#92400e' : '#065f46',
+                        backgroundColor: school.billingStatus === 'suspended' ? 'color-mix(in srgb, var(--color-danger) 60%, black)' : school.billingStatus === 'warning' ? 'color-mix(in srgb, var(--color-warning) 60%, black)' : 'color-mix(in srgb, var(--color-success) 60%, black)',
                         color: 'white',
                         fontWeight: 700,
                         textTransform: 'uppercase'
@@ -196,7 +196,7 @@ export default function SchoolDetail() {
                                 <Edit3 size={13} /> Edit Profile
                             </button>
                         ) : (
-                            <button className="btn btn-ghost btn-sm" onClick={cancelEdit} style={{ color: 'var(--red)' }}>
+                            <button className="btn btn-ghost btn-sm" onClick={cancelEdit} style={{ color: 'var(--color-danger)' }}>
                                 <X size={13} /> Cancel
                             </button>
                         )}
@@ -207,8 +207,8 @@ export default function SchoolDetail() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                             {profileFields.map(({ label, field }) => (
                                 <div key={field}>
-                                    <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
-                                    <div style={{ fontSize: 14, color: edits[field] ? 'var(--text)' : 'var(--text3)', fontWeight: 500 }}>
+                                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
+                                    <div style={{ fontSize: 14, color: edits[field] ? 'var(--text)' : 'var(--text-tertiary)', fontWeight: 500 }}>
                                         {edits[field] || '—'}
                                     </div>
                                 </div>
@@ -241,7 +241,7 @@ export default function SchoolDetail() {
                                             </button>
                                         </div>
                                     ) : (
-                                        <label style={{ position: 'relative', width: 64, height: 64, borderRadius: 8, border: '2px dashed var(--bg3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: logoLoading ? 'default' : 'pointer', color: 'var(--text3)', overflow: 'hidden' }}>
+                                        <label style={{ position: 'relative', width: 64, height: 64, borderRadius: 8, border: '2px dashed var(--bg3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: logoLoading ? 'default' : 'pointer', color: 'var(--text-tertiary)', overflow: 'hidden' }}>
                                             <input 
                                                 type="file" 
                                                 accept="image/*" 
@@ -258,17 +258,17 @@ export default function SchoolDetail() {
                                                 }}
                                             />
                                             {logoLoading ? (
-                                                <Loader size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+                                                <Loader size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-primary)' }} />
                                             ) : (
                                                 <>
                                                     <Upload size={16} />
                                                     <span style={{ fontSize: 9, fontWeight: 700, marginTop: 4 }}>UPLOAD</span>
                                                 </>
                                             )}
-                                            {logoLoading && <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, background: 'var(--accent)', animation: 'shimmer 2s infinite linear', width: '100%' }} />}
+                                            {logoLoading && <div style={{ position: 'absolute', bottom: 0, left: 0, height: 2, background: 'var(--color-primary)', animation: 'shimmer 2s infinite linear', width: '100%' }} />}
                                         </label>
                                     )}
-                                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                                         Recommended: Square SVG or PNG<br/>Max size: 2MB
                                     </div>
                                 </div>
@@ -283,7 +283,7 @@ export default function SchoolDetail() {
                                     />
                                 </div>
                             ))}
-                            <div style={{ gridColumn: '1 / -1', marginTop: 10, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <div style={{ gridColumn: '1 / -1', marginTop: 10, paddingTop: 16, borderTop: '1px solid var(--border-default)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                 <button className="btn btn-ghost btn-sm" onClick={cancelEdit}>Discard</button>
                                 <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
                                     {saving ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={13} />} Save Profile
@@ -296,34 +296,34 @@ export default function SchoolDetail() {
                 {/* Sidebar Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {/* Billing Snapshot */}
-                    <div className="card" style={{ background: 'var(--glass)', border: '1px solid var(--accent-30)' }}>
+                    <div className="card" style={{ background: 'var(--surface-overlay)', border: '1px solid var(--accent-30)' }}>
                         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <CreditCard size={18} className="text-accent" /> Billing Snapshot
                         </h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 12 }}>
-                                <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ background: 'color-mix(in srgb, black 20%, transparent)', padding: 12, borderRadius: 12 }}>
+                                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                                     <Users size={12} /> Students
                                 </div>
                                 <div style={{ fontSize: 18, fontWeight: 800 }}>{school.activeStudentCount || 0}</div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 12 }}>
-                                <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ background: 'color-mix(in srgb, black 20%, transparent)', padding: 12, borderRadius: 12 }}>
+                                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                                     <TrendingUp size={12} /> Projected
                                 </div>
-                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>₹{projected.toLocaleString()}</div>
+                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-primary)' }}>₹{projected.toLocaleString()}</div>
                             </div>
                         </div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                            <span style={{ fontSize: 12, color: 'var(--text3)' }}>Wallet Balance</span>
-                            <span style={{ fontSize: 16, fontWeight: 800, color: balance < projected ? '#ef4444' : '#10b981' }}>₹{balance.toLocaleString()}</span>
+                            <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Wallet Balance</span>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: balance < projected ? 'var(--color-danger)' : 'var(--color-success)' }}>₹{balance.toLocaleString()}</span>
                         </div>
-                        <div style={{ w: '100%', height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden', marginBottom: 20 }}>
+                        <div style={{ w: '100%', height: 4, background: 'color-mix(in srgb, white 5%, transparent)', borderRadius: 2, overflow: 'hidden', marginBottom: 20 }}>
                             <div style={{ 
                                 height: '100%', 
                                 width: `${Math.min(100, (balance / Math.max(1, projected)) * 100)}%`, 
-                                background: balance < projected ? '#ef4444' : 'var(--accent)' 
+                                background: balance < projected ? 'var(--color-danger)' : 'var(--color-primary)' 
                             }} />
                         </div>
 
@@ -373,8 +373,8 @@ export default function SchoolDetail() {
                             ['Last Billing', school.lastBillingDate ? new Date(school.lastBillingDate).toLocaleDateString() : '—'],
                             ['Registered', school.createdAt ? new Date(school.createdAt).toLocaleDateString() : '—'],
                         ].map(([k, v]) => (
-                            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '8px', borderBottom: '1px solid var(--glass-border)' }}>
-                                <span style={{ color: 'var(--text3)' }}>{k}</span>
+                            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '8px', borderBottom: '1px solid var(--border-default)' }}>
+                                <span style={{ color: 'var(--text-tertiary)' }}>{k}</span>
                                 <span style={{ fontWeight: 600 }}>{v}</span>
                             </div>
                         ))}

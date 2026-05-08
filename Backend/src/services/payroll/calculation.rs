@@ -59,9 +59,9 @@ impl PayrollCalculation {
 
         let now = Local::now();
         let (month, year) = if now.month() == 1 {
-            (12, (now.year() - 1) as i32)
+            (12, (now.year() - 1))
         } else {
-            (now.month() - 1, now.year() as i32)
+            (now.month() - 1, now.year())
         };
         let attendance = self
             .repos

@@ -1,475 +1,453 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
-import { getSchoolIdFromStorage } from '../../../utils/api';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { selectPollingInterval } from '../../settings/settingsSlice';
 import {
-  CalendarDays, Plus, Trash2, Loader, CheckCircle, AlertTriangle,
-  ChevronLeft, ChevronRight, Users, GraduationCap, Shield, Info, UserCheck, FileText, BarChart3, Settings
+  Calendar, Users, CheckCircle, XCircle, Download, 
+  Loader, AlertTriangle, Filter, Search, Activity,
+  Database, GraduationCap, ClipboardList, RefreshCw,
+  Plus, Trash2, ChevronLeft, ChevronRight, Shield,
+  BarChart3, Clock, User, Building, Hash
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useForm } from 'react-hook-form';
+import { getSchoolIdFromStorage } from '../../../utils/api';
+
+import StandardButton from '../../../components/ui/StandardButton';
+import DropdownWidget from '../../../components/ui/DropdownWidget';
+import KPIWidget, { KPITile } from '../../../components/ui/KPIWidget';
+import GlassCard from '../../../components/ui/GlassCard';
+import PageHeader from '../../../components/ui/PageHeader';
+import FormWidget from '../../../components/ui/FormWidget';
+import DataGrid from '../../../components/ui/DataGrid';
 
 import {
+  useGetClassesQuery,
+  useGetStudentsByClassQuery,
+  useBulkMarkAttendanceMutation,
+  useGetClassAttendanceQuery,
   useGetHolidaysQuery,
   useCreateHolidayMutation,
   useDeleteHolidayMutation,
+  useGetAdvancedAttendanceQuery,
 } from '../api/academicApi';
-import BulkAttendance from '../components/BulkAttendance';
-import AttendanceReports from '../components/AttendanceReports';
-import AttendanceConfig from '../components/AttendanceConfig';
+import { useGetSpacesQuery } from '../../infrastructure/infrastructureApi';
 
-const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 const getSchoolId = () => getSchoolIdFromStorage() || "";
+const today = new Date().toISOString().split('T')[0];
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-function isSunday(dateStr) {
-  return new Date(dateStr).getDay() === 0;
-}
-
-function dateRange(from, to) {
-  const dates = [];
-  let cur = new Date(from);
-  const end = new Date(to);
-  while (cur <= end) {
-    dates.push(cur.toISOString().split('T')[0]);
-    cur.setDate(cur.getDate() + 1);
-  }
-  return dates;
-}
+const STATUS_CONFIG = {
+  present: { color: 'success', icon: CheckCircle, label: 'Present' },
+  absent: { color: 'danger', icon: XCircle, label: 'Absent' },
+  holiday: { color: 'warning', icon: Calendar, label: 'Holiday' },
+  leave: { color: 'primary', icon: AlertTriangle, label: 'Leave' }
+};
 
 export default function AttendancePage() {
-  const location = useLocation();
   const schoolId = getSchoolId();
-
-  // RTK Query Hooks for Holidays
-  const pollingInterval = useSelector(selectPollingInterval);
-  const { data: holidays = [], isLoading: isHolidaysLoading, refetch: refetchHolidays } = useGetHolidaysQuery(schoolId, {
-    skip: !schoolId,
-    pollingInterval
-  });
-  const [createHolidayApi] = useCreateHolidayMutation();
-  const [deleteHolidayApi] = useDeleteHolidayMutation();
-
-  const [classes, setClasses] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Core state
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [attendanceData, setAttendanceData] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [showForm, setShowForm] = useState(new URLSearchParams(location.search).get('mark') === '1' || new URLSearchParams(location.search).get('add') === '1');
+  const [showHolidayForm, setShowHolidayForm] = useState(false);
+  
+  // Analytics filters (used by DataGrid's filterDefinitions)
+  const [filters, setFilters] = useState({
+    date: today,
+    period: 'day',
+    incoming_after: '',
+    outgoing_before: '',
+    user_type: '',
+    class_name: '',
+    space_name: '',
+    user_ids: '',
+    fields: ''
+  });
 
-  // Sync showForm with URL search params
+  const { control, handleSubmit, reset } = useForm();
+
+  // API Hooks
+  const { data: classes = [], isLoading: classesLoading } = useGetClassesQuery(schoolId, { skip: !schoolId });
+  const { data: holidays = [], isLoading: isHolidaysLoading } = useGetHolidaysQuery(schoolId, { skip: !schoolId });
+  const { data: spacesData = [] } = useGetSpacesQuery(schoolId, { skip: !schoolId });
+  const { data: studentsData = [], isLoading: studentsLoading } = useGetStudentsByClassQuery(
+    { schoolId, className: selectedClass }, 
+    { skip: !schoolId || !selectedClass }
+  );
+  const { data: existingAttendance = [], isLoading: attendanceLoading, refetch: refetchAttendance } = useGetClassAttendanceQuery(
+    { schoolId, className: selectedClass, date: selectedDate }, 
+    { skip: !schoolId || !selectedClass || !selectedDate }
+  );
+
+  // Advanced attendance analytics - always fetched with current filters
+  const { data: advancedAttendance, isLoading: advancedLoading, refetch: refetchAdvanced } = useGetAdvancedAttendanceQuery(
+    { school_id: schoolId, ...filters },
+    { skip: !schoolId }
+  );
+
+  const [bulkMarkAttendance] = useBulkMarkAttendanceMutation();
+  const [createHoliday] = useCreateHolidayMutation();
+  const [deleteHoliday] = useDeleteHolidayMutation();
+
+  // Initialize attendance data from students + existing records
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('mark') === '1' || params.get('add') === '1') {
-      setShowForm(true);
-    } else if (params.get('mark') === null && params.get('add') === null && showForm && !params.toString().includes('mark=') && !params.toString().includes('add=')) {
-      setShowForm(false);
+    if (studentsData.length > 0) {
+      const students = Array.isArray(studentsData) ? studentsData : (studentsData.data || []);
+      const existingMap = {};
+      
+      const existing = Array.isArray(existingAttendance) ? existingAttendance : (existingAttendance.data || []);
+      existing.forEach(item => {
+        if (item.user_id) existingMap[item.user_id] = item.status || 'absent';
+      });
+      
+      const newAttendanceData = students.map(student => {
+        const userId = student.studentId || student.id || student.user_id;
+        return {
+          id: userId,
+          name: student.name || student.studentName || `Student ${userId}`,
+          rollNumber: student.rollNumber || student.roll_number || '',
+          status: existingMap[userId] || 'absent',
+          inTime: '',
+          outTime: ''
+        };
+      });
+      setAttendanceData(newAttendanceData);
     }
-  }, [location.search]);
+  }, [studentsData, existingAttendance, selectedClass]);
 
-  // Calendar state
-  const now = new Date();
-  const [calYear, setCalYear] = useState(now.getFullYear());
-  const [calMonth, setCalMonth] = useState(now.getMonth());
-
-  // Form state
-  const defaultForm = {
-    title: '',
-    description: '',
-    fromDate: new Date().toISOString().split('T')[0],
-    toDate: new Date().toISOString().split('T')[0],
-    classes: ['All'],         // ['All'] or specific class names
-    allClasses: true,
-    exemptEmployees: [],      // employee IDs
-    exemptStudents: [],       // student IDs or class names
-    showAdvanced: false,
-  };
-  const [form, setForm] = useState(defaultForm);
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState('holidays'); // 'holidays', 'bulk', 'reports', 'config'
-
-  const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
-
-  const fetchData = useCallback(async () => {
-    if (!schoolId) return;
-    setLoading(true);
+  // Handlers
+  const handleStatusChange = async (id, status) => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      };
-      const [cRes, eRes] = await Promise.allSettled([
-        fetch(`${API}/class/${schoolId}/classes`, { headers }),
-        fetch(`${API}/employees/${schoolId}/employees`, { headers }),
-      ]);
-      if (cRes.status === 'fulfilled' && cRes.value.ok) {
-        const d = await cRes.value.json(); 
-        setClasses((d.data || d.classes || []).map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
-      }
-      if (eRes.status === 'fulfilled' && eRes.value.ok) {
-        const d = await eRes.value.json(); setEmployees(d.data || d.employees || []);
-      }
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  }, [schoolId]);
+      await bulkMarkAttendance({ 
+        schoolId, 
+        body: { 
+          class_name: selectedClass, 
+          date: selectedDate, 
+          attendance: [{ user_id: id, role: 'student', status }] 
+        } 
+      }).unwrap();
+      refetchAttendance();
+    } catch (e) {
+      toast.error('Sync Failure: Protocol rejected');
+    }
+  };
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const createHoliday = async () => {
-    if (!form.title.trim()) return showToast('error', 'Title is required');
-    setSaving(true);
+  const handleBulkStatusChange = async (status) => {
     try {
       const payload = {
-        title: form.title,
-        description: form.description,
-        fromDate: form.fromDate,
-        toDate: form.toDate || form.fromDate,
-        classes: form.allClasses ? ['All'] : form.classes,
-        exemptEmployees: form.exemptEmployees,
-        exemptStudents: form.exemptStudents,
+        class_name: selectedClass,
+        date: selectedDate,
+        attendance: attendanceData.map(item => ({
+          user_id: item.id,
+          role: 'student',
+          status
+        }))
       };
-      
-      const res = await createHolidayApi({ schoolId, body: payload }).unwrap();
-      
-      showToast('success', 'Holiday created!');
-      setForm(defaultForm);
-      setShowForm(false);
-    } catch (e) { 
-      showToast('error', e.data?.message || e.message || 'Failed to create holiday'); 
-    } finally { 
-      setSaving(false); 
+      await bulkMarkAttendance({ schoolId, body: payload }).unwrap();
+      toast.info(`Protocol: All nodes synced as ${status.toUpperCase()}`);
+      refetchAttendance();
+    } catch (e) {
+      toast.error('Bulk Sync Failure');
     }
   };
 
-  const deleteHoliday = async (id) => {
+  const handleDeleteHoliday = async (id) => {
     try {
-      await deleteHolidayApi({ schoolId, holidayId: id }).unwrap();
-      showToast('success', 'Holiday removed');
-    } catch(e) {
-      showToast('error', e.data?.message || e.message || 'Failed to remove holiday');
-    }
+      await deleteHoliday({ schoolId, holidayId: id }).unwrap();
+      toast.success('Holiday protocol terminated');
+    } catch(e) { toast.error('De-registration failure'); }
   };
 
-  // ── Calendar: compute holiday dates ──────────────────────────────────────
-  const holidayDateSet = useMemo(() => {
-    const set = new Set();
-    holidays.forEach(h => {
-      dateRange(h.fromDate, h.toDate || h.fromDate).forEach(d => set.add(d));
-    });
-    return set;
-  }, [holidays]);
+  // Filter change helper
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
-  const calDays = useMemo(() => {
-    const firstDay = new Date(calYear, calMonth, 1).getDay();
-    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-    const cells = [];
-    for (let i = 0; i < firstDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const isSun = new Date(dateStr).getDay() === 0;
-      const isHoliday = holidayDateSet.has(dateStr) || isSun;
-      const isToday = dateStr === new Date().toISOString().split('T')[0];
-      cells.push({ d, dateStr, isSun, isHoliday, isToday });
-    }
-    return cells;
-  }, [calYear, calMonth, holidayDateSet]);
-
-  const toggleClass = (cls) => {
-    if (cls === 'All') { setForm(f => ({ ...f, allClasses: true, classes: ['All'] })); return; }
-    setForm(f => {
-      const next = f.classes.includes(cls) ? f.classes.filter(c => c !== cls) : [...f.classes.filter(c => c !== 'All'), cls];
-      return { ...f, allClasses: false, classes: next.length ? next : ['All'], ...(next.length === 0 ? { allClasses: true } : {}) };
+  // Clear all analytics filters
+  const handleClearFilters = () => {
+    setFilters({
+      date: today,
+      period: 'day',
+      incoming_after: '',
+      outgoing_before: '',
+      user_type: '',
+      class_name: '',
+      space_name: '',
+      user_ids: '',
+      fields: ''
     });
   };
 
-  const toggleEmployee = (id) => setForm(f => ({ ...f, exemptEmployees: f.exemptEmployees.includes(id) ? f.exemptEmployees.filter(x => x !== id) : [...f.exemptEmployees, id] }));
+  // Filtered attendance for mark mode
+  const filteredAttendance = attendanceData.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.rollNumber.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Stats for mark mode
+  const stats = useMemo(() => ({
+    total: attendanceData.length,
+    present: attendanceData.filter(item => item.status === 'present').length,
+    absent: attendanceData.filter(item => item.status === 'absent').length
+  }), [attendanceData]);
+
+  // Advanced attendance stats & records
+  const advancedStats = useMemo(() => advancedAttendance?.summary || null, [advancedAttendance]);
+  const advancedRecords = useMemo(() => advancedAttendance?.records || [], [advancedAttendance]);
+
+  // Combined KPI stats (uses advanced stats when filters are active, otherwise mark stats)
+  const hasActiveFilters = Object.values(filters).some(v => v && v !== 'day' && v !== today);
+  const kpiStats = hasActiveFilters && advancedStats ? {
+    total: advancedStats.total_users || 0,
+    present: advancedStats.total_present || 0,
+    absent: advancedStats.total_absent || 0,
+    percentage: advancedStats.attendance_percentage?.toFixed(1) || 0
+  } : {
+    total: stats.total,
+    present: stats.present,
+    absent: stats.absent,
+    percentage: stats.total > 0 ? ((stats.present / stats.total) * 100).toFixed(1) : 0
+  };
+
+  // Columns for mark attendance mode
+  const markColumns = [
+    {
+      header: 'Identity',
+      key: 'name',
+      render: (val, row) => (
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-white group-hover:text-primary transition-colors italic uppercase tracking-tighter">{val}</span>
+          <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mt-0.5">NODE_{row.rollNumber || row.id}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Status Protocol',
+      key: 'status',
+      render: (val, row) => (
+        <div className="flex gap-1">
+          {['present', 'absent'].map(s => (
+            <button
+              key={s}
+              onClick={() => handleStatusChange(row.id, s)}
+              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border transition-all ${val === s ? `bg-${STATUS_CONFIG[s].color}-500/20 text-${STATUS_CONFIG[s].color}-400 border-${STATUS_CONFIG[s].color}-500/40 shadow-lg shadow-${STATUS_CONFIG[s].color}-500/10` : 'bg-white/5 border-white/5 text-slate-700 hover:text-slate-500'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )
+    },
+    {
+      header: 'Scan Window',
+      key: 'inTime',
+      render: (_, row) => (
+        <div className="flex gap-1">
+           <input type="time" value={row.inTime} className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[9px] text-primary focus:outline-none focus:border-primary/50" />
+           <input type="time" value={row.outTime} className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[9px] text-accent focus:outline-none focus:border-accent/50" />
+        </div>
+      )
+    }
+  ];
+
+  // Columns for analytics records
+  const analyticsColumns = [
+    { header: 'User ID', key: 'user_id', render: (v) => <span className="text-[10px] font-mono text-slate-400">{v}</span> },
+    { header: 'Name', key: 'name', render: (v) => <span className="text-xs font-bold text-white uppercase">{v || '---'}</span> },
+    { header: 'Date', key: 'date' },
+    { 
+      header: 'Status', 
+      key: 'status',
+      render: (v) => {
+        const cfg = STATUS_CONFIG[v?.toLowerCase()];
+        return cfg ? (
+          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase bg-${cfg.color}-500/20 text-${cfg.color}-400 border border-${cfg.color}-500/30`}>{v}</span>
+        ) : <span className="text-xs text-slate-500">{v}</span>;
+      }
+    },
+    { header: 'Class', key: 'class_name' },
+    { header: 'In', key: 'in_time', render: (v) => <span className="text-[10px] font-mono text-primary">{v || '---'}</span> },
+    { header: 'Out', key: 'out_time', render: (v) => <span className="text-[10px] font-mono text-accent">{v || '---'}</span> },
+  ];
+
+  // Determine which data to show in the grid
+  // When a class is selected for marking, show mark view; otherwise show analytics
+  const showMarkView = selectedClass && !hasActiveFilters;
+  const gridColumns = showMarkView ? markColumns : analyticsColumns;
+  const gridRows = showMarkView ? filteredAttendance : advancedRecords;
+  const gridLoading = showMarkView ? (studentsLoading || attendanceLoading) : advancedLoading;
+
+  // Structured filter definitions for DataGrid
+  const filterDefinitions = [
+    {
+      type: 'date',
+      label: 'Date',
+      value: filters.date,
+      onChange: (v) => handleFilterChange('date', v),
+    },
+    {
+      type: 'select',
+      label: 'Period',
+      value: filters.period,
+      onChange: (v) => handleFilterChange('period', v),
+      options: [
+        { label: 'Day', value: 'day' },
+        { label: 'Week', value: 'week' },
+        { label: 'Month', value: 'month' },
+        { label: 'Year', value: 'year' },
+      ]
+    },
+    {
+      type: 'select',
+      label: 'User Type',
+      value: filters.user_type,
+      onChange: (v) => handleFilterChange('user_type', v),
+      options: [
+        { label: 'All', value: '' },
+        { label: 'Student', value: 'student' },
+        { label: 'Employee', value: 'employee' },
+      ]
+    },
+    {
+      type: 'select',
+      label: 'Class',
+      value: filters.class_name,
+      onChange: (v) => handleFilterChange('class_name', v),
+      options: [
+        { label: 'All', value: '' },
+        ...classes.map(cls => ({ label: cls.name || cls.className, value: cls.name || cls.className }))
+      ]
+    },
+    {
+      type: 'time',
+      label: 'In After',
+      value: filters.incoming_after,
+      onChange: (v) => handleFilterChange('incoming_after', v),
+    },
+    {
+      type: 'time',
+      label: 'Out Before',
+      value: filters.outgoing_before,
+      onChange: (v) => handleFilterChange('outgoing_before', v),
+    },
+    {
+      type: 'text',
+      label: 'User IDs',
+      value: filters.user_ids,
+      onChange: (v) => handleFilterChange('user_ids', v),
+      placeholder: 'id1,id2,...',
+      className: 'col-span-2'
+    },
+  ];
 
   return (
-    <div className="min-h-full page-bg text-slate-300">
-      <div className="container mx-auto p-6 max-w-[1600px]">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
-                    <CalendarDays size={24} className="text-accent" />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-black text-white tracking-tight">Attendance Management</h1>
-                    <p className="text-sm font-medium text-slate-500 uppercase tracking-[0.2em] mt-1">Manage holidays, bulk attendance & reports</p>
-                </div>
-            </div>
-            {activeTab === 'holidays' && (
-              <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 shadow-lg shadow-accent/20 transition-all duration-300 active:scale-95">
-                  <Plus size={18} /> Add Holiday
-              </button>
-            )}
-        </div>
+    <div className="max-w-full p-2 space-y-4 pb-20">
+      <PageHeader
+        title="ATTENDANCE"
+        accentTitle="MANAGEMENT"
+        subtitle="Verification, Analytics & Exceptions"
+        icon={Users}
+        actions={[
+          { label: "DECLARE HOLIDAY", onClick: () => setShowHolidayForm(true), variant: "ghost", size: "sm", icon: Plus, className: "text-rose-400" }
+        ]}
+      />
 
-        {/* Tabs */}
-        <div className="flex border-b border-white/10 mb-6">
-          <button
-            onClick={() => setActiveTab('holidays')}
-            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'holidays' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <div className="flex items-center gap-2">
-              <CalendarDays size={16} />
-              Holidays
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('bulk')}
-            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'bulk' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <div className="flex items-center gap-2">
-              <UserCheck size={16} />
-              Bulk Attendance
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'reports' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <div className="flex items-center gap-2">
-              <BarChart3 size={16} />
-              Reports
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('config')}
-            className={`px-5 py-3 text-sm font-medium transition-colors relative ${activeTab === 'config' ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <div className="flex items-center gap-2">
-              <Settings size={16} />
-              Config
-            </div>
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'holidays' && (
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
-            {/* ── Left: Holiday List ── */}
-            <div className="space-y-4">
-              {/* Sunday notice */}
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/10 text-xs text-accent/70 backdrop-blur-md">
-                <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
-                    <Info size={14} className="text-accent" />
-                </div>
-                <span><strong className="text-accent">Sunday</strong> is automatically a holiday for everyone. No attendance can be marked on Sundays.</span>
-              </div>
-
-              {loading || isHolidaysLoading ? (
-                <div className="flex items-center justify-center py-16"><Loader size={24} className="animate-spin text-accent" /></div>
-              ) : holidays.length === 0 ? (
-                <div className="glass-card p-8 text-center">
-                  <CalendarDays size={32} className="text-slate-600 mx-auto mb-2" />
-                  <p className="text-slate-500 text-sm">No holidays created yet</p>
-                  <p className="text-slate-600 text-xs mt-1">Click "Add Holiday" to create one</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {holidays.map(h => {
-                    const isSingle = h.fromDate === (h.toDate || h.fromDate);
-                const dateLabel = isSingle ? h.fromDate : `${h.fromDate} → ${h.toDate}`;
-                const cls = h.classes?.length === 1 && h.classes[0] === 'All' ? 'All Classes' : (h.classes || []).join(', ');
-                return (
-                  <motion.div key={h.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-4 flex items-start gap-3">
-                    <div className="w-1 self-stretch rounded-full bg-accent/60 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white">{h.title}</p>
-                      {h.description && <p className="text-xs text-slate-500 mt-0.5">{h.description}</p>}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
-                        <span className="text-[10px] text-accent font-mono">{dateLabel}</span>
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1"><GraduationCap size={10} />{cls}</span>
-                        {h.exemptEmployees?.length > 0 && <span className="text-[10px] text-slate-500 flex items-center gap-1"><Users size={10} />{h.exemptEmployees.length} emp exempt</span>}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_2fr] gap-4">
+        {/* Left: Exceptions & KPIs */}
+        <div className="space-y-4">
+          <GlassCard className="p-4 border-primary/20 bg-primary/5">
+             <div className="flex items-center gap-2 mb-4">
+                <Shield size={16} className="text-primary" />
+                <h4 className="text-xs font-black text-white uppercase tracking-widest">Active Exceptions</h4>
+             </div>
+             {isHolidaysLoading ? <Loader className="animate-spin mx-auto" /> : (
+               <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                  {holidays.map(h => (
+                    <div key={h.id} className="p-2 bg-white/5 rounded-lg border border-white/5 flex justify-between items-center group">
+                      <div>
+                        <p className="text-[10px] font-black text-white uppercase">{h.title}</p>
+                        <p className="text-[8px] text-slate-500 font-bold">{h.fromDate} → {h.toDate || h.fromDate}</p>
                       </div>
+                      <StandardButton variant="ghost" size="xs" onClick={() => handleDeleteHoliday(h.id)} icon={Trash2} className="text-rose-400 opacity-0 group-hover:opacity-100" />
                     </div>
-                    <button onClick={() => deleteHoliday(h.id)} className="p-1.5 rounded-lg text-slate-600 hover:text-accent hover:bg-accent/10 transition-colors">
-                      <Trash2 size={13} />
-                    </button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ── Right: Interactive Calendar ── */}
-        <div className="glass-card p-5">
-          {/* Month nav */}
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => { const d = new Date(calYear, calMonth - 1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400">
-              <ChevronLeft size={16} />
-            </button>
-            <p className="text-sm font-semibold text-white">{MONTHS[calMonth]} {calYear}</p>
-            <button onClick={() => { const d = new Date(calYear, calMonth + 1); setCalYear(d.getFullYear()); setCalMonth(d.getMonth()); }} className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {DAYS.map(d => (
-              <div key={d} className={`text-center text-[10px] font-semibold pb-1 ${d === 'Sun' ? 'text-accent' : 'text-slate-500'}`}>{d}</div>
-            ))}
-          </div>
-
-          {/* Cells */}
-          <div className="grid grid-cols-7 gap-0.5">
-            {calDays.map((cell, i) => {
-              if (!cell) return <div key={`e${i}`} />;
-              return (
-                <div key={cell.dateStr}
-                  className={`aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all
-                                        ${cell.isToday ? 'ring-2 ring-indigo-500 bg-indigo-500/20 text-indigo-300' : ''}
-                                        ${cell.isSun && !cell.isToday ? 'text-rose-400 bg-rose-500/10' : ''}
-                                        ${!cell.isSun && cell.isHoliday && !cell.isToday ? 'bg-amber-500/20 text-amber-300' : ''}
-                                        ${!cell.isHoliday && !cell.isToday ? 'text-slate-300 hover:bg-white/5' : ''}
-                                    `}>
-                  {cell.d}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t border-white/5">
-            {[['bg-primary/20 ring-1 ring-primary', 'text-primary', 'Today'], ['bg-accent/20', 'text-accent', 'Holiday'], ['bg-accent/10', 'text-accent', 'Sunday']].map(([cls, txt, lbl]) => (
-              <div key={lbl} className="flex items-center gap-1.5">
-                <div className={`w-3 h-3 rounded ${cls}`} />
-                <span className={`text-[10px] ${txt}`}>{lbl}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-        )}
-
-        {/* Bulk Attendance Tab */}
-        {activeTab === 'bulk' && (
-          <div className="p-6">
-            <BulkAttendance />
-          </div>
-        )}
-
-        {/* Reports Tab */}
-        {activeTab === 'reports' && (
-          <div className="p-6">
-            <AttendanceReports />
-          </div>
-        )}
-
-        {/* Config Tab */}
-        {activeTab === 'config' && (
-          <div className="p-6">
-            <AttendanceConfig />
-          </div>
-        )}
-
-      {/* ── Create Holiday Drawer ── */}
-      <AnimatePresence>
-        {showForm && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setShowForm(false)} />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="drawer-panel p-6 overflow-y-auto space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-white">Create Holiday</h2>
-                <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg">✕</button>
-              </div>
-
-              {/* Title */}
-              <div>
-                <label className="text-xs text-slate-400 mb-1.5 block">Title *</label>
-                <input className="input-dark w-full" placeholder="e.g. Diwali, Annual Sports Day" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="text-xs text-slate-400 mb-1.5 block">Description</label>
-                <textarea className="input-dark w-full resize-none" rows={2} placeholder="Why is this a holiday?" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-              </div>
-
-              {/* Date range */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-slate-400 mb-1.5 block">From Date *</label>
-                  <input type="date" className="input-dark w-full" value={form.fromDate} onChange={e => setForm(f => ({ ...f, fromDate: e.target.value, toDate: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 mb-1.5 block">To Date</label>
-                  <input type="date" className="input-dark w-full" value={form.toDate} min={form.fromDate} onChange={e => setForm(f => ({ ...f, toDate: e.target.value }))} />
-                </div>
-              </div>
-
-              {/* Classes */}
-              <div>
-                <label className="text-xs text-slate-400 mb-2 block">Applicable Classes</label>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setForm(f => ({ ...f, allClasses: true, classes: ['All'] }))}
-                    className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${form.allClasses ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
-                    All Classes
-                  </button>
-                  {classes.map(c => (
-                    <button key={c} onClick={() => toggleClass(c)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${!form.allClasses && form.classes.includes(c) ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
-                      {c}
-                    </button>
                   ))}
-                </div>
-              </div>
+               </div>
+             )}
+          </GlassCard>
 
-              {/* Advanced section */}
-              <div>
-                <button onClick={() => setForm(f => ({ ...f, showAdvanced: !f.showAdvanced }))} className="text-xs text-primary hover:brightness-110 font-medium flex items-center gap-1">
-                  <Shield size={12} /> {form.showAdvanced ? '− Hide' : '+ Show'} Advanced Exceptions
-                </button>
-              </div>
+          <KPIWidget columns={1}>
+            <KPITile label="Total Nodes" value={kpiStats.total} icon={Users} color="primary" />
+            <KPITile label="Verified" value={kpiStats.present} icon={CheckCircle} color="success" />
+            <KPITile label="Missing" value={kpiStats.absent} icon={XCircle} color="danger" />
+            <KPITile label="Attendance %" value={`${kpiStats.percentage}%`} icon={Activity} color="warning" />
+          </KPIWidget>
+        </div>
 
-              {form.showAdvanced && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 border border-white/10 rounded-xl p-4 bg-white/[0.02]">
-                  <p className="text-xs text-slate-400">Employees listed here will <strong className="text-white">not</strong> get a holiday — they must work.</p>
-                  <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
-                    {employees.length === 0 ? <p className="text-xs text-slate-600">No employees found</p> : employees.map(e => {
-                      const id = e.employeeId || e.employee_id || e.id;
-                      const name = e.employeeName || e.name || id;
-                      const sel = form.exemptEmployees.includes(id);
-                      return (
-                        <button key={id} onClick={() => toggleEmployee(id)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left ${sel ? 'bg-accent/20 border border-accent/30 text-accent' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
-                          {sel ? <CheckCircle size={11} /> : <div className="w-[11px] h-[11px] rounded-full border border-slate-600" />}
-                          {name}
-                          {e.category && <span className="ml-auto text-slate-600">{e.category}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-
-              <button onClick={createHoliday} disabled={saving} className="btn-primary w-full justify-center">
-                {saving ? <Loader size={14} className="animate-spin" /> : <CalendarDays size={14} />}
-                {saving ? 'Creating…' : 'Create Holiday'}
-              </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl ${toast.type === 'success' ? 'bg-success/20 border border-success/30 text-success' : 'bg-accent/20 border border-accent/30 text-accent'}`}>
-            {toast.type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Right: Unified DataGrid with integrated filters */}
+        <div className="space-y-4">
+          <input id="scan-date" type="date" className="sr-only" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+          <DataGrid 
+            columns={gridColumns}
+            rows={gridRows}
+            isLoading={gridLoading}
+            emptyMessage={showMarkView ? "NO_NODES_IN_CLUSTER" : "NO_ATTENDANCE_RECORDS"}
+            showSearch={true}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={showMarkView ? "Scan student nodes..." : "Search records..."}
+            onRefresh={showMarkView ? () => { if (selectedClass) refetchAttendance(); } : refetchAdvanced}
+            // Mark mode: class & date filters as legacy JSX
+            filters={showMarkView ? [
+              <DropdownWidget
+                key="class-select"
+                dense
+                options={[{ label: 'SELECT CLASS', value: '' }, ...classes.map(cls => ({ label: `CLASS ${cls.name || cls.className}`, value: cls.name || cls.className }))]}
+                value={selectedClass}
+                onChange={setSelectedClass}
+              />,
+              <StandardButton 
+                key="date-picker"
+                variant="ghost" 
+                size="sm" 
+                icon={Calendar} 
+                onClick={() => document.getElementById('scan-date').showPicker?.()}
+                className="text-primary bg-primary/10 hover:bg-primary/20"
+              >
+                {selectedDate}
+              </StandardButton>
+            ] : []}
+            // Analytics mode: structured filter definitions
+            filterDefinitions={showMarkView ? [] : filterDefinitions}
+            onApplyFilters={refetchAdvanced}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
       </div>
+
+      <AnimatePresence>
+        {showHolidayForm && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHolidayForm(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md">
+                <FormWidget
+                  title="LOG_EXCEPTION"
+                  description="Register custom holiday protocols"
+                  sections={[{ fields: [
+                    { name: 'title', label: 'Reference ID', type: 'text', required: true },
+                    { name: 'fromDate', label: 'Node Start', type: 'date', required: true },
+                    { name: 'toDate', label: 'Node End', type: 'date' },
+                    { name: 'allClasses', label: 'Global Application', type: 'checkbox' }
+                  ]}]}
+                  control={control}
+                  onSubmit={handleSubmit((v) => { createHoliday({ schoolId, body: { ...v, classes: v.allClasses ? ['All'] : [] } }).unwrap().then(() => { setShowHolidayForm(false); reset(); toast.success('Exception registered'); }); })}
+                  onCancel={() => { setShowHolidayForm(false); reset(); }}
+                  submitLabel="COMMIT_EXCEPTION"
+                />
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

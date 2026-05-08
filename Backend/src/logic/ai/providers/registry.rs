@@ -42,7 +42,7 @@ impl ProviderRegistry {
         )
         .fetch_all(&self.db_client.pool)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         for row in rows {
             let provider_id: i32 = row.get("provider_id");
@@ -139,7 +139,7 @@ impl ProviderRegistry {
         .bind(school_id)
         .fetch_optional(&self.db_client.pool)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         if let Some(row) = row {
             let provider_type: String = row.get("provider_type");
@@ -255,7 +255,7 @@ impl ProviderRegistry {
         .bind(provider_type)
         .fetch_optional(&self.db_client.pool)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         if let Some(row) = row {
             let provider_id: i32 = row.get("provider_id");
@@ -271,7 +271,7 @@ impl ProviderRegistry {
             .bind(provider_id)
             .execute(&self.db_client.pool)
             .await
-            .map_err(|e| crate::error::AppError::Database(e))?;
+            .map_err(crate::error::AppError::Database)?;
             
             // Update cache
             {

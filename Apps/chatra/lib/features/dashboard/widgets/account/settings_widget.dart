@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chatra/theme/app_theme.dart';
@@ -57,7 +56,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title,
-        style: GoogleFonts.outfit(
+        style: const TextStyle(
           color: AppColors.accentTeal,
           fontSize: 13,
           fontWeight: FontWeight.bold,
@@ -100,8 +99,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryBrand,
-        title: Text("Profile Settings", style: GoogleFonts.outfit(color: Colors.white)),
-        content: Text("Profile settings functionality will be implemented here.", style: GoogleFonts.outfit(color: Colors.white70)),
+        title: Text("Profile Settings", style: const TextStyle(color: Colors.white)),
+        content: const Text("Profile settings functionality will be implemented here.", style: TextStyle(color: Colors.white70)),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text("OK", style: TextStyle(color: AppColors.accentTeal)))],
       ),
     );
@@ -116,11 +115,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Select Language", style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Select Language", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             ...['English', 'Hindi', 'Gujarati', 'Marathi'].map((lang) {
               return ListTile(
-                title: Text(lang, style: GoogleFonts.outfit(color: Colors.white70)),
+                title: Text(lang, style: const TextStyle(color: Colors.white70)),
                 trailing: _language == lang ? Icon(Icons.check, color: AppColors.accentTeal) : null,
                 onTap: () {
                   setState(() => _language = lang);

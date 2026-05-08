@@ -1,13 +1,13 @@
 pub mod ai;
-pub mod ai_orchestrator;
 pub mod analytics_engine;
+pub mod cache;
 pub mod cache_service;
 pub mod encryption_config;
 pub mod encryption_service;
 pub mod encryption_middleware;
 pub mod email_service;
 pub mod sms_service;
-pub mod ocr_pipeline;
+
 pub mod pdf_generator;
 pub mod storage_engine;
 pub mod fcm_service;

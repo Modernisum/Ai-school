@@ -20,48 +20,70 @@ class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
+      const isChunkError = this.state.error?.name === 'ChunkLoadError' || 
+                          (this.state.error instanceof TypeError && this.state.error.message.includes('fetch'));
+
       return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-red-100">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="text-red-500 w-10 h-10" />
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-slate-200 selection:bg-primary/30">
+          <div className="glass-card p-10 rounded-[2.5rem] max-w-xl w-full border border-white/10 shadow-2xl relative overflow-hidden bg-slate-900/50 backdrop-blur-xl">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50" />
+             
+            <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+              <AlertTriangle className="text-red-400 w-10 h-10" />
             </div>
             
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">Something went wrong</h1>
-            <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-              We encountered an unexpected error while rendering this page. Our team has been notified.
+            <h1 className="text-3xl font-black text-white mb-4 tracking-tight">
+              {isChunkError ? 'Synchronization Lost' : 'Neural Link Interrupted'}
+            </h1>
+            <p className="text-slate-400 mb-10 max-w-sm mx-auto font-medium text-sm leading-relaxed">
+              {isChunkError 
+                ? 'We were unable to download a part of the app. This usually happens if the connection was lost or the server restarted.' 
+                : 'A critical system error has occurred in the interface layer. Use the controls below to restore connectivity.'}
             </p>
 
-            {/* Optional: Show error details ONLY in development/if needed */}
-            {(this.state.error && import.meta.env.DEV) && (
-              <div className="bg-red-50 p-4 rounded-xl text-left mb-8 overflow-auto max-h-48 text-sm">
-                <p className="font-mono text-red-800 break-words font-semibold">
-                  {this.state.error.toString()}
+            {/* Error Detail (Dev Only) */}
+            {import.meta.env.DEV && (
+              <div className="bg-slate-950/80 border border-white/5 p-5 rounded-2xl text-left mb-10 overflow-auto max-h-48 text-[10px] font-mono custom-scrollbar">
+                <p className="text-red-400 font-black mb-2 uppercase tracking-widest">Diagnostic Report:</p>
+                <p className="text-slate-500 break-words mb-2">
+                  {this.state.error?.toString()}
                 </p>
-                <p className="font-mono text-red-600 break-words mt-2 whitespace-pre-wrap">
-                  {this.state.errorInfo?.componentStack}
-                </p>
+                <div className="text-slate-600 mt-2 border-t border-white/5 pt-2">
+                   {this.state.errorInfo?.componentStack}
+                </div>
               </div>
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => window.location.reload()}
-                className="flex items-center justify-center px-6 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors"
+                onClick={() => window.location.reload(true)}
+                className="flex items-center justify-center px-8 py-4 bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
               >
-                <RefreshCw className="mr-2 w-5 h-5" />
-                Reload Page
+                <RefreshCw className="mr-3 w-4 h-4" />
+                Synchronize App
               </button>
               <button
                 onClick={() => window.location.href = '/dashboard/home'}
-                className="flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                className="flex items-center justify-center px-8 py-4 bg-white/5 border border-white/10 text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all active:scale-95"
               >
-                <Home className="mr-2 w-5 h-5" />
-                Back to Dashboard
+                <Home className="mr-3 w-4 h-4" />
+                Return Home
               </button>
             </div>
           </div>
+          
+          <style>{`
+            .glass-card::before {
+              content: "";
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent);
+              pointer-events: none;
+            }
+            .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+          `}</style>
         </div>
       );
     }

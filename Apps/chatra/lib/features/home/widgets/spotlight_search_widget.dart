@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'dart:ui';
-
 import 'package:chatra/theme/app_theme.dart';
 
 class SpotlightSearchWidget extends StatefulWidget {
@@ -51,18 +47,15 @@ class _SpotlightSearchWidgetState extends State<SpotlightSearchWidget> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const Icon(Icons.search_rounded, color: Colors.white60, size: 20),
-            const SizedBox(width: 10),
-            Text(
-              "Spotlight Search",
-              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 15),
-            ),
+            Icon(Icons.search_rounded, color: Colors.white60, size: 20),
+            SizedBox(width: 10),
+            Text("Spotlight Search", style: TextStyle(color: Colors.white38, fontSize: 15)),
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    );
   }
 
   Widget _buildSpotlightOverlay() {
@@ -73,87 +66,77 @@ class _SpotlightSearchWidgetState extends State<SpotlightSearchWidget> {
     }).toList();
 
     return Positioned.fill(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: GestureDetector(
-          onTap: () => widget.onSearchToggle(false),
-          child: Container(
-            color: Colors.black.withOpacity(0.7),
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: widget.searchController,
-                  focusNode: widget.searchFocusNode,
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 20),
-                  onChanged: widget.onSearchQueryChanged,
-                  decoration: InputDecoration(
-                    hintText: "Search anything...",
-                    hintStyle: GoogleFonts.outfit(color: Colors.white38),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.accentTeal,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Colors.white38,
-                      ),
-                      onPressed: () {
-                        widget.searchController.clear();
-                        widget.onSearchQueryChanged("");
-                        widget.onSearchToggle(false);
-                      },
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.05),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(color: AppColors.accentTeal),
-                    ),
+      child: GestureDetector(
+        onTap: () => widget.onSearchToggle(false),
+        child: Container(
+          color: Colors.black.withOpacity(0.85),
+          padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
+          child: Column(
+            children: [
+              TextField(
+                controller: widget.searchController,
+                focusNode: widget.searchFocusNode,
+                style: const TextStyle(color: Colors.white, fontSize: 20),
+                onChanged: widget.onSearchQueryChanged,
+                decoration: InputDecoration(
+                  hintText: "Search anything...",
+                  hintStyle: const TextStyle(color: Colors.white38),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: AppColors.accentTeal,
                   ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return ListTile(
-                        leading: Icon(
-                          item['icon'] as IconData,
-                          color: AppColors.accentTeal,
-                        ),
-                        title: Text(
-                          item['title'].toString(),
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                        subtitle: Text(
-                          "Tap to open ${item['title']}",
-                          style: GoogleFonts.outfit(
-                            color: Colors.white38,
-                            fontSize: 12,
-                          ),
-                        ),
-                        onTap: () {
-                          // Navigation would be handled by parent
-                          widget.onSearchToggle(false);
-                        },
-                      );
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white38,
+                    ),
+                    onPressed: () {
+                      widget.searchController.clear();
+                      widget.onSearchQueryChanged("");
+                      widget.onSearchToggle(false);
                     },
                   ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.05),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: AppColors.accentTeal),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final item = filtered[index];
+                    return ListTile(
+                      leading: Icon(
+                        item['icon'] as IconData,
+                        color: AppColors.accentTeal,
+                      ),
+                      title: Text(
+                        item['title'].toString(),
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      subtitle: Text(
+                        "Tap to open ${item['title']}",
+                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
+                      onTap: () {
+                        widget.onSearchToggle(false);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

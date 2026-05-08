@@ -13,6 +13,37 @@ export const infrastructureApi = baseApi.injectEndpoints({
           ]
           : [{ type: 'Complaints', id: 'LIST' }],
     }),
+    
+    getComplaintsWithFilters: builder.query({
+      query: ({ schoolId, userId, userRole, status, startDate, endDate, search }) => {
+        const params = new URLSearchParams();
+        if (userId) params.append('user_id', userId);
+        if (userRole) params.append('user_role', userRole);
+        if (status) params.append('status', status);
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+        if (search) params.append('search', search);
+        const qs = params.toString();
+        return `/complains/${schoolId}${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: (result) =>
+        result?.success && result.data
+          ? [
+            ...result.data.map(({ id }) => ({ type: 'Complaints', id })),
+            { type: 'Complaints', id: 'FILTERED_LIST' },
+          ]
+          : [{ type: 'Complaints', id: 'FILTERED_LIST' }],
+    }),
+    
+    getComplaintsStats: builder.query({
+      query: (schoolId) => `/complains/${schoolId}/stats`,
+      transformResponse: (response) => response.data || {},
+    }),
+    
+    getWeeklyComplaints: builder.query({
+      query: ({ schoolId, weeks = 4 }) => `/complains/${schoolId}/weekly?weeks=${weeks}`,
+      transformResponse: (response) => response.data || [],
+    }),
 
     createComplaint: builder.mutation({
       query: ({ schoolId, body }) => ({
@@ -325,12 +356,63 @@ export const infrastructureApi = baseApi.injectEndpoints({
         { type: 'ResponsibilityVersions', id: responsibilityId }
       ],
     }),
+
+    // --- Responsibility Analytics & Reporting ---
+    getResponsibilityAnalytics: builder.query({
+      query: ({ schoolId, responsibilityId }) => `/responsibility/${schoolId}/${responsibilityId}/analytics`,
+      providesTags: (result, error, { responsibilityId }) => [{ type: 'ResponsibilityAnalytics', id: responsibilityId }],
+    }),
+
+    getOverviewAnalytics: builder.query({
+      query: ({ schoolId, timeRange = '30d' }) => {
+        const params = new URLSearchParams();
+        if (timeRange) params.append('timeRange', timeRange);
+        return `/responsibility/${schoolId}/overview/analytics?${params.toString()}`;
+      },
+      providesTags: [{ type: 'Responsibilities', id: 'OVERVIEW' }],
+    }),
+
+    bulkAssignResponsibilities: builder.mutation({
+      query: ({ schoolId, responsibilityId, body }) => ({
+        url: `/responsibility/${schoolId}/responsibilities/${responsibilityId}/bulk-assign`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'ResponsibilityHistory', id: responsibilityId },
+        { type: 'ResponsibilityDetails', id: responsibilityId }
+      ],
+    }),
+
+    getUtilizationMetrics: builder.query({
+      query: ({ schoolId, startDate, endDate }) => {
+        const params = new URLSearchParams();
+        if (startDate) params.append('startDate', startDate);
+        if (endDate) params.append('endDate', endDate);
+        return `/responsibility/${schoolId}/metrics/utilization?${params.toString()}`;
+      },
+      providesTags: [{ type: 'Responsibilities', id: 'METRICS' }],
+    }),
+
+    generateUtilizationReport: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/utilization/${startDate}/${endDate}`,
+    }),
+
+    exportResponsibilitiesCSV: builder.query({
+      query: (schoolId) => ({
+        url: `/responsibility/${schoolId}/export/csv`,
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
   overrideExisting: false,
 });
 
 export const {
   useGetComplaintsQuery,
+  useGetComplaintsWithFiltersQuery,
+  useGetComplaintsStatsQuery,
+  useGetWeeklyComplaintsQuery,
   useCreateComplaintMutation,
   useGetMaterialsQuery,
   useAddMaterialMutation,
@@ -367,4 +449,10 @@ export const {
   useGetResponsibilityVersionsQuery,
   useRollbackResponsibilityMutation,
   useCreateResponsibilityVersionMutation,
+  useGetResponsibilityAnalyticsQuery,
+  useGetOverviewAnalyticsQuery,
+  useBulkAssignResponsibilitiesMutation,
+  useGetUtilizationMetricsQuery,
+  useGenerateUtilizationReportQuery,
+  useExportResponsibilitiesCSVQuery,
 } = infrastructureApi;

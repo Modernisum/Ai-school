@@ -6,6 +6,8 @@ import {
   Briefcase, CreditCard, Server, Settings, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SwitchButton from '../../../components/ui/SwitchButton';
+import StandardButton from '../../../components/ui/StandardButton';
 
 const API_BASE = window.location.origin.includes('localhost') 
   ? `http://${window.location.hostname}:8080/api` 
@@ -125,55 +127,46 @@ export default function RecoveryPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen">
+    <div className="max-w-full p-1 space-y-1 pb-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-primary/10 rounded-2xl border border-primary/20">
-              <History size={28} className="text-primary" />
-            </div>
-            Audit Recovery
-          </h1>
-          <p className="text-slate-400 mt-2 font-medium">Track and revert changes made to student records.</p>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <History size={14} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-white tracking-widest uppercase italic leading-none">AUDIT_RECOVERY</h1>
+            <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">REVERT_ENGINE • MANUAL_RECOVERY_PROTOCOL</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-x-auto custom-scrollbar">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
-                  isActive 
-                    ? 'bg-primary/20 text-primary border border-primary/20' 
-                    : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-                }`}
-              >
-                <Icon size={16} />
-                <span className="font-bold text-sm tracking-tight">{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="scale-75 origin-right">
+          <SwitchButton 
+            tabs={TABS.map(t => ({ ...t, label: t.label.toUpperCase() }))}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+      <div className="flex items-center justify-between gap-1 mb-2">
+        <div className="relative flex-1 group">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-primary transition-colors" />
           <input 
             type="text" 
-            placeholder="Search records..."
-            className="bg-slate-900/50 border border-white/5 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white w-full md:w-80 focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+            placeholder="SCAN_AUDIT_LOGS..."
+            className="w-full bg-white/[0.03] border border-white/10 rounded-lg h-8 pl-9 pr-3 text-micro text-white focus:outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-800 font-black uppercase tracking-widest"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <button onClick={fetchHistory} className="p-2.5 bg-slate-900/50 border border-white/5 hover:bg-white/10 rounded-xl transition-colors text-slate-400 hover:text-white">
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <StandardButton 
+          variant="ghost" 
+          size="xs" 
+          onClick={fetchHistory} 
+          icon={RefreshCw}
+          className={loading ? 'animate-spin' : ''}
+        />
       </div>
 
       {loading ? (
@@ -195,60 +188,51 @@ export default function RecoveryPage() {
             const ActiveIcon = TABS.find(t => t.id === activeTab)?.icon || User;
             return (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.02 }}
               key={item.id}
-              className="group glass-card p-6 flex flex-col md:flex-row md:items-center gap-6 hover:border-primary/30 transition-all border border-white/5 bg-slate-900/40 relative overflow-hidden rounded-2xl"
+              className="glass-card p-2 border-white/5 bg-white/[0.02] hover:border-primary/30 transition-all group flex items-center justify-between gap-4"
             >
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
-              
-              <div className="flex items-center gap-4 min-w-[240px]">
-                <div className="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center text-primary border border-white/5">
-                  <ActiveIcon size={24} />
+              <div className="flex items-center gap-3 min-w-[200px]">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-primary border border-white/10">
+                  <ActiveIcon size={14} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-lg">{item.primaryText}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-mono text-slate-500">{item.secondaryText}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-700" />
-                    <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{item.badge}</span>
+                  <h3 className="font-black text-white text-micro uppercase italic leading-none">{item.primaryText}</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[8px] font-mono text-slate-700 font-black uppercase tracking-tighter">{item.secondaryText}</span>
+                    <span className="text-[8px] bg-primary/5 text-primary/80 px-1 rounded border border-primary/10 font-black uppercase italic tracking-widest">{item.badge}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {formatDelta(item.delta).slice(0, 4).map((d, i) => (
-                    <div key={i} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/[0.03] flex items-center gap-2">
-                       <span className="text-[10px] font-bold text-slate-500 uppercase">{d.label}:</span>
-                       <span className="text-[11px] text-emerald-400 font-medium truncate max-w-[120px]">{String(d.value)}</span>
+              <div className="flex-1 hidden md:block">
+                <div className="flex flex-wrap gap-1">
+                  {formatDelta(item.delta).slice(0, 3).map((d, i) => (
+                    <div key={i} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/5 flex items-center gap-1.5">
+                       <span className="text-[8px] font-black text-slate-700 uppercase italic leading-none">{d.label}:</span>
+                       <span className="text-[8px] text-emerald-500 font-black uppercase italic tracking-tighter leading-none truncate max-w-[80px]">{String(d.value)}</span>
                     </div>
                   ))}
-                  {formatDelta(item.delta).length > 4 && (
-                    <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/[0.03] text-[11px] text-slate-400 font-medium">
-                      +{formatDelta(item.delta).length - 4} more
-                    </div>
-                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 min-w-[200px] justify-between md:justify-end">
-                <div className="flex flex-col items-end">
-                  <p className="text-sm font-bold text-white flex items-center gap-2">
-                    <Calendar size={14} className="text-slate-400" />
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-[8px] font-black text-white flex items-center gap-1.5 uppercase italic tracking-widest leading-none">
+                    <Calendar size={10} className="text-slate-700" />
                     {new Date(item.createdAt).toLocaleDateString()}
                   </p>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-[8px] text-slate-700 font-black uppercase italic tracking-widest mt-0.5 leading-none">{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 
-                <button 
-                  onClick={() => setShowUndoModal(item)}
-                  title="Revert to this version"
-                  className="p-3 rounded-2xl bg-primary/10 hover:bg-primary border border-primary/20 text-primary hover:text-white shadow-lg transition-all group-hover:scale-110 active:scale-95"
-                >
-                  <RotateCcw size={20} />
-                </button>
+                <StandardButton 
+                  icon={RotateCcw} 
+                  size="xs" 
+                  onClick={() => setShowUndoModal(item)} 
+                  variant="ghost" 
+                />
               </div>
             </motion.div>
             );

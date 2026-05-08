@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "created_at": "2026-04-27T02:12:08.407431+00:00",
+    "fees_amount": "1000",
+    "fees_name": "Tuition Fee",
+    "fees_period": "monthly",
+    "fees_reason": "Monthly tuition fee for all classes",
+    "id": "F1777255928406",
+    "school_id": "515004"
+  },
+  {
+    "created_at": "2026-04-27T02:12:08.414832+00:00",
+    "fees_amount": "5000",
+    "fees_name": "Admission Fee",
+    "fees_period": "one_time",
+    "fees_reason": "One-time admission fee",
+    "id": "F1777255928414",
+    "school_id": "515004"
+  },
+  {
+    "created_at": "2026-04-27T02:12:08.419102+00:00",
+    "fees_amount": "500",
+    "fees_name": "Exam Fee",
+    "fees_period": "term",
+    "fees_reason": "Term examination fee",
+    "id": "F1777255928418",
+    "school_id": "515004"
+  },
+  {
+    "created_at": "2026-04-27T02:12:08.423426+00:00",
+    "fees_amount": "2000",
+    "fees_name": "Transport Fee",
+    "fees_period": "monthly",
+    "fees_reason": "Monthly transport charges",
+    "id": "F1777255928422",
+    "school_id": "515004"
+  }
+]

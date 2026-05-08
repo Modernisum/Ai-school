@@ -80,7 +80,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
             <div 
                 className="config-header" 
                 onClick={() => setExpanded(!expanded)}
-                style={{ cursor: 'pointer', padding: '12px 16px', background: 'var(--bg-light)', borderRadius: '8px', marginBottom: '8px' }}
+                style={{ cursor: 'pointer', padding: '12px 16px', background: 'var(--surface-layer2)', borderRadius: '8px', marginBottom: '8px' }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -88,7 +88,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                         width: '24px', 
                         height: '24px', 
                         borderRadius: '6px', 
-                        background: 'var(--accent)', 
+                        background: 'var(--color-primary)', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center' 
@@ -107,7 +107,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                             {section === 'fees' && 'Fee Structure'}
                             {section === 'students' && 'Student Management'}
                         </h4>
-                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
                             {localConfig.fields.length} fields • {localConfig.enabled ? 'Enabled' : 'Disabled'}
                         </p>
                     </div>
@@ -136,7 +136,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     className="config-content"
-                    style={{ padding: '16px', background: 'var(--bg-lighter)', borderRadius: '8px', marginBottom: '16px' }}
+                    style={{ padding: '16px', background: 'var(--surface-layer2)', borderRadius: '8px', marginBottom: '16px' }}
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h5 style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Field Configuration</h5>
@@ -146,7 +146,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                     </div>
 
                     {localConfig.fields.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>
+                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
                             <FileText size={24} style={{ marginBottom: '8px', opacity: 0.5 }} />
                             <p>No fields configured. Add fields to define what data gets auto-filled.</p>
                         </div>
@@ -155,7 +155,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                             {localConfig.fields.map((field, index) => (
                                 <div key={field.id} className="field-card" style={{ 
                                     padding: '12px', 
-                                    border: '1px solid var(--border)', 
+                                    border: '1px solid var(--border-default)', 
                                     borderRadius: '8px',
                                     marginBottom: '12px'
                                 }}>
@@ -165,7 +165,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 fontSize: '12px', 
                                                 fontWeight: '600', 
                                                 background: 'var(--accent-light)', 
-                                                color: 'var(--accent)',
+                                                color: 'var(--color-primary)',
                                                 padding: '2px 8px',
                                                 borderRadius: '4px'
                                             }}>
@@ -178,7 +178,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 placeholder="Field name (API key)"
                                                 style={{ 
                                                     padding: '6px 10px',
-                                                    border: '1px solid var(--border)',
+                                                    border: '1px solid var(--border-default)',
                                                     borderRadius: '4px',
                                                     fontSize: '13px',
                                                     width: '180px'
@@ -191,7 +191,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 placeholder="Display label"
                                                 style={{ 
                                                     padding: '6px 10px',
-                                                    border: '1px solid var(--border)',
+                                                    border: '1px solid var(--border-default)',
                                                     borderRadius: '4px',
                                                     fontSize: '13px',
                                                     width: '180px'
@@ -216,7 +216,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 style={{ 
                                                     width: '100%',
                                                     padding: '6px 10px',
-                                                    border: '1px solid var(--border)',
+                                                    border: '1px solid var(--border-default)',
                                                     borderRadius: '4px',
                                                     fontSize: '13px'
                                                 }}
@@ -237,7 +237,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 style={{ 
                                                     width: '100%',
                                                     padding: '6px 10px',
-                                                    border: '1px solid var(--border)',
+                                                    border: '1px solid var(--border-default)',
                                                     borderRadius: '4px',
                                                     fontSize: '13px'
                                                 }}
@@ -281,7 +281,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                                 style={{ 
                                                     width: '100%',
                                                     padding: '6px 10px',
-                                                    border: '1px solid var(--border)',
+                                                    border: '1px solid var(--border-default)',
                                                     borderRadius: '4px',
                                                     fontSize: '13px'
                                                 }}
@@ -299,7 +299,7 @@ const SectionConfig = ({ section, config, onUpdate }) => {
                                             style={{ 
                                                 width: '100%',
                                                 padding: '6px 10px',
-                                                border: '1px solid var(--border)',
+                                                border: '1px solid var(--border-default)',
                                                 borderRadius: '4px',
                                                 fontSize: '13px'
                                             }}
@@ -498,14 +498,14 @@ function SetupTemplatesPage() {
     return (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="page">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <Settings size={22} style={{ color: 'var(--accent)' }} />
+                <Settings size={22} style={{ color: 'var(--color-primary)' }} />
                 <h1 className="page-title">Setup Templates</h1>
             </div>
             <p className="page-sub">Manage school setup templates for automatic data filling</p>
 
             <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
                 {/* Templates List */}
-                <div style={{ flex: '0 0 300px', background: 'var(--bg-light)', borderRadius: '12px', padding: '20px' }}>
+                <div style={{ flex: '0 0 300px', background: 'var(--surface-layer2)', borderRadius: '12px', padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Templates</h3>
                         <button
@@ -520,10 +520,10 @@ function SetupTemplatesPage() {
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '40px' }}>
                             <div className="spinner"></div>
-                            <p style={{ marginTop: '12px', color: 'var(--text-light)' }}>Loading templates...</p>
+                            <p style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>Loading templates...</p>
                         </div>
                     ) : templates.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
                             <FileText size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
                             <p>No templates found. Create your first template to get started.</p>
                         </div>
@@ -539,11 +539,11 @@ function SetupTemplatesPage() {
                                     }}
                                     style={{
                                         padding: '16px',
-                                        border: selectedTemplate === template.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                        border: selectedTemplate === template.id ? '2px solid var(--color-primary)' : '1px solid var(--border-default)',
                                         borderRadius: '8px',
                                         marginBottom: '12px',
                                         cursor: 'pointer',
-                                        background: selectedTemplate === template.id ? 'var(--accent-light)' : 'var(--bg-lighter)',
+                                        background: selectedTemplate === template.id ? 'var(--accent-light)' : 'var(--surface-layer2)',
                                         transition: 'all 0.2s'
                                     }}
                                 >
@@ -555,7 +555,7 @@ function SetupTemplatesPage() {
                                                     <span style={{
                                                         fontSize: '10px',
                                                         fontWeight: '700',
-                                                        background: 'var(--accent)',
+                                                        background: 'var(--color-primary)',
                                                         color: 'white',
                                                         padding: '2px 6px',
                                                         borderRadius: '4px'
@@ -564,10 +564,10 @@ function SetupTemplatesPage() {
                                                     </span>
                                                 )}
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)', marginBottom: '8px' }}>
+                                            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                 {template.description || 'No description'}
                                             </p>
-                                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--text-light)' }}>
+                                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                                                 <span>Created: {new Date(template.created_at).toLocaleDateString()}</span>
                                                 <span>•</span>
                                                 <span>Schools: {template.school_count || 0}</span>
@@ -618,7 +618,7 @@ function SetupTemplatesPage() {
                 </div>
 
                 {/* Configuration Panel */}
-                <div style={{ flex: 1, background: 'var(--bg-light)', borderRadius: '12px', padding: '20px' }}>
+                <div style={{ flex: 1, background: 'var(--surface-layer2)', borderRadius: '12px', padding: '20px' }}>
                     {selectedTemplate ? (
                         <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -626,7 +626,7 @@ function SetupTemplatesPage() {
                                     <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
                                         {templates.find(t => t.id === selectedTemplate)?.name || 'Template'} Configuration
                                     </h3>
-                                    <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--text-light)' }}>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
                                         Configure what data gets auto-filled during school setup
                                     </p>
                                 </div>
@@ -641,7 +641,7 @@ function SetupTemplatesPage() {
 
                             <div style={{ marginBottom: '32px' }}>
                                 <h4 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: '600' }}>Auto-fill Sections</h4>
-                                <p style={{ marginBottom: '20px', fontSize: '14px', color: 'var(--text-light)' }}>
+                                <p style={{ marginBottom: '20px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                                     Enable/disable sections and configure fields that should be automatically filled when creating a new school.
                                 </p>
 
@@ -657,19 +657,19 @@ function SetupTemplatesPage() {
 
                             <div style={{
                                 padding: '20px',
-                                background: 'var(--bg-lighter)',
+                                background: 'var(--surface-layer2)',
                                 borderRadius: '8px',
-                                border: '1px solid var(--border)'
+                                border: '1px solid var(--border-default)'
                             }}>
                                 <h4 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>Template Usage</h4>
-                                <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-light)' }}>
+                                <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                                     This template will be used when:
                                 </p>
                                 <ul style={{
                                     margin: 0,
                                     paddingLeft: '20px',
                                     fontSize: '14px',
-                                    color: 'var(--text-light)'
+                                    color: 'var(--text-secondary)'
                                 }}>
                                     <li>Creating a new school via SuperAdmin (if set as default)</li>
                                     <li>Manually assigned to a specific school during setup</li>
@@ -681,7 +681,7 @@ function SetupTemplatesPage() {
                         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                             <Settings size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
                             <h4 style={{ marginBottom: '8px', fontSize: '18px', fontWeight: '600' }}>Select a Template</h4>
-                            <p style={{ color: 'var(--text-light)', marginBottom: '24px' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
                                 Choose a template from the left panel to configure its auto-fill settings.
                             </p>
                             <button
@@ -724,7 +724,7 @@ function SetupTemplatesPage() {
                                 style={{
                                     width: '100%',
                                     padding: '10px 12px',
-                                    border: '1px solid var(--border)',
+                                    border: '1px solid var(--border-default)',
                                     borderRadius: '8px',
                                     fontSize: '14px'
                                 }}
@@ -741,7 +741,7 @@ function SetupTemplatesPage() {
                                 style={{
                                     width: '100%',
                                     padding: '10px 12px',
-                                    border: '1px solid var(--border)',
+                                    border: '1px solid var(--border-default)',
                                     borderRadius: '8px',
                                     fontSize: '14px',
                                     resize: 'vertical'
@@ -802,7 +802,7 @@ function SetupTemplatesPage() {
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-color: var(--border);
+                    background-color: var(--border-default);
                     transition: .2s;
                     border-radius: 20px;
                 }
@@ -822,7 +822,7 @@ function SetupTemplatesPage() {
                     width: 12px;
                 }
                 input:checked + .slider {
-                    background-color: var(--accent);
+                    background-color: var(--color-primary);
                 }
                 input:checked + .slider:before {
                     transform: translateX(20px);
@@ -853,7 +853,7 @@ function SetupTemplatesPage() {
                     z-index: 1000;
                 }
                 .modal {
-                    background: var(--bg-light);
+                    background: var(--surface-layer2);
                     border-radius: 12px;
                     padding: 24px;
                     width: 90%;
@@ -861,8 +861,8 @@ function SetupTemplatesPage() {
                     overflow-y: auto;
                 }
                 .spinner {
-                    border: 3px solid var(--border);
-                    border-top: 3px solid var(--accent);
+                    border: 3px solid var(--border-default);
+                    border-top: 3px solid var(--color-primary);
                     border-radius: 50%;
                     width: 30px;
                     height: 30px;

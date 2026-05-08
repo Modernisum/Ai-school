@@ -17,10 +17,10 @@ impl StudentValidation {
 
         // 1. Aadhaar Uniqueness (Cross Student & Employee)
         if let Some(aadhaar) = data["aadhaarNumber"].as_str() {
-            if !aadhaar.trim().is_empty() {
-                if self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid, None).await? {
-                    return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member in this or another school".to_string()));
-                }
+            if !aadhaar.trim().is_empty()
+                && self.repos.student.check_aadhaar_exists(school_id, aadhaar, exclude_sid, None).await?
+            {
+                return Err(AppError::Validation("Aadhaar Number already exists for another student or staff member in this or another school".to_string()));
             }
         }
 

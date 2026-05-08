@@ -8,8 +8,10 @@ The Responsibility System helps schools manage employee responsibilities, assign
 2. [Managing Responsibilities](#managing-responsibilities)
 3. [Assigning Responsibilities](#assigning-responsibilities)
 4. [Tracking Performance](#tracking-performance)
-5. [Generating Reports](#generating-reports)
+5. [Filtering & Searching](#filtering--searching)
 6. [Troubleshooting](#troubleshooting)
+
+---
 
 ## Getting Started
 
@@ -19,14 +21,16 @@ The Responsibility System helps schools manage employee responsibilities, assign
 3. You'll see the main dashboard with:
    - Total responsibilities
    - Active assignments
-   - Revenue overview
    - Utilization rate
+   - Analytics overview
 
 ### User Roles & Permissions
 - **Administrator**: Full access to create, edit, delete responsibilities and assignments
 - **Principal**: View all responsibilities, generate reports
 - **Department Head**: Manage responsibilities within their department
 - **Teacher/Staff**: View assigned responsibilities, update status
+
+---
 
 ## Managing Responsibilities
 
@@ -36,13 +40,11 @@ The Responsibility System helps schools manage employee responsibilities, assign
    - **Name**: Descriptive name (e.g., "Class Teacher - Grade 5")
    - **Description**: Detailed responsibilities
    - **Employee Type**: Teacher, Staff, Administrator, etc.
-   - **Space Category**: Classroom, Lab, Office, etc.
-   - **Monthly Price**: Fixed monthly compensation
-   - **Per Day Price**: Daily rate (for part-time)
-   - **Student Fee**: Additional fee per student
-   - **Work Level**: Low, Medium, High
-   - **Work Period**: Daily, Weekly, Monthly
-   - **Work Amount**: Numerical workload (e.g., 1.0 for full-time)
+   - **Priority**: Low, Medium, High
+   - **Estimated Hours/Week**: Numerical workload value
+   - **Compensation**: Fixed compensation amount
+   - **Start Date / End Date**: Active period
+   - **Is Active**: Toggle to enable/disable
 
 3. Click **Save** to create the responsibility
 
@@ -56,7 +58,9 @@ The Responsibility System helps schools manage employee responsibilities, assign
 1. Find the responsibility in the list
 2. Click the **Delete** button (trash icon)
 3. Confirm deletion
-   - **Note**: Deleting a responsibility will also remove all assignments
+   - **Note:** Deleting a responsibility will also remove all assignments
+
+---
 
 ## Assigning Responsibilities
 
@@ -65,27 +69,19 @@ The Responsibility System helps schools manage employee responsibilities, assign
 2. Select:
    - **Employee**: Choose from the employee list
    - **Responsibility**: Select from available responsibilities
-   - **Space**: Select the physical space (classroom, lab, etc.)
    - **Start Date**: Assignment start date
    - **End Date**: Optional end date
-
 3. Click **Assign**
 
 ### Bulk Assignments
 1. Navigate to **Assignments → Bulk Assign**
-2. Upload a CSV file with columns:
-   ```
-   employee_id,responsibility_id,space_id,start_date,end_date
-   emp_123,resp_456,class_101,2024-01-01,2024-12-31
-   ```
-
-3. Or use the form to add multiple assignments manually
+2. Select the responsibility and add multiple employee IDs
+3. Set a common assignment date and optional notes
 4. Click **Process Assignments**
 
 ### Viewing Assignments
 - **By Employee**: Go to **Employees → [Employee Name] → Responsibilities**
 - **By Responsibility**: Go to **Responsibilities → [Responsibility Name] → Assignments**
-- **By Student**: Go to **Students → [Student Name] → Teachers/Responsibilities**
 
 ### Removing Assignments
 1. Find the assignment in the list
@@ -93,109 +89,91 @@ The Responsibility System helps schools manage employee responsibilities, assign
 3. Provide reason (optional)
 4. Confirm removal
 
+---
+
 ## Tracking Performance
 
 ### Responsibility Analytics
 Each responsibility has an analytics dashboard showing:
 - **Total Assignments**: Number of employees assigned
 - **Active Assignments**: Currently active assignments
-- **Total Revenue**: Total earnings from this responsibility
+- **Completion Rate**: Percentage of tasks completed
 - **Utilization Rate**: Percentage of capacity used
-- **Employee Distribution**: Breakdown by employee type
-- **Space Utilization**: Performance by space
+- **Trends**: Assignment trend over the last 30 days
 
 ### Employee Workload
 View an employee's workload:
 1. Go to **Employees → [Employee Name] → Workload**
 2. See:
    - Total responsibilities assigned
-   - Monthly earnings
-   - Workload distribution
-   - Performance metrics
+   - Hours this week
+   - Completion percentage
 
-### Student-Teacher Mapping
-For students to see their teachers:
-1. Go to **Students → [Student Name] → My Teachers**
-2. View all teachers assigned to their classes/spaces
-3. See contact information and responsibilities
+### Overview Analytics Dashboard
+The school-wide analytics view shows:
+- Total vs. active responsibilities
+- Breakdown by employee type and priority
+- Average assignments per responsibility
+- Total estimated hours per week
+- Overall utilization rate
 
-## Generating Reports
+---
 
-### Available Reports
-1. **Utilization Report**: Shows how effectively spaces are being used
-2. **Workload Report**: Employee workload distribution
-3. **Space Distribution Report**: Responsibility distribution across spaces
-4. **Revenue Report**: Financial performance by responsibility
-5. **Assignment History**: Timeline of all assignments
+## Filtering & Searching
 
-### Generating a Report
-1. Navigate to **Reports → [Report Type]**
-2. Select date range:
-   - Last 7 days
-   - Last 30 days
-   - Last 90 days
-   - Custom range
-3. Click **Generate Report**
+### All filtering and pagination happens in the frontend — no need to reload data.
 
-### Export Options
-All reports can be exported as:
-- **PDF**: For printing or sharing
-- **CSV**: For data analysis
-- **Excel**: For spreadsheet processing
+### Available Filters
+Use the filter panel to narrow down the responsibility list:
 
-### Scheduled Reports
-Set up automatic report generation:
-1. Go to **Reports → Scheduled Reports**
-2. Configure:
-   - Report type
-   - Frequency (Daily, Weekly, Monthly)
-   - Recipients (email addresses)
-   - Format (PDF, CSV)
-3. Click **Save Schedule**
+| Filter | Options |
+|--------|---------|
+| **Employee Type** | Teacher, Staff, Administrator |
+| **Status** | Active, Inactive |
+| **Priority** | High, Medium, Low |
+| **Date Range** | Start Date / End Date |
 
-## Common Tasks
-
-### Finding a Responsibility
+### Search
 Use the search bar to find responsibilities by:
 - Name
-- Employee type
-- Space category
 - Description keywords
 
-### Filtering Responsibilities
-Use filters to narrow down the list:
-- **Employee Type**: Teacher, Staff, etc.
-- **Space Category**: Classroom, Lab, etc.
-- **Status**: Active, Inactive
-- **Work Level**: Low, Medium, High
-
-### Sorting Responsibilities
+### Sorting
 Click column headers to sort by:
-- Name (A-Z, Z-A)
-- Monthly Price (High-Low, Low-High)
-- Created Date (Newest-Oldest)
+- Name (A–Z, Z–A)
+- Priority (High–Low)
+- Created Date (Newest–Oldest)
 - Number of Assignments
+
+### Pagination
+The list is paginated locally in the browser. Use the **Next / Previous** buttons or select a page size (10, 25, 50) from the toolbar.
+
+### Exporting Data
+Export the current filtered list to **CSV** using the **Export** button in the toolbar. The file is generated directly in the browser — no server request needed.
+
+---
 
 ## Best Practices
 
 ### 1. Naming Conventions
-- Use consistent naming: `[Role] - [Grade/Subject] - [Space]`
-- Example: `Class Teacher - Grade 5 - Room 101`
+- Use consistent naming: `[Role] - [Grade/Subject]`
+- Example: `Class Teacher - Grade 5`
 
-### 2. Pricing Strategy
-- Set realistic monthly prices based on market rates
-- Consider per-day pricing for part-time roles
-- Include student fees where applicable
-
-### 3. Assignment Management
+### 2. Assignment Management
 - Assign responsibilities before the academic year starts
 - Review assignments quarterly
 - Update assignments when employees change roles
 
-### 4. Space Utilization
-- Monitor space utilization regularly
-- Reassign underutilized spaces
-- Balance workload across similar spaces
+### 3. Using Filters Effectively
+- Use **Date Range** filters for time-bound analytics
+- Use **isActive=false** to audit inactive responsibilities
+- Use **Priority: High** filter to focus on critical responsibilities
+
+### 4. Performance Tips
+- Use filters to reduce the visible data set before exporting
+- The analytics dashboard auto-updates when filters change — no page reload needed
+
+---
 
 ## Troubleshooting
 
@@ -208,24 +186,18 @@ Click column headers to sort by:
 
 #### "Cannot assign responsibility"
 - Employee may already be assigned to this responsibility
-- Space may be at full capacity
 - Check assignment dates (no overlap)
 
-#### "Report generation failed"
-- Check date range validity
-- Ensure you have sufficient data for the period
-- Try a smaller date range
-
-#### "Slow performance"
-- Use filters to reduce data volume
-- Generate reports during off-peak hours
-- Contact IT if issue persists
+#### "Slow page load"
+- Apply filters to reduce data volume on the next fetch
+- Contact IT if the issue persists
 
 ### Error Messages
 - **"Duplicate assignment"**: Employee already assigned
-- **"Space not available"**: Space at full capacity or not found
 - **"Permission denied"**: Insufficient user permissions
 - **"Invalid date range"**: End date before start date
+
+---
 
 ## Getting Help
 
@@ -244,14 +216,15 @@ Click column headers to sort by:
 - Report bugs through the **Issue Tracker**
 - Suggest features via the **Feature Request** form
 
+---
+
 ## Appendix
 
 ### Keyboard Shortcuts
 - `Ctrl + N`: New responsibility
 - `Ctrl + A`: New assignment
-- `Ctrl + F`: Search
-- `Ctrl + P`: Print report
-- `Ctrl + E`: Export data
+- `Ctrl + F`: Search / Filter
+- `Ctrl + E`: Export current list as CSV
 
 ### Mobile Access
 The responsibility system is accessible via:
@@ -261,16 +234,16 @@ The responsibility system is accessible via:
 ### Data Privacy
 - Responsibility data is stored securely
 - Access is restricted by role
-- Reports contain anonymized data where appropriate
+- Exported data follows school data privacy policies
 
 ### Version History
 - **v1.0**: Basic responsibility management
 - **v1.1**: Added analytics and reporting
-- **v1.2**: Added bulk assignments and CSV import/export
-- **v1.3**: Added scheduled reports and email delivery
-- **Current**: v1.4 with performance optimizations and pagination
+- **v1.2**: Added bulk assignments
+- **v1.3**: Scheduled reports and email delivery
+- **v2.0**: Frontend-driven pagination, filtering, sorting & CSV export; backend APIs streamlined
 
 ---
 
-*Last Updated: April 2024*  
+*Last Updated: April 2026*  
 *For the latest updates, check the system announcements.*

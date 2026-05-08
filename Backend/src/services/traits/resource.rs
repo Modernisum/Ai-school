@@ -3,11 +3,6 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 #[async_trait]
-pub trait OCRService: Send + Sync {
-    async fn perform_ocr(&self, image_url: &str) -> AppResult<Value>;
-}
-
-#[async_trait]
 pub trait AiService: Send + Sync {
     async fn post_query(&self, school_id: &str, query: Value) -> AppResult<Value>;
     async fn query_ai(&self, school_id: &str, user_query: &str) -> AppResult<Value>;

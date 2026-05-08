@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/theme/app_theme.dart';
 
-/// Displays pending fees summary card on the home screen.
 class FeesPreviewWidget extends StatelessWidget {
   final Map<String, dynamic> fees;
 
@@ -30,18 +27,14 @@ class FeesPreviewWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Wallet/Fees',
-            style: GoogleFonts.outfit(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           Text(
             '₹${pending.toStringAsFixed(0)}',
-            style: GoogleFonts.outfit(
+            style: const TextStyle(
               color: AppColors.accentCream,
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -50,7 +43,7 @@ class FeesPreviewWidget extends StatelessWidget {
           ),
           Text(
             'Pending Balance',
-            style: GoogleFonts.outfit(
+            style: TextStyle(
               color: Colors.redAccent.withOpacity(0.6),
               fontSize: 11,
             ),
@@ -65,9 +58,9 @@ class FeesPreviewWidget extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
+                const Text(
                   'Pay Now',
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
                     color: AppColors.accentTeal,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -80,6 +73,6 @@ class FeesPreviewWidget extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 150.ms);
+    );
   }
 }

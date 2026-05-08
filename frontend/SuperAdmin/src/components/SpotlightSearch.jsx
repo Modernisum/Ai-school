@@ -22,9 +22,7 @@ export default function SpotlightSearch() {
       }
       if (e.key === 'Escape') setIsOpen(false);
     };
-
     const handleToggle = () => setIsOpen(prev => !prev);
-
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('toggle-spotlight', handleToggle);
     return () => {
@@ -48,15 +46,12 @@ export default function SpotlightSearch() {
       setResults([]);
       return;
     }
-
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
       try {
         const url = `${API_BASE}/api/search/global?q=${query}`;
         const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('sa_token')}`
-            }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('sa_token')}` }
         });
         const data = await response.json();
         if (data.success) {
@@ -69,16 +64,12 @@ export default function SpotlightSearch() {
         setLoading(false);
       }
     }, 300);
-
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
   const handleSelect = (result) => {
-    // Correct URL mapping for Super Admin
     let url = result.url;
-    if (result.type === 'school') {
-        url = `/schools/${result.id}`;
-    }
+    if (result.type === 'school') url = `/schools/${result.id}`;
     navigate(url);
     setIsOpen(false);
   };
@@ -98,80 +89,40 @@ export default function SpotlightSearch() {
   if (!isOpen) return null;
 
   return (
-    <div className="spotlight-overlay" style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'start',
-        justifyContent: 'center',
-        paddingTop: '100px',
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(4px)'
-    }} onClick={() => setIsOpen(false)}>
+    <div className="spotlight-overlay" onClick={() => setIsOpen(false)}>
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="spotlight-content"
-        style={{
-            width: '100%',
-            maxWidth: '600px',
-            background: 'var(--bg2)',
-            borderRadius: '16px',
-            border: '1px solid var(--glass-border)',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
-            overflow: 'hidden'
-        }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--glass-border)' }}>
-            <Search size={20} color="var(--text3)" />
+        <div className="spotlight-input-row">
+            <Search size={20} className="text-tertiary" />
             <input
                 ref={inputRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search across all schools..."
-                style={{
-                    flex: 1,
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    color: 'var(--text1)',
-                    fontSize: '16px'
-                }}
+                className="spotlight-input"
             />
-            {loading && <Loader2 className="animate-spin" size={18} color="var(--accent)" />}
+            {loading && <Loader2 className="animate-spin text-primary" size={18} />}
         </div>
         
-        <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px' }}>
+        <div className="spotlight-results">
             {results.map((result, index) => (
                 <div
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleSelect(result)}
-                    style={{
-                        padding: '12px 16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        background: selectedIndex === index ? 'var(--bg3)' : 'transparent',
-                        transition: 'background 0.2s'
-                    }}
+                    className={`spotlight-result-item ${selectedIndex === index ? 'selected' : ''}`}
                     onMouseEnter={() => setSelectedIndex(index)}
                 >
-                    <div style={{
-                        padding: '8px',
-                        background: result.type === 'school' ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: '8px',
-                        color: result.type === 'school' ? '#6366f1' : 'var(--text2)'
-                    }}>
+                    <div className={`spotlight-result-icon ${result.type === 'school' ? 'school' : ''}`}>
                         <School size={16} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{result.title}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text3)' }}>{result.subtitle}</div>
+                    <div className="flex-1">
+                        <div className="text-sm font-semibold">{result.title}</div>
+                        <div className="text-xs text-tertiary">{result.subtitle}</div>
                     </div>
                 </div>
             ))}

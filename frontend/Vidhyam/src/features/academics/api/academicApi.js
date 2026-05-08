@@ -244,47 +244,11 @@ export const academicApi = createApi({
             transformResponse: (res) => res.data || [],
         }),
 
-        // Attendance Reports
-        getDailySummary: builder.query({
-            query: ({ schoolId, date }) => ({
-                url: `/operations/attendance/${schoolId}/reports/daily-summary`,
-                params: { date },
-            }),
-            providesTags: ['Attendance'],
-            transformResponse: (res) => res.data || res,
-        }),
-
-        getMonthlyStats: builder.query({
-            query: ({ schoolId, month, year }) => ({
-                url: `/operations/attendance/${schoolId}/reports/monthly-stats`,
-                params: { month, year },
-            }),
-            providesTags: ['Attendance'],
-            transformResponse: (res) => res.data || res,
-        }),
-
-        getStudentReport: builder.query({
-            query: ({ schoolId, studentId, startDate, endDate, status }) => ({
-                url: `/operations/attendance/${schoolId}/reports/student`,
-                params: { student_id: studentId, start_date: startDate, end_date: endDate, status },
-            }),
-            providesTags: ['Attendance'],
-            transformResponse: (res) => res.data || res,
-        }),
-
-        getClassReport: builder.query({
-            query: ({ schoolId, className, startDate, endDate }) => ({
-                url: `/operations/attendance/${schoolId}/reports/class`,
-                params: { class_name: className, start_date: startDate, end_date: endDate },
-            }),
-            providesTags: ['Attendance'],
-            transformResponse: (res) => res.data || res,
-        }),
-
-        getEmployeeReport: builder.query({
-            query: ({ schoolId, employeeId, startDate, endDate }) => ({
-                url: `/operations/attendance/${schoolId}/reports/employee`,
-                params: { employee_id: employeeId, start_date: startDate, end_date: endDate },
+        // Updated Unified Attendance Analytics
+        getAdvancedAttendance: builder.query({
+            query: ({ school_id, ...params }) => ({
+                url: `/operations/attendance/${school_id}/`,
+                params,
             }),
             providesTags: ['Attendance'],
             transformResponse: (res) => res.data || res,
@@ -336,15 +300,7 @@ export const {
     useBulkMarkAttendanceMutation,
     useGetClassAttendanceQuery,
     useLazyGetClassAttendanceQuery,
-    useGetDailySummaryQuery,
-    useLazyGetDailySummaryQuery,
-    useGetMonthlyStatsQuery,
-    useLazyGetMonthlyStatsQuery,
-    useGetStudentReportQuery,
-    useLazyGetStudentReportQuery,
-    useGetClassReportQuery,
-    useLazyGetClassReportQuery,
-    useGetEmployeeReportQuery,
-    useLazyGetEmployeeReportQuery,
+    useGetAdvancedAttendanceQuery,
+    useLazyGetAdvancedAttendanceQuery,
     useGenerateCustomReportMutation,
 } = academicApi;

@@ -7,5 +7,23 @@
     "id": 1,
     "school_id": "153490",
     "transaction_type": "monthly_usage"
+  },
+  {
+    "amount": "-3",
+    "balance_after": "997",
+    "created_at": "2026-04-23T14:53:50.757648+00:00",
+    "description": "30-Day billing: 3 active students",
+    "id": 2,
+    "school_id": "519063",
+    "transaction_type": "monthly_usage"
+  },
+  {
+    "amount": "-5",
+    "balance_after": "990",
+    "created_at": "2026-05-08T07:51:38.085422+00:00",
+    "description": "30-Day billing: 5 active students",
+    "id": 3,
+    "school_id": "153490",
+    "transaction_type": "monthly_usage"
   }
 ]

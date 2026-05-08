@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vidhyam Autofill - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">V</div>
+      <div>
+        <h1>Vidhyam Autofill</h1>
+        <p class="subtitle">Extension Settings</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔗 Backend Connection</h2>
+      <div class="form-group">
+        <label for="baseUrl">Backend URL</label>
+        <input type="text" id="baseUrl" placeholder="http://localhost:8080">
+        <small class="hint">The URL of your Vidhyam backend API server</small>
+      </div>
+      <button id="saveUrlBtn" class="btn btn-primary">Save URL</button>
+      <div id="urlSaveStatus" class="status-msg" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔑 API Key</h2>
+      <div class="form-group">
+        <label for="optionsApiKey">API Key</label>
+        <input type="text" id="optionsApiKey" placeholder="vk_xxxxxxxx_xxxxxxxx">
+        <small class="hint">Generate from School Dashboard → Settings → API Keys. Required scope: <code>read:students</code> and/or <code>read:employees</code></small>
+      </div>
+      <button id="saveApiKeyBtn" class="btn btn-primary">Save API Key</button>
+      <div id="apiKeySaveStatus" class="status-msg" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <h2>ℹ️ About</h2>
+      <p>Vidhyam Autofill Extension v2.0.0</p>
+      <p class="muted">Login with your school credentials, search for students or employees, and auto-fill their details on any webpage form.</p>
+      <p class="muted mt">How to use:</p>
+      <ol class="steps">
+        <li>Set the correct Backend URL above</li>
+        <li>Generate an API key from your school dashboard (Settings → API Keys) with scopes: <code>read:students</code> and <code>read:employees</code></li>
+        <li>Enter the API key above</li>
+        <li>Open the extension popup and login with your School ID and password</li>
+        <li>Search for a student or employee</li>
+        <li>Navigate to any webpage with a form</li>
+        <li>Click "Autofill This Page" to fill in the details</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

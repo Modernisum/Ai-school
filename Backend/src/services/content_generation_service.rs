@@ -5,24 +5,18 @@ use crate::services::traits::content_generation::{
     StudyMaterialType, ComplexityLevel, StudyMaterials, PracticeProblem, ProblemType,
 };
 use async_trait::async_trait;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::Arc;
 
 /// Content generation service for educational materials
 pub struct ContentGenerationServiceImpl {
     repos: Arc<Repositories>,
+    ai_service: Arc<dyn crate::services::traits::resource::AiService>,
 }
 
 impl ContentGenerationServiceImpl {
-    pub fn new(repos: Arc<Repositories>) -> Self {
-        Self { repos }
-    }
-
-    /// Get AI provider for content generation
-    async fn get_ai_provider(&self) -> AppResult<Arc<dyn crate::services::traits::resource::AiService>> {
-        // In a real implementation, this would get the AI service from the services struct
-        // For now, we'll create a simple mock
-        Ok(Arc::new(MockAiService))
+    pub fn new(repos: Arc<Repositories>, ai_service: Arc<dyn crate::services::traits::resource::AiService>) -> Self {
+        Self { repos, ai_service }
     }
 
     /// Generate prompt for exam questions based on parameters
@@ -138,20 +132,21 @@ impl ContentGenerationService for ContentGenerationServiceImpl {
             syllabus_topics.as_ref(),
         );
 
-        // Get AI service
-        let ai_service = self.get_ai_provider().await?;
+        // Call AI service with the generated prompt
+        let ai_response = self.ai_service.query_ai(school_id, &prompt).await?;
 
-        // Call AI service (in real implementation, this would be actual AI call)
-        // For now, we'll create mock questions
-        let mock_questions = self.generate_mock_exam_questions(
-            subject,
-            class_level,
-            &question_types,
-            &difficulty,
-            num_questions,
-        );
+        // Try to parse structured response from AI, fall back to mock
+        if let Some(questions) = ai_response.get("questions").and_then(|q| q.as_array()) {
+            let parsed: Result<Vec<ExamQuestion>, _> = serde_json::from_value(serde_json::Value::Array(questions.clone()));
+            if let Ok(questions) = parsed {
+                return Ok(questions);
+            }
+        }
 
-        Ok(mock_questions)
+        // Fallback to mock if AI didn't return structured data
+        Ok(self.generate_mock_exam_questions(
+            subject, class_level, &question_types, &difficulty, num_questions,
+        ))
     }
 
     async fn generate_lesson_plan(
@@ -174,20 +169,17 @@ impl ContentGenerationService for ContentGenerationServiceImpl {
             include_activities,
         );
 
-        // Get AI service
-        let ai_service = self.get_ai_provider().await?;
+        // Call AI service with the generated prompt
+        let ai_response = self.ai_service.query_ai(school_id, &prompt).await?;
 
-        // Create mock lesson plan
-        let lesson_plan = self.generate_mock_lesson_plan(
-            subject,
-            class_level,
-            topic,
-            duration_minutes,
-            learning_objectives,
-            include_activities,
-        );
+        // Try to parse structured response from AI, fall back to mock
+        if let Ok(lesson_plan) = serde_json::from_value::<LessonPlan>(ai_response) {
+            return Ok(lesson_plan);
+        }
 
-        Ok(lesson_plan)
+        Ok(self.generate_mock_lesson_plan(
+            subject, class_level, topic, duration_minutes, learning_objectives, include_activities,
+        ))
     }
 
     async fn generate_study_materials(
@@ -208,19 +200,17 @@ impl ContentGenerationService for ContentGenerationServiceImpl {
             include_examples,
         );
 
-        // Get AI service
-        let ai_service = self.get_ai_provider().await?;
+        // Call AI service with the generated prompt
+        let ai_response = self.ai_service.query_ai(school_id, &prompt).await?;
 
-        // Create mock study materials
-        let study_materials = self.generate_mock_study_materials(
-            subject,
-            topic,
-            material_type,
-            complexity,
-            include_examples,
-        );
+        // Try to parse structured response, fall back to mock
+        if let Ok(materials) = serde_json::from_value::<StudyMaterials>(ai_response) {
+            return Ok(materials);
+        }
 
-        Ok(study_materials)
+        Ok(self.generate_mock_study_materials(
+            subject, topic, material_type, complexity, include_examples,
+        ))
     }
 
     async fn generate_practice_problems(
@@ -232,16 +222,24 @@ impl ContentGenerationService for ContentGenerationServiceImpl {
         num_problems: i32,
         include_solutions: bool,
     ) -> AppResult<Vec<PracticeProblem>> {
-        // Create mock practice problems
-        let problems = self.generate_mock_practice_problems(
-            subject,
-            topic,
-            problem_type,
-            num_problems,
-            include_solutions,
+        // Build prompt for practice problems
+        let prompt = format!(
+            "Generate {} {:?} problems for {} topic: {}. {}",
+            num_problems, problem_type, subject, topic,
+            if include_solutions { "Include detailed solutions." } else { "Do not include solutions." }
         );
 
-        Ok(problems)
+        let ai_response = self.ai_service.query_ai(school_id, &prompt).await?;
+        if let Some(problems) = ai_response.get("problems").and_then(|p| p.as_array()) {
+            let parsed: Result<Vec<PracticeProblem>, _> = serde_json::from_value(serde_json::Value::Array(problems.clone()));
+            if let Ok(problems) = parsed {
+                return Ok(problems);
+            }
+        }
+
+        Ok(self.generate_mock_practice_problems(
+            subject, topic, problem_type, num_problems, include_solutions,
+        ))
     }
 
     async fn summarize_content(
@@ -265,7 +263,7 @@ impl ContentGenerationService for ContentGenerationServiceImpl {
             }
             crate::services::traits::content_generation::SummaryType::BulletPoints => {
                 let sentences: Vec<&str> = content.split('.').collect();
-                let take_count = (sentences.len() / 4).max(1).min(5);
+                let take_count = (sentences.len() / 4).clamp(1, 5);
                 let bullet_points: Vec<String> = sentences[..take_count]
                     .iter()
                     .enumerate()
@@ -475,35 +473,5 @@ impl ContentGenerationServiceImpl {
         }
 
         problems
-    }
-}
-
-/// Mock AI service for demonstration
-struct MockAiService;
-
-#[async_trait]
-impl crate::services::traits::resource::AiService for MockAiService {
-    async fn post_query(&self, school_id: &str, query: Value) -> AppResult<Value> {
-        Ok(json!({"response": "Mock AI response"}))
-    }
-
-    async fn query_ai(&self, school_id: &str, user_query: &str) -> AppResult<Value> {
-        Ok(json!({"answer": "Mock answer to query"}))
-    }
-
-    async fn generate_embedding(&self, text: &str) -> AppResult<Vec<f32>> {
-        Ok(vec![0.1, 0.2, 0.3])
-    }
-
-    async fn generate_employee_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value> {
-        Ok(json!({"tasks": []}))
-    }
-
-    async fn reorganize_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value> {
-        Ok(json!({"reorganized": true}))
-    }
-
-    async fn generate_exam_questions(&self, school_id: &str, payload: &Value) -> AppResult<Value> {
-        Ok(json!({"questions": []}))
     }
 }

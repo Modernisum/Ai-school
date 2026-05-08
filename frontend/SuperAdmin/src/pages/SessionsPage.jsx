@@ -1,9 +1,10 @@
 import { useEffect, useState, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Key, RefreshCw, Clock, Loader } from 'lucide-react'
+import { ArrowLeft, Key, RefreshCw, Clock } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 import { getSessions, expireSessions } from '../api.js'
+import { PageHeader, StatusBadge } from '../components/ui/index.js'
 
 export default function SessionsPage() {
     const { schoolId } = useParams()
@@ -27,9 +28,7 @@ export default function SessionsPage() {
         load()
     }
 
-    const timeRemainingMs = (expiresAt) => {
-        return Math.max(0, new Date(expiresAt) - Date.now())
-    }
+    const timeRemainingMs = (expiresAt) => Math.max(0, new Date(expiresAt) - Date.now())
 
     const formatMs = (ms) => {
         const h = Math.floor(ms / 3600000)
@@ -41,17 +40,17 @@ export default function SessionsPage() {
     const expired = sessions.filter(s => s.isExpired)
 
     return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="page">
-            <button className="btn btn-ghost btn-sm" onClick={() => nav(`/schools/${schoolId}`)} style={{ marginBottom: 20 }}>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="page-container">
+            <button className="btn btn-ghost btn-sm mb-4" onClick={() => nav(`/schools/${schoolId}`)}>
                 <ArrowLeft size={14} /> Back to School
             </button>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="page-title"><Clock size={20} style={{ verticalAlign: 'middle', marginRight: 8 }} />Session Monitor</h1>
-                    <p className="page-sub"><code style={{ color: 'var(--accent)' }}>{schoolId}</code> — {active.length} active, {expired.length} expired</p>
+                    <p className="page-sub"><code className="text-primary">{schoolId}</code> — {active.length} active, {expired.length} expired</p>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="flex gap-2">
                     <button className="btn btn-ghost btn-sm" onClick={load}><RefreshCw size={13} /> Refresh</button>
                     <button className="btn btn-danger btn-sm" onClick={doExpireAll} disabled={active.length === 0}>
                         <Key size={13} /> Expire All Sessions
@@ -60,15 +59,14 @@ export default function SessionsPage() {
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: 60 }}>
-                    <Loader size={26} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
-                    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                <div className="glass-card text-center" style={{ padding: 60 }}>
+                    <div className="spinner" />
                 </div>
             ) : sessions.length === 0 ? (
-                <div className="card" style={{ textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No sessions found.</div>
+                <div className="glass-card text-center text-tertiary" style={{ padding: 40 }}>No sessions found.</div>
             ) : (
-                <div className="card table-wrap">
-                    <table>
+                <div className="table-container">
+                    <table className="data-table">
                         <thead>
                             <tr>
                                 <th>Token (prefix)</th><th>User Type</th><th>Status</th>
@@ -81,18 +79,18 @@ export default function SessionsPage() {
                                 const pct = s.isExpired ? 0 : Math.min(100, (ms / (24 * 3600000)) * 100)
                                 return (
                                     <tr key={i} style={{ opacity: s.isExpired ? 0.5 : 1 }}>
-                                        <td><code style={{ fontSize: 11, color: 'var(--accent)' }}>{s.tokenId}…</code></td>
-                                        <td><span style={{ fontSize: 12 }}>{s.userType}</span></td>
-                                        <td><span className={`badge badge-${s.isExpired ? 'inactive' : 'active'}`}>{s.isExpired ? 'expired' : 'valid'}</span></td>
-                                        <td style={{ fontSize: 11, color: 'var(--text3)' }}>{s.createdAt ? new Date(s.createdAt).toLocaleString() : '—'}</td>
-                                        <td style={{ fontSize: 11, color: 'var(--text3)' }}>{s.expiresAt ? new Date(s.expiresAt).toLocaleString() : '—'}</td>
+                                        <td><code className="text-xs text-primary">{s.tokenId}…</code></td>
+                                        <td className="text-xs">{s.userType}</td>
+                                        <td><StatusBadge status={s.isExpired ? 'inactive' : 'active'} label={s.isExpired ? 'expired' : 'valid'} /></td>
+                                        <td className="text-xs text-tertiary">{s.createdAt ? new Date(s.createdAt).toLocaleString() : '—'}</td>
+                                        <td className="text-xs text-tertiary">{s.expiresAt ? new Date(s.expiresAt).toLocaleString() : '—'}</td>
                                         <td style={{ minWidth: 120 }}>
                                             {s.isExpired ? (
-                                                <span style={{ fontSize: 11, color: 'var(--text3)' }}>—</span>
+                                                <span className="text-xs text-tertiary">—</span>
                                             ) : (
                                                 <div>
-                                                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>{formatMs(ms)}</div>
-                                                    <div className="session-bar"><div className="session-fill" style={{ width: `${pct}%` }} /></div>
+                                                    <div className="text-xs text-secondary mb-1">{formatMs(ms)}</div>
+                                                    <div className="progress-bar-track"><div className="progress-bar-fill" style={{ width: `${pct}%` }} /></div>
                                                 </div>
                                             )}
                                         </td>

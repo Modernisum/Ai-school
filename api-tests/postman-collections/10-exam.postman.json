@@ -1,0 +1,327 @@
+{
+  "info": {
+    "name": "Exam Management APIs",
+    "description": "Converted from 10-exam.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Create Exam",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"examName\": \"First Term Examination\",\n  \"examType\": \"term\",\n  \"academicYear\": \"2024-2025\",\n  \"startDate\": \"2025-03-01\",\n  \"endDate\": \"2025-03-15\",\n  \"classes\": [\"Class 10\", \"Class 11\", \"Class 12\"],\n  \"subjects\": [\"Mathematics\", \"Science\", \"English\"],\n  \"totalMarks\": 100,\n  \"passingMarks\": 40,\n  \"description\": \"First term examination for all classes\",\n  \"schedule\": [\n    {\n      \"date\": \"2025-03-01\",\n      \"subject\": \"Mathematics\",\n      \"time\": \"10:00-13:00\",\n      \"venue\": \"Main Hall\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "2. List Exams",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "3. List Exams by Student",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}?studentId={{sampleStudentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}?studentId={{sampleStudentId}}"
+          ],
+          "query": [
+            {
+              "key": "studentId",
+              "value": "{{sampleStudentId}}",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "4. AI Generate Exam Questions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}/ai/generate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}",
+            "ai",
+            "generate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Mathematics\",\n  \"classLevel\": \"Class 10\",\n  \"questionTypes\": [\"mcq\", \"short_answer\", \"problem_solving\"],\n  \"difficulty\": \"medium\",\n  \"numQuestions\": 20,\n  \"syllabusTopics\": [\"Algebra\", \"Geometry\", \"Trigonometry\"],\n  \"includeAnswerKey\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Exam Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}",
+            "{{sampleExamId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "6. Update Exam",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}",
+            "{{sampleExamId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"examName\": \"First Term Examination Updated\",\n  \"endDate\": \"2025-03-20\",\n  \"description\": \"Updated exam schedule with extended dates\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "7. Delete Exam",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}",
+            "{{sampleExamId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "8. Publish Exam Results",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/{{schoolId}}/{{sampleExamId}}/publish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "{{schoolId}}",
+            "{{sampleExamId}}",
+            "publish"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"publishDate\": \"2025-03-25\",\n  \"notifyStudents\": true,\n  \"notifyParents\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

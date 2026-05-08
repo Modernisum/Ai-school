@@ -1,0 +1,253 @@
+{
+  "info": {
+    "name": "Academic Materials APIs",
+    "description": "Converted from 26-materials.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/materials/:schoolId - List All Materials",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/materials/:schoolId/:materialName - Get Material Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}/{{materialName}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}",
+            "{{materialName}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/materials/:schoolId - Create New Material",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"materialName\": \"Mathematics Textbook\",\n  \"category\": \"Books\",\n  \"quantity\": 50,\n  \"unitPrice\": 250.00,\n  \"description\": \"Class 10 Mathematics textbook for CBSE curriculum\",\n  \"supplier\": \"NCERT Publications\",\n  \"minimumStockLevel\": 10,\n  \"reorderPoint\": 15,\n  \"storageLocation\": \"Library Shelf A3\",\n  \"isConsumable\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "PUT /api/materials/:schoolId/:materialName - Update Material",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}/{{materialName}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}",
+            "{{materialName}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 45,\n  \"unitPrice\": 260.00,\n  \"description\": \"Updated Class 10 Mathematics textbook with latest syllabus\",\n  \"minimumStockLevel\": 12\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/materials/:schoolId/:materialName - Delete Material",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}/{{materialName}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}",
+            "{{materialName}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/materials/:schoolId/bulk - Bulk Import Materials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/{{schoolId}}/bulk",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "{{schoolId}}",
+            "bulk"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"materials\": [\n    {\n      \"materialName\": \"Science Lab Kit\",\n      \"category\": \"Lab Equipment\",\n      \"quantity\": 20,\n      \"unitPrice\": 1200.00\n    },\n    {\n      \"materialName\": \"Art Supplies Pack\",\n      \"category\": \"Stationery\",\n      \"quantity\": 100,\n      \"unitPrice\": 150.00\n    },\n    {\n      \"materialName\": \"Sports Equipment\",\n      \"category\": \"Sports\",\n      \"quantity\": 30,\n      \"unitPrice\": 800.00\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

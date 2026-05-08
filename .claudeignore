@@ -1,0 +1,42 @@
+# Rust build
+target/
+Cargo.lock
+
+# Node dependencies
+node_modules/
+Admin/node_modules/
+
+# Build outputs
+Admin/build/
+frontend/*/build/
+frontend/*/dist/
+
+# Environment files (secrets)
+*.env
+*.env.local
+*.env.production
+
+# Logs
+*.log
+backend.log
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+
+# Backup data (large JSON, not code)
+Backend/Backup/
+
+# Git
+.git/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp

@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Reminder Management APIs",
+    "description": "Converted from 30-reminders.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/reminders/:schoolId - List All Reminders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reminders/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "reminders",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/reminders/:schoolId - Create Reminder",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reminders/{{schoolId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "reminders",
+            "{{schoolId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Submit Annual Reports\",\n  \"description\": \"All teachers must submit annual reports by Friday\",\n  \"reminder_type\": \"task\",\n  \"priority\": \"high\",\n  \"due_date\": \"2024-03-22\",\n  \"assigned_to\": \"teachers\",\n  \"assigned_to_ids\": [\"teacher_001\", \"teacher_002\"],\n  \"notification_channels\": [\"in_app\", \"email\"],\n  \"repeat_schedule\": \"none\",\n  \"tags\": [\"reports\", \"deadline\", \"academic\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

@@ -43,7 +43,14 @@ class MyApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<ApiService>(
-          create: (context) => ApiService(),
+          create: (context) {
+            final api = ApiService();
+            api.onSessionExpired = () {
+              print("[ApiService] Session expired, logging out...");
+              api.logout();
+            };
+            return api;
+          },
         ),
       ],
       child: MultiBlocProvider(

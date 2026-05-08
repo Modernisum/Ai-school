@@ -6,6 +6,9 @@ import {
   FileText, Plus, Calendar, CheckCircle, XCircle, Clock, AlertTriangle,
   User, Loader, ChevronDown, ChevronUp, MessageSquare, Shield, RefreshCw
 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import FormWidget from '../../../components/ui/FormWidget';
+import SwitchButton from '../../../components/ui/SwitchButton';
 
 const getSchoolId = () => getSchoolIdFromStorage() || '';
 const getToken = () => localStorage.getItem('accessToken') || '';
@@ -51,41 +54,58 @@ function Badge({ status }) {
 // ── Apply Leave Form ──────────────────────────────────────────────────────────
 function ApplyLeaveForm({ onSuccess }) {
   const schoolId = getSchoolId();
-  const [form, setForm] = useState({
-    type: 'casual',
-    from_date: '',
-    to_date: '',
-    reason: '',
-    contact_during_leave: '',
-  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!form.from_date || !form.to_date || !form.reason.trim()) {
-      setError('Please fill in all required fields');
-      return;
+  const { control, handleSubmit } = useForm({
+    defaultValues: {
+      type: 'casual',
+      from_date: new Date().toISOString().split('T')[0],
+      to_date: '',
+      reason: '',
+      contact_during_leave: '',
     }
+  });
+
+  const SCHEMA = useMemo(() => [
+    {
+      id: 'details',
+      label: 'Leave Specs',
+      icon: Calendar,
+      fields: [
+        { 
+          name: 'type', 
+          label: 'Leave Category', 
+          type: 'select', 
+          required: true,
+          options: LEAVE_TYPES.map(t => ({ label: t.label, value: t.id }))
+        },
+        { name: 'from_date', label: 'Start Date', type: 'date', required: true },
+        { name: 'to_date', label: 'End Date', type: 'date', required: true },
+        { name: 'reason', label: 'Reason for absence', type: 'textarea', required: true, placeholder: 'Explain why you need leave...' },
+        { name: 'contact_during_leave', label: 'Alternate Contact', type: 'tel', placeholder: 'Optional phone/email' },
+      ]
+    }
+  ], []);
+
+  const submit = async (data) => {
     setSaving(true); setError(null);
     try {
       const res = await fetch(`${API_BASE_URL}/leaves/${schoolId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({
-          ...form,
-          leaveType: form.type,
-          fromDate: form.from_date,
-          toDate: form.to_date,
+          ...data,
+          leaveType: data.type,
+          fromDate: data.from_date,
+          toDate: data.to_date,
         }),
       });
-      const data = await res.json();
-      if (res.ok && data.success !== false) {
+      const resData = await res.json();
+      if (res.ok && resData.success !== false) {
         onSuccess?.();
       } else {
-        setError(data.message || 'Failed to apply for leave');
+        setError(resData.message || 'Synchronization failed');
       }
     } catch (err) {
       setError(err.message);
@@ -95,64 +115,25 @@ function ApplyLeaveForm({ onSuccess }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      {/* Leave Type */}
-      <div>
-        <label className="text-xs text-slate-400 mb-2 block">Leave Type *</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {LEAVE_TYPES.map(type => (
-            <button key={type.id} type="button" onClick={() => set('type', type.id)}
-              className={`text-left p-3 rounded-xl border text-sm transition-all ${form.type === type.id ? 'bg-primary/20 border-primary/40 text-white' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'}`}>
-              <p className="font-semibold">{type.label}</p>
-              <p className="text-[11px] opacity-70 mt-0.5">{type.description}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Dates */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs text-slate-400 mb-1.5 block">From Date *</label>
-          <input type="date" className="input-dark w-full" value={form.from_date}
-            min={new Date().toISOString().split('T')[0]}
-            onChange={e => set('from_date', e.target.value)} required />
-        </div>
-        <div>
-          <label className="text-xs text-slate-400 mb-1.5 block">To Date *</label>
-          <input type="date" className="input-dark w-full" value={form.to_date}
-            min={form.from_date || new Date().toISOString().split('T')[0]}
-            onChange={e => set('to_date', e.target.value)} required />
-        </div>
-      </div>
-
-      {/* Reason */}
-      <div>
-        <label className="text-xs text-slate-400 mb-1.5 block">Reason *</label>
-        <textarea className="input-dark w-full resize-none" rows={3}
-          placeholder="Please explain the reason for your leave..."
-          value={form.reason} onChange={e => set('reason', e.target.value)} required />
-      </div>
-
-      {/* Contact */}
-      <div>
-        <label className="text-xs text-slate-400 mb-1.5 block">Contact During Leave (optional)</label>
-        <input className="input-dark w-full" placeholder="Phone number or alternate contact..."
-          value={form.contact_during_leave} onChange={e => set('contact_during_leave', e.target.value)} />
-      </div>
-
+    <div className="space-y-4">
       {error && (
-        <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-rose-400 text-[10px] font-black uppercase tracking-widest bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
           <AlertTriangle size={14} />{error}
         </div>
       )}
 
-      <button type="submit" disabled={saving}
-        className="btn-primary w-full justify-center">
-        {saving ? <Loader size={14} className="animate-spin" /> : <FileText size={14} />}
-        {saving ? 'Submitting…' : 'Submit Leave Application'}
-      </button>
-    </form>
+      <FormWidget
+        title=""
+        sections={SCHEMA}
+        activeSection="details"
+        control={control}
+        onSubmit={handleSubmit(submit)}
+        onCancel={() => onSuccess?.()}
+        submitLabel="Submit Application"
+        isLoading={saving}
+        showDescription={false}
+      />
+    </div>
   );
 }
 
@@ -306,43 +287,49 @@ export default function LeaveManagement({ isAdmin = false }) {
   const rejectedLeaves = leaves.filter(l => (l.status || '').toLowerCase() === 'rejected');
 
   return (
-    <div className="space-y-5 p-4 md:p-6 min-h-screen bg-[#0a0a0c]">
+    <div className="max-w-full p-1 space-y-1 pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <FileText size={20} className="text-primary" />
+      <header className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <FileText size={14} className="text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Leave Management</h2>
-            <p className="text-sm text-slate-500">
-              {isAdmin ? 'Review and approved leave requests' : 'Apply and track your leaves'}
+            <h1 className="text-xl font-black text-white tracking-widest uppercase italic leading-none">LEAVE_PROTOCOL</h1>
+            <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">
+              {isAdmin ? 'REVIEW_AND_APPROVE_REQUESTS' : 'APPLY_AND_TRACK_ABSENCE'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-            <button onClick={fetchLeaves} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all">
-                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            </button>
+        <div className="flex items-center gap-1">
+            <StandardButton
+                variant="ghost"
+                size="xs"
+                onClick={fetchLeaves}
+                icon={RefreshCw}
+                className={loading ? 'animate-spin' : ''}
+            />
             {!isAdmin && (
-                <button onClick={() => setShowForm(f => !f)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-slate-900 font-bold hover:brightness-110 transition-all">
-                    <Plus size={16} /> Apply Leave
-                </button>
+                <StandardButton
+                    variant="primary"
+                    size="xs"
+                    onClick={() => setShowForm(f => !f)}
+                    icon={Plus}
+                >
+                    APPLY_LEAVE
+                </StandardButton>
             )}
         </div>
-      </div>
+      </header>
 
       {/* Apply Form */}
       <AnimatePresence>
         {showForm && !isAdmin && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-            <div className="glass-card p-5">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-white">New Leave Application</h3>
-                <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white">
-                    <XCircle size={18} />
-                </button>
+            <div className="glass-card p-3 border-white/5 bg-white/[0.02]">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-micro font-black text-white uppercase italic tracking-widest">NEW_APPLICATION</h3>
+                <StandardButton variant="ghost" size="xs" onClick={() => setShowForm(false)} icon={XCircle} />
               </div>
               <ApplyLeaveForm onSuccess={() => { setShowForm(false); fetchLeaves(); }} />
             </div>
@@ -351,37 +338,32 @@ export default function LeaveManagement({ isAdmin = false }) {
       </AnimatePresence>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
         {[
-          { label: 'Pending Requests', count: pendingLeaves.length, color: 'border-amber-500 text-amber-400' },
-          { label: 'Approved', count: approvedLeaves.length, color: 'border-green-500 text-green-400' },
-          { label: 'Rejected', count: rejectedLeaves.length, color: 'border-rose-500 text-rose-400' },
+          { label: 'PENDING_REQUESTS', count: pendingLeaves.length, color: 'text-amber-500', bg: 'bg-amber-500/5' },
+          { label: 'APPROVED_NODES', count: approvedLeaves.length, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+          { label: 'REJECTED_NODES', count: rejectedLeaves.length, color: 'text-rose-500', bg: 'bg-rose-500/5' },
         ].map(s => (
-          <div key={s.label} className={`glass-card p-4 border-l-4 ${s.color.split(' ')[0]}`}>
-            <p className={`text-3xl font-black ${s.color.split(' ')[1]}`}>{s.count}</p>
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">{s.label}</p>
+          <div key={s.label} className={`glass-card p-2 flex flex-col items-center border-white/5 ${s.bg}`}>
+            <p className={`text-xl font-black ${s.color} italic`}>{s.count}</p>
+            <p className="text-micro text-slate-700 font-black uppercase tracking-widest mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
-        {isAdmin ? (
-          [['queue', 'Pending Queue', pendingLeaves.length], ['all', 'All History', leaves.length]].map(([id, label, cnt]) => (
-            <button key={id} onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap relative ${activeTab === id ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}>
-              {label}
-              {cnt > 0 && <span className="bg-accent/20 text-accent text-[10px] px-1.5 py-0.5 rounded-full font-bold">{cnt}</span>}
-            </button>
-          ))
-        ) : (
-          [['my', 'All Leaves'], ['pending', 'Waitlisted'], ['approved', 'Approved']].map(([id, label]) => (
-            <button key={id} onClick={() => setActiveTab(id)}
-              className={`px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap relative ${activeTab === id ? 'text-accent border-b-2 border-accent' : 'text-slate-500 hover:text-slate-300'}`}>
-              {label}
-            </button>
-          ))
-        )}
+      <div className="pb-2">
+        <SwitchButton 
+          tabs={isAdmin ? [
+            { id: 'queue', label: 'Pending Queue' },
+            { id: 'all', label: 'All History' }
+          ] : [
+            { id: 'my', label: 'All Leaves' },
+            { id: 'pending', label: 'Waitlisted' },
+            { id: 'approved', label: 'Approved' }
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
       </div>
 
       {loading && leaves.length === 0 ? (

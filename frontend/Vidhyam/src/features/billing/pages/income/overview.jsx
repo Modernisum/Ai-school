@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
     TrendingUp, Users, PieChart, ArrowRight, Download, 
@@ -10,104 +10,139 @@ import {
     ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectSchoolId } from '../../../../features/auth/authSlice';
+import StandardButton from '../../../../components/ui/StandardButton';
+import SkeletonLoader from '../../../../components/ui/SkeletonLoader';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
 
 const IncomeOverview = () => {
     const navigate = useNavigate();
+    const schoolId = useSelector(selectSchoolId) || "";
     const [timeRange, setTimeRange] = useState('monthly');
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    
+    const [overviewData, setOverviewData] = useState({
+        totalRevenue: 0,
+        timeline: [],
+        sources: []
+    });
 
-    // Mock Data for Visualization
+    useEffect(() => {
+        if (!schoolId) return;
+        setIsLoading(true);
+        setHasError(false);
+
+        fetch(`${API_BASE_URL}/dashboard/${schoolId}/stats?include_chart=all`)
+            .then(res => res.json())
+            .then(d => {
+                if(d.success) {
+                    setOverviewData({
+                        totalRevenue: d.data.revenue_month || 0,
+                        timeline: d.data.revenue_timeline || [],
+                        sources: d.data.revenue_sources || []
+                    });
+                } else {
+                    setHasError(true);
+                }
+            })
+            .catch(() => setHasError(true))
+            .finally(() => setIsLoading(false));
+    }, [schoolId, timeRange]);
+
+    // Derived Metrics for visualization
     const metrics = [
-        { label: 'Total Income', value: '₹45,82,000', change: '+12.5%', icon: IndianRupee, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+        { label: 'Total Income', value: `₹${(overviewData.totalRevenue).toLocaleString('en-IN')}`, change: '+12.5%', icon: IndianRupee, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
         { label: 'Monthly Growth', value: '₹8,24,000', change: '+5.2%', icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-400/10' },
         { label: 'Total Donors', value: '124', change: '+8', icon: Heart, color: 'text-rose-400', bg: 'bg-rose-400/10' },
         { label: 'Pending Fees', value: '₹12,45,000', change: '-2.1%', icon: Zap, color: 'text-amber-400', bg: 'bg-amber-400/10' },
     ];
 
-    const monthlyTrend = [
-        { name: 'Jan', income: 400000, target: 350000 },
-        { name: 'Feb', income: 300000, target: 350000 },
-        { name: 'Mar', income: 600000, target: 500000 },
-        { name: 'Apr', income: 800000, target: 700000 },
-        { name: 'May', income: 500000, target: 600000 },
-        { name: 'Jun', income: 900000, target: 800000 },
-    ];
+    const monthlyTrend = overviewData.timeline.length > 0 ? overviewData.timeline.map(item => ({
+        name: item.label,
+        income: item.value,
+        target: item.value * 1.1 // Target relative to real income
+    })) : [];
 
-    const categoryBreakdown = [
-        { name: 'Fees', value: 3500000, color: '#10b981', path: '/dashboard/billing/income/fees' },
-        { name: 'Donations', value: 850000, color: '#3b82f6', path: '/dashboard/billing/income/donations' },
-        { name: 'Events', value: 150000, color: '#f59e0b', path: '/dashboard/billing/income/events' },
-        { name: 'Other', value: 82000, color: '#6366f1', path: '/dashboard/billing/income/other' },
-    ];
+    const fallbackColors = ['#10b981', '#3b82f6', '#f59e0b', '#6366f1', '#ec4899'];
+    const categoryBreakdown = overviewData.sources.length > 0 ? overviewData.sources.map((item, idx) => ({
+        name: item.name,
+        value: item.value,
+        color: fallbackColors[idx % fallbackColors.length],
+        path: '/dashboard/billing/income/fees'
+    })) : [];
 
     const handlePieClick = (data) => {
         if (data && data.path) navigate(data.path);
     };
 
+    if (isLoading) return <div className="h-64"><SkeletonLoader /></div>;
+    if (hasError) return <div className="h-64 flex items-center justify-center text-red-400 font-bold glass-card">Failed to load Income Overview. Please try again.</div>;
+
     return (
-        <div className="space-y-4 animate-in fade-in duration-500">
+        <div className="space-y-2 text-slate-400">
             {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-lg border border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-white/[0.02] p-1 rounded-lg border border-white/5">
+                <div className="flex items-center gap-0.5">
                     {['daily', 'weekly', 'monthly', 'yearly'].map((range) => (
-                        <button
+                        <StandardButton
                             key={range}
+                            variant={timeRange === range ? 'primary' : 'ghost'}
+                            size="xs"
                             onClick={() => setTimeRange(range)}
-                            className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
-                                timeRange === range ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'
-                            }`}
+                            className={`!py-1 !px-2 font-black uppercase tracking-widest ${timeRange === range ? '' : 'text-slate-700'}`}
                         >
                             {range}
-                        </button>
+                        </StandardButton>
                     ))}
                 </div>
-                <div className="flex gap-1.5">
-                    <button className="btn-secondary py-1.5 px-3 text-[10px] flex items-center gap-1.5">
-                        <Download size={12} /> Excel
-                    </button>
-                    <button className="btn-primary py-1.5 px-3 text-[10px] flex items-center gap-1.5">
-                        <FileText size={12} /> PDF
-                    </button>
+                <div className="flex gap-1">
+                    <StandardButton variant="secondary" size="xs" icon={Download} onClick={() => {}} label="EXPORT_XLS" />
+                    <StandardButton variant="primary" size="xs" icon={FileText} onClick={() => {}} label="GENERATE_PDF" />
                 </div>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
                 {metrics.map((m, i) => (
                     <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 15 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        className="glass-card p-3 border-white/5 bg-white/[0.02] relative overflow-hidden group"
+                        transition={{ delay: i * 0.05 }}
+                        className="glass-card p-2 border-white/5 bg-white/[0.01] hover:border-white/10 transition-all flex flex-col justify-between"
                     >
-                        <div className={`absolute -right-3 -top-3 w-20 h-20 rounded-full blur-2xl opacity-10 transition-opacity group-hover:opacity-20 ${m.bg}`} />
-                        <div className="flex items-start justify-between mb-2">
-                            <div className={`p-2 rounded-lg ${m.bg} ${m.color}`}>
-                                <m.icon size={16} />
+                        <div className="flex items-start justify-between mb-1">
+                            <div className={`p-1 rounded bg-white/5 ${m.color}`}>
+                                <m.icon size={12} />
                             </div>
-                            <div className={`flex items-center gap-1 text-[9px] font-bold ${m.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {m.change.startsWith('+') ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                            <div className={`flex items-center gap-0.5 text-[7px] font-black uppercase italic ${m.change.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {m.change.startsWith('+') ? <ArrowUpRight size={8} /> : <ArrowDownRight size={8} />}
                                 {m.change}
                             </div>
                         </div>
-                        <h3 className="text-xl font-black text-white tracking-tight">{m.value}</h3>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{m.label}</p>
+                        <div>
+                            <h3 className="text-sm font-black text-white tracking-tighter leading-none italic">{m.value}</h3>
+                            <p className="text-[7px] text-slate-700 font-black uppercase tracking-widest mt-0.5">{m.label.replace(' ', '_')}</p>
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-1">
                 {/* Monthly Trend Bar Chart */}
-                <div className="lg:col-span-2 glass-card p-4 border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-black text-white uppercase tracking-widest">Growth Trend</h3>
-                        <div className="flex items-center gap-3 text-[8px] font-bold uppercase tracking-widest">
-                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Income</span>
-                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-slate-700" /> Target</span>
+                <div className="lg:col-span-2 glass-card p-2 border-white/5 bg-white/[0.01]">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-[10px] font-black text-white italic uppercase tracking-tight">GROWTH_TRENDLINE</h3>
+                        <div className="flex items-center gap-2 text-[7px] font-black uppercase tracking-widest text-slate-700">
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> REALIZED</span>
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-slate-800" /> TARGET</span>
                         </div>
                     </div>
-                    <div className="h-[240px] w-full">
+                    <div className="h-[180px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyTrend}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
@@ -115,49 +150,49 @@ const IncomeOverview = () => {
                                     dataKey="name" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }} 
+                                    tick={{ fill: '#334155', fontSize: 8, fontWeight: 900 }} 
                                     dy={5}
                                 />
                                 <YAxis 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }}
+                                    tick={{ fill: '#334155', fontSize: 8, fontWeight: 900 }}
                                     tickFormatter={(v) => `₹${v/1000}k`}
                                 />
                                 <Tooltip 
-                                    cursor={{ fill: '#ffffff05' }}
+                                    cursor={{ fill: '#ffffff02' }}
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className="bg-slate-900 border border-white/10 p-2 rounded-lg shadow-xl backdrop-blur-xl">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{payload[0].payload.name}</p>
-                                                    <p className="text-xs font-black text-white">₹{payload[0].value.toLocaleString('en-IN')}</p>
+                                                <div className="bg-slate-950/80 border border-white/10 p-1.5 rounded shadow-2xl backdrop-blur-md">
+                                                    <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{payload[0].payload.name}_SYNC</p>
+                                                    <p className="text-[10px] font-black text-white italic">₹{payload[0].value.toLocaleString('en-IN')}</p>
                                                 </div>
                                             );
                                         }
                                         return null;
                                     }}
                                 />
-                                <Bar dataKey="income" fill="var(--primary-color)" radius={[3, 3, 0, 0]} barSize={24} />
-                                <Bar dataKey="target" fill="#334155" radius={[3, 3, 0, 0]} barSize={6} />
+                                <Bar dataKey="income" fill="var(--primary-color)" radius={[2, 2, 0, 0]} barSize={16} />
+                                <Bar dataKey="target" fill="#1e293b" radius={[2, 2, 0, 0]} barSize={4} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Category Breakdown Pie Chart */}
-                <div className="glass-card p-4 border-white/5 bg-white/[0.02]">
-                    <h3 className="text-xs font-black text-white uppercase tracking-widest mb-4 text-center">Revenue Streams</h3>
-                    <div className="h-[200px] w-full">
+                <div className="glass-card p-2 border-white/5 bg-white/[0.01]">
+                    <h3 className="text-[10px] font-black text-white italic uppercase tracking-tight mb-2 text-center">REVENUE_STREAMS</h3>
+                    <div className="h-[140px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
                                 <Pie
                                     data={categoryBreakdown}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={45}
-                                    outerRadius={65}
-                                    paddingAngle={6}
+                                    innerRadius={35}
+                                    outerRadius={50}
+                                    paddingAngle={4}
                                     dataKey="value"
                                     onClick={(data) => handlePieClick(data)}
                                     cursor="pointer"
@@ -170,8 +205,8 @@ const IncomeOverview = () => {
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className="bg-slate-900 border border-white/10 p-2 rounded-lg shadow-xl">
-                                                    <p className="text-[9px] font-bold text-white uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
+                                                <div className="bg-slate-950/80 border border-white/10 p-1 rounded shadow-xl backdrop-blur-md">
+                                                    <p className="text-[8px] font-black text-white italic uppercase">{payload[0].name}: ₹{(payload[0].value/1000).toFixed(1)}k</p>
                                                 </div>
                                             );
                                         }
@@ -181,18 +216,18 @@ const IncomeOverview = () => {
                             </RePieChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-1 space-y-0.5">
                         {categoryBreakdown.map((c, i) => (
                             <button 
                                 key={i} 
                                 onClick={() => navigate(c.path)}
-                                className="w-full flex items-center justify-between p-1.5 rounded-lg hover:bg-white/5 transition-colors group"
+                                className="w-full flex items-center justify-between p-1 rounded hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} />
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-1 h-1 rounded-full" style={{ backgroundColor: c.color }} />
+                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest group-hover:text-white transition-colors">{c.name}</span>
                                 </div>
-                                <ArrowRight size={10} className="text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                                <ArrowRight size={8} className="text-slate-700 group-hover:text-white transition-all transform group-hover:translate-x-0.5" />
                             </button>
                         ))}
                     </div>

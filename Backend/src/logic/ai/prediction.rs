@@ -1,3 +1,4 @@
+use crate::logic::ai::utils;
 use crate::repository::Repositories;
 use anyhow::{anyhow, Result};
 use reqwest::Client;
@@ -15,17 +16,6 @@ impl PredictionEngine {
         Self {
             repos,
             http_client: Client::new(),
-        }
-    }
-
-    pub async fn fetch_api_key(&self) -> Result<String> {
-        let row = sqlx::query("SELECT config_value FROM system_config WHERE config_key = 'GEMINI_API_KEY'")
-            .fetch_optional(&self.repos.db_client.pool)
-            .await?;
-        
-        match row {
-            Some(r) => Ok(r.get::<String, _>("config_value")),
-            None => Err(anyhow!("GEMINI_API_KEY not found in system_config. Please update settings.")),
         }
     }
 
@@ -153,7 +143,7 @@ impl PredictionEngine {
         
         let contents = vec![json!({ "role": "user", "parts": [{ "text": prompt }] })];
         
-        let api_key = self.fetch_api_key().await?;
+        let api_key = utils::fetch_api_key(&self.repos).await?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={}", api_key);
         let body = json!({
             "contents": contents,
@@ -274,7 +264,7 @@ impl PredictionEngine {
         }]);
         
         let contents = vec![json!({ "role": "user", "parts": [{ "text": prompt }] })];
-        let api_key = self.fetch_api_key().await?;
+        let api_key = utils::fetch_api_key(&self.repos).await?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={}", api_key);
         let body = json!({ "contents": contents, "tools": tools, "system_instruction": { "parts": [{ "text": "Plan efficiently." }] } });
         
@@ -357,7 +347,7 @@ impl PredictionEngine {
         }]);
         
         let contents = vec![json!({ "role": "user", "parts": [{ "text": prompt }] })];
-        let api_key = self.fetch_api_key().await?;
+        let api_key = utils::fetch_api_key(&self.repos).await?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={}", api_key);
         let body = json!({ "contents": contents, "tools": tools, "system_instruction": { "parts": [{ "text": "Draft academic exam questions." }] } });
         

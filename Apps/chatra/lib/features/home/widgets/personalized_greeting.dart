@@ -1,7 +1,5 @@
-// personalized_greeting.dart - Personalized greeting widget
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:chatra/theme/app_theme.dart';
 
 class PersonalizedGreeting extends StatelessWidget {
   final Map<String, dynamic>? profile;
@@ -63,6 +61,6 @@ class PersonalizedGreeting extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.3, end: 0);
+    );
   }
 }

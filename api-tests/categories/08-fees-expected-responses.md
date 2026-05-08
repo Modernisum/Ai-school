@@ -7,6 +7,47 @@
 
 ## 1. POST /api/fees/:schoolId - Create School Fee
 
+### Request Body Examples
+
+#### Example 1: Regular Tuition Fee
+```json
+{
+  "feeName": "Tuition Fee",
+  "amount": 5000.00,
+  "dueDate": "2025-03-31",
+  "feeType": "regular",
+  "description": "Monthly tuition fee for all students",
+  "applicableClasses": ["Class 10", "Class 11", "Class 12"],
+  "discountPercentage": 10.0
+}
+```
+
+#### Example 2: Annual Library Fee
+```json
+{
+  "feeName": "Library Fee",
+  "amount": 500.00,
+  "dueDate": "2025-06-30",
+  "feeType": "annual",
+  "description": "Annual library membership fee",
+  "applicableClasses": ["All"],
+  "discountPercentage": 0.0
+}
+```
+
+#### Example 3: One-time Sports Fee
+```json
+{
+  "feeName": "Sports Equipment Fee",
+  "amount": 1500.00,
+  "dueDate": "2025-04-15",
+  "feeType": "one_time",
+  "description": "One-time sports equipment charge",
+  "applicableClasses": ["Class 9", "Class 10"],
+  "discountPercentage": 5.0
+}
+```
+
 ### Expected Successful Response (HTTP 200)
 ```json
 {
@@ -25,6 +66,14 @@
   }
 }
 ```
+
+### Test Cases for Validation
+1. **Valid Request**: All required fields present with valid data
+2. **Missing Required Field**: Omit `feeName` or `amount`
+3. **Invalid Amount**: Negative amount or zero
+4. **Invalid Date**: Past due date or invalid date format
+5. **Invalid Fee Type**: Unsupported fee type value
+6. **Duplicate Fee Name**: Fee with same name already exists
 
 ### Error Responses
 - **HTTP 400:** Invalid fee data (missing required fields)
@@ -216,14 +265,9 @@
 {
   "success": true,
   "data": {
-    "customFeeId": "custom_001",
+    "id": "CF1742815200000",
     "feeName": "Sports Equipment Fee",
-    "amount": 1500.00,
-    "description": "Annual sports equipment maintenance",
-    "applicableTo": "selected_students",
-    "studentIds": ["stu_001"],
-    "createdAt": "2025-01-15T12:00:00Z",
-    "createdBy": "admin_001"
+    "amount": 1500.00
   }
 }
 ```
@@ -236,14 +280,9 @@
   "success": true,
   "data": [
     {
-      "customFeeId": "custom_001",
+      "id": "CF1742815200000",
       "feeName": "Sports Equipment Fee",
-      "amount": 1500.00,
-      "description": "Annual sports equipment maintenance",
-      "applicableTo": "selected_students",
-      "studentCount": 1,
-      "createdAt": "2025-01-15T12:00:00Z",
-      "status": "active"
+      "amount": 1500.00
     }
   ]
 }
@@ -266,9 +305,8 @@
 {
   "success": true,
   "data": {
-    "appliedCount": 1,
-    "totalAmount": 1500.00,
-    "students": ["stu_001"]
+    "status": "applied",
+    "id": "CF1742815200000"
   }
 }
 ```

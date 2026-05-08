@@ -6214,5 +6214,93 @@
     "total_students": 0,
     "total_teachers": 0,
     "updated_at": "2026-03-29T14:24:07.674220+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:20:00.640571+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "Pre-Nursery",
+    "school_id": "142736",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:20:00.640571+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:35:14.012557+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-2569",
+    "school_id": "256956",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:35:14.012557+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:42:05.974588+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-5859",
+    "school_id": "585963",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:42:05.974588+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T02:12:08.050661+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-5150",
+    "school_id": "515004",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T02:12:08.050661+00:00"
   }
 ]

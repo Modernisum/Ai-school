@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { selectPollingInterval } from '../../settings/settingsSlice';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,9 +12,26 @@ import {
   CheckCircle2,
   Trash2,
   ChevronRight,
-  Printer
+  Printer,
+  BookOpen,
+  Layout,
+  Clock,
+  Activity,
+  Award,
+  Zap,
+  Book,
+  Calendar
 } from 'lucide-react';
+import { toast } from 'react-toastify';
+
 import { academicApi } from '../api/academicApi';
+import GlassCard from '../../../components/ui/GlassCard';
+import FormWidget from '../../../components/ui/FormWidget';
+import PageHeader from '../../../components/ui/PageHeader';
+import KPIWidget from '../../../components/ui/KPIWidget';
+import KPITile from '../../../components/ui/KPITile';
+import StandardButton from '../../../components/ui/StandardButton';
+
 const {
   useGetClassIdsQuery,
   useLazyGetSubjectIdsQuery,
@@ -23,57 +41,41 @@ const {
 } = academicApi;
 
 const ExamManager = () => {
-  // Get data from localStorage
+  const { control, handleSubmit, reset, watch } = useForm({
+    defaultValues: {
+      className: '',
+      subject: '',
+      examType: 'Mid-Term',
+      examDuration: 180,
+      totalQuestions: 20,
+      shortCount: 5,
+      shortMarks: 2,
+      longCount: 3,
+      longMarks: 5,
+      mcqCount: 12,
+      mcqMarks: 1,
+      chapters: [],
+      examDate: new Date().toISOString().split('T')[0],
+      examTime: '09:00'
+    }
+  });
+
+  const formValues = watch();
+
   const getSchoolId = () => localStorage.getItem('schoolId') || "";
   const getSchoolName = () => localStorage.getItem('schoolName') || 'Vidhyam';
   const getBoard = () => localStorage.getItem('boardName') || 'CBSE';
   const getMedium = () => localStorage.getItem('medium') || 'English';
 
-  // State Management
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  // Dynamic Data States
   const [chapters, setChapters] = useState([]);
   const [selectedChapters, setSelectedChapters] = useState([]);
 
-  // Form States
-  const [formData, setFormData] = useState({
-    className: '',
-    subject: '',
-    examType: 'Mid-Term',
-    examDuration: 180,
-    totalQuestions: 20,
-    questionStructure: {
-      short: 5,
-      long: 3,
-      mcq: 12
-    },
-    examDate: '',
-    examTime: '09:00',
-    announcementDate: '',
-    conductTeacher: '',
-    reason: ''
-  });
-
-  // Generated Paper State
   const [generatedPaper, setGeneratedPaper] = useState(null);
-  const [selectedQuestions, setSelectedQuestions] = useState({
-    short: [],
-    long: [],
-    mcq: []
-  });
-  const [marksPerQuestion, setMarksPerQuestion] = useState({
-    short: 2,
-    long: 5,
-    mcq: 1
-  });
+  const [selectedQuestions, setSelectedQuestions] = useState({ short: [], long: [], mcq: [] });
+  const [marksPerQuestion, setMarksPerQuestion] = useState({ short: 2, long: 5, mcq: 1 });
   const [pdfFontSize, setPdfFontSize] = useState(12);
 
-  // Current school ID
   const schoolId = getSchoolId();
-
-  // RTK Query hooks
   const pollingInterval = useSelector(selectPollingInterval);
   const { data: classes = [] } = useGetClassIdsQuery(schoolId, { pollingInterval });
   const [fetchSubjects, { data: subjects = [] }] = useLazyGetSubjectIdsQuery();
@@ -81,30 +83,13 @@ const ExamManager = () => {
   const [generatePaperMut, { isLoading: generateLoading }] = useGeneratePaperMutation();
   const [approveExamMut, { isLoading: loading }] = useApproveExamMutation();
 
-  // Utility Functions
-  const showMessage = (message, type = 'success') => {
-    if (type === 'success') {
-      setSuccess(message);
-      setError('');
-    } else {
-      setError(message);
-      setSuccess('');
-    }
-    setTimeout(() => {
-      setSuccess('');
-      setError('');
-    }, 5000);
-  };
-
   const loadSubjects = async (className) => {
     if (!className) return;
     try {
       await fetchSubjects({ schoolId, className }).unwrap();
       setChapters([]);
       setSelectedChapters([]);
-    } catch (error) {
-      console.error('Error fetching subjects:', error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const loadChapters = async (className, subject) => {
@@ -118,16 +103,14 @@ const ExamManager = () => {
       setChapters(data);
       setSelectedChapters([]);
     } catch (error) {
-      console.error('Error fetching chapters:', error);
+      console.error(error);
       setChapters([]);
-      setSelectedChapters([]);
     }
   };
 
-  // Generate Paper Function
-  const generatePaper = async () => {
+  const generatePaper = async (values) => {
     if (selectedChapters.length === 0) {
-      showMessage('Please select at least one chapter', 'error');
+      toast.warning('Sequence interrupted: Select targeting chapters');
       return;
     }
 
@@ -136,11 +119,15 @@ const ExamManager = () => {
         schoolId,
         board: getBoard(),
         language: getMedium(),
-        className: formData.className,
-        subject: formData.subject,
+        className: values.className,
+        subject: values.subject,
         chapters: selectedChapters,
         difficulty: 'Medium',
-        counts: formData.questionStructure
+        counts: {
+           short: values.shortCount,
+           long: values.longCount,
+           mcq: values.mcqCount
+        }
       };
 
       const response = await generatePaperMut(config).unwrap();
@@ -148,50 +135,38 @@ const ExamManager = () => {
       if (response.success) {
         const paper = response.data;
         setGeneratedPaper(paper);
-
-        // Initialize selected questions with all questions
         setSelectedQuestions({
           short: paper.questions.short.map((_, index) => index),
           long: paper.questions.long.map((_, index) => index),
           mcq: paper.questions.mcq.map((_, index) => index)
         });
-
-        showMessage('Paper generated successfully!');
+        toast.success('AI Core: Assessment paper synthesized');
       }
     } catch (error) {
-      // Fallback to manual paper generation
-      const fallbackPaper = generateFallbackPaper();
-      setGeneratedPaper(fallbackPaper);
-
-      setSelectedQuestions({
-        short: fallbackPaper.questions.short.map((_, index) => index),
-        long: fallbackPaper.questions.long.map((_, index) => index),
-        mcq: fallbackPaper.questions.mcq.map((_, index) => index)
-      });
-
-      showMessage('Template paper generated (AI service unavailable)', 'warning');
+      setGeneratedPaper(generateFallbackPaper(values));
+      toast.info('AI offline: Fallback template deployed');
     }
   };
 
-  // Fallback paper generation
-  const generateFallbackPaper = () => {
+  const generateFallbackPaper = (values) => {
+    const qStruct = { short: values.shortCount, long: values.longCount, mcq: values.mcqCount };
     const sampleQuestions = {
-      short: Array.from({ length: formData.questionStructure.short }, (_, i) => ({
+      short: Array.from({ length: qStruct.short || 5 }, (_, i) => ({
         id: `S${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Short answer question ${i + 1} about ${formData.subject}. Explain the key concepts and their applications.`,
+        text: `Short answer question ${i + 1} about ${values.subject}. Explain the key concepts and their applications.`,
         answer: `Sample answer for short question ${i + 1}.`
       })),
-      long: Array.from({ length: formData.questionStructure.long }, (_, i) => ({
+      long: Array.from({ length: qStruct.long || 3 }, (_, i) => ({
         id: `L${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Long answer question ${i + 1} about ${formData.subject}. Discuss in detail the concepts, theories, and practical applications.`,
+        text: `Long answer question ${i + 1} about ${values.subject}. Discuss in detail the concepts, theories, and practical applications.`,
         answer: `Sample detailed answer for long question ${i + 1}.`
       })),
-      mcq: Array.from({ length: formData.questionStructure.mcq }, (_, i) => ({
+      mcq: Array.from({ length: qStruct.mcq || 12 }, (_, i) => ({
         id: `M${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Multiple choice question ${i + 1} about ${formData.subject}?`,
+        text: `Multiple choice question ${i + 1} about ${values.subject}?`,
         options: ['Option A', 'Option B', 'Option C', 'Option D'],
         correctIndex: 0,
         explanation: `Explanation for MCQ ${i + 1}.`
@@ -199,746 +174,200 @@ const ExamManager = () => {
     };
 
     return {
-      meta: {
-        board: getBoard(),
-        language: getMedium(),
-        className: formData.className,
-        subject: formData.subject,
-        chapters: selectedChapters,
-        generatedAt: new Date().toISOString()
-      },
+      meta: { board: getBoard(), language: getMedium(), className: values.className, subject: values.subject, chapters: selectedChapters, generatedAt: new Date().toISOString() },
       questions: sampleQuestions
     };
   };
 
-  // Calculate total marks
   const calculateTotalMarks = () => {
-    const shortMarks = selectedQuestions.short.length * marksPerQuestion.short;
-    const longMarks = selectedQuestions.long.length * marksPerQuestion.long;
-    const mcqMarks = selectedQuestions.mcq.length * marksPerQuestion.mcq;
+    const shortMarks = selectedQuestions.short.length * (formValues.shortMarks || 2);
+    const longMarks = selectedQuestions.long.length * (formValues.longMarks || 5);
+    const mcqMarks = selectedQuestions.mcq.length * (formValues.mcqMarks || 1);
     return shortMarks + longMarks + mcqMarks;
   };
 
-  // Handle question selection
   const handleQuestionToggle = (type, index) => {
     setSelectedQuestions(prev => ({
       ...prev,
-      [type]: prev[type].includes(index)
-        ? prev[type].filter(i => i !== index)
-        : [...prev[type], index]
+      [type]: prev[type].includes(index) ? prev[type].filter(i => i !== index) : [...prev[type], index]
     }));
-  };
-
-  // Generate new paper
-  const generateNewPaper = () => {
-    setGeneratedPaper(null);
-    setSelectedQuestions({ short: [], long: [], mcq: [] });
-    generatePaper();
   };
 
   const approveExam = async () => {
     try {
       const examData = {
-        schoolId,
-        examName: `${formData.subject} ${formData.examType} Exam`,
-        examType: formData.examType,
-        subjectName: formData.subject,
+        schoolId, classroom: formValues.className,
+        examName: `${formValues.subject} ${formValues.examType} Exam`,
+        examType: formValues.examType,
+        subjectName: formValues.subject,
         chapters: selectedChapters,
-        examDate: formData.examDate ? new Date(formData.examDate).toISOString() : new Date().toISOString(),
-        examTime: formData.examTime,
-        examDuration: formData.examDuration,
-        announcementDate: formData.announcementDate ? new Date(formData.announcementDate).toISOString() : new Date().toISOString(),
-        reason: formData.reason || `${formData.examType} evaluation for ${formData.className}`,
-        conductTeacher: formData.conductTeacher || 'Staff Teacher',
-        className: formData.className
+        examDate: new Date(formValues.examDate).toISOString(),
+        examTime: formValues.examTime,
+        examDuration: formValues.examDuration,
+        announcementDate: new Date().toISOString(),
+        reason: formValues.reason || `${formValues.examType} evaluation`,
+        conductTeacher: formValues.conductTeacher || 'Staff Teacher',
+        className: formValues.className
       };
 
       await approveExamMut(examData).unwrap();
-      showMessage('Exam approved and saved successfully!');
-
-      // Export PDF after approval
+      toast.success('Exam ledger finalized');
       exportToPDF();
-
-    } catch (error) {
-      console.error('Error approving exam:', error);
-      showMessage('Error approving exam. Please try again.', 'error');
-    }
+    } catch (error) { toast.error('Finalization failure'); }
   };
 
-  // Export to PDF
   const exportToPDF = () => {
     const printWindow = window.open('', '_blank');
     const pdfContent = generatePDFContent();
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${formData.subject} Exam Paper</title>
-          <style>
-            body { font-family: Arial, sans-serif; font-size: ${pdfFontSize}px; margin: 20px; line-height: 1.6; }
-            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-            .school-name { font-size: ${pdfFontSize + 4}px; font-weight: bold; margin-bottom: 5px; }
-            .exam-info { display: flex; justify-content: space-between; margin: 10px 0; }
-            .section { margin: 20px 0; }
-            .section-header { font-weight: bold; font-size: ${pdfFontSize + 2}px; margin: 15px 0 10px 0; border-bottom: 1px solid #ccc; }
-            .question { margin: 15px 0; display: flex; align-items: flex-start; }
-            .question-text { flex: 1; }
-            .marks { margin-left: 10px; font-weight: bold; border: 1px solid #000; padding: 2px 8px; min-width: 30px; text-align: center; }
-            .instructions { background: #f5f5f5; padding: 15px; margin: 20px 0; border-left: 4px solid #007bff; }
-            @media print { body { margin: 0; } }
-          </style>
-        </head>
-        <body>
-          ${pdfContent}
-        </body>
-      </html>
-    `);
-
+    printWindow.document.write(`<html><head><title>Exam Paper</title><style>body { font-family: sans-serif; font-size: ${pdfFontSize}px; padding: 40px; } .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; } .section { margin-top: 30px; font-weight: bold; border-bottom: 1px solid #ccc; }</style></head><body>${pdfContent}</body></html>`);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => printWindow.print(), 500);
   };
 
-  // Generate PDF content
   const generatePDFContent = () => {
     const totalMarks = calculateTotalMarks();
-
-    let content = `
-      <div class="header">
-        <div class="school-name">${getSchoolName()}</div>
-        <h2>${formData.subject} - ${formData.examType} Examination</h2>
-        <div class="exam-info">
-          <div>Class: ${formData.className}</div>
-          <div>Duration: ${formData.examDuration} minutes</div>
-          <div>Total Marks: ${totalMarks}</div>
-        </div>
-        <div>Date: ${formData.examDate || new Date().toLocaleDateString()}</div>
-      </div>
-      
-      <div class="instructions">
-        <strong>Instructions:</strong><br>
-        1. All questions are compulsory.<br>
-        2. Write your answers clearly and legibly.<br>
-        3. Time allowed: ${formData.examDuration} minutes.<br>
-        4. Total marks: ${totalMarks}
-      </div>
-    `;
-
+    let content = `<div class="header"><h1>${getSchoolName()}</h1><h2>${formValues.subject} - ${formValues.examType}</h2><p>Class: ${formValues.className} | Duration: ${formValues.examDuration}m | Marks: ${totalMarks}</p></div>`;
     if (generatedPaper) {
-      let sectionA = '';
-      if (selectedQuestions.short.length > 0) {
-        sectionA = '<div class="section"><div class="section-header">Section A - Short Answer Questions</div>';
-        selectedQuestions.short.forEach((qIndex, i) => {
-          const question = generatedPaper.questions.short[qIndex];
-          sectionA += `
-            <div class="question">
-              <div class="question-text">
-                <strong>${i + 1}.</strong> ${question.text}
-              </div>
-              <div class="marks">${marksPerQuestion.short}</div>
-            </div>
-          `;
-        });
-        sectionA += '</div>';
-      }
-
-      let sectionB = '';
-      if (selectedQuestions.long.length > 0) {
-        sectionB = '<div class="section"><div class="section-header">Section B - Long Answer Questions</div>';
-        selectedQuestions.long.forEach((qIndex, i) => {
-          const question = generatedPaper.questions.long[qIndex];
-          sectionB += `
-            <div class="question">
-              <div class="question-text">
-                <strong>${i + 1}.</strong> ${question.text}
-              </div>
-              <div class="marks">${marksPerQuestion.long}</div>
-            </div>
-          `;
-        });
-        sectionB += '</div>';
-      }
-
-      let sectionC = '';
-      if (selectedQuestions.mcq.length > 0) {
-        sectionC = '<div class="section"><div class="section-header">Section C - Multiple Choice Questions</div>';
-        selectedQuestions.mcq.forEach((qIndex, i) => {
-          const question = generatedPaper.questions.mcq[qIndex];
-          sectionC += `
-            <div class="question">
-              <div class="question-text">
-                <strong>${i + 1}.</strong> ${question.text}<br>
-                ${question.options.map((opt, idx) => `<span style="margin-right: 20px;">${String.fromCharCode(65 + idx)}. ${opt}</span>`).join('<br>')}
-              </div>
-              <div class="marks">${marksPerQuestion.mcq}</div>
-            </div>
-          `;
-        });
-        sectionC += '</div>';
-      }
-
-      content += sectionA + sectionB + sectionC;
+      ['short', 'long', 'mcq'].forEach(type => {
+        if (selectedQuestions[type].length > 0) {
+          content += `<div class="section">${type.toUpperCase()} QUESTIONS</div>`;
+          selectedQuestions[type].forEach((idx, i) => {
+            const q = generatedPaper.questions[type][idx];
+            content += `<p><b>Q${i+1}.</b> ${q.text} [${formValues[`${type}Marks`] || 1}M]</p>`;
+            if (type === 'mcq') content += `<p>${q.options.map((o, j) => `(${String.fromCharCode(65+j)}) ${o}`).join(' &nbsp; ')}</p>`;
+          });
+        }
+      });
     }
-
     return content;
   };
 
-  // Handle form changes
-  const handleFormChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleQuestionStructureChange = (type, value) => {
-    setFormData(prev => ({
-      ...prev,
-      questionStructure: {
-        ...prev.questionStructure,
-        [type]: parseInt(value) || 0
-      }
-    }));
-  };
-
-  const handleChapterToggle = (chapter) => {
-    setSelectedChapters(prev =>
-      prev.includes(chapter)
-        ? prev.filter(c => c !== chapter)
-        : [...prev, chapter]
-    );
-  };
-
-  // Effects
-  useEffect(() => {
-    if (formData.className) {
-      loadSubjects(formData.className);
-    }
-  }, [formData.className]);
-
-  useEffect(() => {
-    if (formData.className && formData.subject) {
-      loadChapters(formData.className, formData.subject);
-    }
-  }, [formData.className, formData.subject]);
+  useEffect(() => { if (formValues.className) loadSubjects(formValues.className); }, [formValues.className]);
+  useEffect(() => { if (formValues.className && formValues.subject) loadChapters(formValues.className, formValues.subject); }, [formValues.className, formValues.subject]);
 
   return (
-    <div className="min-h-full page-bg text-slate-300">
-      <div className="container mx-auto p-6 max-w-[1600px]">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-md">
-                <FileText size={16} style={{ color: 'var(--primary-color)' }} />
-            </div>
-            <div>
-                <h1 className="text-base font-bold text-white tracking-tight leading-tight">Exam AI Laboratory</h1>
-                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mt-0.5">Generate & Approve Assessment Papers</p>
-            </div>
-        </div>
+    <div className="max-w-full p-1 space-y-2">
+       <PageHeader
+        title="EXAM AI"
+        accentTitle="LABORATORY"
+        subtitle="Assessment Synthesis & Node Validation"
+        icon={Zap}
+        actions={[
+          {
+            label: "FINAL_ARCHIVE",
+            onClick: approveExam,
+            variant: "primary",
+            size: "xs",
+            icon: Award,
+            disabled: !generatedPaper || loading
+          }
+        ]}
+      />
 
-        {/* Status Messages */}
-        <AnimatePresence>
-          {success && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-6 flex items-center gap-3">
-              <CheckCircle size={18} /> {success}
-            </motion.div>
-          )}
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium mb-6 flex items-center gap-3">
-              <AlertTriangle size={18} /> {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <KPIWidget columns={4}>
+         <KPITile label="Assessment Load" value="Normal" sub="AI Throughput Active" icon={Zap} color="primary" />
+         <KPITile label="Target Unit" value={formValues.className || 'NONE'} sub="Active Sector" icon={Layout} color="accent" />
+         <KPITile label="Total Marks" value={calculateTotalMarks()} sub="Protocol Weight" icon={Award} color="success" />
+         <KPITile label="Temporal Limit" value={`${formValues.examDuration}M`} sub="Duration Lock" icon={Clock} color="warning" />
+      </KPIWidget>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-2 items-start text-xxs">
+        <GlassCard className="p-2" glowColor="primary" dense>
+          <FormWidget
+            title="EXAM_ARCH"
+            description="Configure assessment parameters"
+            sections={[
+              {
+                id: 'basic', label: 'Unit Identification', icon: BookOpen,
+                fields: [
+                  { name: 'className', label: 'Sector Unit', type: 'select', options: classes.map(c => ({ value: c, label: c.toUpperCase() })), required: true, labelIcon: Layout },
+                  { name: 'subject', label: 'Knowledge Base', type: 'select', options: subjects.map(s => ({ value: s, label: s })), required: true, labelIcon: Book },
+                  { name: 'chapters', label: 'Temporal Chapters', type: 'select', multiple: true, options: chapters.map(c => ({ value: c, label: c })), value: selectedChapters, onChange: setSelectedChapters, labelIcon: Activity }
+                ]
+              },
+              {
+                id: 'config', label: 'Protocol Settings', icon: Settings,
+                fields: [
+                  { name: 'examType', label: 'Assessment Class', type: 'select', options: ['Mid-Term', 'Final', 'Unit Test', 'Mock'], required: true, labelIcon: Zap },
+                  { name: 'examDuration', label: 'Temporal Limit (M)', type: 'number', required: true, labelIcon: Clock },
+                  { name: 'examDate', label: 'Launch Vector', type: 'date', required: true, labelIcon: Calendar },
+                  { name: 'examTime', label: 'Zero Hour', type: 'time', required: true, labelIcon: Clock }
+                ]
+              },
+              {
+                id: 'structure', label: 'Neural Weighting', icon: Award,
+                fields: [
+                  { name: 'shortCount', label: 'Short Quants', type: 'number', labelIcon: Activity },
+                  { name: 'shortMarks', label: 'Short Weight', type: 'number', labelIcon: Award },
+                  { name: 'longCount', label: 'Long Quants', type: 'number', labelIcon: Activity },
+                  { name: 'longMarks', label: 'Long Weight', type: 'number', labelIcon: Award },
+                  { name: 'mcqCount', label: 'MCQ Quants', type: 'number', labelIcon: Activity },
+                  { name: 'mcqMarks', label: 'MCQ Weight', type: 'number', labelIcon: Award }
+                ]
+              }
+            ]}
+            control={control}
+            onSubmit={handleSubmit(generatePaper)}
+            submitLabel="SYNTHESIZE_PAPER"
+            isLoading={generateLoading}
+            dense
+          />
+        </GlassCard>
 
-          {/* Left Panel - Form */}
-          <div className="glass-card p-8 space-y-8 animate-fade-in overflow-y-auto max-h-[calc(100vh-200px)]">
-            <div className="section-header flex items-center gap-3 border-b border-white/[0.05] pb-4 mb-6">
-                <Settings size={18} className="text-slate-400" />
-                <h3 className="text-lg font-bold text-white">Basic Information</h3>
-            </div>
-            <div className="form-section">
-              <h3>📚 Basic Information</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Class Name</label>
-                   <select
-                    className="input-standard bg-slate-900"
-                    value={formData.className}
-                    onChange={(e) => handleFormChange('className', e.target.value)}
-                    required
-                  >
-                    <option value="">Select Class</option>
-                    {classes.map((classId) => (
-                      <option key={classId} value={classId}>
-                        {classId.replace('class-', 'Class ').replace('-', ' ').toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <GlassCard className="p-2 h-fit min-h-[500px] flex flex-col" glowColor="accent" dense>
+          {!generatedPaper ? (
+             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 opacity-20 space-y-2">
+                <Printer size={32} />
+                <p className="text-micro font-black uppercase tracking-[0.4em]">AWAITING_DATA</p>
+             </div>
+          ) : (
+            <div className="space-y-4 h-full">
+               <div className="pb-2 border-b border-white/5">
+                  <h3 className="text-micro font-black text-white uppercase tracking-widest italic mb-0.5">SYNTHESIS_PREVIEW</h3>
+                  <p className="text-micro text-slate-700 font-bold uppercase">Manual overrides active</p>
+               </div>
 
-                <div className="form-group">
-                  <label>Subject Name</label>
-                   <select
-                    className="input-standard bg-slate-900"
-                    value={formData.subject}
-                    onChange={(e) => handleFormChange('subject', e.target.value)}
-                    disabled={!formData.className}
-                    required
-                  >
-                    <option value="">Select Subject</option>
-                    {subjects.map((subject) => (
-                      <option key={subject} value={subject}>{subject}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Chapters (Select Multiple)</label>
-                {chapters.length === 0 ? (
-                  <p style={{ color: '#666', fontStyle: 'italic' }}>
-                    {formData.subject ? 'No chapters found' : 'Please select class and subject first'}
-                  </p>
-                ) : (
-                  <div className="chapters-container">
-                    {chapters.map((chapter) => (
-                      <div key={chapter} className="chapter-item">
-                        <input
-                          type="checkbox"
-                          id={`chapter-${chapter}`}
-                          checked={selectedChapters.includes(chapter)}
-                          onChange={() => handleChapterToggle(chapter)}
-                        />
-                        <label htmlFor={`chapter-${chapter}`} style={{ margin: 0, cursor: 'pointer' }}>
-                          {chapter}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h3>⚙️ Exam Configuration</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Exam Type</label>
-                   <select
-                    className="input-standard bg-slate-900"
-                    value={formData.examType}
-                    onChange={(e) => handleFormChange('examType', e.target.value)}
-                  >
-                    <option value="Mid-Term">Mid-Term</option>
-                    <option value="Final">Final</option>
-                    <option value="Unit Test">Unit Test</option>
-                    <option value="Mock Test">Mock Test</option>
-                    <option value="Assignment">Assignment</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Duration (minutes)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.examDuration}
-                    onChange={(e) => handleFormChange('examDuration', e.target.value)}
-                    min="30"
-                    max="300"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Exam Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.examDate}
-                    onChange={(e) => handleFormChange('examDate', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Exam Time</label>
-                  <input
-                    type="time"
-                    className="form-control"
-                    value={formData.examTime}
-                    onChange={(e) => handleFormChange('examTime', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Announcement Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.announcementDate}
-                    onChange={(e) => handleFormChange('announcementDate', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Conduct Teacher</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.conductTeacher}
-                    onChange={(e) => handleFormChange('conductTeacher', e.target.value)}
-                    placeholder="Teacher Name"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Reason/Description</label>
-                <textarea
-                  className="form-control"
-                  value={formData.reason}
-                  onChange={(e) => handleFormChange('reason', e.target.value)}
-                  rows="3"
-                  placeholder="Exam description or reason"
-                />
-              </div>
-            </div>
-
-            <div className="form-section">
-              <h3>📝 Question Structure</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Short Questions</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.questionStructure.short}
-                    onChange={(e) => handleQuestionStructureChange('short', e.target.value)}
-                    min="0"
-                    max="20"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Long Questions</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.questionStructure.long}
-                    onChange={(e) => handleQuestionStructureChange('long', e.target.value)}
-                    min="0"
-                    max="15"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>MCQ Questions</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.questionStructure.mcq}
-                    onChange={(e) => handleQuestionStructureChange('mcq', e.target.value)}
-                    min="0"
-                    max="30"
-                  />
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Marks per Short Question</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={marksPerQuestion.short}
-                    onChange={(e) => setMarksPerQuestion(prev => ({ ...prev, short: parseInt(e.target.value) || 0 }))}
-                    min="1"
-                    max="10"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Marks per Long Question</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={marksPerQuestion.long}
-                    onChange={(e) => setMarksPerQuestion(prev => ({ ...prev, long: parseInt(e.target.value) || 0 }))}
-                    min="1"
-                    max="15"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Marks per MCQ</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={marksPerQuestion.mcq}
-                    onChange={(e) => setMarksPerQuestion(prev => ({ ...prev, mcq: parseInt(e.target.value) || 0 }))}
-                    min="1"
-                    max="5"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: '30px' }}>
-              <button
-                className="btn btn-primary"
-                onClick={generatePaper}
-                disabled={generateLoading || selectedChapters.length === 0}
-                style={{ fontSize: '16px', padding: '15px 30px' }}
-              >
-                {generateLoading ? (
-                  <>
-                    <span className="loading-spinner"></span>
-                    Generating Paper...
-                  </>
-                ) : (
-                  '🚀 Generate Paper'
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Right Panel - Questions and Preview */}
-          <div className="glass-card p-8 space-y-8 animate-fade-in overflow-y-auto max-h-[calc(100vh-200px)]">
-            {!generatedPaper ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-4">
-                <Printer size={48} className="opacity-20" />
-                <div className="text-center">
-                    <h3 className="text-lg font-bold text-slate-400">Paper Preview</h3>
-                    <p className="text-sm">Configure and generate a paper to see the preview here</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Question Selection */}
-                <div className="question-list">
-                  <h3>📋 Question Selection</h3>
-
-                  {generatedPaper.questions.short.length > 0 && (
-                    <div className="question-section">
-                      <div className="question-section-header">
-                        <span>Short Answer Questions</span>
-                        <span>{selectedQuestions.short.length} / {generatedPaper.questions.short.length}</span>
-                      </div>
-                      {generatedPaper.questions.short.map((question, index) => (
-                        <div key={question.id} className={`question-item ${selectedQuestions.short.includes(index) ? 'selected' : ''}`}>
-                          <input
-                            type="checkbox"
-                            className="question-checkbox"
-                            checked={selectedQuestions.short.includes(index)}
-                            onChange={() => handleQuestionToggle('short', index)}
-                          />
-                          <div className="question-text">{question.text}</div>
-                          <div className="question-marks">{marksPerQuestion.short} marks</div>
+               <div className="space-y-4 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
+                  {['short', 'long', 'mcq'].map(type => (
+                    generatedPaper.questions[type]?.length > 0 && (
+                      <div key={type} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                           <h4 className="text-micro font-black text-primary uppercase tracking-widest leading-none">{type}_PROTOCOL</h4>
+                           <span className="text-micro font-black text-slate-700">{selectedQuestions[type].length} UNIT</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {generatedPaper.questions.long.length > 0 && (
-                    <div className="question-section">
-                      <div className="question-section-header">
-                        <span>Long Answer Questions</span>
-                        <span>{selectedQuestions.long.length} / {generatedPaper.questions.long.length}</span>
-                      </div>
-                      {generatedPaper.questions.long.map((question, index) => (
-                        <div key={question.id} className={`question-item ${selectedQuestions.long.includes(index) ? 'selected' : ''}`}>
-                          <input
-                            type="checkbox"
-                            className="question-checkbox"
-                            checked={selectedQuestions.long.includes(index)}
-                            onChange={() => handleQuestionToggle('long', index)}
-                          />
-                          <div className="question-text">{question.text}</div>
-                          <div className="question-marks">{marksPerQuestion.long} marks</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {generatedPaper.questions.mcq.length > 0 && (
-                    <div className="question-section">
-                      <div className="question-section-header">
-                        <span>Multiple Choice Questions</span>
-                        <span>{selectedQuestions.mcq.length} / {generatedPaper.questions.mcq.length}</span>
-                      </div>
-                      {generatedPaper.questions.mcq.map((question, index) => (
-                        <div key={question.id} className={`question-item ${selectedQuestions.mcq.includes(index) ? 'selected' : ''}`}>
-                          <input
-                            type="checkbox"
-                            className="question-checkbox"
-                            checked={selectedQuestions.mcq.includes(index)}
-                            onChange={() => handleQuestionToggle('mcq', index)}
-                          />
-                          <div className="question-text">
-                            {question.text}
-                            <div style={{ marginTop: '5px', fontSize: '12px', color: 'var(--slate-500)' }}>
-                              {question.options.map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`).join(' | ')}
-                            </div>
-                          </div>
-                          <div className="question-marks">{marksPerQuestion.mcq} marks</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Paper Preview */}
-                <div style={{ marginTop: '30px' }}>
-                  <div className="preview-controls">
-                    <div className="font-size-control">
-                      <label>Font Size:</label>
-                      <input
-                        type="range"
-                        min="10"
-                        max="16"
-                        value={pdfFontSize}
-                        onChange={(e) => setPdfFontSize(parseInt(e.target.value))}
-                      />
-                      <span>{pdfFontSize}px</span>
-                    </div>
-                    <div className="total-marks">
-                      Total Marks: {calculateTotalMarks()}
-                    </div>
-                  </div>
-
-                  <div className="preview-container" style={{ fontSize: `${pdfFontSize}px` }}>
-                    <div className="preview-header">
-                      <div style={{ fontSize: `${pdfFontSize + 4}px`, fontWeight: 'bold', marginBottom: '10px' }}>
-                        {getSchoolName()}
-                      </div>
-                      <div style={{ fontSize: `${pdfFontSize + 2}px`, fontWeight: 'bold' }}>
-                        {formData.subject} - {formData.examType} Examination
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                        <span>Class: {formData.className}</span>
-                        <span>Duration: {formData.examDuration} minutes</span>
-                        <span>Total Marks: {calculateTotalMarks()}</span>
-                      </div>
-                      <div style={{ marginTop: '10px' }}>
-                        Date: {formData.examDate || new Date().toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', margin: '20px 0', borderLeft: '4px solid var(--primary-color)', borderRadius: '8px' }}>
-                      <strong>Instructions:</strong><br />
-                      1. All questions are compulsory.<br />
-                      2. Write your answers clearly and legibly.<br />
-                      3. Time allowed: {formData.examDuration} minutes.<br />
-                      4. Total marks: {calculateTotalMarks()}
-                    </div>
-
-                    {/* Render selected questions */}
-                    {selectedQuestions.short.length > 0 && (
-                      <div style={{ margin: '20px 0' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: `${pdfFontSize + 2}px`, marginBottom: '15px', borderBottom: '1px solid #ccc' }}>
-                          Section A - Short Answer Questions
-                        </div>
-                        {selectedQuestions.short.map((qIndex, i) => {
-                          const question = generatedPaper.questions.short[qIndex];
-                          return (
-                            <div key={question.id} style={{ margin: '15px 0', display: 'flex', alignItems: 'flex-start' }}>
-                              <div style={{ flex: 1 }}>
-                                <strong>{i + 1}.</strong> {question.text}
-                              </div>
-                              <div style={{ marginLeft: '10px', fontWeight: 'bold', border: '1px solid #000', padding: '2px 8px', minWidth: '30px', textAlign: 'center' }}>
-                                {marksPerQuestion.short}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {selectedQuestions.long.length > 0 && (
-                      <div style={{ margin: '20px 0' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: `${pdfFontSize + 2}px`, marginBottom: '15px', borderBottom: '1px solid #ccc' }}>
-                          Section B - Long Answer Questions
-                        </div>
-                        {selectedQuestions.long.map((qIndex, i) => {
-                          const question = generatedPaper.questions.long[qIndex];
-                          return (
-                            <div key={question.id} style={{ margin: '15px 0', display: 'flex', alignItems: 'flex-start' }}>
-                              <div style={{ flex: 1 }}>
-                                <strong>{i + 1}.</strong> {question.text}
-                              </div>
-                              <div style={{ marginLeft: '10px', fontWeight: 'bold', border: '1px solid #000', padding: '2px 8px', minWidth: '30px', textAlign: 'center' }}>
-                                {marksPerQuestion.long}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {selectedQuestions.mcq.length > 0 && (
-                      <div style={{ margin: '20px 0' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: `${pdfFontSize + 2}px`, marginBottom: '15px', borderBottom: '1px solid #ccc' }}>
-                          Section C - Multiple Choice Questions
-                        </div>
-                        {selectedQuestions.mcq.map((qIndex, i) => {
-                          const question = generatedPaper.questions.mcq[qIndex];
-                          return (
-                            <div key={question.id} style={{ margin: '15px 0', display: 'flex', alignItems: 'flex-start' }}>
-                              <div style={{ flex: 1 }}>
-                                <strong>{i + 1}.</strong> {question.text}<br />
-                                <div style={{ marginTop: '5px' }}>
-                                  {question.options.map((opt, idx) => (
-                                    <div key={idx} style={{ marginLeft: '20px' }}>
-                                      {String.fromCharCode(65 + idx)}. {opt}
-                                    </div>
-                                  ))}
+                        <div className="space-y-1">
+                           {generatedPaper.questions[type].map((q, idx) => (
+                             <div key={idx} onClick={() => handleQuestionToggle(type, idx)} className={`p-2 rounded-lg border transition-all cursor-pointer group ${selectedQuestions[type].includes(idx) ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/5 hover:border-white/10'}`}>
+                                <div className="flex gap-2">
+                                   <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${selectedQuestions[type].includes(idx) ? 'bg-primary border-primary' : 'border-slate-800'}`}>
+                                      {selectedQuestions[type].includes(idx) && <CheckCircle size={8} className="text-white" />}
+                                   </div>
+                                   <div className="flex-1">
+                                      <p className="text-micro font-bold text-slate-400 group-hover:text-white leading-tight">{q.text}</p>
+                                      {type === 'mcq' && q.options && (
+                                        <div className="grid grid-cols-2 gap-1 mt-2">
+                                           {q.options.map((o, i) => <div key={i} className="text-micro font-black text-slate-700 truncate leading-none">( {String.fromCharCode(65+i)} ) {o}</div>)}
+                                        </div>
+                                      )}
+                                   </div>
+                                   <span className="text-micro font-black text-primary/40">{formValues[`${type}Marks`] || 1}M</span>
                                 </div>
-                              </div>
-                              <div style={{ marginLeft: '10px', fontWeight: 'bold', border: '1px solid #000', padding: '2px 8px', minWidth: '30px', textAlign: 'center' }}>
-                                {marksPerQuestion.mcq}
-                              </div>
-                            </div>
-                          );
-                        })}
+                             </div>
+                           ))}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
+                    )
+                  ))}
+               </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-center gap-4 mt-8 pt-8 border-t border-white/[0.05]">
-                  <button
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all duration-300 active:scale-95"
-                    onClick={generateNewPaper}
-                    disabled={generateLoading}
-                  >
-                    <RefreshCw size={18} className={generateLoading ? 'animate-spin' : ''} />
-                    Regenerate Paper
-                  </button>
-
-                  <button
-                    className="flex items-center gap-2 px-8 py-3 rounded-xl bg-primary text-white font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                    onClick={approveExam}
-                    disabled={loading || calculateTotalMarks() === 0}
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={18} className="animate-spin" />
-                        Approving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 size={18} />
-                        Approve & Export PDF
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+               <div className="mt-auto pt-4 border-t border-white/5 grid grid-cols-2 gap-2">
+                  <StandardButton variant="ghost" size="xs" onClick={() => setGeneratedPaper(null)} icon={Trash2}>TERMINATE</StandardButton>
+                  <StandardButton variant="primary" size="xs" onClick={exportToPDF} icon={Printer}>PRINT_LEDGER</StandardButton>
+               </div>
+            </div>
+          )}
+        </GlassCard>
       </div>
     </div>
   );

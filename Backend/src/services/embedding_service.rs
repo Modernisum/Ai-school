@@ -38,7 +38,7 @@ impl PostgresEmbeddingService {
         let rows = sqlx::query("SELECT provider_type, provider_name, config FROM ai_providers WHERE is_active = true")
             .fetch_all(&self.repos.db_client.pool)
             .await
-            .map_err(|e| crate::error::AppError::Database(e))?;
+            .map_err(crate::error::AppError::Database)?;
         
         for row in rows {
             let provider_type: String = row.get("provider_type");
@@ -122,7 +122,7 @@ impl PostgresEmbeddingService {
         .bind(school_id)
         .fetch_optional(&self.repos.db_client.pool)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         let provider_type = if let Some(row) = row {
             row.get::<String, _>("provider_type")
@@ -156,7 +156,7 @@ impl PostgresEmbeddingService {
         }
         
         // Try any available provider
-        for (_, provider) in providers.iter() {
+        if let Some((_, provider)) = providers.iter().next() {
             return Ok(provider.clone());
         }
         
@@ -228,7 +228,7 @@ impl EmbeddingService for PostgresEmbeddingService {
         .bind(limit as i64)
         .fetch_all(&mut *conn)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         let mut results = Vec::with_capacity(rows.len());
         for row in rows {
@@ -266,7 +266,7 @@ impl EmbeddingService for PostgresEmbeddingService {
         .bind(metadata)
         .fetch_one(&mut *conn)
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
         
         let id: i64 = row.get("id");
         Ok(id)

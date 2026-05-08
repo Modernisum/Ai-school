@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/theme/app_theme.dart';
 
@@ -38,19 +35,15 @@ class DashboardStatsWidget extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: const [
               Text(
                 "Welcome!",
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 "Loading your dashboard...",
-                style: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+                style: TextStyle(color: Colors.white38, fontSize: 14),
               ),
             ],
           ),
@@ -98,18 +91,11 @@ class DashboardStatsWidget extends StatelessWidget {
                   children: [
                     Text(
                       "Hello, $name!",
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       "$className • Roll: $rollNumber",
-                      style: GoogleFonts.outfit(
-                        color: Colors.white38,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white38, fontSize: 13),
                     ),
                   ],
                 ),
@@ -117,13 +103,13 @@ class DashboardStatsWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             "Here's your daily overview",
-            style: GoogleFonts.outfit(color: Colors.white60, fontSize: 14),
+            style: TextStyle(color: Colors.white60, fontSize: 14),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 50.ms);
+    );
   }
 
   Widget _buildStatsGrid(
@@ -141,7 +127,7 @@ class DashboardStatsWidget extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.0, // Changed from 1.4 to 1.0 to give more height
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           "Attendance",
@@ -184,50 +170,44 @@ class DashboardStatsWidget extends StatelessWidget {
   ) {
     return GlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(12), // Reduced from 16
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(5), // Reduced from 6
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: color, size: 16), // Reduced from 18
+                  child: Icon(icon, color: color, size: 16),
                 ),
                 const Spacer(),
                 Text(
                   title,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white38,
-                    fontSize: 10, // Reduced from 11
-                  ),
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
                 ),
               ],
             ),
-            const SizedBox(height: 8), // Reduced from 12
+            const SizedBox(height: 8),
             Text(
               value,
-              style: GoogleFonts.outfit(
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20, // Reduced from 24
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                letterSpacing: -0.5, // Reduced from -1
+                letterSpacing: -0.5,
               ),
             ),
             Text(
               subtitle,
-              style: GoogleFonts.outfit(
-                color: Colors.white38,
-                fontSize: 10,
-              ), // Reduced from 11
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
             ),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 150.ms);
+    );
   }
 }

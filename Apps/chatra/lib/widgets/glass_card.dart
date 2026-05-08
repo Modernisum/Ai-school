@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class GlassCard extends StatelessWidget {
@@ -8,7 +7,6 @@ class GlassCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final double borderRadius;
-  final double blur;
 
   const GlassCard({
     super.key,
@@ -18,38 +16,19 @@ class GlassCard extends StatelessWidget {
     this.padding,
     this.margin,
     this.borderRadius = 24.0,
-    this.blur = 8.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Container(
-      padding: padding ?? const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-      ),
-      child: child,
-    );
-
-    if (blur > 0) {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: content,
-        ),
-      );
-    }
-
     return RepaintBoundary(
       child: Container(
         width: width,
         height: height,
         margin: margin,
         decoration: BoxDecoration(
+          color: const Color(0x1AFFFFFF),
           borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(color: const Color(0x33FFFFFF), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -58,7 +37,13 @@ class GlassCard extends StatelessWidget {
             ),
           ],
         ),
-        child: content,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: Container(
+            padding: padding ?? const EdgeInsets.all(20),
+            child: child,
+          ),
+        ),
       ),
     );
   }

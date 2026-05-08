@@ -1,0 +1,620 @@
+{
+  "info": {
+    "name": "25. Space & Material Management APIs",
+    "description": "Converted from 25-spaces.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. GET /api/spaces/:schoolId/spaces - List Spaces",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/spaces",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "spaces"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "2. GET /api/spaces/:schoolId/categories - List Space Categories",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/categories",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "categories"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "3. POST /api/spaces/:schoolId/spaces/:category - Create Space by Category",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/spaces/Classroom",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "spaces",
+            "Classroom"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"spaceName\": \"Physics Lab A\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "4. GET /api/spaces/:schoolId/:spaceName - Get Space Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/Physics%20Lab%20A",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "Physics%20Lab%20A"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "5. PUT /api/spaces/:schoolId/:spaceName - Update Space",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/Physics%20Lab%20A",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "Physics%20Lab%20A"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"capacity\": 30,\n  \"description\": \"Physics laboratory with updated equipment\",\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "6. DELETE /api/spaces/:schoolId/:spaceName - Delete Space",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/Physics%20Lab%20A",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "Physics%20Lab%20A"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "7. POST /api/spaces/:schoolId/:spaceName/materials - Assign Space Materials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/spaces/SCH001/Physics%20Lab%20A/materials",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "spaces",
+            "SCH001",
+            "Physics%20Lab%20A",
+            "materials"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"materialName\": \"Microscope\",\n    \"quantity\": 5,\n    \"condition\": \"good\"\n  },\n  {\n    \"materialName\": \"Bunsen Burner\",\n    \"quantity\": 10,\n    \"condition\": \"excellent\"\n  }\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "8. GET /api/materials/:schoolId - List Materials",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "9. POST /api/materials/:schoolId - Create Material",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"materialName\": \"Chemistry Lab Kit\",\n  \"description\": \"Complete chemistry laboratory kit for high school\",\n  \"category\": \"Lab Equipment\",\n  \"quantity\": 15,\n  \"unitPrice\": 2500.00,\n  \"status\": \"available\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "10. GET /api/materials/:schoolId/:materialName - Get Material",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001/Chemistry%20Lab%20Kit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001",
+            "Chemistry%20Lab%20Kit"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "11. PATCH /api/materials/:schoolId/:materialName - Update Material",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001/Chemistry%20Lab%20Kit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001",
+            "Chemistry%20Lab%20Kit"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 20,\n  \"description\": \"Updated chemistry kit with safety equipment\",\n  \"status\": \"in_use\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "12. DELETE /api/materials/:schoolId/:materialName - Delete Material",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001/Chemistry%20Lab%20Kit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001",
+            "Chemistry%20Lab%20Kit"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "13. POST /api/materials/:schoolId/:materialName/buy - Buy Material",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001/Microscope/buy",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001",
+            "Microscope",
+            "buy"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 2,\n  \"unitPrice\": 15000.00,\n  \"supplier\": \"Lab Supplies Inc.\",\n  \"transactionDate\": \"2024-01-15\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "14. POST /api/materials/:schoolId/:materialName/sell - Sell Material",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "SCH001",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "admin001",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/materials/SCH001/Microscope/sell",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "materials",
+            "SCH001",
+            "Microscope",
+            "sell"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 1,\n  \"salePrice\": 12000.00\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

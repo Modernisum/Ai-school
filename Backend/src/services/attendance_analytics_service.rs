@@ -36,7 +36,7 @@ impl PostgresAttendanceAnalyticsService {
         let month = parts[1].parse::<u32>()
             .map_err(|e| AppError::Validation(format!("Invalid month: {} - {}", parts[1], e)))?;
         
-        if month < 1 || month > 12 {
+        if !(1..=12).contains(&month) {
             return Err(AppError::Validation(format!("Month must be 1-12: {}", month)));
         }
         
@@ -64,232 +64,157 @@ impl PostgresAttendanceAnalyticsService {
 
 #[async_trait]
 impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
-    async fn get_daily_summary(
+    async fn get_advanced_attendance_stats(
         &self,
         school_id: &str,
-        date: &str,
+        query: crate::routes::attendance::AttendanceQuery,
     ) -> AppResult<Value> {
-        // Try cache first
-        if let Ok(Some(cached)) = self.cache.get_analytics(school_id, "attendance_daily", date).await {
-            return Ok(cached);
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        // 1. Determine Date Range
+        let target_date = query.date.clone().unwrap_or_else(|| Utc::now().format("%Y-%m-%d").to_string());
+        let (start_date, end_date) = if let Some(period) = &query.period {
+            match period.as_str() {
+                "day" => (self.parse_date(&target_date)?, self.parse_date(&target_date)?),
+                "week" => {
+                    let d = self.parse_date(&target_date)?;
+                    (d, d.checked_add_days(Days::new(7)).unwrap_or(d))
+                },
+                "month" => {
+                    let d = self.parse_date(&target_date)?;
+                    (d.with_day(1).unwrap(), d.with_day(1).unwrap().checked_add_months(Months::new(1)).unwrap().pred_opt().unwrap())
+                },
+                "year" => {
+                    let d = self.parse_date(&target_date)?;
+                    (NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap(), NaiveDate::from_ymd_opt(d.year(), 12, 31).unwrap())
+                },
+                _ => (self.parse_date(&target_date)?, self.parse_date(&target_date)?),
+            }
+        } else {
+            (self.parse_date(&target_date)?, self.parse_date(&target_date)?)
+        };
+
+        // 2. Build Dynamic SQL with User Details (Name/Image)
+        let mut sql = String::from(r#"
+            SELECT
+                a.user_id, a.role, a.date, a.status, a.in_time, a.out_time, a.class_name, a.reason,
+                COALESCE(s.name, e.name) as name,
+                COALESCE(s.image_url, e.profile_image) as image_url
+            FROM attendance a
+            LEFT JOIN students s ON a.user_id = s.student_id AND a.school_id = s.school_id
+            LEFT JOIN employees e ON a.user_id = e.employee_id AND a.school_id = e.school_id
+            WHERE a.school_id = $1 AND a.date >= $2 AND a.date <= $3
+        "#);
+        let mut bind_index = 4;
+
+        if let Some(user_type) = &query.user_type {
+            sql.push_str(&format!(" AND a.role = ${}", bind_index));
+            bind_index += 1;
+        }
+        if let Some(class_name) = &query.class_name {
+            sql.push_str(&format!(" AND a.class_name = ${}", bind_index));
+            bind_index += 1;
+        }
+        if let Some(incoming_after) = &query.incoming_after {
+            sql.push_str(&format!(" AND a.in_time > ${}", bind_index));
+            bind_index += 1;
+        }
+        if let Some(outgoing_before) = &query.outgoing_before {
+            sql.push_str(&format!(" AND a.out_time < ${}", bind_index));
+            bind_index += 1;
+        }
+        if let Some(user_ids_str) = &query.user_ids {
+            let ids: Vec<&str> = user_ids_str.split(',').map(|s| s.trim()).collect();
+            sql.push_str(&format!(" AND a.user_id = ANY(${}::text[])", bind_index));
+            bind_index += 1;
+        }
+        if let Some(_space_name) = &query.space_name {
+            sql.push_str(&format!(" AND a.space_name = ${}", bind_index));
+            bind_index += 1;
         }
 
-        let target_date = self.parse_date(date)?;
+        // 4. Advanced Filtered Query execution
+        let mut q_exec = sqlx::query(&sql).bind(school_id).bind(start_date).bind(end_date);
         
-        // Query daily attendance summary
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        if let Some(user_type) = &query.user_type { q_exec = q_exec.bind(user_type); }
+        if let Some(class_name) = &query.class_name { q_exec = q_exec.bind(class_name); }
+        if let Some(incoming_after) = &query.incoming_after { q_exec = q_exec.bind(incoming_after); }
+        if let Some(outgoing_before) = &query.outgoing_before { q_exec = q_exec.bind(outgoing_before); }
+        if let Some(user_ids_str) = &query.user_ids {
+            let ids: Vec<String> = user_ids_str.split(',').map(|s| s.trim().to_string()).collect();
+            q_exec = q_exec.bind(ids);
+        }
+        if let Some(space_name) = &query.space_name { q_exec = q_exec.bind(space_name); }
+
+        let rows = q_exec.fetch_all(&mut *conn).await?;
         
-        let summary_query = r#"
-            SELECT 
-                role,
-                status,
-                COUNT(*) as count
-            FROM attendance
-            WHERE school_id = $1 AND date = $2
-            GROUP BY role, status
-            ORDER BY role, status
-        "#;
-        
-        let rows = sqlx::query(summary_query)
-            .bind(school_id)
-            .bind(target_date)
-            .fetch_all(&mut *conn)
-            .await?;
-        
-        let mut summary = json!({
-            "date": date,
-            "student": {"present": 0, "absent": 0, "leave": 0, "holiday": 0, "total": 0},
-            "employee": {"present": 0, "absent": 0, "leave": 0, "holiday": 0, "total": 0},
-            "overall": {"present": 0, "absent": 0, "leave": 0, "holiday": 0, "total": 0}
-        });
-        
-        for row in rows {
-            let role: String = row.get("role");
+        // 5. Calculate DYNAMIC SUMMARY from filtered results
+        let mut total_present = 0;
+        let mut total_absent = 0;
+        let mut total_leave = 0;
+
+        for row in &rows {
             let status: String = row.get("status");
-            let count: i64 = row.get("count");
-            
-            let status_key = status.to_lowercase();
-            
-            // Update role-specific counts
-            if let Some(role_map) = summary.get_mut(&role) {
-                if let Some(target) = role_map.get_mut(&status_key) {
-                    *target = json!(count);
-                }
-                // Update total for this role
-                if let Some(total) = role_map.get_mut("total") {
-                    if let Value::Number(current) = total {
-                        let new_total = current.as_i64().unwrap_or(0) + count;
-                        *total = json!(new_total);
-                    }
-                }
-            }
-            
-            // Update overall counts
-            if let Some(overall_map) = summary.get_mut("overall") {
-                if let Some(target) = overall_map.get_mut(&status_key) {
-                    if let Value::Number(current) = target {
-                        let new_count = current.as_i64().unwrap_or(0) + count;
-                        *target = json!(new_count);
-                    }
-                }
-                if let Some(total) = overall_map.get_mut("total") {
-                    if let Value::Number(current) = total {
-                        let new_total = current.as_i64().unwrap_or(0) + count;
-                        *total = json!(new_total);
-                    }
-                }
+            match status.to_lowercase().as_str() {
+                "present" => total_present += 1,
+                "absent" => total_absent += 1,
+                "leave" => total_leave += 1,
+                _ => {}
             }
         }
-        
-        // Calculate percentages
-        for role in &["student", "employee", "overall"] {
-            if let Some(role_map) = summary.get_mut(*role) {
-                if let (Some(total_val), Some(present_val)) = (role_map.get("total"), role_map.get("present")) {
-                    if let (Value::Number(total), Value::Number(present)) = (total_val, present_val) {
-                        let total_num = total.as_i64().unwrap_or(0);
-                        let present_num = present.as_i64().unwrap_or(0);
-                        
-                        if total_num > 0 {
-                            let percentage = (present_num as f64 / total_num as f64) * 100.0;
-                            role_map["attendance_percentage"] = json!(percentage.round() as i64);
-                        } else {
-                            role_map["attendance_percentage"] = json!(0);
+
+        let total_users = rows.len();
+        let attendance_percentage = if total_users > 0 {
+            (total_present as f64 / total_users as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        // 6. Transform rows to JSON with DYNAMIC FIELD SELECTION
+        let requested_fields: Vec<String> = query.fields.as_ref()
+            .map(|f| f.split(',').map(|s| s.trim().to_string()).collect())
+            .unwrap_or_default();
+
+        let records: Vec<Value> = rows.iter().map(|r| {
+            let mut record = json!({
+                "user_id": r.get::<String, _>("user_id"),
+                "user_type": r.get::<String, _>("role"),
+                "name": r.get::<Option<String>, _>("name"),
+                "image_url": r.get::<Option<String>, _>("image_url"),
+                "date": r.get::<NaiveDate, _>("date").to_string(),
+                "status": r.get::<String, _>("status"),
+                "in_time": r.get::<Option<String>, _>("in_time"),
+                "out_time": r.get::<Option<String>, _>("out_time"),
+                "class_name": r.get::<Option<String>, _>("class_name"),
+                "reason": r.get::<Option<String>, _>("reason")
+            });
+
+            // If specific fields are requested, filter the JSON object
+            if !requested_fields.is_empty() {
+                if let Value::Object(ref mut map) = record {
+                    let mut filtered_map = serde_json::Map::new();
+                    for field in &requested_fields {
+                        if let Some(val) = map.remove(field) {
+                            filtered_map.insert(field.clone(), val);
                         }
                     }
+                    *map = filtered_map;
                 }
             }
-        }
-        
-        
-        // Cache the result (15 minutes TTL)
-        let _ = self.cache.cache_analytics(
-            school_id,
-            "attendance_daily",
-            date,
-            &summary,
-            15 * 60,
-        ).await;
-        
-        Ok(summary)
-    }
+            record
+        }).collect();
 
-    async fn get_monthly_stats(
-        &self,
-        school_id: &str,
-        month: &str,
-    ) -> AppResult<Value> {
-        // Try cache first
-        if let Ok(Some(cached)) = self.cache.get_analytics(school_id, "attendance_monthly", month).await {
-            return Ok(cached);
-        }
-
-        let (year, month_num) = self.parse_month(month)?;
-        
-        let start_date = NaiveDate::from_ymd_opt(year, month_num, 1)
-            .ok_or_else(|| AppError::Validation("Invalid month".to_string()))?;
-        let end_date = start_date.with_day(1)
-            .and_then(|d| d.checked_add_months(Months::new(1)))
-            .and_then(|d| d.checked_sub_days(Days::new(1)))
-            .unwrap_or(start_date.with_day(28).unwrap());
-        
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let monthly_query = r#"
-            SELECT 
-                role,
-                status,
-                COUNT(*) as count
-            FROM attendance
-            WHERE school_id = $1 
-              AND date >= $2 
-              AND date <= $3
-            GROUP BY role, status
-            ORDER BY role, status
-        "#;
-        
-        let rows = sqlx::query(monthly_query)
-            .bind(school_id)
-            .bind(start_date)
-            .bind(end_date)
-            .fetch_all(&mut *conn)
-            .await?;
-        
-        let mut stats = json!({
-            "month": month,
-            "period_start": start_date.to_string(),
-            "period_end": end_date.to_string(),
-            "student": {"present": 0, "absent": 0, "leave": 0, "total": 0},
-            "employee": {"present": 0, "absent": 0, "leave": 0, "total": 0},
-            "overall": {"present": 0, "absent": 0, "leave": 0, "total": 0}
-        });
-        
-        for row in rows {
-            let role: String = row.get("role");
-            let status: String = row.get("status");
-            let count: i64 = row.get("count");
-            
-            let status_key = status.to_lowercase();
-            
-            if let Some(role_map) = stats.get_mut(&role) {
-                if let Some(target) = role_map.get_mut(&status_key) {
-                    *target = json!(count);
-                }
-                // Update total for this role
-                if let Some(total) = role_map.get_mut("total") {
-                    if let Value::Number(current) = total {
-                        let new_total = current.as_i64().unwrap_or(0) + count;
-                        *total = json!(new_total);
-                    }
-                }
-            }
-            
-            // Update overall counts
-            if let Some(overall_map) = stats.get_mut("overall") {
-                if let Some(target) = overall_map.get_mut(&status_key) {
-                    if let Value::Number(current) = target {
-                        let new_count = current.as_i64().unwrap_or(0) + count;
-                        *target = json!(new_count);
-                    }
-                }
-                if let Some(total) = overall_map.get_mut("total") {
-                    if let Value::Number(current) = total {
-                        let new_total = current.as_i64().unwrap_or(0) + count;
-                        *total = json!(new_total);
-                    }
-                }
-            }
-        }
-        
-        // Calculate percentages
-        for role in &["student", "employee", "overall"] {
-            if let Some(role_map) = stats.get_mut(*role) {
-                if let (Some(total_val), Some(present_val)) = (role_map.get("total"), role_map.get("present")) {
-                    if let (Value::Number(total), Value::Number(present)) = (total_val, present_val) {
-                        let total_num = total.as_i64().unwrap_or(0);
-                        let present_num = present.as_i64().unwrap_or(0);
-                        
-                        if total_num > 0 {
-                            let percentage = (present_num as f64 / total_num as f64) * 100.0;
-                            role_map["attendance_percentage"] = json!(percentage.round() as i64);
-                        } else {
-                            role_map["attendance_percentage"] = json!(0);
-                        }
-                    }
-                }
-            }
-        }
-        
-        
-        // Cache the result (1 hour TTL for monthly reports)
-        let _ = self.cache.cache_analytics(
-            school_id,
-            "attendance_monthly",
-            month,
-            &stats,
-            60 * 60,
-        ).await;
-        
-        Ok(stats)
+        Ok(json!({
+            "period": { "start": start_date.to_string(), "end": end_date.to_string() },
+            "summary": {
+                "total_users": total_users,
+                "total_present": total_present,
+                "total_absent": total_absent,
+                "total_leave": total_leave,
+                "attendance_percentage": attendance_percentage
+            },
+            "records": records
+        }))
     }
 
     async fn get_student_report(

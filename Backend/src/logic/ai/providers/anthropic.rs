@@ -242,6 +242,7 @@ impl LLMProvider for AnthropicProvider {
             temperature: None,
             top_p: None,
             stop_sequences: None,
+            stream: false,
             extra_params: None,
         }).await;
 

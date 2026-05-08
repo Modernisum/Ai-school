@@ -78,7 +78,7 @@ impl PlagiarismServiceTrait for PlagiarismService {
         let hash = self.generate_hash(text);
         
         // Simulate comparing with 3 other submissions
-        let mock_texts = vec![
+        let mock_texts = [
             "This is a sample answer to the question about photosynthesis.",
             "Photosynthesis is the process by which plants convert light energy into chemical energy.",
             "The answer discusses the importance of chlorophyll in capturing sunlight.",

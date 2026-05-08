@@ -6,6 +6,7 @@ import '../../core/widgets/animated_gradient_bg.dart';
 import '../../core/widgets/glass_card.dart';
 import '../management/leave_approvals_screen.dart';
 import '../management/broadcast_notice_screen.dart';
+import '../management/salary_management_screen.dart';
 
 class ManagementDashboard extends StatelessWidget {
   const ManagementDashboard({super.key});
@@ -52,7 +53,9 @@ class ManagementDashboard extends StatelessWidget {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const BroadcastNoticeScreen()));
                 }),
                 _buildActionCard(context, Icons.people, 'All Staff', Colors.blueAccent),
-                _buildActionCard(context, Icons.receipt_long, 'Payroll Overview', Colors.green),
+                _buildActionCard(context, Icons.receipt_long, 'Payroll Overview', Colors.green, onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SalaryManagementScreen()));
+                }),
               ],
             )
           ],

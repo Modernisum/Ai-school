@@ -110,6 +110,31 @@ impl ResponsibilityService for PostgresResponsibilityService {
         self.crud.delete_responsibility(school_id, responsibility_id, admin_id).await
     }
 
+    async fn list_space_responsibilities(&self, school_id: &str, space_id: &str) -> AppResult<Vec<Value>> {
+        self.crud.list_space_responsibilities(school_id, space_id).await
+    }
+
+    async fn sync_student_fees_for_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> AppResult<usize> {
+        self.crud.sync_student_fees_for_responsibility(school_id, responsibility_id).await
+    }
+
+    async fn recalculate_all_student_fees(&self, school_id: &str) -> AppResult<usize> {
+        self.crud.recalculate_all_student_fees(school_id).await
+    }
+
+    async fn generate_salaries_from_responsibilities(
+        &self,
+        school_id: &str,
+        month: i32,
+        year: i32,
+    ) -> AppResult<Value> {
+        self.crud.generate_salaries_from_responsibilities(school_id, month, year).await
+    }
+
     async fn get_overview_analytics(&self, school_id: &str, time_range: &str) -> AppResult<Value> {
         self.crud.get_overview_analytics(school_id, time_range).await
     }

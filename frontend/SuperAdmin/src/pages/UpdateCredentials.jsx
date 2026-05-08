@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Shield, User, Lock, ArrowLeft, AlertCircle, Upload, X, Loader } from 'lucide-react'
 import { updateAdminCredentials, getAdminProfile, uploadFile, deleteFileByUrl } from '../api'
+import GlassCard from '../components/ui/GlassCard.jsx'
+import StandardButton from '../components/ui/StandardButton.jsx'
 
 export default function UpdateCredentials() {
     const navigate = useNavigate()
@@ -46,7 +48,6 @@ export default function UpdateCredentials() {
         try {
             let finalProfileUrl = form.profileImageUrl;
 
-            // Upload pending profile if exists
             if (pendingProfileFile) {
                 setProfLoading(true);
                 const uploadRes = await uploadFile(pendingProfileFile);
@@ -86,45 +87,39 @@ export default function UpdateCredentials() {
 
     return (
         <div className="login-bg">
-            <div className="login-card" style={{ maxWidth: '450px', margin: '60px auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Shield size={22} color="white" />
+            <GlassCard className="login-card-refactored" style={{ maxWidth: 450, margin: '60px auto' }}>
+                <div className="login-header">
+                    <div className="login-logo">
+                        <div className="login-logo-icon">
+                            <Shield size={22} color="white" />
+                        </div>
                     </div>
-                    <div>
-                        <h1>Update Admin Credentials</h1>
-                        <p>Verify current identity to set new credentials</p>
+                    <div className="login-header-text">
+                        <h1 className="login-title">Update Credentials</h1>
+                        <p className="login-subtitle">Verify current identity to set new credentials</p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    {error && (
-                        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#f87171', marginBottom: 14 }}>
-                            {error}
-                        </div>
-                    )}
-                    {message && (
-                        <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#10b981', marginBottom: 14 }}>
-                            {message}
-                        </div>
-                    )}
+                <div className="login-divider" />
 
-                    <div style={{ marginBottom: 20, borderBottom: '1px solid var(--glass-border)', paddingBottom: 10 }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            ADMIN PROFILE
-                        </span>
+                <form onSubmit={handleSubmit}>
+                    {error && <div className="alert-inline alert-inline-danger mb-4">{error}</div>}
+                    {message && <div className="alert-inline alert-inline-success mb-4">{message}</div>}
+
+                    <div className="form-group" style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: 10, marginBottom: 20 }}>
+                        <span className="text-xs font-bold uppercase letter-spaced text-tertiary">ADMIN PROFILE</span>
                     </div>
 
-                    <div className="input-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-                        <div style={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--accent-30)', background: 'var(--bg3)' }}>
+                    <div className="input-group flex flex-col items-center mb-4">
+                        <div style={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--border-default)', background: 'var(--surface-layer3)' }}>
                             {(localProfilePreview || form.profileImageUrl) ? (
                                 <>
                                     <img src={localProfilePreview || form.profileImageUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     <button 
                                         type="button" 
-                                        style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: '50%', padding: 4, cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                                        className="icon-btn"
+                                        style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.5)', borderRadius: '50%', padding: 4, backdropFilter: 'blur(4px)' }}
                                         onClick={() => {
-                                            // Only delete from server if it was already a server URL
                                             if (form.profileImageUrl && !localProfilePreview) {
                                                 deleteFileByUrl(form.profileImageUrl);
                                             }
@@ -138,7 +133,7 @@ export default function UpdateCredentials() {
                                     </button>
                                 </>
                             ) : (
-                                <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: profLoading ? 'default' : 'pointer', color: 'var(--text3)' }}>
+                                <label className="flex flex-col items-center justify-center" style={{ width: '100%', height: '100%', cursor: profLoading ? 'default' : 'pointer', color: 'var(--text-tertiary)' }}>
                                     <input 
                                         type="file" 
                                         accept="image/*" 
@@ -147,105 +142,73 @@ export default function UpdateCredentials() {
                                         onChange={async (e) => {
                                             const file = e.target.files[0];
                                             if (!file) return;
-
-                                            // Immediate local preview only
                                             const localUrl = URL.createObjectURL(file);
                                             setLocalProfilePreview(localUrl);
                                             setPendingProfileFile(file);
                                         }}
                                     />
                                     {profLoading ? (
-                                        <Loader size={24} className="spin" style={{ color: 'var(--accent)' }} />
+                                        <div className="spinner" style={{ width: 24, height: 24 }} />
                                     ) : (
                                         <>
                                             <Upload size={24} />
-                                            <span style={{ fontSize: 10, fontWeight: 700, marginTop: 4 }}>UPLOAD</span>
+                                            <span className="text-xs font-bold" style={{ marginTop: 4 }}>UPLOAD</span>
                                         </>
                                     )}
-                                    {profLoading && <div style={{ position: 'absolute', bottom: 0, left: 0, height: 4, background: 'var(--accent)', width: '100%', animation: 'shimmer 2s infinite linear' }} />}
                                 </label>
                             )}
                         </div>
                     </div>
 
-                    <div style={{ marginBottom: 20, borderBottom: '1px solid var(--glass-border)', paddingBottom: 10 }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            CURRENT AUTHORIZATION
-                        </span>
+                    <div style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: 10, marginBottom: 20 }}>
+                        <span className="text-xs font-bold uppercase letter-spaced text-tertiary">CURRENT AUTHORIZATION</span>
                     </div>
 
                     <div className="input-group">
-                        <label>Current Username</label>
-                        <input
-                            type="text"
-                            placeholder="superadmin"
-                            required
-                            value={form.currentUsername}
-                            onChange={e => setForm({ ...form, currentUsername: e.target.value })}
-                        />
+                        <label className="input-label">Current Username</label>
+                        <div className="input-wrapper">
+                            <input type="text" placeholder="superadmin" required value={form.currentUsername} onChange={e => setForm({ ...form, currentUsername: e.target.value })} className="form-input" />
+                        </div>
                     </div>
                     <div className="input-group">
-                        <label>Current Password</label>
-                        <input
-                            type="password"
-                            placeholder="••••••••"
-                            required
-                            value={form.currentPassword}
-                            onChange={e => setForm({ ...form, currentPassword: e.target.value })}
-                        />
+                        <label className="input-label">Current Password</label>
+                        <div className="input-wrapper">
+                            <input type="password" placeholder="••••••••" required value={form.currentPassword} onChange={e => setForm({ ...form, currentPassword: e.target.value })} className="form-input" />
+                        </div>
                     </div>
                     
-                    <div style={{ margin: '24px 0 20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: 10 }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            NEW CREDENTIALS
-                        </span>
+                    <div style={{ margin: '24px 0 20px', borderBottom: '1px solid var(--border-default)', paddingBottom: 10 }}>
+                        <span className="text-xs font-bold uppercase letter-spaced text-tertiary">NEW CREDENTIALS</span>
                     </div>
 
                     <div className="input-group">
-                        <label>New Username</label>
-                        <input
-                            type="text"
-                            placeholder="Enter new username"
-                            required
-                            value={form.newUsername}
-                            onChange={e => setForm({ ...form, newUsername: e.target.value })}
-                        />
+                        <label className="input-label">New Username</label>
+                        <div className="input-wrapper">
+                            <input type="text" placeholder="Enter new username" required value={form.newUsername} onChange={e => setForm({ ...form, newUsername: e.target.value })} className="form-input" />
+                        </div>
                     </div>
                     <div className="input-group">
-                        <label>New Password</label>
-                        <input
-                            type="password"
-                            placeholder="Enter new password"
-                            required
-                            value={form.newPassword}
-                            onChange={e => setForm({ ...form, newPassword: e.target.value })}
-                        />
+                        <label className="input-label">New Password</label>
+                        <div className="input-wrapper">
+                            <input type="password" placeholder="Enter new password" required value={form.newPassword} onChange={e => setForm({ ...form, newPassword: e.target.value })} className="form-input" />
+                        </div>
                     </div>
                     <div className="input-group">
-                        <label>Confirm New Password</label>
-                        <input
-                            type="password"
-                            placeholder="Confirm new password"
-                            required
-                            value={form.confirmPassword}
-                            onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
-                        />
+                        <label className="input-label">Confirm New Password</label>
+                        <div className="input-wrapper">
+                            <input type="password" placeholder="Confirm new password" required value={form.confirmPassword} onChange={e => setForm({ ...form, confirmPassword: e.target.value })} className="form-input" />
+                        </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}>
-                        {loading ? 'Updating...' : 'Update Credentials'}
-                    </button>
+                    <StandardButton type="submit" isLoading={loading} className="w-full mt-4" style={{ width: '100%' }}>
+                        Update Credentials
+                    </StandardButton>
 
-                    <Link to="/login" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, color: 'var(--text3)', fontSize: '0.9rem', textDecoration: 'none' }}>
+                    <Link to="/login" className="login-footer-link" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 }}>
                         <ArrowLeft size={16} /> Back to Login
                     </Link>
                 </form>
-            </div>
-            <style>{`
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-            `}</style>
+            </GlassCard>
         </div>
     )
 }

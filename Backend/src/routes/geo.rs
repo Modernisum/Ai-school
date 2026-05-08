@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::AppState;
 use std::fs;
 
-#[derive(Serialize)]
+#[derive(Serialize, sqlx::FromRow)]
 pub struct Country {
     pub id: i32,
     pub name: String,
@@ -16,14 +16,14 @@ pub struct Country {
     pub phone_code: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, sqlx::FromRow)]
 pub struct StateModel {
     pub id: i32,
     pub country_id: Option<i32>,
     pub name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, sqlx::FromRow)]
 pub struct District {
     pub id: i32,
     pub state_id: Option<i32>,
@@ -32,8 +32,7 @@ pub struct District {
 
 // GET /api/geo/countries
 pub async fn get_countries(State(state): State<AppState>) -> Json<Vec<Country>> {
-    let countries = sqlx::query_as!(
-        Country,
+    let countries = sqlx::query_as::<_, Country>(
         "SELECT id, name, code, phone_code FROM countries ORDER BY name"
     )
     .fetch_all(&state.db.pool)
@@ -48,11 +47,10 @@ pub async fn get_states(
     State(state): State<AppState>,
     Path(country_id): Path<i32>,
 ) -> Json<Vec<StateModel>> {
-    let states = sqlx::query_as!(
-        StateModel,
+    let states = sqlx::query_as::<_, StateModel>(
         "SELECT id, country_id, name FROM states WHERE country_id = $1 ORDER BY name",
-        country_id
     )
+    .bind(country_id)
     .fetch_all(&state.db.pool)
     .await
     .unwrap_or_default();
@@ -65,11 +63,10 @@ pub async fn get_districts(
     State(state): State<AppState>,
     Path(state_id): Path<i32>,
 ) -> Json<Vec<District>> {
-    let districts = sqlx::query_as!(
-        District,
+    let districts = sqlx::query_as::<_, District>(
         "SELECT id, state_id, name FROM districts WHERE state_id = $1 ORDER BY name",
-        state_id
     )
+    .bind(state_id)
     .fetch_all(&state.db.pool)
     .await
     .unwrap_or_default();

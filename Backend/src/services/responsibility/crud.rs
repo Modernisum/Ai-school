@@ -1,6 +1,7 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
+use bigdecimal::ToPrimitive;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use sqlx::Row;
@@ -230,6 +231,37 @@ impl ResponsibilityCrud {
         Ok(responsibilities)
     }
 
+    pub async fn list_space_responsibilities(&self, school_id: &str, space_id: &str) -> AppResult<Vec<Value>> {
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT r.*, er.space_ids as assigned_space_ids,
+                    COALESCE(r.data->>'mandatory', 'false') = 'true' as is_mandatory
+             FROM responsibilities r
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let items: Vec<Value> = rows.iter().map(|row| {
+            json!({
+                "responsibilityId": row.get::<String, _>("responsibility_id"),
+                "name": row.get::<String, _>("name"),
+                "description": row.get::<Option<String>, _>("description"),
+                "employeeType": row.get::<Option<String>, _>("employee_type"),
+                "studentFee": row.get::<f64, _>("student_fee"),
+                "monthlyPrice": row.get::<f64, _>("monthly_price"),
+                "perDayPrice": row.get::<f64, _>("per_day_price"),
+                "spaceCategory": row.get::<Option<String>, _>("space_category"),
+                "isMandatory": row.get::<bool, _>("is_mandatory")
+            })
+        }).collect();
+
+        Ok(items)
+    }
+
     pub async fn list_student_responsibilities_paginated(
         &self,
         school_id: &str,
@@ -271,6 +303,11 @@ impl ResponsibilityCrud {
             }
         }
 
+        // 2.5 Check if student_fee changed (for auto-sync)
+        let fee_changed = data.get("studentFee").and_then(|v| v.as_f64())
+            .map(|new_fee| new_fee != old_data["studentFee"].as_f64().unwrap_or(0.0))
+            .unwrap_or(false);
+
         // 3. Perform update
         self.repos.responsibility.update_responsibility(school_id, responsibility_id, data.clone()).await?;
 
@@ -286,6 +323,15 @@ impl ResponsibilityCrud {
                 "new": data
             })
         ).await;
+
+        // 5. Auto-sync student fees if student_fee changed
+        if fee_changed {
+            let affected = self.sync_student_fees_for_responsibility(school_id, responsibility_id).await.unwrap_or(0);
+            tracing::info!(
+                "Auto-synced student fees for {} students after responsibility '{}' fee changed",
+                affected, responsibility_id
+            );
+        }
 
         Ok(())
     }
@@ -544,7 +590,220 @@ impl ResponsibilityCrud {
             
             count += 1;
         }
-        
+
         Ok(count)
+    }
+
+    /// Sync student fees: finds all students in spaces covered by this responsibility
+    /// and recalculates their totalFees based on the current sum of student_fee for their space.
+    pub async fn sync_student_fees_for_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> AppResult<usize> {
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        let space_rows: Vec<(String,)> = sqlx::query_as(
+            "SELECT DISTINCT jsonb_array_elements_text(er.space_ids) as space_id
+             FROM employee_responsibilities er
+             WHERE er.school_id = $1 AND er.responsibility_id = $2"
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let space_ids: Vec<String> = space_rows.into_iter().map(|(s,)| s).collect();
+
+        if space_ids.is_empty() {
+            return Ok(0);
+        }
+
+        let mut affected = 0usize;
+
+        for space_id in &space_ids {
+            let fee_sum: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
+                "SELECT SUM(r.student_fee) FROM responsibilities r
+                 JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+                 WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+            )
+            .bind(school_id)
+            .bind(space_id)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+            let new_fee = fee_sum.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
+
+            let result = sqlx::query(
+                "UPDATE students SET total_fees = $1, updated_at = NOW()
+                 WHERE school_id = $2 AND CONCAT(COALESCE(class_name, ''), '-', COALESCE(section, '')) = $3"
+            )
+            .bind(new_fee)
+            .bind(school_id)
+            .bind(space_id)
+            .execute(&mut *conn)
+            .await?;
+
+            affected += result.rows_affected() as usize;
+        }
+
+        Ok(affected)
+    }
+
+    /// Recalculate student fees for all students in the school
+    pub async fn recalculate_all_student_fees(&self, school_id: &str) -> AppResult<usize> {
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        let students: Vec<(String, String, String)> = sqlx::query_as(
+            "SELECT student_id, COALESCE(class_name, '') as class_name, COALESCE(section, '') as section FROM students WHERE school_id = $1"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let mut affected = 0usize;
+
+        for (student_id, class_name, section) in &students {
+            let space_id = if section.is_empty() {
+                class_name.clone()
+            } else {
+                format!("{}-{}", class_name, section)
+            };
+
+            let fee_sum: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
+                "SELECT SUM(r.student_fee) FROM responsibilities r
+                 JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+                 WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+            )
+            .bind(school_id)
+            .bind(space_id)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+            let new_fee = fee_sum.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
+
+            sqlx::query(
+                "UPDATE students SET total_fees = $1, updated_at = NOW() WHERE school_id = $2 AND student_id = $3"
+            )
+            .bind(new_fee)
+            .bind(school_id)
+            .bind(student_id)
+            .execute(&mut *conn)
+            .await?;
+
+            affected += 1;
+        }
+
+        Ok(affected)
+    }
+
+    /// Generate monthly salary records for all employees based on their responsibility assignments.
+    pub async fn generate_salaries_from_responsibilities(
+        &self,
+        school_id: &str,
+        month: i32,
+        year: i32,
+    ) -> AppResult<Value> {
+        let employees = self.repos.employee.get_employees(school_id).await?;
+        let mut generated = 0usize;
+        let mut failed = 0usize;
+        let mut errors = Vec::new();
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        for emp in &employees {
+            let emp_id = match emp["employeeId"].as_str() {
+                Some(id) => id,
+                None => continue,
+            };
+
+            let mut spaces_component = 0.0f64;
+            let responsibilities = self
+                .repos
+                .responsibility
+                .get_employee_responsibilities(school_id, emp_id)
+                .await
+                .unwrap_or_default();
+
+            for r in &responsibilities {
+                let monthly_price = r["monthlyPrice"].as_f64().unwrap_or(0.0);
+                let spaces_count = r["assignedSpaceIds"]
+                    .as_array()
+                    .map(|arr| arr.len() as f64)
+                    .unwrap_or(1.0);
+                spaces_component += monthly_price * spaces_count;
+            }
+
+            let base_salary = emp["baseSalary"].as_f64().unwrap_or(0.0);
+            let bonus = emp["bonus"].as_f64().unwrap_or(0.0);
+            let aid = emp["aid"].as_f64().unwrap_or(0.0);
+            let exp_years = emp["experienceYears"].as_f64().unwrap_or(0.0);
+            let exp_rate = emp["experienceRate"].as_f64().unwrap_or(0.0);
+            let tenure_months = emp["tenureMonths"].as_f64().unwrap_or(0.0);
+            let tenure_rate = emp["tenureRate"].as_f64().unwrap_or(0.0);
+
+            let exp_component = exp_years * exp_rate;
+            let tenure_component = tenure_months * tenure_rate;
+            let gross_salary = spaces_component + exp_component + tenure_component + bonus + aid;
+
+            let attendance = self
+                .repos
+                .attendance
+                .get_attendance(school_id, "employee", emp_id)
+                .await
+                .unwrap_or_default();
+
+            let absent_days = attendance.iter().filter(|a| {
+                a["status"] == "absent"
+                    && a["month"].as_i64() == Some(month as i64)
+                    && a["year"].as_i64() == Some(year as i64)
+            }).count() as f64;
+
+            let daily_rate = gross_salary / 30.0;
+            let deductions = absent_days * daily_rate;
+            let net_salary = (gross_salary - deductions).max(0.0);
+
+            let salary_id = format!("sal_{}_{}", emp_id, uuid::Uuid::new_v4().to_string()[..8].to_string());
+
+            let result = sqlx::query(
+                "INSERT INTO salaries (salary_id, school_id, employee_id, month, year,
+                 base_salary, bonus, total_salary, due_amount, status, created_at, updated_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW())
+                 ON CONFLICT (salary_id) DO UPDATE SET
+                 total_salary = EXCLUDED.total_salary,
+                 due_amount = EXCLUDED.due_amount,
+                 status = EXCLUDED.status,
+                 updated_at = NOW()"
+            )
+            .bind(&salary_id)
+            .bind(school_id)
+            .bind(emp_id)
+            .bind(month)
+            .bind(year)
+            .bind(base_salary)
+            .bind(bonus)
+            .bind(net_salary)
+            .bind(net_salary)
+            .bind("DUE")
+            .execute(&mut *conn)
+            .await;
+
+            match result {
+                Ok(_) => generated += 1,
+                Err(e) => {
+                    failed += 1;
+                    errors.push(json!({"employeeId": emp_id, "error": e.to_string()}));
+                }
+            }
+        }
+
+        Ok(json!({
+            "schoolId": school_id,
+            "month": month,
+            "year": year,
+            "totalEmployees": employees.len(),
+            "generated": generated,
+            "failed": failed,
+            "errors": errors
+        }))
     }
 }

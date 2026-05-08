@@ -1,0 +1,694 @@
+{
+  "info": {
+    "name": "Attendance Management APIs - Supplemental",
+    "description": "Converted from 05-attendance-supplemental.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "PUT /api/operations/attendance/:schoolId/:role/:userId/:date - Update Attendance",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/{{studentId}}/{{currentDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "student",
+            "{{studentId}}",
+            "{{currentDate}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"present\",\n  \"remarks\": \"Updated attendance\",\n  \"in_time\": \"08:30:00\",\n  \"out_time\": \"15:30:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/operations/attendance/:schoolId/:role/:userId/:date - Delete Attendance",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/student/{{studentId}}/{{currentDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "student",
+            "{{studentId}}",
+            "{{currentDate}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/holidays - List School Holidays",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/holidays",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "holidays"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/holidays - Create School Holiday",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/holidays",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "holidays"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"{{currentDate}}\",\n  \"name\": \"Test Holiday\",\n  \"description\": \"Test holiday for API testing\",\n  \"type\": \"public\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/holidays/check - Check School Holiday",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/holidays/check?date={{currentDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "holidays",
+            "check?date={{currentDate}}"
+          ],
+          "query": [
+            {
+              "key": "date",
+              "value": "{{currentDate}}",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/holidays/:holidayId - Get Holiday Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/holidays/{{holidayId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "holidays",
+            "{{holidayId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/operations/attendance/:schoolId/holidays/:holidayId - Delete School Holiday",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/holidays/{{holidayId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "holidays",
+            "{{holidayId}}"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/class-attendance - Get Class Attendance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/class-attendance?class_name=10th&date={{currentDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "class-attendance?class_name=10th&date={{currentDate}}"
+          ],
+          "query": [
+            {
+              "key": "class_name",
+              "value": "10th",
+              "description": ""
+            },
+            {
+              "key": "date",
+              "value": "{{currentDate}}",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/qr-attendance - Generate QR Attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/qr-attendance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "qr-attendance"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"class_name\": \"10th\",\n  \"valid_for_minutes\": 30,\n  \"location\": {\n    \"latitude\": 28.6139,\n    \"longitude\": 77.2090\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/mobile-attendance - Mobile Mark Attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/mobile-attendance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "mobile-attendance"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": \"{{studentId}}\",\n  \"role\": \"student\",\n  \"date\": \"{{currentDate}}\",\n  \"status\": \"present\",\n  \"location\": {\n    \"latitude\": 28.6139,\n    \"longitude\": 77.2090\n  },\n  \"device_id\": \"test-device-123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/offline-sync - Offline Sync Attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/offline-sync",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "offline-sync"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"records\": [\n    {\n      \"user_id\": \"{{studentId}}\",\n      \"role\": \"student\",\n      \"date\": \"{{currentDate}}\",\n      \"status\": \"present\",\n      \"timestamp\": \"{{currentDateTime}}\",\n      \"device_id\": \"offline-device-001\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/reports/student - Student Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/student?student_id={{studentId}}&start_date=2024-01-01&end_date=2024-12-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "reports",
+            "student?student_id={{studentId}}&start_date=2024-01-01&end_date=2024-12-31"
+          ],
+          "query": [
+            {
+              "key": "student_id",
+              "value": "{{studentId}}",
+              "description": ""
+            },
+            {
+              "key": "start_date",
+              "value": "2024-01-01",
+              "description": ""
+            },
+            {
+              "key": "end_date",
+              "value": "2024-12-31",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/reports/class - Class Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/class?class_name=10th&start_date=2024-01-01&end_date=2024-12-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "reports",
+            "class?class_name=10th&start_date=2024-01-01&end_date=2024-12-31"
+          ],
+          "query": [
+            {
+              "key": "class_name",
+              "value": "10th",
+              "description": ""
+            },
+            {
+              "key": "start_date",
+              "value": "2024-01-01",
+              "description": ""
+            },
+            {
+              "key": "end_date",
+              "value": "2024-12-31",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/operations/attendance/:schoolId/reports/employee - Employee Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/employee?employee_id={{employeeId}}&start_date=2024-01-01&end_date=2024-12-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "reports",
+            "employee?employee_id={{employeeId}}&start_date=2024-01-01&end_date=2024-12-31"
+          ],
+          "query": [
+            {
+              "key": "employee_id",
+              "value": "{{employeeId}}",
+              "description": ""
+            },
+            {
+              "key": "start_date",
+              "value": "2024-01-01",
+              "description": ""
+            },
+            {
+              "key": "end_date",
+              "value": "2024-12-31",
+              "description": ""
+            }
+          ]
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/operations/attendance/:schoolId/reports/custom - Generate Custom Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/operations/attendance/{{schoolId}}/reports/custom",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "operations",
+            "attendance",
+            "{{schoolId}}",
+            "reports",
+            "custom"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"report_type\": \"attendance_summary\",\n  \"filters\": {\n    \"start_date\": \"2024-01-01\",\n    \"end_date\": \"2024-12-31\",\n    \"class_name\": \"10th\",\n    \"status\": \"present\"\n  },\n  \"format\": \"json\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

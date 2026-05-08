@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:chatra/core/network/api_service.dart';
@@ -10,6 +10,7 @@ import 'package:chatra/widgets/animated_gradient_bg.dart';
 import 'package:chatra/features/auth/screens/widgets/login_step_widgets.dart';
 import 'package:chatra/features/auth/bloc/auth_bloc.dart';
 import 'package:chatra/features/auth/bloc/auth_event.dart';
+import 'package:chatra/services/notification_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -130,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   "Chatra",
-                  style: GoogleFonts.outfit(
+                  style: const TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -139,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ).animate().fadeIn(delay: 400.ms),
                 Text(
                   "Smart Student Connect",
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.6),
                     letterSpacing: 1.5,

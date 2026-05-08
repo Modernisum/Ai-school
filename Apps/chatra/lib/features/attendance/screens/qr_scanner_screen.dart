@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/core/network/api_service.dart';
+import 'package:chatra/features/attendance/services/offline_sync_service.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/widgets/animated_gradient_bg.dart';
 
@@ -223,7 +224,7 @@ class _QrAttendanceScreenState extends State<QrAttendanceScreen>
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.fromMaterial McGrId(backgroundColor: Colors.amber),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
             onPressed: () async {
               Navigator.pop(context);
               final now = DateTime.now();
@@ -255,7 +256,6 @@ class _QrAttendanceScreenState extends State<QrAttendanceScreen>
         ],
       ),
     );
-  }
   }
 
   void _showMessage(String msg, {bool isError = false}) {

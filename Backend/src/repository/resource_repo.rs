@@ -22,14 +22,24 @@ impl ResourceRepository for PostgresResourceRepository {
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let item_id = format!(
-            "{}-{}",
+            "{}-{}-{}",
             space_name,
-            data["id"].as_str().unwrap_or("")
+            data["id"].as_str().unwrap_or(""),
+            &school_id[..4]
         );
-        sqlx::query("INSERT INTO items (item_id, school_id, space_name, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_name, item_id) DO NOTHING")
-            .bind(&item_id)
+        // Resolve space_name to space_id for the items table
+        let space_id: Option<String> = sqlx::query_scalar(
+            "SELECT space_id FROM spaces WHERE school_id = $1 AND (name = $2 OR space_name = $2)"
+        )
             .bind(school_id)
             .bind(space_name)
+            .fetch_optional(&mut *conn)
+            .await?;
+        let sid = space_id.as_deref().unwrap_or(space_name);
+        sqlx::query("INSERT INTO items (item_id, school_id, space_id, item_name, room_number, class_id) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (school_id, space_id, item_id) DO NOTHING")
+            .bind(&item_id)
+            .bind(school_id)
+            .bind(sid)
             .bind(data["itemName"].as_str())
             .bind(data["roomNumber"].as_str())
             .bind(data["classId"].as_str())
@@ -489,13 +499,16 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn create_space(&self, school_id: &str, category: &str, name: String) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        
-        // Insert Space (name is unique per school)
+        let space_id = format!("{}-{}", name.to_lowercase().replace(' ', "-"), &school_id[..4]);
+
+        // Insert Space (space_id is school-scoped for global uniqueness)
         sqlx::query(
-            "INSERT INTO spaces (school_id, name, space_category, data)
-             VALUES ($1, $2, $3, $4)"
+            "INSERT INTO spaces (school_id, space_id, name, space_category, data)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (school_id, space_id) DO NOTHING"
         )
         .bind(school_id)
+        .bind(&space_id)
         .bind(&name)
         .bind(category)
         .bind(json!({"name": name, "category": category}))
@@ -543,7 +556,7 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let row = sqlx::query("SELECT * FROM spaces WHERE school_id = $1 AND name = $2")
+        let row = sqlx::query("SELECT * FROM spaces WHERE school_id = $1 AND (name = $2 OR space_id = $2 OR space_name = $2)")
             .bind(school_id)
             .bind(space_name)
             .fetch_optional(&mut *conn)

@@ -1,33 +1,30 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, IndianRupee, Clock, AlertTriangle, Loader, CheckCircle, Ban, TrendingUp, RefreshCw, PlusCircle, History } from 'lucide-react'
+import { Wallet, Clock, AlertTriangle, CheckCircle, Ban, TrendingUp, RefreshCw, PlusCircle, History } from 'lucide-react'
 import { listSchools, listPromos, createPromo, updateSchool, processRefund, getWalletLedger } from '../../api.js'
+import { StatCard, Modal, StatusBadge, formatCurrency } from '../../components/ui/index.js'
 
 export default function BillingPage() {
     const [schools, setSchools] = useState([])
     const [promos, setPromos] = useState([])
     const [loading, setLoading] = useState(true)
 
-    // Ledger Modal State
     const [showLedgerModal, setShowLedgerModal] = useState(false)
     const [ledgerSchool, setLedgerSchool] = useState(null)
     const [ledgerData, setLedgerData] = useState([])
     const [ledgerLoading, setLedgerLoading] = useState(false)
 
-    // Manage School State
     const [showManageModal, setShowManageModal] = useState(false)
     const [manageSchool, setManageSchool] = useState(null)
     const [manageForm, setManageForm] = useState({ perStudentRate: '', applyToAll: false })
     const [manageSubmitting, setManageSubmitting] = useState(false)
     const [manageError, setManageError] = useState('')
 
-    // Promo Modal State
     const [showPromoModal, setShowPromoModal] = useState(false)
     const [promoForm, setPromoForm] = useState({ code: '', creditAmount: '', freeDays: 0, maxUses: 1 })
     const [promoSubmitting, setPromoSubmitting] = useState(false)
     const [promoError, setPromoError] = useState('')
 
-    // Refund Modal State
     const [showRefundModal, setShowRefundModal] = useState(false)
     const [refundSchool, setRefundSchool] = useState(null)
     const [refundForm, setRefundForm] = useState({ amount: '', description: 'Manual Adjustment' })
@@ -163,12 +160,6 @@ export default function BillingPage() {
     const currentMRR = activeSchools.reduce((acc, curr) => acc + (Number(curr.perStudentRate || 50) * (curr.activeStudentCount || 0)), 0)
     const atRiskSchools = schools.filter(s => s.billingStatus === 'warning' || s.billingStatus === 'suspended')
 
-    const stats = [
-        { label: 'Platform MRR', value: `₹${currentMRR.toLocaleString()}`, color: '#10b981', icon: <TrendingUp size={18} /> },
-        { label: 'Wallet Liabilities', value: `₹${totalWalletBalance.toLocaleString()}`, color: '#6366f1', icon: <Wallet size={18} /> },
-        { label: 'Warning / Suspended', value: atRiskSchools.length, color: '#ef4444', icon: <AlertTriangle size={18} /> },
-    ]
-
     const getNextBilling = (lastDate) => {
         if (!lastDate) return 'Pending'
         const date = new Date(lastDate)
@@ -185,41 +176,28 @@ export default function BillingPage() {
             <p className="page-sub">Monitor school wallets, set per-student pricing, and manage platform MRR.</p>
 
             {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                    <Loader size={28} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                <div className="flex justify-center" style={{ padding: 'var(--space-16)' }}>
+                    <div className="spinner" />
                 </div>
             ) : (
                 <>
-                    <div className="stats-grid" style={{ marginBottom: '2rem' }}>
-                        {stats.map((s, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="stat-card"
-                            >
-                                <div className="stat-icon" style={{ backgroundColor: `${s.color}20`, color: s.color }}>
-                                    {s.icon}
-                                </div>
-                                <div className="stat-value">{s.value}</div>
-                                <div className="stat-label">{s.label}</div>
-                            </motion.div>
-                        ))}
+                    <div className="stats-grid mb-6">
+                        <StatCard label="Platform MRR" value={formatCurrency(currentMRR)} icon={TrendingUp} color="success" />
+                        <StatCard label="Wallet Liabilities" value={formatCurrency(totalWalletBalance)} icon={Wallet} color="primary" />
+                        <StatCard label="Warning / Suspended" value={atRiskSchools.length} icon={AlertTriangle} color="danger" />
                     </div>
 
-                    <div className="card">
-                        <div style={{ padding: '24px 24px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>School Wallets & SaaS Metering</h2>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className="btn btn-ghost" onClick={loadData}>
-                                    <RefreshCw size={14} style={{ marginRight: 6 }} /> Sync
+                    <div className="table-container">
+                        <div className="table-toolbar">
+                            <h2 className="text-lg font-bold">School Wallets & SaaS Metering</h2>
+                            <div className="flex gap-2">
+                                <button className="btn btn-ghost btn-sm" onClick={loadData}>
+                                    <RefreshCw size={14} /> Sync
                                 </button>
                             </div>
                         </div>
 
-                        <div style={{ overflowX: 'auto', padding: '24px' }}>
+                        <div className="table-wrap">
                             <table className="data-table">
                                 <thead>
                                     <tr>
@@ -239,62 +217,46 @@ export default function BillingPage() {
                                         const isLow = s.walletBalance < projected;
                                         return (
                                             <tr key={s.schoolId}>
-                                                <td style={{ fontWeight: 600 }}>
-                                                    {s.schoolName}
-                                                    <div style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 400 }}>{s.schoolId}</div>
+                                                <td>
+                                                    <span className="font-bold">{s.schoolName}</span>
+                                                    <div className="text-xs text-tertiary">{s.schoolId}</div>
                                                 </td>
                                                 <td>
-                                                    <span className={`badge ${s.billingStatus || 'active'}`} style={{
-                                                        padding: '4px 10px',
-                                                        borderRadius: '20px',
-                                                        fontSize: '11px',
-                                                        backgroundColor: s.billingStatus === 'suspended' ? '#fee2e2' : s.billingStatus === 'warning' ? '#fef3c7' : '#d1fae5',
-                                                        color: s.billingStatus === 'suspended' ? '#991b1b' : s.billingStatus === 'warning' ? '#92400e' : '#065f46',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        fontWeight: 600,
-                                                        textTransform: 'uppercase'
-                                                    }}>
+                                                    <span className={`badge badge-${s.billingStatus || 'active'} uppercase`}>
                                                         {s.billingStatus === 'suspended' ? <Ban size={10} /> : s.billingStatus === 'warning' ? <Clock size={10} /> : <CheckCircle size={10} />}
                                                         {s.billingStatus || 'active'}
                                                     </span>
                                                 </td>
-                                                <td style={{ fontSize: '13px' }}>₹{Number(s.perStudentRate || 50).toLocaleString()}</td>
-                                                <td style={{ textAlign: 'center', fontWeight: 600 }}>{s.activeStudentCount || 0}</td>
-                                                <td style={{ fontWeight: 700, color: 'var(--accent)' }}>₹{projected.toLocaleString()}</td>
-                                                <td style={{ fontSize: '12px', color: 'var(--text2)' }}>{getNextBilling(s.lastBillingDate)}</td>
-                                                <td style={{
-                                                    color: isLow ? '#ef4444' : '#10b981',
-                                                    fontWeight: 700,
-                                                    fontSize: '15px'
-                                                }}>
-                                                    ₹{Number(s.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    {isLow && <AlertTriangle size={12} style={{ display: 'inline', marginLeft: 4, verticalAlign: 'middle' }} />}
+                                                <td className="text-sm">{formatCurrency(Number(s.perStudentRate || 50))}</td>
+                                                <td className="text-center font-bold">{s.activeStudentCount || 0}</td>
+                                                <td className="font-extrabold text-primary">{formatCurrency(projected)}</td>
+                                                <td className="text-sm text-secondary">{getNextBilling(s.lastBillingDate)}</td>
+                                                <td>
+                                                    <span className={`${isLow ? 'text-danger' : 'text-success'} font-bold`}>
+                                                        ₹{Number(s.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                    {isLow && <AlertTriangle size={12} className="text-danger" />}
                                                 </td>
                                                 <td>
-                                                    <div style={{ display: 'flex', gap: 6 }}>
+                                                    <div className="flex gap-2">
                                                         <button
-                                                            className="btn btn-primary"
-                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            className="btn btn-primary btn-xs"
                                                             onClick={() => {
                                                                 setRefundSchool(s)
                                                                 setRefundForm({ amount: '', description: 'Manual Adjustment' })
                                                                 setShowRefundModal(true)
                                                             }}
                                                         >
-                                                            <PlusCircle size={12} style={{ marginRight: 4 }} /> Adjust
+                                                            <PlusCircle size={12} /> Adjust
                                                         </button>
                                                         <button
-                                                            className="btn"
-                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            className="btn btn-secondary btn-xs"
                                                             onClick={() => handleViewLedger(s)}
                                                         >
-                                                            <History size={12} style={{ marginRight: 4 }} /> History
+                                                            <History size={12} /> History
                                                         </button>
                                                         <button
-                                                            className="btn"
-                                                            style={{ padding: '4px 12px', fontSize: '12px', fontWeight: 600 }}
+                                                            className="btn btn-secondary btn-xs"
                                                             onClick={() => {
                                                                 setManageSchool(s)
                                                                 setManageForm({ perStudentRate: s.perStudentRate || 50, applyToAll: false })
@@ -310,9 +272,7 @@ export default function BillingPage() {
                                     })}
                                     {schools.length === 0 && (
                                         <tr>
-                                            <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-light)', padding: '3rem' }}>
-                                                No schools found.
-                                            </td>
+                                            <td colSpan="8" className="table-empty">No schools found.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -320,15 +280,13 @@ export default function BillingPage() {
                         </div>
                     </div>
 
-                    <div className="card" style={{ marginTop: '2rem' }}>
-                        <div style={{ padding: '24px 24px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Revenue Generation & Promos</h2>
-                            <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '14px' }} onClick={() => setShowPromoModal(true)}>
-                                + Create Promo
-                            </button>
+                    <div className="table-container mt-6">
+                        <div className="table-toolbar">
+                            <h2 className="text-lg font-bold">Revenue Generation & Promos</h2>
+                            <button className="btn btn-primary btn-sm" onClick={() => setShowPromoModal(true)}>+ Create Promo</button>
                         </div>
 
-                        <div style={{ overflowX: 'auto', padding: '24px' }}>
+                        <div className="table-wrap">
                             <table className="data-table">
                                 <thead>
                                     <tr>
@@ -342,8 +300,8 @@ export default function BillingPage() {
                                 <tbody>
                                     {promos.map(p => (
                                         <tr key={p.id}>
-                                            <td style={{ fontWeight: 600, color: 'var(--accent)', letterSpacing: '1px' }}>{p.code}</td>
-                                            <td>₹{Number(p.creditAmount || 0).toLocaleString()}</td>
+                                            <td className="font-bold text-primary uppercase letter-spaced">{p.code}</td>
+                                            <td>{formatCurrency(Number(p.creditAmount || 0))}</td>
                                             <td>{p.freeDays} days</td>
                                             <td>{p.currentUses} / {p.maxUses}</td>
                                             <td>{new Date(p.createdAt).toLocaleDateString()}</td>
@@ -351,9 +309,7 @@ export default function BillingPage() {
                                     ))}
                                     {promos.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-light)', padding: '3rem' }}>
-                                                No promo codes available.
-                                            </td>
+                                            <td colSpan="5" className="table-empty">No promo codes available.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -361,256 +317,188 @@ export default function BillingPage() {
                         </div>
                     </div>
 
-                    {showPromoModal && (
-                        <div className="modal-overlay" onClick={() => setShowPromoModal(false)}>
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                className="modal-content" onClick={e => e.stopPropagation()}
-                                style={{ maxWidth: 450 }}
-                            >
-                                <div className="modal-header">
-                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Create Promo Code</h2>
-                                    <button className="btn-close" onClick={() => setShowPromoModal(false)}>×</button>
+                    <Modal open={showPromoModal} onClose={() => setShowPromoModal(false)} title="Create Promo Code">
+                        <form onSubmit={handleCreatePromo}>
+                            <div className="form-group">
+                                <label className="form-label">Promo Code Name</label>
+                                <input
+                                    type="text"
+                                    value={promoForm.code}
+                                    onChange={e => setPromoForm({ ...promoForm, code: e.target.value.toUpperCase() })}
+                                    placeholder="e.g. WELCOME5000"
+                                    className="form-input"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Credit Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={promoForm.creditAmount}
+                                    onChange={e => setPromoForm({ ...promoForm, creditAmount: e.target.value })}
+                                    placeholder="5000"
+                                    className="form-input"
+                                    required
+                                />
+                            </div>
+                            <div className="flex gap-4 mb-6">
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Free Days</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={promoForm.freeDays}
+                                        onChange={e => setPromoForm({ ...promoForm, freeDays: parseInt(e.target.value) || 0 })}
+                                        className="form-input"
+                                    />
                                 </div>
-                                <form onSubmit={handleCreatePromo} style={{ padding: 20 }}>
-                                    <div className="form-group" style={{ marginBottom: 15 }}>
-                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Promo Code Name</label>
-                                        <input
-                                            type="text"
-                                            value={promoForm.code}
-                                            onChange={e => setPromoForm({ ...promoForm, code: e.target.value.toUpperCase() })}
-                                            placeholder="e.g. WELCOME5000"
-                                            className="input-field"
-                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group" style={{ marginBottom: 15 }}>
-                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Credit Amount (₹)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={promoForm.creditAmount}
-                                            onChange={e => setPromoForm({ ...promoForm, creditAmount: e.target.value })}
-                                            placeholder="5000"
-                                            className="input-field"
-                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            required
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 15, marginBottom: 20 }}>
-                                        <div className="form-group" style={{ flex: 1 }}>
-                                            <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Free Days</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={promoForm.freeDays}
-                                                onChange={e => setPromoForm({ ...promoForm, freeDays: parseInt(e.target.value) || 0 })}
-                                                className="input-field"
-                                                style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            />
-                                        </div>
-                                        <div className="form-group" style={{ flex: 1 }}>
-                                            <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Max Uses</label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={promoForm.maxUses}
-                                                onChange={e => setPromoForm({ ...promoForm, maxUses: parseInt(e.target.value) || 1 })}
-                                                className="input-field"
-                                                style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            />
-                                        </div>
-                                    </div>
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Max Uses</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={promoForm.maxUses}
+                                        onChange={e => setPromoForm({ ...promoForm, maxUses: parseInt(e.target.value) || 1 })}
+                                        className="form-input"
+                                    />
+                                </div>
+                            </div>
 
-                                    {promoError && (
-                                        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '6px', marginBottom: '15px', fontSize: '13px' }}>
-                                            {promoError}
-                                        </div>
-                                    )}
+                            {promoError && (
+                                <div className="alert-inline alert-inline-danger mb-4">{promoError}</div>
+                            )}
 
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                        <button type="button" className="btn" onClick={() => setShowPromoModal(false)}>Cancel</button>
-                                        <button type="submit" className="btn btn-primary" disabled={promoSubmitting}>
-                                            {promoSubmitting ? 'Creating...' : 'Create Promo Code'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowPromoModal(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary btn-sm" disabled={promoSubmitting}>
+                                    {promoSubmitting ? 'Creating...' : 'Create Promo Code'}
+                                </button>
+                            </div>
+                        </form>
+                    </Modal>
+
+                    <Modal open={showManageModal && !!manageSchool} onClose={() => setShowManageModal(false)} title={`Manage Billing for ${manageSchool?.schoolName || ''}`}>
+                        <form onSubmit={handleManageSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">Per Student Rate (₹) / month</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={manageForm.perStudentRate}
+                                    onChange={e => setManageForm({ ...manageForm, perStudentRate: e.target.value })}
+                                    className="form-input"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="applyToAll"
+                                    checked={manageForm.applyToAll}
+                                    onChange={e => setManageForm({ ...manageForm, applyToAll: e.target.checked })}
+                                    style={{ accentColor: 'var(--color-primary)', cursor: 'pointer' }}
+                                />
+                                <label htmlFor="applyToAll" className="text-md" style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    Apply this rate to <strong>all schools</strong> across the platform
+                                </label>
+                            </div>
+
+                            {manageError && (
+                                <div className="alert-inline alert-inline-danger mb-4">{manageError}</div>
+                            )}
+
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowManageModal(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary btn-sm" disabled={manageSubmitting}>
+                                    {manageSubmitting ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </Modal>
+
+                    <Modal open={showRefundModal && !!refundSchool} onClose={() => setShowRefundModal(false)} title={`Adjust Wallet: ${refundSchool?.schoolName || ''}`}>
+                        <form onSubmit={handleRefundSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">Adjustment Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    value={refundForm.amount}
+                                    onChange={e => setRefundForm({ ...refundForm, amount: e.target.value })}
+                                    placeholder="e.g. 500 for refund, -500 for charge"
+                                    className="form-input"
+                                    required
+                                />
+                                <p className="form-hint">Positive values add credit. Negative values subtract credit.</p>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Description / Reason</label>
+                                <textarea
+                                    value={refundForm.description}
+                                    onChange={e => setRefundForm({ ...refundForm, description: e.target.value })}
+                                    className="form-textarea"
+                                    required
+                                />
+                            </div>
+
+                            {refundError && (
+                                <div className="alert-inline alert-inline-danger mb-4">{refundError}</div>
+                            )}
+
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowRefundModal(false)}>Cancel</button>
+                                <button type="submit" className="btn btn-primary btn-sm" disabled={refundSubmitting}>
+                                    {refundSubmitting ? 'Processing...' : 'Apply Adjustment'}
+                                </button>
+                            </div>
+                        </form>
+                    </Modal>
+
+                    <Modal open={showLedgerModal && !!ledgerSchool} onClose={() => setShowLedgerModal(false)} title={`Wallet History: ${ledgerSchool?.schoolName || ''}`} wide>
+                        <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                            {ledgerLoading ? (
+                                <div className="flex justify-center" style={{ padding: 'var(--space-10)' }}>
+                                    <div className="spinner" />
+                                </div>
+                            ) : (
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ledgerData.map(entry => (
+                                            <tr key={entry.id}>
+                                                <td className="text-sm">{new Date(entry.createdAt).toLocaleString()}</td>
+                                                <td>
+                                                    <StatusBadge
+                                                        status={entry.type === 'REFUND' || entry.type === 'CREDIT' ? 'active' : 'blocked'}
+                                                        label={entry.type}
+                                                    />
+                                                </td>
+                                                <td className="text-sm">{entry.description}</td>
+                                                <td className={`font-bold ${Number(entry.amount) >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                    {Number(entry.amount) >= 0 ? '+' : ''}{formatCurrency(Number(entry.amount))}
+                                                </td>
+                                                <td className="font-bold">{formatCurrency(Number(entry.balanceAfter))}</td>
+                                            </tr>
+                                        ))}
+                                        {ledgerData.length === 0 && (
+                                            <tr><td colSpan="5" className="table-empty">No records found</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
-                    )}
-
-                    {showManageModal && manageSchool && (
-                        <div className="modal-overlay" onClick={() => setShowManageModal(false)}>
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                className="modal-content" onClick={e => e.stopPropagation()}
-                                style={{ maxWidth: 450 }}
-                            >
-                                <div className="modal-header">
-                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Manage Billing for {manageSchool.schoolName}</h2>
-                                    <button className="btn-close" onClick={() => setShowManageModal(false)}>×</button>
-                                </div>
-                                <form onSubmit={handleManageSubmit} style={{ padding: 20 }}>
-                                    <div className="form-group" style={{ marginBottom: 15 }}>
-                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Per Student Rate (₹) / month</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={manageForm.perStudentRate}
-                                            onChange={e => setManageForm({ ...manageForm, perStudentRate: e.target.value })}
-                                            className="input-field"
-                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <input
-                                            type="checkbox"
-                                            id="applyToAll"
-                                            checked={manageForm.applyToAll}
-                                            onChange={e => setManageForm({ ...manageForm, applyToAll: e.target.checked })}
-                                            style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent)' }}
-                                        />
-                                        <label htmlFor="applyToAll" style={{ fontSize: 14, cursor: 'pointer', color: 'var(--text)', userSelect: 'none' }}>
-                                            Apply this rate to <strong>all schools</strong> across the platform
-                                        </label>
-                                    </div>
-
-                                    {manageError && (
-                                        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '6px', marginBottom: '15px', fontSize: '13px' }}>
-                                            {manageError}
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-                                        <button type="button" className="btn" onClick={() => setShowManageModal(false)}>Cancel</button>
-                                        <button type="submit" className="btn btn-primary" disabled={manageSubmitting}>
-                                            {manageSubmitting ? 'Saving...' : 'Save Changes'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </div>
-                    )}
-
-                    {showRefundModal && refundSchool && (
-                        <div className="modal-overlay" onClick={() => setShowRefundModal(false)}>
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                className="modal-content" onClick={e => e.stopPropagation()}
-                                style={{ maxWidth: 450 }}
-                            >
-                                <div className="modal-header">
-                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Adjust Wallet: {refundSchool.schoolName}</h2>
-                                    <button className="btn-close" onClick={() => setShowRefundModal(false)}>×</button>
-                                </div>
-                                <form onSubmit={handleRefundSubmit} style={{ padding: 20 }}>
-                                    <div className="form-group" style={{ marginBottom: 15 }}>
-                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Adjustment Amount (₹)</label>
-                                        <input
-                                            type="number"
-                                            value={refundForm.amount}
-                                            onChange={e => setRefundForm({ ...refundForm, amount: e.target.value })}
-                                            placeholder="e.g. 500 for refund, -500 for charge"
-                                            className="input-field"
-                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)' }}
-                                            required
-                                        />
-                                        <p style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
-                                            Positive values add credit. Negative values subtract credit.
-                                        </p>
-                                    </div>
-                                    <div className="form-group" style={{ marginBottom: 15 }}>
-                                        <label style={{ display: 'block', marginBottom: 5, fontSize: 14 }}>Description / Reason</label>
-                                        <textarea
-                                            value={refundForm.description}
-                                            onChange={e => setRefundForm({ ...refundForm, description: e.target.value })}
-                                            className="input-field"
-                                            style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid var(--border)', minHeight: 80 }}
-                                            required
-                                        />
-                                    </div>
-
-                                    {refundError && (
-                                        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '6px', marginBottom: '15px', fontSize: '13px' }}>
-                                            {refundError}
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-                                        <button type="button" className="btn" onClick={() => setShowRefundModal(false)}>Cancel</button>
-                                        <button type="submit" className="btn btn-primary" disabled={refundSubmitting}>
-                                            {refundSubmitting ? 'Processing...' : 'Apply Adjustment'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </motion.div>
-                        </div>
-                    )}
-
-                    {showLedgerModal && ledgerSchool && (
-                        <div className="modal-overlay" onClick={() => setShowLedgerModal(false)}>
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                className="modal-content" onClick={e => e.stopPropagation()}
-                                style={{ maxWidth: 700, width: '90%' }}
-                            >
-                                <div className="modal-header">
-                                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>Wallet History: {ledgerSchool.schoolName}</h2>
-                                    <button className="btn-close" onClick={() => setShowLedgerModal(false)}>×</button>
-                                </div>
-                                <div style={{ padding: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
-                                    {ledgerLoading ? (
-                                        <div style={{ padding: 40, textAlign: 'center' }}><Loader className="spin" /></div>
-                                    ) : (
-                                        <table className="data-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Date</th>
-                                                    <th>Type</th>
-                                                    <th>Description</th>
-                                                    <th>Amount</th>
-                                                    <th>Balance</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {ledgerData.map(entry => (
-                                                    <tr key={entry.id}>
-                                                        <td style={{ fontSize: 12 }}>{new Date(entry.createdAt).toLocaleString()}</td>
-                                                        <td>
-                                                            <span style={{
-                                                                fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                                                                backgroundColor: entry.type === 'REFUND' || entry.type === 'CREDIT' ? '#d1fae5' : '#fee2e2',
-                                                                color: entry.type === 'REFUND' || entry.type === 'CREDIT' ? '#065f46' : '#991b1b'
-                                                            }}>
-                                                                {entry.type}
-                                                            </span>
-                                                        </td>
-                                                        <td style={{ fontSize: 12 }}>{entry.description}</td>
-                                                        <td style={{ fontWeight: 600, color: Number(entry.amount) >= 0 ? '#10b981' : '#ef4444' }}>
-                                                            {Number(entry.amount) >= 0 ? '+' : ''}₹{Number(entry.amount).toLocaleString()}
-                                                        </td>
-                                                        <td style={{ fontWeight: 700 }}>₹{Number(entry.balanceAfter).toLocaleString()}</td>
-                                                    </tr>
-                                                ))}
-                                                {ledgerData.length === 0 && (
-                                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>No records found</td></tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
+                    </Modal>
                 </>
             )}
-            <style>{`
-                .refresh-icon { animation: rotate 2s linear infinite; }
-                @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
         </motion.div>
     )
 }

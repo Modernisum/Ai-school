@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:chatra/core/network/api_service.dart';
 import 'package:chatra/features/announcement/bloc/announcement_bloc.dart';
 import 'package:chatra/features/announcement/bloc/announcement_event.dart';
 import 'package:chatra/features/announcement/bloc/announcement_state.dart';
 import 'package:chatra/theme/app_theme.dart';
-import 'package:chatra/widgets/animated_gradient_bg.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/widgets/common/pull_to_refresh.dart';
 import 'package:chatra/widgets/common/empty_state.dart';
@@ -30,41 +27,37 @@ class AnnouncementScreen extends StatelessWidget {
         return bloc;
       },
       child: Scaffold(
+        backgroundColor: AppColors.primaryBrand,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text(
+          title: const Text(
             "Announcements",
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: AnimatedGradientBg(
-          child: BlocConsumer<AnnouncementBloc, AnnouncementState>(
-            listener: (context, state) {
-              if (state is AnnouncementError) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              if (state is AnnouncementLoading) {
-                return const Center(child: CircularProgressIndicator(color: Colors.white));
-              }
-              if (state is AnnouncementLoaded) {
-                return _buildLoadedState(context, state);
-              }
+        body: BlocConsumer<AnnouncementBloc, AnnouncementState>(
+          listener: (context, state) {
+            if (state is AnnouncementError) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is AnnouncementLoading) {
               return const Center(child: CircularProgressIndicator(color: Colors.white));
-            },
-          ),
+            }
+            if (state is AnnouncementLoaded) {
+              return _buildLoadedState(context, state);
+            }
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
+          },
         ),
       ),
     );
@@ -88,10 +81,7 @@ class AnnouncementScreen extends StatelessWidget {
         itemCount: state.announcements.length,
         itemBuilder: (context, index) {
           final announcement = state.announcements[index];
-          return _buildAnnouncementCard(announcement)
-              .animate()
-              .fadeIn(duration: 500.ms)
-              .slideY(begin: 0.1, end: 0);
+          return _buildAnnouncementCard(announcement);
         },
       ),
     );
@@ -122,7 +112,7 @@ class AnnouncementScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   announcement['title'] ?? 'No Title',
-                  style: GoogleFonts.outfit(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -134,7 +124,7 @@ class AnnouncementScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             announcement['message'] ?? 'No message content',
-            style: GoogleFonts.outfit(
+            style: TextStyle(
               color: Colors.white.withOpacity(0.8),
               fontSize: 14,
             ),
@@ -143,7 +133,7 @@ class AnnouncementScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               _formatDate(announcement['date']),
-              style: GoogleFonts.outfit(
+              style: TextStyle(
                 color: Colors.white.withOpacity(0.5),
                 fontSize: 12,
               ),

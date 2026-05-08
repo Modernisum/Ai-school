@@ -114,13 +114,14 @@ const BulkImportModal = memo(({ isOpen, onClose, title, columns, expectedHeaders
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999,
-            display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4
-        }}>
+            backgroundColor: 'rgba(2, 6, 23, 0.4)', backdropFilter: 'blur(16px)', zIndex: 9999,
+            display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '2rem'
+        }} onClick={(e) => e.target === e.currentTarget && closeModal()}>
             <div style={{
-                background: 'var(--surface-color, #1a1b23)',
-                width: '100%', maxWidth: '800px',
-                borderRadius: '12px', overflow: 'hidden',
+                background: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                width: '100%', maxWidth: '700px',
+                borderRadius: '2.5rem', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column',
                 maxHeight: '90vh', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
             }}>
@@ -152,9 +153,9 @@ const BulkImportModal = memo(({ isOpen, onClose, title, columns, expectedHeaders
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
                                 style={{
-                                    border: `2px dashed ${isDragging ? 'var(--accent, #6366f1)' : '#444'}`,
+                                    border: `2px dashed ${isDragging ? 'var(--accent, #06b6d4)' : '#444'}`,
                                     borderRadius: '12px', padding: '40px', textAlign: 'center',
-                                    backgroundColor: isDragging ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                    backgroundColor: isDragging ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                                     transition: 'all 0.2s', cursor: 'pointer'
                                 }}
                                 onClick={() => fileInputRef.current?.click()}

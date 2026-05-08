@@ -45,7 +45,7 @@ pub async fn publish_gps(
         timestamp: ts,
     };
 
-    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL environment variable must be set");
     if let Ok(redis_client) = redis::Client::open(redis_url) {
         if let Ok(mut pubsub_conn) = redis_client.get_multiplexed_async_connection().await {
             // Channel specific to a vehicle for a school, parents can subscribe to this via WS

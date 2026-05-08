@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -104,11 +103,11 @@ class _ProfileHeaderWidgetState extends State<ProfileHeaderWidget> {
             const SizedBox(height: 16),
             Text(
               studentName,
-              style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
             ).animate().fadeIn(delay: 100.ms),
             Text(
               "Student ID: $studentId",
-              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
             ).animate().fadeIn(delay: 150.ms),
           ],
         );

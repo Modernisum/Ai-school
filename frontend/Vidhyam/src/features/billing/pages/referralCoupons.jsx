@@ -99,104 +99,79 @@ export default function ReferralCoupons() {
     };
 
     return (
-        <div className="min-h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-3">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                        <Tag size={16} className="text-violet-400" />
+        <div className="max-w-full p-1 space-y-2 text-slate-400">
+            {/* ─── Digital Header ─── */}
+            <header className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                        <Tag size={12} className="text-blue-400" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white leading-tight">Referral Coupons</h1>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">{coupons.length} coupons created</p>
+                        <h1 className="text-sm font-black text-white tracking-tight uppercase italic leading-none">REFERRAL_PROTOCOL</h1>
+                        <p className="text-[7px] font-bold text-slate-700 uppercase tracking-widest mt-0.5 whitespace-nowrap">
+                            NODES: {coupons.length} REGISTERED
+                        </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={fetchCoupons} className="btn-secondary p-1.5"><RefreshCw size={13} /></button>
-                    <button onClick={() => setShowCreate(true)} className="btn-primary py-1.5 px-3 text-[11px]"><Plus size={13} /> Create Coupon</button>
+                <div className="flex items-center gap-1">
+                    <StandardButton variant="ghost" size="xs" onClick={fetchCoupons} icon={RefreshCw} className={loading ? 'animate-spin' : ''} />
+                    <StandardButton variant="primary" size="xs" onClick={() => setShowCreate(true)} icon={Plus}>INITIALIZE</StandardButton>
                 </div>
-            </div>
+            </header>
 
-            <div className="p-6 space-y-4">
-                {/* Search */}
-                <div className="relative max-w-md">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input className="input-dark pl-9 w-full" placeholder="Search coupons..." value={search} onChange={e => setSearch(e.target.value)} />
+            {/* ─── OPERATIONAL VIEWPORT ─── */}
+            <div className="space-y-1">
+                <div className="relative group max-w-xs">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700" />
+                    <input 
+                        className="w-full bg-white/[0.02] border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-blue-500/20 transition-all font-black uppercase tracking-widest"
+                        placeholder="SCAN_HASH..." value={search} onChange={e => setSearch(e.target.value)} 
+                    />
                 </div>
 
-                {/* Coupon Cards */}
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><Loader size={28} className="animate-spin text-violet-400" /></div>
+                    <div className="py-20 flex justify-center"><RefreshCw size={16} className="animate-spin text-slate-800" /></div>
                 ) : filtered.length === 0 ? (
-                    <div className="text-center py-14">
-                        <Tag size={36} className="text-slate-600 mx-auto mb-2" />
-                        <p className="text-slate-500">No referral coupons yet</p>
-                        <button onClick={() => setShowCreate(true)} className="btn-primary mt-4"><Plus size={15} /> Create First Coupon</button>
+                    <div className="py-20 text-center glass-card border-dashed">
+                        <Tag size={24} className="mx-auto mb-2 text-slate-800" />
+                        <p className="text-micro font-black text-slate-700 uppercase tracking-widest">ZERO_NODES_FOUND</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
                         {filtered.map((c, i) => (
-                            <motion.div key={c.couponId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                                className="glass-card p-5 hover-card group relative">
-                                {/* Status badge */}
-                                <div className="absolute top-4 right-4">
-                                    <span className={`badge text-[10px] ${c.status === 'active' ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' : 'bg-rose-500/15 border-rose-500/25 text-rose-400'}`}>
-                                        {c.status === 'active' ? '● Active' : '● Blocked'}
-                                    </span>
-                                </div>
-
-                                {/* Header */}
-                                <div className="flex items-start gap-3 mb-4 pr-16">
-                                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0">
-                                        <Tag size={18} className="text-violet-400" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h3 className="font-bold text-white text-sm truncate">{c.couponName}</h3>
-                                        {c.description && <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{c.description}</p>}
+                            <GlassCard key={i} delay={i * 0.01} className="p-1.5 border border-white/5 bg-white/[0.01]" dense hover>
+                                <div className="flex items-start justify-between mb-1">
+                                    <div className="w-5 h-5 rounded bg-blue-500/10 flex items-center justify-center text-blue-400"><Tag size={10} /></div>
+                                    <div className={`px-1 py-0 rounded text-[6px] font-black uppercase tracking-widest border ${c.status === 'active' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'}`}>
+                                        {c.status}
                                     </div>
                                 </div>
-
-                                {/* Info Grid */}
-                                <div className="grid grid-cols-2 gap-2 mb-3">
-                                    <div className="bg-slate-800/50 rounded-lg px-2.5 py-2 border border-white/5">
-                                        <p className="text-[9px] text-slate-500 uppercase tracking-wider">Discount</p>
-                                        <p className="text-sm font-bold text-violet-400 flex items-center gap-1">
-                                            {c.discountType === 'percentage' ? <><Percent size={12} />{c.discountValue}%</> : <>{fmt(c.discountValue)}</>}
-                                        </p>
+                                <h3 className="text-[9px] font-black text-white italic truncate uppercase leading-none mt-0.5">{c.couponName}</h3>
+                                <div className="mt-2 space-y-0.5">
+                                    <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest">
+                                        <span className="text-slate-800">VALUE</span>
+                                        <span className="text-violet-400">{c.discountType === 'percentage' ? `${c.discountValue}%` : fmt(c.discountValue)}</span>
                                     </div>
-                                    <div className="bg-slate-800/50 rounded-lg px-2.5 py-2 border border-white/5">
-                                        <p className="text-[9px] text-slate-500 uppercase tracking-wider">Uses</p>
-                                        <p className="text-sm font-bold text-indigo-400 flex items-center gap-1">
-                                            <Hash size={12} />{c.currentUses}{c.maxUses > 0 ? `/${c.maxUses}` : '/∞'}
-                                        </p>
+                                    <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest">
+                                        <span className="text-slate-800">LOAD</span>
+                                        <span className="text-indigo-400">{c.currentUses}/{c.maxUses || '∞'}</span>
                                     </div>
                                 </div>
-
-                                {/* Employee */}
+                                
                                 {c.assignedEmployeeId && (
-                                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2 bg-amber-500/5 border border-amber-500/10 rounded-lg px-2.5 py-2">
-                                        <Award size={13} className="text-amber-400 flex-shrink-0" />
-                                        <div className="min-w-0">
-                                            <span className="text-amber-300 font-medium">{getEmpName(c.assignedEmployeeId)}</span>
-                                            <span className="text-slate-500 ml-1">• Reward: {fmt(c.employeeReward)}</span>
+                                    <div className="mt-1 pt-1 border-t border-white/5 space-y-0.5">
+                                        <div className="flex justify-between items-center text-[6px] font-black uppercase tracking-widest truncate">
+                                            <span className="text-slate-700">LINK: {getEmpName(c.assignedEmployeeId)}</span>
+                                            <span className="text-amber-500 ml-1">+{fmt(c.employeeReward)}</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Actions */}
-                                <div className="flex gap-2 pt-3 mt-auto border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => toggleBlock(c)}
-                                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${c.status === 'active'
-                                            ? 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10'
-                                            : 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'}`}>
-                                        {c.status === 'active' ? <><ShieldOff size={12} /> Block</> : <><Shield size={12} /> Activate</>}
-                                    </button>
-                                    <button onClick={() => deleteCoupon(c.couponId)}
-                                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-all">
-                                        <Trash2 size={12} /> Delete
-                                    </button>
+                                <div className="mt-auto pt-1 flex gap-0.5">
+                                    <StandardButton variant="ghost" size="xs" onClick={() => toggleBlock(c)} icon={c.status === 'active' ? ShieldOff : Shield} className="flex-1 !h-4 py-0" />
+                                    <StandardButton variant="ghost" size="xs" onClick={() => deleteCoupon(c.couponId)} icon={Trash2} className="flex-1 !h-4 py-0 text-rose-500" />
                                 </div>
-                            </motion.div>
+                            </GlassCard>
                         ))}
                     </div>
                 )}

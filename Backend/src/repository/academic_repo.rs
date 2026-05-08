@@ -75,6 +75,7 @@ impl crate::repository::traits::AcademicRepository for PostgresAcademicRepositor
                 "classId": id,
                 "name": name,
                 "className": name,
+                "roomNumber": r.get::<Option<String>, _>("room_number"),
                 "sectionSize": r.get::<i32, _>("section_size"),
             })
         }))

@@ -270,14 +270,18 @@ pub async fn list_employee_responsibilities(
 }
 
 /// GET /schools/{schoolId}/spaces/{spaceId}/responsibilities
-/// List all responsibilities assigned to a space
+/// List all responsibilities assigned to a space with mandatory/optional classification
 pub async fn list_space_responsibilities(
     State(state): State<AppState>,
     Path((school_id, space_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    // This is a placeholder - need to implement in service layer
-    // For now, return empty array
-    Json(json!({"success": true, "data": []})).into_response()
+    match state.services.responsibility.list_space_responsibilities(&school_id, &space_id).await {
+        Ok(list) => Json(json!({"success": true, "data": list})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
 }
 
 /// GET /schools/{schoolId}/responsibilities/search
@@ -889,6 +893,58 @@ pub async fn generate_revenue_report_pdf(
                 .body(axum::body::Body::from(pdf_data))
                 .unwrap()
         }
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
+}
+
+/// POST /schools/{schoolId}/responsibility/sync-student-fees
+/// Recalculate and sync student fees from responsibility assignments for all students
+pub async fn sync_student_fees(
+    State(state): State<AppState>,
+    Extension(_tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    match state.services.responsibility.recalculate_all_student_fees(&school_id).await {
+        Ok(count) => Json(json!({
+            "success": true, "message": format!("Student fees synced for {} students", count), "affectedCount": count
+        })).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
+}
+
+/// POST /schools/{schoolId}/responsibility/{responsibilityId}/sync-student-fees
+/// Recalculate student fees for the spaces covered by a specific responsibility
+pub async fn sync_student_fees_for_resp(
+    State(state): State<AppState>,
+    Extension(_tenant_ctx): Extension<TenantContext>,
+    Path((school_id, responsibility_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    match state.services.responsibility.sync_student_fees_for_responsibility(&school_id, &responsibility_id).await {
+        Ok(count) => Json(json!({
+            "success": true, "message": format!("Student fees synced for {} students", count), "affectedCount": count
+        })).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
+}
+
+/// POST /schools/{schoolId}/responsibility/generate-salaries/{month}/{year}
+/// Generate monthly salary records for all employees based on responsibility assignments
+pub async fn generate_salaries(
+    State(state): State<AppState>,
+    Extension(_tenant_ctx): Extension<TenantContext>,
+    Path((school_id, month, year)): Path<(String, i32, i32)>,
+) -> impl IntoResponse {
+    match state.services.responsibility.generate_salaries_from_responsibilities(&school_id, month, year).await {
+        Ok(result) => Json(json!({"success": true, "data": result})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

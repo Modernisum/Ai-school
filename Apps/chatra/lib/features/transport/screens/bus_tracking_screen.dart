@@ -23,29 +23,16 @@ class BusTrackingScreen extends StatefulWidget {
   State<BusTrackingScreen> createState() => _BusTrackingScreenState();
 }
 
-class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTickerProviderStateMixin {
+class _BusTrackingScreenState extends State<BusTrackingScreen> {
   GoogleMapController? _mapController;
-  late AnimationController _markerAnimationController;
-  late Animation<double> _markerPositionFactor;
-
-  LatLng _lastPos = const LatLng(28.6139, 77.2090); // Default Delhi
-  LatLng _targetPos = const LatLng(28.6139, 77.2090);
+  LatLng _currentPos = const LatLng(28.6139, 77.2090);
   double _currentHeading = 0.0;
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
-    _markerAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2), // Match driver's frequency
-    );
-    _markerPositionFactor = Tween<double>(begin: 0.0, end: 1.0).animate(_markerAnimationController);
-  }
-
-  @override
-  void dispose() {
-    _markerAnimationController.dispose();
-    super.dispose();
+    _updateMarkers();
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -54,7 +41,6 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTicker
   }
 
   void _setMapStyle() {
-    // Premium dark style with cyan hints to match cotton candy skies
     const String darkStyle = '''
     [
       {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
@@ -70,22 +56,16 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTicker
     _mapController?.setMapStyle(darkStyle);
   }
 
-  void _updateMarker(double lat, double lng) {
-    setState(() {
-      _lastPos = _getCurrentInterpolatedPosition();
-      _targetPos = LatLng(lat, lng);
-      _markerAnimationController.forward(from: 0.0);
-    });
-    
-    // Smooth camera move
-    _mapController?.animateCamera(CameraUpdate.newLatLng(_targetPos));
-  }
-
-  LatLng _getCurrentInterpolatedPosition() {
-    final double t = _markerPositionFactor.value;
-    final double lat = _lastPos.latitude + (_targetPos.latitude - _lastPos.latitude) * t;
-    final double lng = _lastPos.longitude + (_targetPos.longitude - _lastPos.longitude) * t;
-    return LatLng(lat, lng);
+  void _updateMarkers() {
+    _markers = {
+      Marker(
+        markerId: const MarkerId("bus_marker"),
+        position: _currentPos,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+        anchor: const Offset(0.5, 0.5),
+        rotation: _currentHeading,
+      ),
+    };
   }
 
   @override
@@ -96,7 +76,11 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTicker
       child: BlocListener<BusTrackingBloc, BusTrackingState>(
         listener: (context, state) {
           if (state is TrackingActive) {
-            _updateMarker(state.lat, state.lng);
+            setState(() {
+              _currentPos = LatLng(state.lat, state.lng);
+              _updateMarkers();
+            });
+            _mapController?.animateCamera(CameraUpdate.newLatLng(_currentPos));
           }
         },
         child: Scaffold(
@@ -109,26 +93,12 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> with SingleTicker
           ),
           body: Stack(
             children: [
-              AnimatedBuilder(
-                animation: _markerPositionFactor,
-                builder: (context, child) {
-                  final pos = _getCurrentInterpolatedPosition();
-                  return GoogleMap(
-                    initialCameraPosition: CameraPosition(target: _targetPos, zoom: 15),
-                    onMapCreated: _onMapCreated,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId("bus_marker"),
-                        position: pos,
-                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-                        anchor: const Offset(0.5, 0.5),
-                        rotation: _currentHeading,
-                      ),
-                    },
-                  );
-                },
+              GoogleMap(
+                initialCameraPosition: CameraPosition(target: _currentPos, zoom: 15),
+                onMapCreated: _onMapCreated,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                markers: _markers,
               ),
               _buildTopStatus(),
               _buildBottomPanel(),

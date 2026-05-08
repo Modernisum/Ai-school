@@ -13,6 +13,10 @@ module.exports = {
         success: 'var(--success-color)',
         warning: 'var(--warning-color)',
         'bg-via': 'var(--bg-via)',
+        navy: {
+          900: '#0a1628',
+          950: '#050a1a',
+        },
       }
     },
   },

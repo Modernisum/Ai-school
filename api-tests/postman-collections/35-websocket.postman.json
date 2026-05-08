@@ -1,0 +1,108 @@
+{
+  "info": {
+    "name": "WebSocket APIs",
+    "description": "Converted from 35-websocket.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "General WebSocket Connection",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Upgrade",
+            "value": "websocket",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "Upgrade",
+            "type": "text"
+          },
+          {
+            "key": "Sec-WebSocket-Key",
+            "value": "dGhlIHNhbXBsZSBub25jZQ==",
+            "type": "text"
+          },
+          {
+            "key": "Sec-WebSocket-Version",
+            "value": "13",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ws",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "ws"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "Responsibility WebSocket Connection",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Upgrade",
+            "value": "websocket",
+            "type": "text"
+          },
+          {
+            "key": "Connection",
+            "value": "Upgrade",
+            "type": "text"
+          },
+          {
+            "key": "Sec-WebSocket-Key",
+            "value": "dGhlIHNhbXBsZSBub25jZQ==",
+            "type": "text"
+          },
+          {
+            "key": "Sec-WebSocket-Version",
+            "value": "13",
+            "type": "text"
+          },
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/responsibility-ws",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "responsibility-ws"
+          ],
+          "query": []
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

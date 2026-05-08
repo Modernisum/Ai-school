@@ -138,8 +138,7 @@ impl SetupService for PostgresSetupService {
 
         println!("Initializing Academic Structure & Automated Roles for levels {} to {}", start, end);
         
-        for i in start..=end {
-            let cls_template = &structure[i];
+        for cls_template in structure.iter().take(end + 1).skip(start) {
             let class_names_to_create = if let Some(ref streams) = cls_template.streams {
                 // Ensure deterministic ordering or just iterate
                 let mut names = streams.keys().map(|s| format!("{} {}", cls_template.name, s)).collect::<Vec<_>>();
@@ -172,7 +171,7 @@ impl SetupService for PostgresSetupService {
                             "id": class_id,
                             "className": class_name,
                             "classFees": fee,
-                            "roomNumber": class_name, // Fix: Added roomNumber to bind subjects correctly!
+                            "roomNumber": format!("{}-{}", class_name.to_lowercase().replace(' ', "-"), &school_id[..4]), // match space_id from create_space
                             "totalClassStudents": 0,
                             "sections": sections,
                             "streams": streams_vec,
@@ -386,7 +385,7 @@ impl PostgresSetupService {
             let classes = json!(["all"]);
 
             let _ = sqlx::query("INSERT INTO school_holidays (id, school_id, title, description, from_date, to_date, classes, exempt_employees, exempt_students, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)")
-                .bind(&id).bind(school_id).bind(&name).bind(&description).bind(&date).bind(&date).bind(&classes).bind(json!([])).bind(json!([])).bind(&now)
+                .bind(&id).bind(school_id).bind(name).bind(description).bind(&date).bind(&date).bind(&classes).bind(json!([])).bind(json!([])).bind(&now)
                 .execute(&self.repos.db_client.pool).await;
         }
 

@@ -5,31 +5,22 @@ import 'package:chatra/core/network/api_response.dart';
 import 'package:chatra/core/network/api_service.dart';
 
 class LeaveApi {
-  final ApiService _coreApi;
+  final ApiService _api;
 
-  LeaveApi(this._coreApi);
+  LeaveApi(this._api);
 
   Future<ApiResponse<List<dynamic>>> getLeaveApplications() async {
     try {
-      final token = await _coreApi.storage.read(key: 'jwt_token');
-      final sid = await _coreApi.storage.read(key: 'school_id');
-      if (token == null || sid == null) return const ApiError("Unauthorized");
-
-      final url = '${ApiService.apiBase}/leave/$sid';
+      final sid = await _api.getSchoolId();
       final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiService.apiBase}/leave/$sid'),
+        headers: await _api.authHeaders(),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) return ApiSuccess(data);
-        if (data['leaves'] != null) {
-          return ApiSuccess(data['leaves'] as List<dynamic>);
-        }
+        if (data['leaves'] != null) return ApiSuccess(data['leaves'] as List<dynamic>);
         return ApiSuccess(data['data'] as List<dynamic>? ?? []);
       }
       return ApiError("Failed with status ${response.statusCode}");
@@ -41,18 +32,12 @@ class LeaveApi {
 
   Future<ApiResponse<Map<String, dynamic>>> getLeaveBalance() async {
     try {
-      final token = await _coreApi.storage.read(key: 'jwt_token');
-      final sid = await _coreApi.storage.read(key: 'school_id');
-      final employeeId = await _coreApi.storage.read(key: 'employee_id') ?? '';
-      
-      final url = '${ApiService.apiBase}/leave/$sid/balance?employee_id=$employeeId';
+      final sid = await _api.getSchoolId();
+      final employeeId = await _api.storage.read(key: 'employee_id') ?? '';
 
       final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiService.apiBase}/leave/$sid/balance?employee_id=$employeeId'),
+        headers: await _api.authHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -69,16 +54,10 @@ class LeaveApi {
 
   Future<ApiResponse<List<dynamic>>> getLeaveNotifications() async {
     try {
-      final token = await _coreApi.storage.read(key: 'jwt_token');
-      final sid = await _coreApi.storage.read(key: 'school_id');
-      final url = '${ApiService.apiBase}/notifications/$sid';
-
+      final sid = await _api.getSchoolId();
       final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiService.apiBase}/notifications/$sid'),
+        headers: await _api.authHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -96,16 +75,10 @@ class LeaveApi {
 
   Future<ApiResponse<bool>> applyForLeave(Map<String, dynamic> leaveData) async {
     try {
-      final token = await _coreApi.storage.read(key: 'jwt_token');
-      final sid = await _coreApi.storage.read(key: 'school_id');
-      final url = '${ApiService.apiBase}/leave/$sid';
-
+      final sid = await _api.getSchoolId();
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiService.apiBase}/leave/$sid'),
+        headers: await _api.authHeaders(),
         body: jsonEncode(leaveData),
       );
 
@@ -119,16 +92,10 @@ class LeaveApi {
 
   Future<ApiResponse<bool>> updateLeaveStatus(int leaveId, String action) async {
     try {
-      final token = await _coreApi.storage.read(key: 'jwt_token');
-      final sid = await _coreApi.storage.read(key: 'school_id');
-      final url = '${ApiService.apiBase}/leave/$sid/$leaveId/$action';
-
+      final sid = await _api.getSchoolId();
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiService.apiBase}/leave/$sid/$leaveId/$action'),
+        headers: await _api.authHeaders(),
       );
 
       if (response.statusCode == 200) return const ApiSuccess(true);

@@ -11,6 +11,79 @@ pub struct PostgresLeaveService {
     pub timetable: Arc<crate::logic::timetable_engine::TimetableEngine>,
 }
 
+impl PostgresLeaveService {
+    /// Find employees who can cover a specific responsibility during a leave period.
+    /// Returns employees of the same type, sorted by match score (already assigned > no conflicts).
+    async fn find_matching_employees_for_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        exclude_employee_id: &str,
+        from_date: &str,
+        to_date: &str,
+    ) -> AppResult<Vec<Value>> {
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        let rows = sqlx::query(
+            r#"SELECT
+                e.employee_id,
+                e.data->>'name' as employee_name,
+                e.employee_type,
+                CASE WHEN er2.employee_id IS NOT NULL THEN true ELSE false END as already_assigned,
+                COALESCE(
+                    (SELECT COUNT(*) FROM responsibility_coverage rc2
+                     WHERE rc2.covering_employee_id = e.employee_id
+                       AND rc2.status IN ('assigned', 'accepted')
+                       AND rc2.coverage_period_start <= $5::date
+                       AND rc2.coverage_period_end >= $4::date),
+                    0
+                )::int as active_coverages
+            FROM employees e
+            LEFT JOIN employee_responsibilities er2
+                ON er2.school_id = e.school_id
+                AND er2.employee_id = e.employee_id
+                AND er2.responsibility_id = $2
+            WHERE e.school_id = $1
+              AND e.employee_type = (
+                  SELECT employee_type FROM responsibilities
+                  WHERE school_id = $1 AND responsibility_id = $2
+              )
+              AND e.employee_id != $3
+            ORDER BY already_assigned DESC, active_coverages ASC
+            LIMIT 10"#,
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .bind(exclude_employee_id)
+        .bind(from_date)
+        .bind(to_date)
+        .fetch_all(&mut *conn)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to find matching employees: {}", e)))?;
+
+        let matches: Vec<Value> = rows
+            .iter()
+            .map(|row| {
+                let already_assigned: bool = row.get("already_assigned");
+                let active_coverages: i32 = row.get("active_coverages");
+                let mut match_score = 0i32;
+                if already_assigned { match_score += 50; }
+                if active_coverages == 0 { match_score += 30; }
+                json!({
+                    "employeeId": row.get::<String, _>("employee_id"),
+                    "employeeName": row.get::<String, _>("employee_name"),
+                    "employeeType": row.get::<String, _>("employee_type"),
+                    "alreadyAssigned": already_assigned,
+                    "activeCoverages": active_coverages,
+                    "matchScore": match_score
+                })
+            })
+            .collect();
+
+        Ok(matches)
+    }
+}
+
 #[async_trait]
 impl LeaveService for PostgresLeaveService {
     async fn create_leave(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value> {
@@ -554,6 +627,17 @@ impl LeaveService for PostgresLeaveService {
                     return Err(format!("Cannot accept coverage with status: {}", current_status).into());
                 }
                 
+                // Also fetch leave_id, original_employee_id, responsibility_id for delegation
+                let delegation_row = sqlx::query(
+                    "SELECT leave_id, original_employee_id, responsibility_id FROM responsibility_coverage
+                     WHERE school_id = $1 AND coverage_id = $2"
+                )
+                .bind(school_id)
+                .bind(coverage_id)
+                .fetch_optional(&mut *conn)
+                .await
+                .map_err(|e| AppError::Internal(format!("Failed to query coverage details: {}", e)))?;
+
                 // Update the coverage status
                 sqlx::query(
                     "UPDATE responsibility_coverage
@@ -565,6 +649,58 @@ impl LeaveService for PostgresLeaveService {
                 .execute(&mut *conn)
                 .await
                 .map_err(|e| AppError::Internal(format!("Failed to update coverage status: {}", e)))?;
+
+                // Temporarily delegate responsibility to covering employee
+                if let Some(dr) = delegation_row {
+                    let orig_emp: String = dr.get("original_employee_id");
+                    let resp_id: String = dr.get("responsibility_id");
+                    let lid: String = dr.get("leave_id");
+
+                    // Get original employee's space_ids for this responsibility
+                    let orig_spaces: Option<Value> = sqlx::query_scalar(
+                        "SELECT space_ids FROM employee_responsibilities
+                         WHERE school_id = $1 AND employee_id = $2 AND responsibility_id = $3"
+                    )
+                    .bind(school_id)
+                    .bind(&orig_emp)
+                    .bind(&resp_id)
+                    .fetch_optional(&mut *conn)
+                    .await?;
+
+                    let space_ids: Vec<String> = orig_spaces
+                        .and_then(|v| v.as_array().map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect()))
+                        .unwrap_or_default();
+
+                    // Add covering employee to the responsibility with same spaces
+                    sqlx::query(
+                        "INSERT INTO employee_responsibilities (school_id, employee_id, responsibility_id, space_ids)
+                         VALUES ($1, $2, $3, $4)
+                         ON CONFLICT (school_id, employee_id, responsibility_id) DO UPDATE SET
+                         space_ids = EXCLUDED.space_ids, updated_at = NOW()"
+                    )
+                    .bind(school_id)
+                    .bind(&covering_employee_id)
+                    .bind(&resp_id)
+                    .bind(&space_ids)
+                    .execute(&mut *conn)
+                    .await
+                    .map_err(|e| AppError::Internal(format!("Failed to delegate responsibility: {}", e)))?;
+
+                    // Log delegation in history
+                    let _ = sqlx::query(
+                        "INSERT INTO responsibility_assignment_history (school_id, responsibility_id, employee_id,
+                         action, previous_space_ids, version, performed_by, reason, performed_at)
+                         VALUES ($1, $2, $3, 'coverage_accepted', $4, 1, $5, $6, NOW())"
+                    )
+                    .bind(school_id)
+                    .bind(&resp_id)
+                    .bind(&covering_employee_id)
+                    .bind(&space_ids)
+                    .bind(employee_id)
+                    .bind(format!("Leave coverage for {} (leave {})", orig_emp, lid))
+                    .execute(&mut *conn)
+                    .await;
+                }
             }
             None => {
                 return Err("Coverage record not found".into());
@@ -581,7 +717,7 @@ impl LeaveService for PostgresLeaveService {
                 "LEAVE_COVERAGE",
                 coverage_id,
                 "ACCEPT",
-                json!({}),
+                json!({"responsibilityDelegated": true}),
             )
             .await;
 
@@ -590,21 +726,139 @@ impl LeaveService for PostgresLeaveService {
 
     // Workload assessment methods
     async fn assess_workload(&self, school_id: &str, leave_id: &str) -> AppResult<Value> {
-        // Placeholder workload assessment
+        // 1. Get the leave details to find the employee and dates
+        let leave = self.repos.leave.get_leave(school_id, leave_id).await?
+            .ok_or_else(|| AppError::NotFound("Leave not found".to_string()))?;
+
+        let employee_id = leave["employeeId"].as_str().unwrap_or("");
+        let from_date = leave["fromDate"].as_str().unwrap_or("");
+        let to_date = leave["toDate"].as_str().unwrap_or("");
+
+        if employee_id.is_empty() {
+            return Ok(json!({"leaveId": leave_id, "workloadImpact": "none", "affectedCount": 0, "recommendations": []}));
+        }
+
+        // 2. Get employee's responsibilities
+        let responsibilities = self
+            .repos
+            .responsibility
+            .get_employee_responsibilities(school_id, employee_id)
+            .await
+            .unwrap_or_default();
+
+        if responsibilities.is_empty() {
+            return Ok(json!({
+                "leaveId": leave_id,
+                "employeeId": employee_id,
+                "workloadImpact": "low",
+                "impactScore": 10,
+                "affectedResponsibilities": [],
+                "recommendations": ["No responsibilities to cover"]
+            }));
+        }
+
+        // 3. For each responsibility, find potential covering employees
+        let mut affected = Vec::new();
+        let mut total_sessions = 0i32;
+
+        for resp in &responsibilities {
+            let resp_id = resp["responsibilityId"].as_str().unwrap_or("");
+            let resp_name = resp["name"].as_str().unwrap_or("Unknown");
+            let resp_type = resp["employeeType"].as_str().unwrap_or("");
+
+            // Find employees with same employee_type who can cover
+            let matching_employees = self
+                .find_matching_employees_for_responsibility(school_id, resp_id, employee_id, from_date, to_date)
+                .await
+                .unwrap_or_default();
+
+            let sessions = 3i32; // Estimate: ~3 sessions per leave day for teaching
+            total_sessions += sessions;
+
+            affected.push(json!({
+                "responsibilityId": resp_id,
+                "name": resp_name,
+                "employeeType": resp_type,
+                "sessionsAffected": sessions,
+                "coverageRequired": true,
+                "matchingCoverageEmployees": matching_employees
+            }));
+        }
+
+        let impact_score = if total_sessions > 15 { 85 } else if total_sessions > 8 { 60 } else { 35 };
+        let workload_impact = if impact_score > 70 { "high" } else if impact_score > 40 { "medium" } else { "low" };
+        let risk_level = if impact_score > 70 { "high" } else if impact_score > 40 { "medium" } else { "low" };
+
+        let mut recommendations = Vec::new();
+        if total_sessions > 0 {
+            recommendations.push("Arrange coverage for affected responsibilities".to_string());
+            recommendations.push("Notify covering employees via email".to_string());
+        }
+        if total_sessions > 10 {
+            recommendations.push("Consider rescheduling non-critical sessions".to_string());
+        }
+
+        // 4. Store workload assessment in DB
+        if let Ok(mut conn) = self.repos.db_client.acquire_tenant_connection(school_id).await {
+            // Delete existing assessment for this leave to allow re-assessment
+            let _ = sqlx::query(
+                "DELETE FROM workload_assessment WHERE leave_id = $1 AND school_id = $2"
+            )
+            .bind(leave_id)
+            .bind(school_id)
+            .execute(&mut *conn)
+            .await;
+            let _ = sqlx::query(
+                "INSERT INTO workload_assessment (assessment_id, leave_id, school_id, employee_id,
+                 assessment_date, impact_score, workload_category, coverage_needed, notes)
+                 VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)"
+            )
+            .bind(format!("WA{}", chrono::Utc::now().timestamp_millis()))
+            .bind(leave_id)
+            .bind(school_id)
+            .bind(employee_id)
+            .bind(impact_score)
+            .bind(workload_impact)
+            .bind(total_sessions > 0)
+            .bind(serde_json::to_string(&affected).unwrap_or_default())
+            .execute(&mut *conn)
+            .await;
+        }
+
         Ok(json!({
             "leaveId": leave_id,
-            "workloadScore": 75,
-            "feasibility": "moderate",
-            "recommendations": [
-                "Consider partial coverage for critical responsibilities",
-                "Schedule make-up sessions for missed classes"
-            ],
-            "riskLevel": "medium"
+            "employeeId": employee_id,
+            "workloadImpact": workload_impact,
+            "impactScore": impact_score,
+            "affectedResponsibilities": affected,
+            "totalSessionsAffected": total_sessions,
+            "recommendations": recommendations,
+            "riskLevel": risk_level
         }))
     }
 
     async fn get_workload_assessment(&self, school_id: &str, leave_id: &str) -> AppResult<Value> {
-        // Same as assess_workload for now
+        // Try DB first
+        if let Ok(mut conn) = self.repos.db_client.acquire_tenant_connection(school_id).await {
+            if let Ok(Some(row)) = sqlx::query(
+                "SELECT * FROM workload_assessment WHERE school_id = $1 AND leave_id = $2"
+            )
+            .bind(school_id)
+            .bind(leave_id)
+            .fetch_optional(&mut *conn)
+            .await
+            {
+                return Ok(json!({
+                    "leaveId": row.get::<String, _>("leave_id"),
+                    "workloadImpact": row.get::<Option<String>, _>("workload_category").unwrap_or_default(),
+                    "impactScore": row.get::<Option<i32>, _>("impact_score").unwrap_or(0),
+                    "coverageNeeded": row.get::<Option<bool>, _>("coverage_needed").unwrap_or(false),
+                    "assessmentDate": row.get::<Option<String>, _>("assessment_date").unwrap_or_default(),
+                    "notes": row.get::<Option<String>, _>("notes").unwrap_or_default()
+                }));
+            }
+        }
+        // Fallback: run fresh assessment
         self.assess_workload(school_id, leave_id).await
     }
 

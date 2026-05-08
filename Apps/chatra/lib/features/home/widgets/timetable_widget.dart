@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/theme/app_theme.dart';
 
@@ -40,29 +37,25 @@ class TimetableWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 "Timetable",
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             "No timetable available for today.",
-            style: GoogleFonts.outfit(color: Colors.white38, fontSize: 14),
+            style: TextStyle(color: Colors.white38, fontSize: 14),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             "Check back later or contact your school.",
-            style: GoogleFonts.outfit(color: Colors.white24, fontSize: 12),
+            style: TextStyle(color: Colors.white24, fontSize: 12),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms);
+    );
   }
 
   Widget _buildTimetableContent() {
@@ -72,19 +65,12 @@ class TimetableWidget extends StatelessWidget {
     if (data is List) {
       classes = data.map((e) => e as Map<String, dynamic>).toList();
     } else if (data is Map<String, dynamic>) {
-      // Check for common timetable structures
       if (data['classes'] is List) {
-        classes = (data['classes'] as List)
-            .map((e) => e as Map<String, dynamic>)
-            .toList();
+        classes = (data['classes'] as List).map((e) => e as Map<String, dynamic>).toList();
       } else if (data['slots'] is List) {
-        classes = (data['slots'] as List)
-            .map((e) => e as Map<String, dynamic>)
-            .toList();
+        classes = (data['slots'] as List).map((e) => e as Map<String, dynamic>).toList();
       } else if (data['timetable'] is List) {
-        classes = (data['timetable'] as List)
-            .map((e) => e as Map<String, dynamic>)
-            .toList();
+        classes = (data['timetable'] as List).map((e) => e as Map<String, dynamic>).toList();
       }
     }
 
@@ -112,18 +98,14 @@ class TimetableWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 "Today's Classes",
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               Text(
                 "${classes.length} classes",
-                style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ],
           ),
@@ -134,12 +116,12 @@ class TimetableWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 "+ ${classes.length - 3} more classes",
-                style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms);
+    );
   }
 
   Widget _buildClassItem(Map<String, dynamic> cls) {
@@ -167,25 +149,18 @@ class TimetableWidget extends StatelessWidget {
               children: [
                 Text(
                   subject,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 Text(
                   "$time • Room $room",
-                  style: GoogleFonts.outfit(
-                    color: Colors.white38,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white38, fontSize: 12),
                 ),
               ],
             ),
           ),
           Text(
             teacher,
-            style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11),
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
         ],
       ),

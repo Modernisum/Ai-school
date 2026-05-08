@@ -8,6 +8,7 @@ use axum::{
 };
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sqlx::Row;
 
 #[derive(Deserialize)]
@@ -74,7 +75,7 @@ pub async fn send_message(
 
             // Publish to Redis Pub/Sub so clients get it instantly
             let redis_url =
-                std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
+                std::env::var("REDIS_URL").expect("REDIS_URL environment variable must be set");
             if let Ok(redis_client) = redis::Client::open(redis_url) {
                 if let Ok(mut pubsub_conn) = redis_client.get_multiplexed_async_connection().await {
                     let channel_name = format!("school:{}:user:{}", school_id, payload.receiver_id);
@@ -135,8 +136,47 @@ pub async fn get_history(
     }
 }
 
+// ── AI Chat History ──────────────────────────────────────────────────────
+
+#[derive(Serialize)]
+pub struct AiHistoryEntry {
+    pub role: String,
+    pub content: String,
+    pub created_at: String,
+}
+
+pub async fn get_ai_chat_history(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    let mut conn = match state.db.acquire_tenant_connection(&school_id).await {
+        Ok(c) => c,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),
+    };
+
+    let rows = sqlx::query(
+        "SELECT role, content, created_at::TEXT FROM ai_chat_history WHERE school_id = $1 ORDER BY created_at ASC LIMIT 100"
+    )
+    .bind(&school_id)
+    .fetch_all(&mut *conn)
+    .await;
+
+    match rows {
+        Ok(rs) => {
+            let history: Vec<AiHistoryEntry> = rs.iter().map(|r| AiHistoryEntry {
+                role: r.get("role"),
+                content: r.get("content"),
+                created_at: r.get("created_at"),
+            }).collect();
+            (StatusCode::OK, Json(json!({"success": true, "data": history}))).into_response()
+        }
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"success": false, "message": "Failed to fetch chat history"}))).into_response(),
+    }
+}
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/:schoolId/send", post(send_message))
         .route("/:schoolId/history/:user1/:user2", get(get_history))
+        .route("/:schoolId/ai-history", get(get_ai_chat_history))
 }

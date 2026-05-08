@@ -1,3 +1,4 @@
+use crate::db;
 use crate::logic::analytics_engine::AnalyticsEngine;
 use crate::logic::encryption_service::{create_encryption_service, EncryptionService};
 use crate::logic::email_service::EmailService;
@@ -24,14 +25,11 @@ pub async fn start_background_workers(state: AppState) {
             }
 
             // 2. Student Risk Analysis
-            match sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
-                .fetch_all(&analytics.pool)
-                .await
-            {
+            match db::get_active_school_ids(&analytics.pool).await {
                 Ok(schools) => {
-                    for school in schools {
-                        if let Err(e) = analytics.analyze_student_risks(&school.school_id).await {
-                            eprintln!("[Background Worker] Error analyzing student risks for school {}: {}", school.school_id, e);
+                    for school_id in schools {
+                        if let Err(e) = analytics.analyze_student_risks(&school_id).await {
+                            eprintln!("[Background Worker] Error analyzing student risks for school {}: {}", school_id, e);
                         }
                     }
                 }
@@ -71,8 +69,7 @@ pub async fn start_background_workers(state: AppState) {
             sleep(Duration::from_secs(15 * 60)).await;
 
             println!("[Background Worker] Starting orphaned file cleanup...");
-            // get_orphaned_files takes hours, so pass fractional hours as minutes/60
-            // We use a custom query with minutes below via a separate approach
+            // Clean up files orphaned for 15+ minutes
             match state_clone.repos.storage.get_orphaned_files_minutes(15).await {
                 Ok(orphans) => {
                     let count = orphans.len();
@@ -106,7 +103,7 @@ pub async fn start_background_workers(state: AppState) {
             
             // Find next Monday
             while next_run.weekday().num_days_from_monday() != 0 {
-                next_run = next_run + ChronoDuration::days(1);
+                next_run += ChronoDuration::days(1);
             }
             
             // Set to 9 AM
@@ -114,7 +111,7 @@ pub async fn start_background_workers(state: AppState) {
             
             // If it's already past 9 AM today (Monday), schedule for next week
             if next_run <= now {
-                next_run = next_run + ChronoDuration::weeks(1);
+                next_run += ChronoDuration::weeks(1);
             }
             
             let wait_duration = (next_run - now).to_std().unwrap_or(Duration::from_secs(7 * 24 * 60 * 60));
@@ -182,14 +179,9 @@ pub async fn start_background_workers(state: AppState) {
             println!("[Attendance Automation] Starting daily attendance automation...");
             
             // Get all active schools
-            match sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
-                .fetch_all(&state_clone.db.pool)
-                .await
-            {
+            match db::get_active_school_ids(&state_clone.db.pool).await {
                 Ok(schools) => {
-                    for school in schools {
-                        let school_id = school.school_id;
-                        
+                    for school_id in schools {
                         // 1. Auto-mark absent after cutoff time (10 AM)
                         if now.hour() >= 10 {
                             println!("[Attendance Automation] Auto-marking absent for school: {}", school_id);
@@ -275,13 +267,9 @@ pub async fn start_background_workers(state: AppState) {
             println!("[Notification Service] Checking for pending notifications...");
             
             // Check for unmarked attendance and send reminders
-            match sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
-                .fetch_all(&state_clone.db.pool)
-                .await
-            {
+            match db::get_active_school_ids(&state_clone.db.pool).await {
                 Ok(schools) => {
-                    for school in schools {
-                        let school_id = school.school_id;
+                    for school_id in schools {
                         let today = Utc::now().format("%Y-%m-%d").to_string();
                         
                         // Get unmarked attendance count
@@ -331,12 +319,9 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
     let start_date = (now - ChronoDuration::days(7)).format("%Y-%m-%d").to_string();
     
     // Get all active schools
-    let schools = sqlx::query!("SELECT school_id FROM schools WHERE status = 'active'")
-        .fetch_all(&state.db.pool)
-        .await?;
-    
-    for school in schools {
-        let school_id = school.school_id;
+    let schools = db::get_active_school_ids(&state.db.pool).await?;
+
+    for school_id in schools {
         
         println!("[Scheduled Reports] Generating reports for school: {}", school_id);
         

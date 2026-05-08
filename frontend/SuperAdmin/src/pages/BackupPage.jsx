@@ -1,9 +1,10 @@
 import { useState, useContext } from 'react'
 import { motion } from 'framer-motion'
-import { Download, Upload, Database, AlertTriangle, CheckCircle, Loader, FileJson } from 'lucide-react'
+import { Download, Upload, Database, AlertTriangle, CheckCircle, FileJson } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
 import { downloadExport, importSchoolData, listSchools, manualBackup } from '../api.js'
 import { API_ROOT } from '../config.js'
+import { GlassCard, StandardButton, StatusBadge, PageHeader } from '../components/ui/'
 
 export default function BackupPage() {
     const toast = useContext(ToastCtx)
@@ -91,76 +92,81 @@ export default function BackupPage() {
 
     return (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="page">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <Database size={22} style={{ color: 'var(--accent)' }} />
-                <h1 className="page-title">Backup & Restore</h1>
-            </div>
-            <p className="page-sub">Export full school data as JSON or restore from a backup file</p>
+            <PageHeader
+                title="Backup & Restore"
+                description="Export full school data as JSON or restore from a backup file"
+                actions={<Database size={22} style={{ color: 'var(--color-primary)' }} />}
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                {/* Export */}
-                <div className="card">
+                <GlassCard glowColor="primary">
                     <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
-                        <Download size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--accent)' }} /> Export Data
+                        <Download size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--color-primary)' }} /> Export Data
                     </h3>
-                    <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 18 }}>
                         Download complete school data as a JSON file (students, employees, classes, fees, attendance, and more).
                     </p>
 
-                    {/* Export all */}
-                    <button
-                        className="btn btn-primary"
-                        style={{ width: '100%', justifyContent: 'center', marginBottom: 14 }}
+                    <StandardButton
+                        variant="primary"
+                        size="md"
+                        className="w-full justify-center"
+                        icon={Database}
+                        isLoading={exportingId === 'all'}
                         onClick={() => handleExport('all')}
                         disabled={exportingId !== null}
                     >
-                        {exportingId === 'all' ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Database size={14} />}
                         Export All Schools
-                    </button>
+                    </StandardButton>
 
-                    <div style={{ border: '1px dashed var(--glass-border)', borderRadius: 8, padding: 14, marginBottom: 10 }}>
-                        <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 10 }}>Or export a single school:</p>
+                    <div style={{ border: '1px dashed var(--border-default)', borderRadius: 8, padding: 14, marginBottom: 10, marginTop: 14 }}>
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>Or export a single school:</p>
                         {!schoolsLoaded ? (
-                            <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={loadSchools}>
+                            <StandardButton variant="ghost" size="sm" className="w-full justify-center" onClick={loadSchools}>
                                 Load school list
-                            </button>
+                            </StandardButton>
                         ) : (
                             <>
                                 <select
+                                    className="form-select"
                                     value={selectedSchool}
                                     onChange={e => setSelectedSchool(e.target.value)}
-                                    style={{ marginBottom: 10 }}
+                                    style={{ marginBottom: 10, width: '100%' }}
                                 >
                                     <option value="">Select school…</option>
                                     {schools.map(s => (
                                         <option key={s.schoolId} value={s.schoolId}>{s.schoolName} ({s.schoolId})</option>
                                     ))}
                                 </select>
-                                <button
-                                    className="btn btn-ghost btn-sm"
+                                <StandardButton
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-center"
+                                    icon={Download}
+                                    isLoading={exportingId === selectedSchool}
                                     disabled={!selectedSchool || exportingId !== null}
                                     onClick={() => handleExport(selectedSchool)}
-                                    style={{ width: '100%', justifyContent: 'center' }}
                                 >
-                                    {exportingId === selectedSchool ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={13} />}
                                     Export {selectedSchool || 'School'}
-                                </button>
+                                </StandardButton>
                             </>
                         )}
                     </div>
 
-                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>
+                    <div className="alert-inline alert-inline-info" style={{ marginBottom: 14 }}>
                         📦 Exports include: school info, students, employees, classes, subjects, fees, attendance, announcements, events, complaints, spaces
                     </div>
 
-                    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: 14 }}>
-                        <h4 style={{ fontSize: 13, marginBottom: 8, color: 'var(--text2)' }}>System Auto-Backup</h4>
-                        <p style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 12 }}>
+                    <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14 }}>
+                        <h4 style={{ fontSize: 13, marginBottom: 8, color: 'var(--text-secondary)' }}>System Auto-Backup</h4>
+                        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 12 }}>
                             The system performs an incremental auto-backup every 15 minutes to the server's local storage.
                         </p>
-                        <button 
-                            className="btn btn-ghost" 
-                            style={{ width: '100%', justifyContent: 'center' }}
+                        <StandardButton
+                            variant="ghost"
+                            size="md"
+                            className="w-full justify-center"
+                            icon={Database}
                             onClick={async () => {
                                 try {
                                     const r = await manualBackup();
@@ -169,42 +175,40 @@ export default function BackupPage() {
                                 } catch(e) { toast('error', 'Failed to trigger backup'); }
                             }}
                         >
-                            <Database size={14} /> Trigger Manual System Backup
-                        </button>
+                            Trigger Manual System Backup
+                        </StandardButton>
                     </div>
+                </GlassCard>
 
-                    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-                </div>
-
-                {/* Import */}
-                <div className="card">
+                <GlassCard glowColor="warning">
                     <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
-                        <Upload size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--amber)' }} /> Restore from Backup
+                        <Upload size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--color-warning)' }} /> Restore from Backup
                     </h3>
-                    <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 18 }}>
                         Import student and school data from a previously exported JSON backup file.
                     </p>
 
                     <div
+                        className="flex flex-col items-center gap-4"
                         style={{
-                            border: `2px dashed ${importFile ? 'var(--accent)' : 'var(--glass-border)'}`,
+                            border: `2px dashed ${importFile ? 'var(--color-primary)' : 'var(--border-default)'}`,
                             borderRadius: 10, padding: 24, textAlign: 'center',
                             cursor: 'pointer', marginBottom: 14,
-                            background: importFile ? 'rgba(99,102,241,0.05)' : 'transparent',
+                            background: importFile ? 'color-mix(in srgb, var(--color-primary) 5%, transparent)' : 'transparent',
                             transition: 'all 0.2s'
                         }}
                         onClick={() => document.getElementById('file-input').click()}
                     >
-                        <FileJson size={28} style={{ color: importFile ? 'var(--accent)' : 'var(--text3)', marginBottom: 8 }} />
+                        <FileJson size={28} style={{ color: importFile ? 'var(--color-primary)' : 'var(--text-tertiary)', marginBottom: 8 }} />
                         {importFile ? (
                             <>
                                 <p style={{ fontWeight: 600, fontSize: 13 }}>{importFile.name}</p>
-                                <p style={{ fontSize: 11, color: 'var(--text2)' }}>{(importFile.size / 1024).toFixed(1)} KB</p>
+                                <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{(importFile.size / 1024).toFixed(1)} KB</p>
                             </>
                         ) : (
                             <>
-                                <p style={{ fontSize: 13, color: 'var(--text2)' }}>Click to select backup JSON</p>
-                                <p style={{ fontSize: 11, color: 'var(--text3)' }}>Only valid export JSON files are accepted</p>
+                                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Click to select backup JSON</p>
+                                <p style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Only valid export JSON files are accepted</p>
                             </>
                         )}
                         <input id="file-input" type="file" accept=".json" style={{ display: 'none' }}
@@ -212,14 +216,14 @@ export default function BackupPage() {
                     </div>
 
                     {!schoolsLoaded && (
-                        <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }} onClick={loadSchools}>
+                        <StandardButton variant="ghost" size="sm" className="w-full justify-center" style={{ marginBottom: 10 }} onClick={loadSchools}>
                             Load school list to select target
-                        </button>
+                        </StandardButton>
                     )}
                     {schoolsLoaded && (
                         <div className="input-group">
                             <label>Target School</label>
-                            <select value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}>
+                            <select className="form-select" value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}>
                                 <option value="">Select school to restore into…</option>
                                 {schools.map(s => (
                                     <option key={s.schoolId} value={s.schoolId}>{s.schoolName} ({s.schoolId})</option>
@@ -228,52 +232,59 @@ export default function BackupPage() {
                         </div>
                     )}
 
-                    <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: '#f59e0b', marginBottom: 14 }}>
-                        <AlertTriangle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                    <div className="alert-inline alert-inline-warning" style={{ marginBottom: 14 }}>
+                        <AlertTriangle size={12} />
                         Import will upsert records — existing data for conflicting IDs will be overwritten.
                     </div>
 
-                    <button
-                        className="btn btn-primary"
-                        style={{ width: '100%', justifyContent: 'center' }}
-                        onClick={handleImport}
+                    <StandardButton
+                        variant="primary"
+                        size="md"
+                        className="w-full justify-center"
+                        icon={Upload}
+                        isLoading={importing}
                         disabled={importing || !importFile || !selectedSchool}
+                        onClick={handleImport}
                     >
-                        {importing ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={14} />}
                         Restore from File
-                    </button>
+                    </StandardButton>
 
                     {importResult && (
-                        <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, fontSize: 12, background: importResult.success ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: importResult.success ? '#34d399' : '#f87171' }}>
-                            <CheckCircle size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                        <div className={`alert-inline ${importResult.success ? 'alert-inline-success' : 'alert-inline-danger'}`} style={{ marginTop: 14 }}>
+                            <CheckCircle size={13} />
                             {importResult.data?.message || importResult.message}
                         </div>
                     )}
-                </div>
+                </GlassCard>
             </div>
 
-            <h2 className="page-sub" style={{ marginTop: 30, color: 'var(--text)', fontWeight: 600 }}>System Configuration</h2>
-            <div className="card" style={{ marginTop: 10 }}>
+            <h2 style={{ marginTop: 30, color: 'var(--text)', fontWeight: 600, fontSize: 'var(--text-lg)' }}>System Configuration</h2>
+            <GlassCard glowColor="accent" style={{ marginTop: 10 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
-                    <Database size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--accent)' }} /> Geo Data Management
+                    <Database size={14} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--color-primary)' }} /> Geo Data Management
                 </h3>
-                <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 18 }}>
                     Download the global Geo Data JSON (Countries, States, Districts), add locations, and upload to sync the backend database.
                 </p>
 
-                <div style={{ display: 'flex', gap: 15 }}>
-                    <button className="btn btn-ghost" onClick={handleGeoExport}>
-                        <Download size={14} /> Download geo.json
-                    </button>
+                <div className="flex gap-4">
+                    <StandardButton variant="ghost" size="md" icon={Download} onClick={handleGeoExport}>
+                        Download geo.json
+                    </StandardButton>
                     <div>
                         <input type="file" id="geo-upload" accept=".json" style={{ display: 'none' }} onChange={handleGeoImport} />
-                        <button className="btn btn-primary" onClick={() => document.getElementById('geo-upload').click()} disabled={importingGeo}>
-                            {importingGeo ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={14} />}
+                        <StandardButton
+                            variant="primary"
+                            size="md"
+                            icon={Upload}
+                            isLoading={importingGeo}
+                            onClick={() => document.getElementById('geo-upload').click()}
+                        >
                             Upload & Sync Geo Data
-                        </button>
+                        </StandardButton>
                     </div>
                 </div>
-            </div>
+            </GlassCard>
         </motion.div>
     )
 }

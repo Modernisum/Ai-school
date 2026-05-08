@@ -93,7 +93,7 @@ impl PayrollProcessing {
         let (month, year) = if now.month() == 1 {
             (12, now.year() - 1)
         } else {
-            (now.month() - 1, now.year() as i32)
+            (now.month() - 1, now.year())
         };
 
         let emp = self

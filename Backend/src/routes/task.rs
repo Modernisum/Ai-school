@@ -4,7 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct TaskFilter {
@@ -39,53 +39,6 @@ pub async fn update_task_status(
 ) -> impl IntoResponse {
     match state.services.task.update_task_status(&school_id, &task_id, &payload.status).await {
         Ok(_) => Json(serde_json::json!({"success": true})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-// AI task generation hooks
-pub async fn ai_generate_tasks(
-    State(state): State<AppState>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let employee_id = payload["employeeId"].as_str().unwrap_or("");
-    if employee_id.is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({"success": false, "message": "employeeId is required"})),
-        ).into_response();
-    }
-
-    match state.services.ai.generate_employee_tasks(&school_id, employee_id).await {
-        Ok(result) => Json(result).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-pub async fn ai_reorganize_tasks(
-    State(state): State<AppState>,
-    Path(school_id): Path<String>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let employee_id = payload["employeeId"].as_str().unwrap_or("");
-    if employee_id.is_empty() {
-        return (
-            axum::http::StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({"success": false, "message": "employeeId is required"})),
-        ).into_response();
-    }
-
-    match state.services.ai.reorganize_tasks(&school_id, employee_id).await {
-        Ok(result) => Json(result).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({"success": false, "message": e.to_string()})),

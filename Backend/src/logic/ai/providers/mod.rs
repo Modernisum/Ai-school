@@ -14,8 +14,23 @@ pub struct GenerateOptions {
     pub top_p: Option<f32>,
     /// Stop sequences
     pub stop_sequences: Option<Vec<String>>,
+    /// Whether to stream the response
+    pub stream: bool,
     /// Additional provider-specific parameters
     pub extra_params: Option<HashMap<String, serde_json::Value>>,
+}
+
+impl Default for GenerateOptions {
+    fn default() -> Self {
+        Self {
+            max_tokens: Some(1000),
+            temperature: Some(0.7),
+            top_p: Some(1.0),
+            stop_sequences: None,
+            stream: false,
+            extra_params: None,
+        }
+    }
 }
 
 /// Response from text generation
@@ -153,9 +168,9 @@ mod tests {
     
     #[test]
     fn test_provider_error_conversion() {
-        let error = ProviderError::Configuration("test error".to_string());
+        let error = ProviderError::Config("test error".to_string());
         let app_error: crate::error::AppError = error.into();
-        
+
         match app_error {
             crate::error::AppError::Internal(msg) => {
                 assert!(msg.contains("test error"));
@@ -163,42 +178,49 @@ mod tests {
             _ => panic!("Expected Internal error"),
         }
     }
-    
+
     #[test]
     fn test_generate_options_default() {
         let options = GenerateOptions::default();
-        assert_eq!(options.max_tokens, 1000);
-        assert_eq!(options.temperature, 0.7);
-        assert_eq!(options.top_p, 1.0);
+        assert_eq!(options.max_tokens, Some(1000));
+        assert_eq!(options.temperature, Some(0.7));
+        assert_eq!(options.top_p, Some(1.0));
         assert!(!options.stream);
+        assert!(options.extra_params.is_none());
     }
-    
+
     #[test]
     fn test_text_response_creation() {
         let response = TextResponse {
             text: "Test response".to_string(),
-            tokens_used: 10,
-            finish_reason: "stop".to_string(),
-            model_used: "test-model".to_string(),
+            total_tokens: 10,
+            finish_reason: Some("stop".to_string()),
+            metadata: {
+                let mut m = HashMap::new();
+                m.insert("model".to_string(), serde_json::Value::String("test-model".to_string()));
+                m
+            },
         };
-        
+
         assert_eq!(response.text, "Test response");
-        assert_eq!(response.tokens_used, 10);
-        assert_eq!(response.finish_reason, "stop");
+        assert_eq!(response.total_tokens, 10);
+        assert_eq!(response.finish_reason, Some("stop".to_string()));
     }
-    
+
     #[test]
     fn test_health_status_creation() {
+        let mut details = HashMap::new();
+        details.insert("status".to_string(), serde_json::Value::String("All good".to_string()));
         let health = HealthStatus {
             healthy: true,
-            latency_ms: 100,
+            latency_ms: Some(100),
             error: None,
-            details: Some("All good".to_string()),
+            details,
         };
-        
+
         assert!(health.healthy);
-        assert_eq!(health.latency_ms, 100);
+        assert_eq!(health.latency_ms, Some(100));
         assert!(health.error.is_none());
-        assert_eq!(health.details, Some("All good".to_string()));
+        assert_eq!(health.details.get("status"), Some(&serde_json::Value::String("All good".to_string())));
     }
 }

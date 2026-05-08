@@ -158,6 +158,9 @@ export const getConfig = (key) => authFetch(`/config/${key}`);
 export const updateConfig = (key, value) => authFetch("/config", { method: "POST", body: JSON.stringify({ key, value }) });
 
 export const getHealth = async () => {
-    const res = await fetch(`${API_BASE}/health/detailed`);
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok && res.status !== 503) {
+        throw new Error(`Health check failed: ${res.status}`);
+    }
     return res.json();
 };

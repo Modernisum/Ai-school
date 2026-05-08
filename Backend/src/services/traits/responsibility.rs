@@ -182,6 +182,32 @@ pub trait ResponsibilityService: Send + Sync {
         end_date: &str,
     ) -> AppResult<Value>;
     
+    // Space-responsibility listing
+    async fn list_space_responsibilities(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> AppResult<Vec<Value>>;
+
+    // Fee & Salary generation from responsibilities
+    async fn sync_student_fees_for_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> AppResult<usize>;
+
+    async fn recalculate_all_student_fees(
+        &self,
+        school_id: &str,
+    ) -> AppResult<usize>;
+
+    async fn generate_salaries_from_responsibilities(
+        &self,
+        school_id: &str,
+        month: i32,
+        year: i32,
+    ) -> AppResult<Value>;
+
     // PDF Export methods
     async fn generate_utilization_report_pdf(
         &self,

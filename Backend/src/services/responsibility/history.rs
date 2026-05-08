@@ -44,7 +44,7 @@ impl ResponsibilityHistory {
             .bind(limit)
             .fetch_all(&mut *conn)
             .await
-            .map_err(|e| AppError::Database(e))?;
+            .map_err(AppError::Database)?;
         
         let mut history = Vec::new();
         for row in rows {
@@ -210,7 +210,7 @@ impl ResponsibilityHistory {
         .bind(responsibility_id)
         .fetch_optional(&mut *conn)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
         
         let resp_data = resp_row.ok_or_else(|| AppError::NotFound("Responsibility not found".to_string()))?;
         

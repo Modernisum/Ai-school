@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:chatra/core/network/api_service.dart';
 import 'package:chatra/features/classroom/bloc/classroom_bloc.dart';
 import 'package:chatra/features/classroom/bloc/classroom_event.dart';
 import 'package:chatra/features/classroom/bloc/classroom_state.dart';
 import 'package:chatra/theme/app_theme.dart';
-import 'package:chatra/widgets/animated_gradient_bg.dart';
 import 'package:chatra/widgets/glass_card.dart';
 import 'package:chatra/widgets/common/empty_state.dart';
 import 'package:chatra/widgets/common/skeleton_loader.dart';
@@ -34,41 +31,37 @@ class ClassroomScreen extends StatelessWidget {
         return bloc;
       },
       child: Scaffold(
+        backgroundColor: AppColors.primaryBrand,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text(
+          title: const Text(
             "My Classrooms",
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: AnimatedGradientBg(
-          child: BlocConsumer<ClassroomBloc, ClassroomState>(
-            listener: (context, state) {
-              if (state is ClassroomError) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              if (state is ClassroomLoading) {
-                return _buildLoadingState();
-              }
-              if (state is ClassroomLoaded) {
-                return _buildLoadedState(state);
-              }
+        body: BlocConsumer<ClassroomBloc, ClassroomState>(
+          listener: (context, state) {
+            if (state is ClassroomError) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is ClassroomLoading) {
               return _buildLoadingState();
-            },
-          ),
+            }
+            if (state is ClassroomLoaded) {
+              return _buildLoadedState(state);
+            }
+            return _buildLoadingState();
+          },
         ),
       ),
     );
@@ -83,7 +76,7 @@ class ClassroomScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             "Loading classrooms...",
-            style: GoogleFonts.outfit(color: Colors.white.withOpacity(0.7)),
+            style: TextStyle(color: Colors.white.withOpacity(0.7)),
           ),
         ],
       ),
@@ -104,9 +97,7 @@ class ClassroomScreen extends StatelessWidget {
       itemCount: state.classrooms.length,
       itemBuilder: (context, index) {
         final classroom = state.classrooms[index];
-        return _buildClassroomCard(
-          classroom,
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1, end: 0);
+        return _buildClassroomCard(classroom);
       },
     );
   }
@@ -139,7 +130,7 @@ class ClassroomScreen extends StatelessWidget {
                   children: [
                     Text(
                       classroom['name'] ?? 'Classroom',
-                      style: GoogleFonts.outfit(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -149,7 +140,7 @@ class ClassroomScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         classroom['subject'],
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 14,
                         ),
@@ -190,7 +181,7 @@ class ClassroomScreen extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: GoogleFonts.outfit(
+            style: TextStyle(
               color: Colors.white.withOpacity(0.8),
               fontSize: 14,
             ),

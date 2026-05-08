@@ -1,0 +1,447 @@
+{
+  "info": {
+    "name": "AI & Content Generation APIs",
+    "description": "Converted from 14-ai-content.bru",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Generate Exam Questions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/generate/exam",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "generate",
+            "exam"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Mathematics\",\n  \"grade\": \"10\",\n  \"topic\": \"Algebra\",\n  \"question_count\": 10,\n  \"difficulty\": \"medium\",\n  \"question_types\": [\"multiple_choice\", \"short_answer\"],\n  \"include_answer_key\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "2. Generate Lesson Plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/generate/lesson-plan",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "generate",
+            "lesson-plan"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Science\",\n  \"grade\": \"8\",\n  \"topic\": \"Photosynthesis\",\n  \"duration_minutes\": 45,\n  \"learning_objectives\": [\"Understand the process of photosynthesis\", \"Identify the reactants and products\"],\n  \"materials_needed\": [\"Whiteboard\", \"Markers\", \"Plant diagram\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "3. Generate Study Materials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/generate/study-materials",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "generate",
+            "study-materials"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"History\",\n  \"grade\": \"11\",\n  \"topic\": \"World War II\",\n  \"content_type\": \"summary\",\n  \"length\": \"medium\",\n  \"include_timeline\": true,\n  \"include_key_figures\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "4. Generate Practice Problems",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/generate/practice-problems",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "generate",
+            "practice-problems"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Physics\",\n  \"grade\": \"12\",\n  \"topic\": \"Newton's Laws of Motion\",\n  \"problem_count\": 15,\n  \"difficulty_levels\": [\"easy\", \"medium\", \"hard\"],\n  \"include_solutions\": true,\n  \"include_step_by_step\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "5. Summarize Content",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/summarize",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "summarize"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a byproduct. The process is vital for life on Earth as it provides the primary source of oxygen in the atmosphere and the energy source for most ecosystems.\",\n  \"summary_length\": \"short\",\n  \"include_key_points\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "6. Enhanced Generate Exam",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/content/{{schoolId}}/enhanced/generate-exam",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "content",
+            "{{schoolId}}",
+            "enhanced",
+            "generate-exam"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Chemistry\",\n  \"grade\": \"11\",\n  \"topics\": [\"Atomic Structure\", \"Chemical Bonding\", \"Periodic Table\"],\n  \"total_marks\": 100,\n  \"time_minutes\": 180,\n  \"sections\": [\n    {\n      \"name\": \"Multiple Choice\",\n      \"marks_per_question\": 1,\n      \"question_count\": 20\n    },\n    {\n      \"name\": \"Short Answer\",\n      \"marks_per_question\": 3,\n      \"question_count\": 10\n    },\n    {\n      \"name\": \"Long Answer\",\n      \"marks_per_question\": 10,\n      \"question_count\": 3\n    }\n  ],\n  \"include_rubric\": true,\n  \"include_answer_sheet\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "7. AI Generate Exam",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/exam/ai/{{schoolId}}/generate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "exam",
+            "ai",
+            "{{schoolId}}",
+            "generate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Biology\",\n  \"class\": \"10\",\n  \"chapter\": \"Cell Structure and Function\",\n  \"exam_type\": \"unit_test\",\n  \"total_questions\": 25,\n  \"difficulty\": \"mixed\",\n  \"include_diagrams\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "8. AI Query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ai/{{schoolId}}/query",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "ai",
+            "{{schoolId}}",
+            "query"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Explain the water cycle in simple terms for a 5th grade student\",\n  \"context\": \"science_education\",\n  \"response_format\": \"explanation\",\n  \"complexity\": \"simple\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "9. AI Generate Tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/ai/{{schoolId}}/generate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "task",
+            "ai",
+            "{{schoolId}}",
+            "generate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"project\": \"School Science Fair\",\n  \"description\": \"Organize and execute the annual school science fair\",\n  \"timeline_days\": 30,\n  \"team_size\": 5,\n  \"include_milestones\": true,\n  \"include_responsibilities\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    },
+    {
+      "name": "10. AI Reorganize Tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-School-ID",
+            "value": "{{schoolId}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Admin-ID",
+            "value": "{{adminId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/task/ai/{{schoolId}}/reorganize",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{baseUrl}}",
+            "api",
+            "task",
+            "ai",
+            "{{schoolId}}",
+            "reorganize"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tasks\": [\n    \"Prepare lesson plan for Monday\",\n    \"Grade student assignments\",\n    \"Attend staff meeting\",\n    \"Prepare exam questions\",\n    \"Meet with parents\"\n  ],\n  \"priority_levels\": [\"high\", \"medium\", \"low\"],\n  \"time_available_hours\": 8,\n  \"optimize_for\": \"productivity\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": ""
+      },
+      "response": []
+    }
+  ]
+}

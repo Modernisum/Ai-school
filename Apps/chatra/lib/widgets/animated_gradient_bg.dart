@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class AnimatedGradientBg extends StatefulWidget {
   final Widget child;
-  const AnimatedGradientBg({super.key, required this.child});
+  final bool animate;
+
+  const AnimatedGradientBg({super.key, required this.child, this.animate = false});
 
   @override
   State<AnimatedGradientBg> createState() => _AnimatedGradientBgState();
@@ -10,20 +12,39 @@ class AnimatedGradientBg extends StatefulWidget {
 
 class _AnimatedGradientBgState extends State<AnimatedGradientBg>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  AnimationController? _controller;
+
+  static const _staticGradient = LinearGradient(
+    colors: [
+      Color(0xFF1E1440),
+      Color(0xFF281C59),
+      Color(0xFF1E1440),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: const [0.0, 0.5, 1.0],
+  );
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat(reverse: true);
+    if (widget.animate) {
+      _controller = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 4),
+      );
+      _controller!.addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          _controller!.stop();
+        }
+      });
+      _controller!.forward();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -31,33 +52,35 @@ class _AnimatedGradientBgState extends State<AnimatedGradientBg>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Background layer with its own RepaintBoundary
         RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: const [
-                      Color(0xFF1E1440), // Deep Purple (Brand)
-                      Color(0xFF281C59), // Mid depth
-                      Color(0xFF1E1440), // Back to Deep
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    stops: [
-                      0.0,
-                      0.2 + (_controller.value * 0.6),
-                      1.0,
-                    ],
-                  ),
+          child: _controller != null
+              ? AnimatedBuilder(
+                  animation: _controller!,
+                  builder: (context, _) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: const [
+                            Color(0xFF1E1440),
+                            Color(0xFF281C59),
+                            Color(0xFF1E1440),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          stops: [
+                            0.0,
+                            0.2 + (_controller!.value * 0.6),
+                            1.0,
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                )
+              : Container(
+                  decoration: const BoxDecoration(gradient: _staticGradient),
                 ),
-              );
-            },
-          ),
         ),
-        // Foreground layer with its own RepaintBoundary to isolate from bg animations
         RepaintBoundary(
           child: widget.child,
         ),

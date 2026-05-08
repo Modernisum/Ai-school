@@ -52,9 +52,9 @@ impl AnalyticsService {
         let mut conn = self.db.acquire_super_admin_connection().await?;
         
         // 1. School Metrics
-        let school_metrics = sqlx::query!(
+        let school_metrics = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 COUNT(*) as total_schools,
                 COUNT(*) FILTER (WHERE status = 'Active') as active_schools,
                 COUNT(*) FILTER (WHERE status = 'Trial') as trial_schools
@@ -66,9 +66,9 @@ impl AnalyticsService {
         
         // 2. Revenue (Last 30 days) - Based on deductions from schools
         // We take sum of absolute values of 'monthly_usage' transactions
-        let revenue_metrics = sqlx::query!(
+        let revenue_metrics = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 ABS(COALESCE(SUM(amount), 0)) as total_revenue
             FROM billing_ledger
             WHERE transaction_type = 'monthly_usage'
@@ -79,7 +79,7 @@ impl AnalyticsService {
         .await?;
         
         // 3. System Load (Simplified)
-        let system_load = sqlx::query!(
+        let system_load = sqlx::query(
             r#"
             SELECT
                 (SELECT COUNT(*) FROM students) as total_students,
@@ -91,16 +91,16 @@ impl AnalyticsService {
         
         Ok(json!({
             "schools": {
-                "total": school_metrics.total_schools,
-                "active": school_metrics.active_schools,
-                "trial": school_metrics.trial_schools
+                "total": school_metrics.try_get::<i64, _>("total_schools").unwrap_or(0),
+                "active": school_metrics.try_get::<i64, _>("active_schools").unwrap_or(0),
+                "trial": school_metrics.try_get::<i64, _>("trial_schools").unwrap_or(0)
             },
             "revenue": {
-                "thirty_days": revenue_metrics.total_revenue.unwrap_or_else(|| bigdecimal::BigDecimal::from(0)).to_string()
+                "thirty_days": revenue_metrics.try_get::<bigdecimal::BigDecimal, _>("total_revenue").unwrap_or_else(|_| bigdecimal::BigDecimal::from(0)).to_string()
             },
             "load": {
-                "students": system_load.total_students,
-                "employees": system_load.total_employees
+                "students": system_load.try_get::<i64, _>("total_students").unwrap_or(0),
+                "employees": system_load.try_get::<i64, _>("total_employees").unwrap_or(0)
             }
         }))
     }

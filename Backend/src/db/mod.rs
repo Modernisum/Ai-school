@@ -20,6 +20,16 @@ pub struct DbClient {
     pub redis: Pool,
 }
 
+/// Shared utility: get all active school IDs
+pub async fn get_active_school_ids(pool: &PgPool) -> Result<Vec<String>, sqlx::Error> {
+    let rows = sqlx::query_as::<_, (String,)>(
+        "SELECT school_id FROM schools WHERE status = 'active'"
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows.into_iter().map(|r| r.0).collect())
+}
+
 impl DbClient {
     /// Optimized helper to acquire a connection based on context
     pub async fn acquire_rls_connection(
@@ -80,6 +90,7 @@ impl DbClient {
         // Initialize database schema
         let schema_setup = SchemaSetup::new(pool.clone());
         schema_setup.initialize_all().await?;
+        schema_setup.initialize_indexes().await?;
 
         Ok(DbClient { pool, redis })
     }

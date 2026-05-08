@@ -14,10 +14,10 @@ impl SchemaSetup {
     /// Initialize all database tables and sequences
     pub async fn initialize_all(&self) -> Result<(), Box<dyn Error>> {
         self.initialize_sequences().await?;
-        self.initialize_schools_table().await?;
         self.initialize_auth_tables().await?;
         self.initialize_billing_tables().await?;
         self.initialize_promo_tables().await?;
+        self.initialize_schools_table().await?;
         self.initialize_super_admin_tables().await?;
         self.initialize_geo_tables().await?;
         self.initialize_audit_tables().await?;
@@ -31,6 +31,7 @@ impl SchemaSetup {
         self.initialize_timetable_tables().await?;
         self.initialize_files_table().await?;
         self.initialize_profile_image_support().await?;
+        self.initialize_global_notifications_tables().await?;
         Ok(())
     }
 
@@ -221,6 +222,21 @@ impl SchemaSetup {
         .execute(&self.pool)
         .await?;
 
+        println!("Ensuring support_requests table exists...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS support_requests (
+                id SERIAL PRIMARY KEY,
+                school_name VARCHAR(255) NOT NULL,
+                contact_info TEXT,
+                message TEXT NOT NULL,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                resolved_at TIMESTAMPTZ
+            )",
+        )
+        .execute(&self.pool)
+        .await?;
+
         // Seed GEMINI_API_KEY if not already present
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             sqlx::query("INSERT INTO system_config (config_key, config_value) VALUES ('GEMINI_API_KEY', $1) ON CONFLICT DO NOTHING")
@@ -230,7 +246,10 @@ impl SchemaSetup {
         }
 
         // Seed default super admin if table is empty
-        let initial_hash = bcrypt::hash("admin@123", 10).unwrap_or_else(|_| "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/lfkj7.wU3Kz9s1PFe".to_string());
+        let default_password = std::env::var("DEFAULT_SUPERADMIN_PASSWORD")
+            .unwrap_or_else(|_| "admin@123".to_string());
+        let initial_hash = bcrypt::hash(&default_password, 10)
+            .unwrap_or_else(|_| "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/lfkj7.wU3Kz9s1PFe".to_string());
         sqlx::query(
             "INSERT INTO super_admin (username, password_hash)
              VALUES ('superadmin', $1)
@@ -417,7 +436,7 @@ impl SchemaSetup {
         
         // Ensure id has a default if it was created as null-violating VARCHAR
         sqlx::query("CREATE SEQUENCE IF NOT EXISTS spaces_id_seq").execute(&self.pool).await?;
-        sqlx::query("ALTER TABLE spaces ALTER COLUMN id SET DEFAULT nextval('spaces_id_seq')::text").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE spaces ALTER COLUMN id SET DEFAULT nextval('spaces_id_seq')").execute(&self.pool).await?;
 
         // Ensure space_id is unique if added late
         sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_spaces_space_id_unique ON spaces (space_id)")
@@ -470,7 +489,7 @@ impl SchemaSetup {
         ).execute(&self.pool).await?;
 
         sqlx::query("CREATE SEQUENCE IF NOT EXISTS items_id_seq").execute(&self.pool).await?;
-        sqlx::query("ALTER TABLE items ALTER COLUMN id SET DEFAULT nextval('items_id_seq')::text").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE items ALTER COLUMN id SET DEFAULT nextval('items_id_seq')").execute(&self.pool).await?;
         
         // Ensure index matches repository conflict target exactly
         sqlx::query("DROP INDEX IF EXISTS idx_items_school_space_item_unique").execute(&self.pool).await?;
@@ -665,7 +684,15 @@ impl SchemaSetup {
              ADD COLUMN IF NOT EXISTS monthly_price DECIMAL(12, 2) DEFAULT 0.00,
              ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}',
              ADD COLUMN IF NOT EXISTS per_day_price DECIMAL(12, 2) DEFAULT 0.00,
-             ADD COLUMN IF NOT EXISTS time_period INTEGER DEFAULT 0"
+             ADD COLUMN IF NOT EXISTS time_period INTEGER DEFAULT 0,
+             ADD COLUMN IF NOT EXISTS student_fee DECIMAL(12, 2) DEFAULT 0.00,
+             ADD COLUMN IF NOT EXISTS space_category VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS work_level VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS work_period VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS work_amount DECIMAL(12, 2) DEFAULT 0.00,
+             ADD COLUMN IF NOT EXISTS created_by VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()"
         ).execute(&self.pool).await?;
 
         println!("Expanding employee_responsibilities table with space_ids support...");
@@ -1022,6 +1049,11 @@ impl SchemaSetup {
             .execute(&self.pool)
             .await?;
 
+        // Ensure employees table has a status column for indexing
+        sqlx::query("ALTER TABLE employees ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'active'")
+            .execute(&self.pool)
+            .await?;
+
         println!("Updating schools and super_admin tables with image support...");
         sqlx::query("ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_logo_url TEXT")
             .execute(&self.pool)
@@ -1030,6 +1062,81 @@ impl SchemaSetup {
             .execute(&self.pool)
             .await?;
 
+        Ok(())
+    }
+
+    async fn initialize_global_notifications_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Creating global_notifications table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS global_notifications (
+                id SERIAL PRIMARY KEY,
+                notification JSONB NOT NULL,
+                active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )",
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_global_notifications_active ON global_notifications(active) WHERE active = TRUE",
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Initialize performance-critical indexes for multi-tenant queries
+    pub async fn initialize_indexes(&self) -> Result<(), Box<dyn Error>> {
+        println!("Ensuring performance indexes exist...");
+
+        // Multi-tenant composite indexes (school_id + common filter)
+        let indexes = [
+            // Students
+            "CREATE INDEX IF NOT EXISTS idx_students_school_status ON students(school_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_students_school_class ON students(school_id, class_name)",
+            "CREATE INDEX IF NOT EXISTS idx_students_active ON students(school_id, class_name) WHERE status = 'active'",
+            // Employees
+            "CREATE INDEX IF NOT EXISTS idx_employees_school_type ON employees(school_id, employee_type)",
+            "CREATE INDEX IF NOT EXISTS idx_employees_school_status ON employees(school_id, status)",
+            // Fees
+            "CREATE INDEX IF NOT EXISTS idx_fees_school_status ON fees(school_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_fees_school_due ON fees(school_id, due_date)",
+            "CREATE INDEX IF NOT EXISTS idx_fees_pending ON fees(school_id, due_date) WHERE status = 'pending'",
+            // Attendance
+            "CREATE INDEX IF NOT EXISTS idx_attendance_school_date ON attendance(school_id, date)",
+            "CREATE INDEX IF NOT EXISTS idx_attendance_school_user ON attendance(school_id, user_id)",
+            // Leaves
+            "CREATE INDEX IF NOT EXISTS idx_leaves_school_status ON leaves(school_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_leaves_pending ON leaves(school_id, created_at) WHERE status = 'pending'",
+            "CREATE INDEX IF NOT EXISTS idx_leaves_school_user ON leaves(school_id, user_id)",
+            // Tasks
+            "CREATE INDEX IF NOT EXISTS idx_tasks_school_assignee ON tasks(school_id, assigned_to)",
+            "CREATE INDEX IF NOT EXISTS idx_tasks_school_status ON tasks(school_id, status)",
+            // Global users
+            "CREATE INDEX IF NOT EXISTS idx_global_users_school_type ON global_users(school_id, user_type)",
+            "CREATE INDEX IF NOT EXISTS idx_global_users_phone ON global_users(phone)",
+            // Responsibilities
+            "CREATE INDEX IF NOT EXISTS idx_responsibilities_school_status ON responsibilities(school_id, status)",
+            // Audit logs
+            "CREATE INDEX IF NOT EXISTS idx_audit_logs_school_entity ON audit_logs(school_id, entity_type)",
+            "CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC)",
+            // AI
+            "CREATE INDEX IF NOT EXISTS idx_ai_chat_history_school ON ai_chat_history(school_id, created_at DESC)",
+            // Billing
+            "CREATE INDEX IF NOT EXISTS idx_billing_ledger_school ON billing_ledger(school_id, created_at DESC)",
+            // Webhooks
+            "CREATE INDEX IF NOT EXISTS idx_webhook_endpoints_school ON webhook_endpoints(school_id)",
+        ];
+
+        for idx_sql in &indexes {
+            if let Err(e) = sqlx::query(idx_sql).execute(&self.pool).await {
+                eprintln!("Warning: Could not create index (table/column may not exist yet): {e}");
+            }
+        }
+
+        println!("Performance indexes verified.");
         Ok(())
     }
 }

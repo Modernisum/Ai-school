@@ -73,11 +73,11 @@ const FeesListBox = memo(({ feesList, onPaymentClick }) => {
                                 <tr key={student.studentId} className="group hover:bg-white/[0.02] transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center border border-violet-500/10">
-                                                <User size={16} className="text-violet-400" />
+                                            <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/10">
+                                                <User size={16} className="text-blue-400" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{student.name}</p>
+                                                <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight">{student.name}</p>
                                                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">{student.studentId} • {student.class}</p>
                                             </div>
                                         </div>
@@ -115,14 +115,14 @@ const FeesListBox = memo(({ feesList, onPaymentClick }) => {
                                                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all
                                                     ${student.pending === 0 
                                                         ? 'bg-emerald-500/10 text-emerald-500 opacity-50 cursor-not-allowed' 
-                                                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 ml-auto'}`}
+                                                        : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2 ml-auto'}`}
                                             >
                                                 <DollarSign size={14} /> {student.pending === 0 ? 'Settled' : 'Collect'}
                                             </button>
                                             {student.pending > 0 && (
                                                 <button 
                                                     onClick={() => handleAIReminder(student)}
-                                                    className="flex items-center gap-1.5 text-[9px] font-black text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest ml-auto"
+                                                    className="flex items-center gap-1.5 text-[9px] font-black text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest ml-auto"
                                                 >
                                                     <Zap size={12} className="animate-pulse" /> Send AI Reminder
                                                 </button>
@@ -231,12 +231,12 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                className="relative w-full max-w-xl glass-card p-0 overflow-hidden shadow-2xl shadow-indigo-500/10 border-indigo-500/20">
+                className="relative w-full max-w-xl glass-card p-0 overflow-hidden shadow-2xl shadow-blue-500/10 border-blue-500/20">
                 
                 {/* Modal Header */}
                 <div className="p-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
                             <CreditCard size={24} className="text-white" />
                         </div>
                         <div>
@@ -252,13 +252,13 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                 {/* Main Content */}
                 <div className="p-8 space-y-8">
                     {/* Student Snapshot */}
-                    <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                    <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
                         <div>
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Student</p>
+                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Student</p>
                             <p className="text-sm font-bold text-white uppercase">{student.name}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Due Amount + Penalty</p>
+                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Due Amount + Penalty</p>
                             <p className="text-base font-black text-rose-400">₹{student.pending?.toLocaleString()} <span className="text-xs text-rose-500 font-bold">+ ₹{penalty.toLocaleString()}</span></p>
                             <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">Total: ₹{(student.pending + penalty).toLocaleString()}</p>
                         </div>
@@ -272,14 +272,14 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                                 <div className="flex gap-1">
                                     {quickAmounts.map(q => (
                                         <button key={q.label} type="button" onClick={() => setPaymentData(d => ({ ...d, amount: Math.round((student.pending + penalty) * q.value) }))}
-                                            className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all uppercase">
+                                            className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-all uppercase">
                                             {q.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                             <input type="number" value={paymentData.amount} onChange={e => setPaymentData(d => ({ ...d, amount: Number(e.target.value) }))}
-                                className="w-full text-2xl font-black bg-white/[0.04] border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-800"
+                                className="w-full text-2xl font-black bg-white/[0.04] border border-white/10 rounded-2xl p-4 text-white focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-800"
                                 placeholder="0.00" />
                         </div>
 
@@ -288,7 +288,7 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                              <div>
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Method</label>
                                 <select value={paymentData.paymentMethod} onChange={e => setPaymentData(d => ({ ...d, paymentMethod: e.target.value }))}
-                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-indigo-500/50 outline-none uppercase tracking-widest appearance-none cursor-pointer">
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-blue-500/50 outline-none uppercase tracking-widest appearance-none cursor-pointer">
                                     <option className="bg-slate-900" value="Cash">Cash</option>
                                     <option className="bg-slate-900" value="UPI">UPI / Digital</option>
                                     <option className="bg-slate-900" value="Card">Bank Card</option>
@@ -299,7 +299,7 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                              <div>
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Value Date</label>
                                 <input type="date" value={paymentData.paymentDate} onChange={e => setPaymentData(d => ({ ...d, paymentDate: e.target.value }))}
-                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-indigo-500/50 outline-none uppercase tracking-widest" />
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3 text-xs font-bold text-white focus:border-blue-500/50 outline-none uppercase tracking-widest" />
                              </div>
                         </div>
 
@@ -309,23 +309,23 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                             <div className="relative">
                                 <MessageSquare size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
                                 <input type="text" value={paymentData.transactionId} onChange={e => setPaymentData(d => ({ ...d, transactionId: e.target.value }))}
-                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs font-bold text-white focus:border-indigo-500/50 outline-none" placeholder="REF-XXXX..." />
+                                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-xs font-bold text-white focus:border-blue-500/50 outline-none" placeholder="REF-XXXX..." />
                             </div>
                         </div>
                     </form>
                 </div>
 
                 {/* Action Footer */}
-                <div className="p-6 bg-indigo-600/5 border-t border-white/10 flex flex-col gap-3">
+                <div className="p-6 bg-blue-600/5 border-t border-white/10 flex flex-col gap-3">
                     <div className="flex gap-4">
                         <button onClick={onClose} className="flex-1 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-all bg-white/[0.03] rounded-2xl border border-white/5">
                             Discard
                         </button>
                         <button onClick={handleSumbit} disabled={paymentData.amount <= 0 || paymentData.amount > student.pending || isProcessing}
-                            className={`flex-[2] py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98]
+                            className={`flex-[2] py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98]
                                 ${paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing
-                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed' 
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}>
+                                    ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                                    : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
                             {isProcessing ? 'Processing...' : 'Commit & Receipt'}
                         </button>
                     </div>
@@ -334,7 +334,7 @@ const StudentPaymentModal = memo(({ student, onClose, onSubmit, calculatePenalty
                     <button 
                         onClick={handleOnlinePayment}
                         disabled={paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing}
-                        className={`w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center gap-3 group relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-blue-600/20
+                        className={`w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 text-white flex items-center justify-center gap-3 group relative overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-blue-600/20
                             ${paymentData.amount <= 0 || paymentData.amount > (student.pending + penalty) || isProcessing ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}>
                         <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                         {isProcessing ? <Loader size={18} className="animate-spin" /> : <Zap size={18} className="text-white animate-pulse" />}

@@ -2,7 +2,7 @@
   {
     "created_at": "2026-03-06T13:02:04.402611+00:00",
     "id": 1,
-    "password_hash": "$2b$10$JLANRqs7DM9FhyS6nWuQRu0NEAdGJKNOhcANZ1AKEivOdZHXTIUEm",
+    "password_hash": "$2b$10$e0H48Uez.ujsnQYqDqnC7OeO0xOFjsP3bhOw4wKKMUp/kCNfu4POe",
     "profile_image_url": null,
     "username": "superadmin"
   }

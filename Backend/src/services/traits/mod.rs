@@ -31,7 +31,7 @@ pub use student::StudentService;
 pub use employee::EmployeeService;
 pub use auth::AuthService;
 pub use academic::AcademicService;
-pub use resource::{OCRService, AiService, AiConfigService, EmbeddingService, ResourceService};
+pub use resource::{AiService, AiConfigService, EmbeddingService, ResourceService};
 pub use attendance::AttendanceService;
 pub use attendance_analytics::AttendanceAnalyticsService;
 pub use leave::LeaveService;

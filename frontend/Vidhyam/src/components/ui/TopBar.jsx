@@ -1,284 +1,295 @@
-import React, { useState, useEffect } from "react";
-import { Bell, User, ChevronDown, Search, School } from "lucide-react";
+import {
+  Bell, School, ChevronDown,
+  LayoutDashboard, Truck, Star, MoreHorizontal,
+  Briefcase, Utensils, Plane, Zap, Wrench, Film,
+  AlertCircle, Megaphone,
+  UserCheck, Box, Layers, ClipboardList,
+  Users, UserPlus, Clock, CreditCard,
+  IndianRupee, CalendarCheck,
+  FileText, CalendarDays, History,
+  Settings, LogOut, User
+} from "lucide-react";
+import { SimpleThemeToggle } from "./ThemeToggle";
+import { MobileNav } from "./MobileNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation, NavLink, Link } from "react-router-dom";
+import GlobalSearchSelect from "./GlobalSearchSelect";
 
 export default function TopBar() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [schoolName, setSchoolName] = useState("School Name");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [schoolName, setSchoolName] = useState("School");
 
-  // Derive page title from location
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path.includes('/dashboard/home')) return 'Home';
-    if (path.includes('/dashboard/student')) return 'Students';
-    if (path.includes('/dashboard/employee')) return 'Employees';
-    if (path.includes('/dashboard/finance')) return 'Finance';
-    if (path.includes('/dashboard/academic')) return 'Academic';
-    if (path.includes('/dashboard/exam')) return 'Exams';
-    if (path.includes('/dashboard/events')) return 'Events';
-    if (path.includes('/dashboard/attendance')) return 'Attendance';
-    if (path.includes('/dashboard/timetable')) return 'Timetable';
-    if (path.includes('/dashboard/academic/materials')) return 'Academic Materials';
-    if (path.includes('/dashboard/announcements')) return 'Announcements';
-    if (path.includes('/dashboard/settings')) return 'Settings';
-    if (path.includes('/dashboard/infra')) return 'Infrastructure';
-    if (path.includes('/dashboard/ai-studio')) return 'AI Studio';
-    return 'Dashboard';
-  };
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "New Announcement", message: "Annual Sports Day is scheduled for next week", time: "2 hours ago", read: false },
-    { id: 2, title: "Fee Reminder", message: "Last date for fee submission is approaching", time: "1 day ago", read: false },
-    { id: 3, title: "Holiday Notice", message: "School will remain closed on Monday", time: "2 days ago", read: true },
-    { id: 4, title: "Exam Schedule", message: "Final exam schedule has been published", time: "3 days ago", read: true },
-  ]);
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
-
-  // Load school name from localStorage
   useEffect(() => {
-    const schoolData = localStorage.getItem("schoolData");
-    if (schoolData) {
+    const data = localStorage.getItem("schoolData");
+    if (data) {
       try {
-        const parsed = JSON.parse(schoolData);
-        if (parsed.name) {
-          setSchoolName(parsed.name);
-        }
-      } catch (e) {
-        console.error("Error parsing school data:", e);
-      }
+        const p = JSON.parse(data);
+        if (p.name) setSchoolName(p.name);
+      } catch { /* ignore */ }
     }
   }, []);
 
+  const getModuleTabs = () => {
+    const path = location.pathname;
+    if (path.startsWith('/dashboard/notifications')) {
+      return [
+        { label: 'Announcements', path: '/dashboard/notifications/announcements', icon: Megaphone },
+        { label: 'Attendance', path: '/dashboard/notifications/attendance', icon: UserCheck },
+        { label: 'Complaints', path: '/dashboard/notifications/complains', icon: AlertCircle },
+      ];
+    }
+    if (path.includes('/dashboard/infra')) {
+      return [
+        { label: "Manifest", path: "/dashboard/infra/manifest", icon: Box },
+        { label: "Materials", path: "/dashboard/infra/materials", icon: Layers },
+        { label: "Protocols", path: "/dashboard/infra/protocols", icon: ClipboardList },
+      ];
+    }
+    if (path.includes('/dashboard/student')) {
+      return [
+        { label: "All Students", path: "/dashboard/student/all", icon: Users },
+        { label: "Admission", path: "/dashboard/student/add", icon: UserPlus },
+        { label: "Leave", path: "/dashboard/student/leave", icon: Clock },
+        { label: "Attendance", path: "/dashboard/student/attendance", icon: Clock },
+        { label: "Fees", path: "/dashboard/student/fees", icon: CreditCard },
+      ];
+    }
+    if (path.includes('/dashboard/employee')) {
+      return [
+        { label: "All", path: "/dashboard/employee/all", icon: UserCheck },
+        { label: "Salary", path: "/dashboard/employee/salary", icon: IndianRupee },
+        { label: "Payroll", path: "/dashboard/employee/payroll", icon: CreditCard },
+        { label: "Leave", path: "/dashboard/employee/leave", icon: CalendarCheck },
+      ];
+    }
+    if (path.includes('/dashboard/academic')) {
+      return [
+        { label: "Exams", path: "/dashboard/academic/exam", icon: FileText },
+        { label: "Events", path: "/dashboard/academic/events", icon: CalendarCheck },
+        { label: "Attendance", path: "/dashboard/academic/attendance", icon: CalendarDays },
+        { label: "Timetable", path: "/dashboard/academic/timetable", icon: History },
+      ];
+    }
+    if (path.includes('/dashboard/finance')) {
+      if (path.includes('/finance/expense')) {
+        return [
+          { label: 'Overview', path: '/dashboard/finance/expense/overview', icon: LayoutDashboard },
+          { label: 'Salary', path: '/dashboard/finance/expense/salary', icon: Briefcase },
+          { label: 'Infra', path: '/dashboard/finance/expense/infra', icon: Box },
+          { label: 'Food', path: '/dashboard/finance/expense/food', icon: Utensils },
+          { label: 'Travel', path: '/dashboard/finance/expense/travel', icon: Plane },
+          { label: 'Utilities', path: '/dashboard/finance/expense/utilities', icon: Zap },
+          { label: 'Maintenance', path: '/dashboard/finance/expense/maintenance', icon: Wrench },
+          { label: 'Entertainment', path: '/dashboard/finance/expense/entertainment', icon: Film },
+          { label: 'Transport', path: '/dashboard/finance/expense/transport', icon: Truck },
+          { label: 'Events', path: '/dashboard/finance/expense/events', icon: Star },
+        ];
+      }
+      return [
+        { label: 'Overview', path: '/dashboard/finance/income/overview', icon: LayoutDashboard },
+        { label: 'Fees', path: '/dashboard/finance/income/fees', icon: CreditCard },
+        { label: 'Admission', path: '/dashboard/finance/income/admission', icon: UserPlus },
+        { label: 'Transport', path: '/dashboard/finance/income/transport', icon: Truck },
+        { label: 'Events', path: '/dashboard/finance/income/events', icon: Star },
+        { label: 'Other', path: '/dashboard/finance/income/other', icon: MoreHorizontal },
+      ];
+    }
+    return [];
+  };
+
+  const tabs = getModuleTabs();
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path.startsWith('/dashboard/notifications')) return 'Notifications';
+    if (path.startsWith('/dashboard/home')) return 'Dashboard';
+    if (path.startsWith('/dashboard/student')) return 'Students';
+    if (path.startsWith('/dashboard/employee')) return 'Employees';
+    if (path.startsWith('/dashboard/finance')) return 'Finance';
+    if (path.startsWith('/dashboard/academic')) return 'Academic';
+    if (path.startsWith('/dashboard/infra')) return 'Infrastructure';
+    if (path.startsWith('/dashboard/ai-studio')) return 'AI Studio';
+    if (path.startsWith('/dashboard/settings')) return 'Settings';
+    return 'Dashboard';
+  };
+
   return (
-    <div className="sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl">
-      <div className="flex items-center justify-between px-6 py-3">
-        {/* Left side - Search */}
-        <div className="flex-1 flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} style={{ fontSize: 'calc(18px * var(--scale-factor, 1))' }} />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 w-48 sm:w-64 transition-all"
-              style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-            />
-          </div>
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.04] bg-[rgba(3,7,18,0.85)] backdrop-blur-xl">
+      <div className="flex items-center justify-between h-12 px-4">
+        {/* Left */}
+        <div className="flex items-center gap-3 flex-1">
+          <MobileNav />
         </div>
 
-        {/* Center - Page Title */}
-        <div className="hidden md:flex flex-1 items-center justify-center">
+        {/* Center — page title or module tabs */}
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center">
           <AnimatePresence mode="wait">
-            <motion.h1
-              key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="text-base font-bold text-white tracking-widest uppercase italic"
-              style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-            >
-              {getPageTitle()}
-            </motion.h1>
+            {tabs.length > 0 ? (
+              <motion.div
+                key="tabs"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="flex items-center gap-0.5 p-0.5 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+              >
+                {tabs.map((tab) => (
+                  <NavLink
+                    key={tab.path}
+                    to={tab.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide transition-all duration-200 ${
+                        isActive
+                          ? 'bg-[var(--primary-color)] text-white shadow-md shadow-primary/20'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`
+                    }
+                  >
+                    {tab.icon && <tab.icon size={13} />}
+                    <span className="hidden xl:inline">{tab.label}</span>
+                  </NavLink>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.h1
+                key="title"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="text-sm font-bold text-white tracking-wide"
+              >
+                {getPageTitle()}
+              </motion.h1>
+            )}
           </AnimatePresence>
         </div>
 
-        {/* Right side - Notifications and Profile */}
-        <div className="flex-1 flex items-center justify-end gap-4">
+        {/* Right — actions */}
+        <div className="flex items-center justify-end gap-1 flex-1">
+          <SimpleThemeToggle />
+
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
-              onClick={() => {
-                setNotificationsOpen(!notificationsOpen);
-                setProfileOpen(false);
-              }}
-              className="relative p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+              aria-label="Notifications"
             >
-              <Bell size={20} className="text-slate-300 group-hover:text-white transition-colors" style={{ fontSize: 'calc(20px * var(--scale-factor, 1))' }} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
+              <Bell size={18} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--accent-color)] ring-2 ring-[#030712]" />
             </button>
 
-            {/* Notifications Dropdown */}
             <AnimatePresence>
               {notificationsOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-2 w-96 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                >
-                  <div className="p-4 border-b border-white/10">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-white" style={{ fontSize: 'calc(16px * var(--scale-factor, 1))' }}>
-                        Notifications
-                      </h3>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllAsRead}
-                          className="text-xs text-primary hover:text-primary/80 transition-colors"
-                          style={{ fontSize: 'calc(12px * var(--scale-factor, 1))' }}
-                        >
-                          Mark all as read
-                        </button>
-                      )}
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-40"
+                    onClick={() => setNotificationsOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
+                    <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                      <h3 className="font-semibold text-white text-sm">Notifications</h3>
+                      <button className="text-xs text-[var(--primary-color)] hover:underline">Mark all read</button>
                     </div>
-                  </div>
-
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-primary' : 'bg-slate-600'}`} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <h4 className="font-semibold text-white" style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}>
-                                  {notification.title}
-                                </h4>
-                                <span className="text-xs text-slate-500" style={{ fontSize: 'calc(11px * var(--scale-factor, 1))' }}>
-                                  {notification.time}
-                                </span>
-                              </div>
-                              <p className="text-slate-400 text-sm" style={{ fontSize: 'calc(13px * var(--scale-factor, 1))' }}>
-                                {notification.message}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-8 text-center">
-                        <Bell className="mx-auto text-slate-600 mb-3" size={32} style={{ fontSize: 'calc(32px * var(--scale-factor, 1))' }} />
-                        <p className="text-slate-500" style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}>
-                          No notifications yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4 border-t border-white/10">
-                    <button
-                      onClick={() => window.location.href = '/dashboard/announcements'}
-                      className="w-full py-2.5 text-center text-primary hover:text-primary/80 transition-colors font-medium"
-                      style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-                    >
-                      View all announcements
-                    </button>
-                  </div>
-                </motion.div>
+                    <div className="max-h-72 overflow-y-auto p-2 space-y-1">
+                      <div className="p-8 text-center text-slate-600 text-sm">No new notifications</div>
+                    </div>
+                    <div className="p-3 border-t border-white/5">
+                      <button
+                        onClick={() => { navigate('/dashboard/notifications/announcements'); setNotificationsOpen(false); }}
+                        className="w-full py-2 text-center text-sm text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                      >
+                        View all notifications
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>
 
-          {/* School Profile */}
-          <div className="relative">
+          {/* Profile */}
+          <div className="relative" ref={profileRef}>
             <button
-              onClick={() => {
-                setProfileOpen(!profileOpen);
-                setNotificationsOpen(false);
-              }}
-              className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
-                <School size={16} className="text-white" style={{ fontSize: 'calc(16px * var(--scale-factor, 1))' }} />
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+                <School size={14} className="text-white" />
               </div>
-              <div className="text-left">
-                <div className="font-semibold text-white whitespace-nowrap" style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}>
-                  {schoolName}
-                </div>
-                <div className="text-xs text-slate-500" style={{ fontSize: 'calc(11px * var(--scale-factor, 1))' }}>
-                  School Profile
-                </div>
-              </div>
-              <ChevronDown size={16} className={`text-slate-500 transition-transform ${profileOpen ? 'rotate-180' : ''}`} style={{ fontSize: 'calc(16px * var(--scale-factor, 1))' }} />
+              <ChevronDown size={12} className={`text-slate-500 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Profile Dropdown */}
             <AnimatePresence>
               {profileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-2 w-64 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                >
-                  <div className="p-4 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
-                        <School size={18} className="text-white" style={{ fontSize: 'calc(18px * var(--scale-factor, 1))' }} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-white" style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}>
-                          {schoolName}
-                        </div>
-                        <div className="text-xs text-slate-500" style={{ fontSize: 'calc(11px * var(--scale-factor, 1))' }}>
-                          Administrator
-                        </div>
-                      </div>
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    className="absolute right-0 top-full mt-2 w-56 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
+                    <div className="p-3 border-b border-white/5">
+                      <p className="font-semibold text-white text-sm">{schoolName}</p>
+                      <p className="text-xs text-slate-500">Administrator</p>
                     </div>
-                  </div>
-
-                  <div className="py-2">
-                    <a
-                      href="/dashboard/school-profile"
-                      className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-                      style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-                    >
-                      <User size={16} style={{ fontSize: 'calc(16px * var(--scale-factor, 1))' }} />
-                      School Profile
-                    </a>
-                    <a
-                      href="/dashboard/settings"
-                      className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-                      style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-                    >
-                      <School size={16} style={{ fontSize: 'calc(16px * var(--scale-factor, 1))' }} />
-                      Settings
-                    </a>
-                  </div>
-
-                  <div className="p-4 border-t border-white/10">
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem("accessToken");
-                        localStorage.removeItem("schoolId");
-                        localStorage.removeItem("schoolData");
-                        window.location.href = "/";
-                      }}
-                      className="w-full py-2.5 px-4 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl transition-colors font-medium"
-                      style={{ fontSize: 'calc(14px * var(--scale-factor, 1))' }}
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </motion.div>
+                    <div className="py-1">
+                      <Link
+                        to="/dashboard/school-profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <User size={15} /> School Profile
+                      </Link>
+                      <Link
+                        to="/dashboard/settings"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <Settings size={15} /> Settings
+                      </Link>
+                    </div>
+                    <div className="p-2 border-t border-white/5">
+                      <button
+                        onClick={() => { localStorage.clear(); navigate("/"); }}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <LogOut size={15} /> Sign Out
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
+          </div>
+
+          <div className="relative">
+            <GlobalSearchSelect onExpandChange={setIsSearchExpanded} />
           </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
