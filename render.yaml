@@ -4,8 +4,7 @@ services:
     env: rust
     rootDir: Backend
     buildCommand: cargo build --release
-    startCommand: ./target/release/backend # या cargo run --release --bin backend
+    startCommand: cargo run --release --bin backend
     envVars:
       - key: PORT
-        value: 8080
-      # अगर आपका डेटाबेस URL या कोई और सीक्रेट है, तो आप उसे Render के डैशबोर्ड में ऐड कर सकते हैं।
+        value: "8080"
