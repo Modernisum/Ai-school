@@ -18,29 +18,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: '20'
 
-      - name: Install AI CLI (Aider)
+      - name: Install Kilo Code CLI
         run: |
-          echo "Installing Aider (Open-Source AI Pair Programmer)..."
-          python -m pip install aider-chat
+          echo "Installing Kilo Code CLI..."
+          npm install -g @kilocode/cli
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "AI Developer"
-          git config --global user.email "ai@ai-school.com"
-
-      - name: Run AI Coder
+      - name: Run Kilo Code
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          echo "Starting AI Developer for Issue: $ISSUE_TITLE"
-          aider --model openrouter/inclusionai/ring-2.6-1t:free --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
+          echo "Starting Kilo Code for Issue: $ISSUE_TITLE"
+          kilo run "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY"
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
