@@ -3,6 +3,7 @@ services:
     name: ai-school-backend
     env: rust
     rootDir: Backend
+    plan: free
     buildCommand: cargo build --release
     startCommand: cargo run --release --bin backend
     envVars:
