@@ -17,16 +17,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.11'
 
-      - name: Install AI CLI
+      - name: Install AI CLI (Aider)
         run: |
-          echo "Installing your preferred AI CLI..."
-          # यहाँ Kilo Code CLI इंस्टॉल करने का कमांड है। अगर कमांड अलग है तो इसे बदल सकते हैं।
-          npm install -g kilo-code-cli 
+          echo "Installing Aider (Open-Source AI Pair Programmer)..."
+          python -m pip install aider-chat
 
       - name: Run AI Coder
         env:
@@ -35,8 +34,9 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           echo "Starting AI Developer for Issue: $ISSUE_TITLE"
-          # AI CLI को कमांड दें (अगर Kilo CLI का कमांड कुछ और है, तो इसे अपडेट कर लें)
-          kilo-code task "$ISSUE_TITLE. Details: $ISSUE_BODY" --api-key $OPENROUTER_API_KEY
+          # Aider को बिना मैन्युअल अप्रूवल के रन करने के लिए --yes फ्लैग लगाया है
+          aider --model openrouter/auto --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
+
         
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
