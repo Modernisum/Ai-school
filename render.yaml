@@ -9,3 +9,5 @@ services:
     envVars:
       - key: PORT
         value: "8080"
+      - key: CARGO_BUILD_JOBS
+        value: "2"
