@@ -1,4 +1,4 @@
-use crate::models::resource::{CreateSpaceRequest};
+use crate::models::resource::{CreateSpaceRequest, CreateSpaceCategoryRequest};
 use crate::AppState;
 
 use axum::{
@@ -38,6 +38,20 @@ pub async fn list_space_categories(
 ) -> AppResult<impl IntoResponse> {
     let list = state.services.resource.list_space_categories(&school_id).await?;
     Ok(Json(json!({"success": true, "categories": list})))
+}
+
+pub async fn create_space_category(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path(school_id): Path<String>,
+    Json(payload): Json<CreateSpaceCategoryRequest>,
+) -> AppResult<impl IntoResponse> {
+    let data = state
+        .services
+        .resource
+        .create_space_category(&school_id, &tenant_ctx.admin_id, &payload.name)
+        .await?;
+    Ok(Json(json!({"success": true, "category": data})))
 }
 
 pub async fn create_space_by_category(

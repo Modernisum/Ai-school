@@ -98,36 +98,37 @@ export default function AddStudentPage() {
 
   const STUDENT_SCHEMA = useMemo(() => [
     {
-      id: 'identity', label: 'IDENTITY_CORE', icon: User,
-      description: 'BIOMETRIC_AND_FAMILY_PARAMETERS',
+      id: 'identity', label: 'Identity & Core Information', icon: User,
+      description: 'Provide biometric and family details for student identification.',
       fields: [
-        { name: 'name', label: 'Full Name', type: 'text', required: true },
+        { name: 'name', label: 'Full Name of Student', type: 'text', required: true },
         { name: 'dob', label: 'Date of Birth', type: 'date', required: true },
         { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Other'], required: true },
         { name: 'bloodGroup', label: 'Blood Group', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
         { name: 'religion', label: 'Religion', type: 'select', options: ['Hindu', 'Muslim', 'Sikh', 'Christian', 'Other'] },
-        { name: 'category', label: 'Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST'], required: true },
-        { name: 'aadhaarNumber', label: 'Aadhaar ID', type: 'text' },
-        { name: 'fatherName', label: "Father's Name", type: 'text', required: true },
-        { name: 'fatherOccupation', label: "Father's Occupation", type: 'text' },
-        { name: 'motherName', label: "Mother's Name", type: 'text' },
-        { name: 'motherOccupation', label: "Mother's Occupation", type: 'text' },
-        { name: 'phone', label: 'Primary Contact', type: 'tel', required: true },
-        { name: 'email', label: 'Parent Email', type: 'email' },
-        { name: 'address', label: 'Residential Address', type: 'textarea', className: 'md:col-span-3' },
+        { name: 'category', label: 'Social Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST'], required: true },
+        { name: 'aadhaarNumber', label: 'Aadhaar Card Number', type: 'text' },
+        { name: 'fatherName', label: "Father's Full Name", type: 'text', required: true },
+        { name: 'fatherOccupation', label: "Father's Profession / Occupation", type: 'text' },
+        { name: 'motherName', label: "Mother's Full Name", type: 'text' },
+        { name: 'motherOccupation', label: "Mother's Profession / Occupation", type: 'text' },
+        { name: 'phone', label: 'Primary Mobile Number', type: 'tel', required: true },
+        { name: 'email', label: 'Parent Email Address', type: 'email' },
+        { name: 'address', label: 'Complete Residential Address', type: 'textarea', className: 'md:col-span-2' },
+        { name: 'image_url', label: 'Upload Student Photo', type: 'image', fieldName: 'profile_photo' },
       ]
     },
     {
-      id: 'enrollment', label: 'ENROLLMENT_INTEL', icon: GraduationCap,
-      description: 'ACADEMIC_CONFIGURATION_AND_FEE_PROTOCOL',
+      id: 'enrollment', label: 'Academic Enrollment & Fee Details', icon: GraduationCap,
+      description: 'Configure class, section, admission details and review fee structure.',
       fields: [
-        { name: 'class', label: 'Grade / Class', type: 'select', options: classOptions, required: true },
+        { name: 'class', label: 'Class / Grade', type: 'select', options: classOptions, required: true },
         { name: 'section', label: 'Section', type: 'select', options: ['A', 'B', 'C', 'D', 'E'] },
         { name: 'rollNumber', label: 'Roll Number', type: 'text' },
-        { name: 'admissionNumber', label: 'Admission No', type: 'text', required: true },
-        { name: 'admissionDate', label: 'Admission Date', type: 'date', required: true },
-        { name: 'studentType', label: 'Student Type', type: 'select', options: ['Regular', 'Private', 'Transfer'], required: true },
-        { name: 'prevSchool', label: 'Last School Attended', type: 'text', className: 'md:col-span-3' },
+        { name: 'admissionNumber', label: 'Admission Number', type: 'text', required: true },
+        { name: 'admissionDate', label: 'Date of Admission', type: 'date', required: true },
+        { name: 'studentType', label: 'Enrollment Type', type: 'select', options: ['Regular', 'Private', 'Transfer'], required: true },
+        { name: 'prevSchool', label: 'Previous School Attended', type: 'text', className: 'md:col-span-3' },
       ],
       customContent: (
         <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
@@ -136,7 +137,7 @@ export default function AddStudentPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle size={14} className="text-amber-400" />
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-400">Mandatory Charges (Auto-Applied)</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-400">Mandatory Fees (Automatically Applied)</h4>
               </div>
               <div className="border border-amber-500/10 rounded-xl bg-amber-500/[0.02] overflow-hidden">
                 {mandatoryResps.map(r => {
@@ -205,9 +206,9 @@ export default function AddStudentPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/5">
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Component</th>
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Monthly Rate</th>
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Discount</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Fee Component</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Monthly Amount (₹)</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Concession</th>
                     <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
                   </tr>
                 </thead>
@@ -226,25 +227,25 @@ export default function AddStudentPage() {
       )
     },
     {
-      id: 'logistics', label: 'LOGISTICS_AND_VAULT', icon: Truck,
-      description: 'SERVICE_PARAMETERS_AND_ENCRYPTED_DOCUMENTS',
+      id: 'logistics', label: 'Logistics & Service Details', icon: Truck,
+      description: 'Set up transport mode, route assignment and upload essential documents.',
       fields: [
         { name: 'transportMode', label: 'Transport Mode', type: 'select', options: ['None', 'Bus', 'Self', 'Van'] },
-        { name: 'busRoute', label: 'Assigned Route', type: 'text' },
-        { name: 'attachments', label: 'Documents (Aadhaar, TC, BirthCert)', type: 'file', multiple: true, className: 'md:col-span-3' },
+        { name: 'busRoute', label: 'Assigned Bus Route', type: 'text' },
+        { name: 'attachments', label: 'Upload Documents (Aadhaar, TC, Birth Certificate)', type: 'file', multiple: true, className: 'md:col-span-3' },
       ]
     }
   ], [classOptions, mandatoryResps, optionalResps, selectedOptionalResps, totalMandatoryFees, fetchingResps, spaceResponsibilities, watchedClass, watchedSection]);
 
   const STUDENT_LEAVE_SCHEMA = useMemo(() => [
     {
-      id: 'request', label: 'Leave Request', icon: Calendar,
+      id: 'request', label: 'Leave Authorization & Request', icon: Calendar,
       fields: [
-        { name: 'leaveType', label: 'Category', type: 'select', options: ['Casual', 'Medical', 'Emergency'], required: true },
-        { name: 'fromDate', label: 'Start Date', type: 'date', required: true },
-        { name: 'toDate', label: 'End Date', type: 'date', required: true },
-        { name: 'reason', label: 'Detailed Reason', type: 'textarea', required: true },
-        { name: 'attachments', label: 'Evidence / Medical Cert', type: 'file', multiple: true },
+        { name: 'leaveType', label: 'Type of Leave', type: 'select', options: ['Casual', 'Medical', 'Emergency'], required: true },
+        { name: 'fromDate', label: 'Vacancy Start Date', type: 'date', required: true },
+        { name: 'toDate', label: 'Resume Date', type: 'date', required: true },
+        { name: 'reason', label: 'Leave Notes / Purpose', type: 'textarea', required: true },
+        { name: 'attachments', label: 'Evidence / Medical Certificate', type: 'file', multiple: true },
       ]
     }
   ], []);
@@ -286,8 +287,8 @@ export default function AddStudentPage() {
       )}
 
       <FormWidget
-        title={mode === 'leave' ? "LEAVE_AUTHORIZATION" : "STUDENT_REGISTRY"}
-        description={mode === 'leave' ? "SUBMIT_ABSENCE_PROTOCOL" : "MAP_ACADEMIC_NODE_PARAMETERS"}
+        title={mode === 'leave' ? "Leave Authorization Request" : "Student Admission Registration"}
+        description={mode === 'leave' ? "Submit a formal leave request with supporting documentation" : "Register a new student with complete academic and personal information"}
         sections={activeSchema}
         activeSection={activeSection}
         onSectionChange={setActiveSection}

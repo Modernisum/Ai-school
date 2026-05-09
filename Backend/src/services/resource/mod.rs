@@ -141,6 +141,10 @@ impl ResourceService for PostgresResourceService {
         self.inventory.list_space_categories(school_id).await
     }
 
+    async fn create_space_category(&self, school_id: &str, admin_id: &str, name: &str) -> AppResult<Value> {
+        self.inventory.create_space_category(school_id, admin_id, name).await
+    }
+
     async fn update_space(
         &self,
         school_id: &str,

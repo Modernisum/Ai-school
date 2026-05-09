@@ -2,39 +2,39 @@
 
 ## Test: Get Timetable
 
-- **Endpoint**: `GET /api/academic/TEST001/timetable`
+- **Endpoint**: `GET /api/academic/689225/timetable`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/academic/TEST001/timetable \
+curl -s http://localhost:8080/api/academic/689225/timetable \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Get Timetable (filtered by class)
 
-- **Endpoint**: `GET /api/academic/TEST001/timetable?class_name=10-A`
+- **Endpoint**: `GET /api/academic/689225/timetable?class_name=10-A`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/academic/TEST001/timetable?class_name=10-A" \
+curl -s "http://localhost:8080/api/academic/689225/timetable?class_name=10-A" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Create Timetable Entry
 
-- **Endpoint**: `POST /api/academic/TEST001/timetable`
+- **Endpoint**: `POST /api/academic/689225/timetable`
 - **Expected**: 201
 
 ```bash
-curl -s -X POST http://localhost:8080/api/academic/TEST001/timetable \
+curl -s -X POST http://localhost:8080/api/academic/689225/timetable \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "class_name": "10-A",
@@ -50,11 +50,11 @@ curl -s -X POST http://localhost:8080/api/academic/TEST001/timetable \
 
 ## Test: Delete Timetable Entry
 
-- **Endpoint**: `DELETE /api/academic/TEST001/timetable/ENTRY_ID`
+- **Endpoint**: `DELETE /api/academic/689225/timetable/ENTRY_ID`
 - **Expected**: 200
 
 ```bash
-curl -s -X DELETE http://localhost:8080/api/academic/TEST001/timetable/1 \
+curl -s -X DELETE http://localhost:8080/api/academic/689225/timetable/1 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```

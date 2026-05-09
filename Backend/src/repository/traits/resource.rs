@@ -10,6 +10,9 @@ pub trait ResourceRepository: Send + Sync {
     async fn create_space(&self, school_id: &str, category: &str, name: String) -> Result<Value, AppError>;
     async fn get_spaces(&self, school_id: &str, category: Option<&str>) -> Result<Vec<Value>, AppError>;
     async fn get_space_categories(&self, school_id: &str) -> Result<Vec<String>, AppError>;
+    
+    // Space Categories management
+    async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError>;
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError>;
     async fn update_space(
         &self,

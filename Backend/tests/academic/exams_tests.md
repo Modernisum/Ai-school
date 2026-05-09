@@ -2,14 +2,14 @@
 
 ## Test: Generate Exam Paper
 
-- **Endpoint**: `POST /api/academic/TEST001/generate-paper`
+- **Endpoint**: `POST /api/academic/689225/generate-paper`
 - **Body**: exam generation params
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/academic/TEST001/generate-paper \
+curl -s -X POST http://localhost:8080/api/academic/689225/generate-paper \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Mathematics",
@@ -25,13 +25,13 @@ curl -s -X POST http://localhost:8080/api/academic/TEST001/generate-paper \
 
 ## Test: Approve Exam
 
-- **Endpoint**: `POST /api/academic/TEST001/exams`
+- **Endpoint**: `POST /api/academic/689225/exams`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/academic/TEST001/exams \
+curl -s -X POST http://localhost:8080/api/academic/689225/exams \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "exam_name": "Mid-Term Math",
@@ -46,24 +46,24 @@ curl -s -X POST http://localhost:8080/api/academic/TEST001/exams \
 
 ## Test: List Upcoming Exams
 
-- **Endpoint**: `GET /api/academic/TEST001/exams/upcoming`
+- **Endpoint**: `GET /api/academic/689225/exams/upcoming`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/academic/TEST001/exams/upcoming \
+curl -s http://localhost:8080/api/academic/689225/exams/upcoming \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Get Chapter Names
 
-- **Endpoint**: `GET /api/academic/TEST001/subjects/Mathematics/chapters`
+- **Endpoint**: `GET /api/academic/689225/subjects/Mathematics/chapters`
 - **Expected**: 200, chapter list
 
 ```bash
-curl -s http://localhost:8080/api/academic/TEST001/subjects/Mathematics/chapters \
+curl -s http://localhost:8080/api/academic/689225/subjects/Mathematics/chapters \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```

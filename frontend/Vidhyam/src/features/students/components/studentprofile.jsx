@@ -75,6 +75,7 @@ export default function StudentProfile() {
         { name: 'rollNumber', label: 'ID / Roll', type: 'text' },
         { name: 'class', label: 'Current Grade', type: 'text' },
         { name: 'session', label: 'Academic Session', type: 'text' },
+        { name: 'image_url', label: 'Student Photo', type: 'image' },
       ]
     },
     {

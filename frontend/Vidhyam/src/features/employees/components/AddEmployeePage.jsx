@@ -176,6 +176,7 @@ export default function AddEmployeePage() {
         { name: 'aadhaarNumber', label: 'Aadhaar ID', type: 'text', icon: ShieldCheck },
         { name: 'panNumber', label: 'PAN Card No', type: 'text', icon: ShieldCheck },
         { name: 'fatherName', label: "Father's Name", type: 'text' },
+        { name: 'image_url', label: 'Staff Photo', type: 'image', fieldName: 'profile_photo', className: 'md:col-span-1' },
       ]
     },
     {

@@ -94,6 +94,7 @@ export default function EmployeeProfile() {
         { name: 'aadhaarNumber', label: 'Aadhaar ID', type: 'text' },
         { name: 'fatherName', label: "Father's Name", type: 'text' },
         { name: 'motherName', label: "Mother's Name", type: 'text' },
+        { name: 'image_url', label: 'Staff Photo', type: 'image' },
       ]
     },
     {

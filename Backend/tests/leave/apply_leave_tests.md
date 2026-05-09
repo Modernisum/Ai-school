@@ -2,13 +2,13 @@
 
 ## Test: Apply for Leave
 
-- **Endpoint**: `POST /api/leave/TEST001`
+- **Endpoint**: `POST /api/leave/689225`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/leave/TEST001 \
+curl -s -X POST http://localhost:8080/api/leave/689225 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "EMP001",
@@ -24,43 +24,43 @@ curl -s -X POST http://localhost:8080/api/leave/TEST001 \
 
 ## Test: List Leave Applications
 
-- **Endpoint**: `GET /api/leave/TEST001`
+- **Endpoint**: `GET /api/leave/689225`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/leave/TEST001 \
+curl -s http://localhost:8080/api/leave/689225 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: List Leave Applications (filtered)
 
-- **Endpoint**: `GET /api/leave/TEST001`
+- **Endpoint**: `GET /api/leave/689225`
 - **Query**: `?filters=[{"field":"status","op":"eq","value":"pending"}]&sort=created_at:desc`
 - **Expected**: 200
 
 ```bash
 FILTERS='[{"field":"status","op":"eq","value":"pending"}]'
-curl -s -G "http://localhost:8080/api/leave/TEST001" \
+curl -s -G "http://localhost:8080/api/leave/689225" \
   --data-urlencode "filters=$FILTERS" \
   --data-urlencode "sort=created_at:desc" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Get Leave Balance
 
-- **Endpoint**: `GET /api/leave/TEST001/balance/EMP001`
+- **Endpoint**: `GET /api/leave/689225/balance/EMP001`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/leave/TEST001/balance/EMP001 \
+curl -s http://localhost:8080/api/leave/689225/balance/EMP001 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ```json

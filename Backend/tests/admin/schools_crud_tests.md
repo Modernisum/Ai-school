@@ -37,11 +37,11 @@ curl -s -G "http://localhost:8080/api/admin/schools" \
 
 ## Test: Get School Detail
 
-- **Endpoint**: `GET /api/admin/schools/TEST001`
+- **Endpoint**: `GET /api/admin/schools/689225`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/admin/schools/TEST001 \
+curl -s http://localhost:8080/api/admin/schools/689225 \
   -H "Authorization: Bearer $SA_TOKEN" | jq .
 ```
 
@@ -49,12 +49,12 @@ curl -s http://localhost:8080/api/admin/schools/TEST001 \
 
 ## Test: Update School Status
 
-- **Endpoint**: `PATCH /api/admin/schools/TEST001`
+- **Endpoint**: `PATCH /api/admin/schools/689225`
 - **Body**: `{ "status": "suspended" }`
 - **Expected**: 200
 
 ```bash
-curl -s -X PATCH http://localhost:8080/api/admin/schools/TEST001 \
+curl -s -X PATCH http://localhost:8080/api/admin/schools/689225 \
   -H "Authorization: Bearer $SA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status":"suspended"}' | jq .
@@ -64,11 +64,11 @@ curl -s -X PATCH http://localhost:8080/api/admin/schools/TEST001 \
 
 ## Test: Change School Password
 
-- **Endpoint**: `POST /api/admin/schools/TEST001/change-password`
+- **Endpoint**: `POST /api/admin/schools/689225/change-password`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/change-password \
+curl -s -X POST http://localhost:8080/api/admin/schools/689225/change-password \
   -H "Authorization: Bearer $SA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"new_password":"newSecurePass789"}' | jq .
@@ -78,12 +78,12 @@ curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/change-password 
 
 ## Test: Set Session Duration
 
-- **Endpoint**: `POST /api/admin/schools/TEST001/session-duration`
+- **Endpoint**: `POST /api/admin/schools/689225/session-duration`
 - **Body**: `{ "duration_hours": 8 }`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/session-duration \
+curl -s -X POST http://localhost:8080/api/admin/schools/689225/session-duration \
   -H "Authorization: Bearer $SA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"duration_hours":8}' | jq .
@@ -93,11 +93,11 @@ curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/session-duration
 
 ## Test: Expire All Sessions
 
-- **Endpoint**: `POST /api/admin/schools/TEST001/expire-sessions`
+- **Endpoint**: `POST /api/admin/schools/689225/expire-sessions`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/expire-sessions \
+curl -s -X POST http://localhost:8080/api/admin/schools/689225/expire-sessions \
   -H "Authorization: Bearer $SA_TOKEN" | jq .
 ```
 

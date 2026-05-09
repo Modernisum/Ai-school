@@ -117,6 +117,7 @@ pub trait ResourceService: Send + Sync {
     ) -> AppResult<Value>;
     async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>>;
     async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>>;
+    async fn create_space_category(&self, school_id: &str, admin_id: &str, name: &str) -> AppResult<Value>;
     async fn update_space(
         &self,
         school_id: &str,

@@ -2,13 +2,13 @@
 
 ## Test: AI Generate Exam Paper
 
-- **Endpoint**: `POST /api/ai/TEST001/exam/generate`
+- **Endpoint**: `POST /api/ai/689225/exam/generate`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/TEST001/exam/generate \
+curl -s -X POST http://localhost:8080/api/ai/689225/exam/generate \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Mathematics",
@@ -25,14 +25,14 @@ curl -s -X POST http://localhost:8080/api/ai/TEST001/exam/generate \
 
 ## Test: AI Generate Tasks
 
-- **Endpoint**: `POST /api/ai/TEST001/tasks/generate`
+- **Endpoint**: `POST /api/ai/689225/tasks/generate`
 - **Body**: `{ "employee_id": "EMP001" }`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/TEST001/tasks/generate \
+curl -s -X POST http://localhost:8080/api/ai/689225/tasks/generate \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"employee_id":"EMP001"}' | jq .
 ```
@@ -41,14 +41,14 @@ curl -s -X POST http://localhost:8080/api/ai/TEST001/tasks/generate \
 
 ## Test: AI Reorganize Tasks
 
-- **Endpoint**: `POST /api/ai/TEST001/tasks/reorganize`
+- **Endpoint**: `POST /api/ai/689225/tasks/reorganize`
 - **Body**: `{ "employee_id": "EMP001" }`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/TEST001/tasks/reorganize \
+curl -s -X POST http://localhost:8080/api/ai/689225/tasks/reorganize \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"employee_id":"EMP001"}' | jq .
 ```
@@ -57,26 +57,26 @@ curl -s -X POST http://localhost:8080/api/ai/TEST001/tasks/reorganize \
 
 ## Test: AI Usage Trends
 
-- **Endpoint**: `GET /api/ai/TEST001/trends`
+- **Endpoint**: `GET /api/ai/689225/trends`
 - **Query**: `?period=monthly&limit=12`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/ai/TEST001/trends?period=monthly&limit=12" \
+curl -s "http://localhost:8080/api/ai/689225/trends?period=monthly&limit=12" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Top AI Operations
 
-- **Endpoint**: `GET /api/ai/TEST001/operations/top`
+- **Endpoint**: `GET /api/ai/689225/operations/top`
 - **Query**: `?limit=5`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/ai/TEST001/operations/top?limit=5" \
+curl -s "http://localhost:8080/api/ai/689225/operations/top?limit=5" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```

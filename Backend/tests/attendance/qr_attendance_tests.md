@@ -2,14 +2,14 @@
 
 ## Test: Generate QR Token
 
-- **Endpoint**: `POST /api/attendance/TEST001/qr-attendance`
+- **Endpoint**: `POST /api/attendance/689225/qr-attendance`
 - **Body**: `{ "duration_minutes": 15, "class_name": "10-A" }`
 - **Expected**: 200, token + URL
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/qr-attendance \
+curl -s -X POST http://localhost:8080/api/attendance/689225/qr-attendance \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"duration_minutes":15,"class_name":"10-A"}' | jq .
 ```
@@ -29,13 +29,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/qr-attendance \
 
 ## Test: Mark Mobile Attendance (with QR token)
 
-- **Endpoint**: `POST /api/attendance/TEST001/mobile-attendance`
+- **Endpoint**: `POST /api/attendance/689225/mobile-attendance`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/mobile-attendance \
+curl -s -X POST http://localhost:8080/api/attendance/689225/mobile-attendance \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "student_id": "STU001",
@@ -50,13 +50,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/mobile-attendance \
 
 ## Test: Mark Mobile Attendance (without QR token — location only)
 
-- **Endpoint**: `POST /api/attendance/TEST001/mobile-attendance`
+- **Endpoint**: `POST /api/attendance/689225/mobile-attendance`
 - **Expected**: 200 (uses geofence fallback)
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/mobile-attendance \
+curl -s -X POST http://localhost:8080/api/attendance/689225/mobile-attendance \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "student_id": "STU001",
@@ -70,13 +70,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/mobile-attendance \
 
 ## Test: Offline Sync Attendance
 
-- **Endpoint**: `POST /api/attendance/TEST001/offline-sync`
+- **Endpoint**: `POST /api/attendance/689225/offline-sync`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/offline-sync \
+curl -s -X POST http://localhost:8080/api/attendance/689225/offline-sync \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "records": [
@@ -90,14 +90,14 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/offline-sync \
 
 ## Test: QR Token Expired
 
-- **Endpoint**: `POST /api/attendance/TEST001/mobile-attendance`
+- **Endpoint**: `POST /api/attendance/689225/mobile-attendance`
 - **Body**: expired QR token
 - **Expected**: 400
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/mobile-attendance \
+curl -s -X POST http://localhost:8080/api/attendance/689225/mobile-attendance \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "student_id": "STU001",

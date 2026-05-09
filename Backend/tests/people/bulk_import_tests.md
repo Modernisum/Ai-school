@@ -2,14 +2,14 @@
 
 ## Test: Bulk Import Students
 
-- **Endpoint**: `POST /api/people/TEST001/students/bulk`
+- **Endpoint**: `POST /api/people/689225/students/bulk`
 - **Body**: `{ "students": [...] }`
 - **Expected**: 200, success with import count
 
 ```bash
-curl -s -X POST http://localhost:8080/api/people/TEST001/students/bulk \
+curl -s -X POST http://localhost:8080/api/people/689225/students/bulk \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "students": [
@@ -24,14 +24,14 @@ curl -s -X POST http://localhost:8080/api/people/TEST001/students/bulk \
 
 ## Test: Bulk Import Employees
 
-- **Endpoint**: `POST /api/people/TEST001/employees/bulk`
+- **Endpoint**: `POST /api/people/689225/employees/bulk`
 - **Body**: `{ "employees": [...] }`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/people/TEST001/employees/bulk \
+curl -s -X POST http://localhost:8080/api/people/689225/employees/bulk \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "employees": [
@@ -46,14 +46,14 @@ curl -s -X POST http://localhost:8080/api/people/TEST001/employees/bulk \
 
 ## Test: Bulk Import Students (with invalid data)
 
-- **Endpoint**: `POST /api/people/TEST001/students/bulk`
+- **Endpoint**: `POST /api/people/689225/students/bulk`
 - **Body**: `{ "students": [{ "name": "" }] }` (empty name)
 - **Expected**: 400, validation errors
 
 ```bash
-curl -s -X POST http://localhost:8080/api/people/TEST001/students/bulk \
+curl -s -X POST http://localhost:8080/api/people/689225/students/bulk \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"students":[{"name":"","class_name":""}]}' | jq .
 ```
@@ -63,13 +63,13 @@ curl -s -X POST http://localhost:8080/api/people/TEST001/students/bulk \
 ## Test: Bulk Import (cross-tenant rejection)
 
 - **Endpoint**: `POST /api/people/WRONG_SCHOOL/students/bulk`
-- **Headers**: `X-School-ID: TEST001`
+- **Headers**: `X-School-ID: 689225`
 - **Expected**: 403
 
 ```bash
 curl -s -X POST http://localhost:8080/api/people/WRONG_SCHOOL/students/bulk \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"students":[{"name":"Bad","phone":"+911111111117"}]}' | jq .
 ```

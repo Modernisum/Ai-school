@@ -11,7 +11,7 @@ import { toast } from 'react-toastify';
 
 import { selectPollingInterval } from '../../settings/settingsSlice';
 import { useGetComplaintsQuery } from '../infrastructureApi';
-import { useWebSockets } from '../../../hooks/useWebSockets';
+import { useWebSockets, MESSAGE_TYPES } from '../../../hooks/useWebSockets';
 import PageHeader from '../../../components/ui/PageHeader';
 import KPIWidget, { KPITile } from '../../../components/ui/KPIWidget';
 import GlassCard from '../../../components/ui/GlassCard';
@@ -27,8 +27,8 @@ export default function ComplainManagement() {
   const schoolId = getSchoolId();
   const pollingInterval = useSelector(selectPollingInterval);
   const { data: complainsData, isLoading, isFetching, refetch } = useGetComplaintsQuery(schoolId, { pollingInterval });
-  const { messages } = useWebSockets(schoolId);
-  
+  const { lastMessage, connected: wsConnected } = useWebSockets(schoolId);
+   
   const [viewComplain, setViewComplain] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -37,14 +37,12 @@ export default function ComplainManagement() {
   const complains = complainsData?.data || [];
 
   useEffect(() => {
-    if (messages.length > 0) {
-      const lastMsg = messages[messages.length - 1];
-      if (lastMsg.type === 'complaint' || lastMsg.category === 'complaint') {
-        if (schoolId) refetch();
-        toast.info('Neural Pulse: New entry recorded in protocol logs');
-      }
+    if (!lastMessage) return;
+    if (lastMessage.msg_type === MESSAGE_TYPES.COMPLAINT_NEW || lastMessage.type === 'complaint' || lastMessage.category === 'complaint') {
+      if (schoolId) refetch();
+      toast.info('Neural Pulse: New entry recorded in protocol logs');
     }
-  }, [messages, refetch, schoolId]);
+  }, [lastMessage, refetch, schoolId]);
 
   const statusMap = {
     'pending': { color: 'warning', label: 'AUDIT PENDING' },
@@ -242,7 +240,7 @@ export default function ComplainManagement() {
          <KPITile label="Active Reports" value={complains.length} sub="REALTIME_BACKLOG" icon={ClipboardList} color="primary" />
          <KPITile label="Pending Audit" value={complains.filter(c => c.status?.toLowerCase() === 'pending').length} sub="URGENT_ATTENTION" icon={AlertCircle} color="warning" />
          <KPITile label="Weekly Trend" value={chartData.reduce((sum, item) => sum + item.value, 0)} sub="7-DAY ANALYSIS" icon={Activity} color="success" />
-         <KPITile label="Log Protocol" value="ACTIVE" sub="WEBSOCKET_LINKED" icon={Activity} color="accent" />
+          <KPITile label="Log Protocol" value={wsConnected ? "ACTIVE" : "OFFLINE"} sub="WEBSOCKET_LINKED" icon={Activity} color={wsConnected ? "accent" : "warning"} />
       </KPIWidget>
 
       {/* Weekly Complaint Chart */}

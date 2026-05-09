@@ -17,6 +17,7 @@ pub mod auxiliary;
 pub mod responsibility;
 pub mod task;
 pub mod payroll;
+pub mod notification;
 pub mod operations;
 pub mod recovery;
 pub mod feedback;
@@ -40,6 +41,7 @@ pub use auxiliary::{AwardService, ComplainService, ReminderService, DocumentBoxS
 pub use responsibility::ResponsibilityService;
 pub use task::TaskService;
 pub use payroll::PayrollService;
+pub use notification::NotificationService;
 pub use operations::OperationsService;
 pub use recovery::RecoveryService;
 pub use feedback::FeedbackServiceTrait;

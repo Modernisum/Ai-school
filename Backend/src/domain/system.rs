@@ -1,5 +1,5 @@
 use crate::routes::{
-    api_keys, developer_access, geo, health, public_api, recovery, school, setup,
+    api_keys, developer_access, geo, health, notification, public_api, recovery, school, setup,
     transport, webhook, ws,
 };
 use crate::AppState;
@@ -59,6 +59,8 @@ pub fn routes(state: AppState) -> Router<AppState> {
             )))
         // Transport
         .nest("/transport", transport::router())
+        // Notifications
+        .nest("/notifications", notification::router())
         // WebSocket
         .nest("/ws", ws::router())
         // Developer Access

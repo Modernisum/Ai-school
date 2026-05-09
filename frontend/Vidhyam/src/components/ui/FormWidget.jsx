@@ -6,6 +6,7 @@ import GlassCard from './GlassCard';
 import StandardButton from './StandardButton';
 import SwitchButton from './SwitchButton';
 import { CheckCircle, MoreHorizontal } from 'lucide-react';
+import { ImageUploadField } from './StorageWidget';
 
 /**
  * Common Form Widget for all input forms in Vidhyam
@@ -248,6 +249,23 @@ export const FileUpload = ({ name, control, rules, label, multiple, accept = "*"
   />
 );
 
+export const ImageUploadInput = ({ name, control, rules, label, fieldName, className }) => (
+  <Controller
+    name={name}
+    control={control}
+    rules={rules}
+    render={({ field: { value, onChange }, fieldState: { error } }) => (
+      <ImageUploadField
+        label={label}
+        value={value}
+        onChange={onChange}
+        fieldName={fieldName || name}
+        className={className}
+      />
+    )}
+  />
+);
+
 // ─── SCHEMA-DRIVEN ENGINE ──────────────────────────────────────────────────
 
 /**
@@ -285,6 +303,7 @@ export const FieldFactory = ({ field, control, mode = 'add' }) => {
     case 'tel': return <TextInput {...props} type="tel" />;
     case 'email': return <TextInput {...props} type="email" />;
     case 'password': return <TextInput {...props} type="password" />;
+    case 'image': return <ImageUploadInput {...props} fieldName={field.fieldName} />;
     default: return <TextInput {...props} />;
   }
 };

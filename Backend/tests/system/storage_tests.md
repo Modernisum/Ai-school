@@ -2,16 +2,16 @@
 
 ## Test: Upload File
 
-- **Endpoint**: `POST /api/system/storage/upload`
-- **Params**: `school_id=TEST001&user_type=teacher`
+- **Endpoint**: `POST /api/auth/storage/upload`
+- **Params**: `school_id=689225&user_type=teacher`
 - **Expected**: 200, public URL
 
 ```bash
 echo "test content" > /tmp/test_upload.txt
-curl -s -X POST http://localhost:8080/api/system/storage/upload \
+curl -s -X POST http://localhost:8080/api/auth/storage/upload \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@/tmp/test_upload.txt" \
-  -F "school_id=TEST001" \
+  -F "school_id=689225" \
   -F "user_type=teacher" | jq .
 ```
 
@@ -19,7 +19,7 @@ curl -s -X POST http://localhost:8080/api/system/storage/upload \
 {
   "success": true,
   "data": {
-    "public_url": "http://localhost:8080/uploads/TEST001/abc123_test_upload.txt",
+    "public_url": "http://localhost:8080/uploads/689225/abc123_test_upload.txt",
     "file_name": "test_upload.txt",
     "size_bytes": 12
   }
@@ -28,51 +28,31 @@ curl -s -X POST http://localhost:8080/api/system/storage/upload \
 
 ---
 
-## Test: Mark File as Permanent
-
-- **Endpoint**: `POST /api/system/storage/mark-permanent`
-- **Expected**: 200
-
-```bash
-curl -s -X POST http://localhost:8080/api/system/storage/mark-permanent \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "school_id": "TEST001",
-    "file_url": "http://localhost:8080/uploads/TEST001/abc123_test_upload.txt"
-  }' | jq .
-```
-
 ---
+
 
 ## Test: List Files
 
-- **Endpoint**: `GET /api/system/TEST001/files`
+- **Endpoint**: `GET /api/auth/storage/files`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/system/TEST001/files \
+curl -s http://localhost:8080/api/auth/storage/files \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Delete File by URL
 
-- **Endpoint**: `DELETE /api/system/storage/delete`
+- **Endpoint**: `DELETE /api/auth/storage/file-by-url`
 - **Expected**: 200
 
 ```bash
-curl -s -X DELETE http://localhost:8080/api/system/storage/delete \
+curl -s -X DELETE "http://localhost:8080/api/auth/storage/file-by-url?url=http://localhost:8080/uploads/689225/abc123_test_upload.txt" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "school_id": "TEST001",
-    "file_url": "http://localhost:8080/uploads/TEST001/abc123_test_upload.txt"
-  }' | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
@@ -88,7 +68,7 @@ dd if=/dev/zero of=/tmp/large_file.bin bs=1M count=51 2>/dev/null
 curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/system/storage/upload \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@/tmp/large_file.bin" \
-  -F "school_id=TEST001" \
+  -F "school_id=689225" \
   -F "user_type=teacher"
 rm /tmp/large_file.bin
 ```

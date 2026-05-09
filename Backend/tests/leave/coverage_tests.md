@@ -2,13 +2,13 @@
 
 ## Test: Conditional Approval
 
-- **Endpoint**: `POST /api/leave/TEST001/LEAVE_ID/conditional/approve`
+- **Endpoint**: `POST /api/leave/689225/LEAVE_ID/conditional/approve`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/leave/TEST001/1/conditional/approve \
+curl -s -X POST http://localhost:8080/api/leave/689225/1/conditional/approve \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "conditions": {
@@ -23,39 +23,39 @@ curl -s -X POST http://localhost:8080/api/leave/TEST001/1/conditional/approve \
 
 ## Test: Get Notifications
 
-- **Endpoint**: `GET /api/leave/TEST001/notifications?unread_only=true`
+- **Endpoint**: `GET /api/leave/689225/notifications?unread_only=true`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/leave/TEST001/notifications?unread_only=true" \
+curl -s "http://localhost:8080/api/leave/689225/notifications?unread_only=true" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Mark Notification Read
 
-- **Endpoint**: `POST /api/leave/TEST001/notifications/NOTIF_ID/read`
+- **Endpoint**: `POST /api/leave/689225/notifications/NOTIF_ID/read`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/leave/TEST001/notifications/1/read \
+curl -s -X POST http://localhost:8080/api/leave/689225/notifications/1/read \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Leave Conflict Check
 
-- **Endpoint**: `POST /api/leave/TEST001/conflicts`
+- **Endpoint**: `POST /api/leave/689225/conflicts`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/leave/TEST001/conflicts \
+curl -s -X POST http://localhost:8080/api/leave/689225/conflicts \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "user_ids": ["EMP001","EMP002"],

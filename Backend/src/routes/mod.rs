@@ -24,6 +24,7 @@ pub mod payment;
 pub mod public_api;
 pub mod recovery;
 pub mod reminder;
+pub mod notification;
 pub mod responsibility;
 pub mod responsibility_ws;
 pub mod school;

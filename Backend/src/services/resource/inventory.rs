@@ -41,6 +41,25 @@ impl InventoryOperations {
         Ok(self.repos.resource.get_space_categories(school_id).await?)
     }
 
+    pub async fn create_space_category(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        name: &str,
+    ) -> AppResult<Value> {
+        let res = self.repos.resource.create_space_category(school_id, name).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "SPACE_CATEGORY",
+            &res["name"].as_str().unwrap_or("unknown"),
+            "CREATE",
+            serde_json::json!({"name": name})
+        ).await;
+        Ok(res)
+    }
+
     pub async fn update_space(
         &self,
         school_id: &str,

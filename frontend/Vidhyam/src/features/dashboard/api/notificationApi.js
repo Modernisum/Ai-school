@@ -2,6 +2,47 @@ import { baseApi } from '../../../app/api/baseApi';
 
 export const notificationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // Notifications (Centralized)
+    getNotifications: builder.query({
+      query: ({ schoolId, userId, category, unreadOnly, limit = 50, offset = 0 }) => ({
+        url: `/school/${schoolId}/notifications`,
+        params: {
+          user_id: userId,
+          ...(category && { category }),
+          ...(unreadOnly && { unread_only: true }),
+          limit,
+          offset,
+        },
+      }),
+      providesTags: ['Notifications'],
+    }),
+    getUnreadCount: builder.query({
+      query: (schoolId) => ({
+        url: `/school/${schoolId}/notifications/unread-count`,
+      }),
+      providesTags: ['Notifications'],
+    }),
+    markRead: builder.mutation({
+      query: ({ schoolId, notificationId }) => ({
+        url: `/school/${schoolId}/notifications/${notificationId}/read`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+    markAllRead: builder.mutation({
+      query: (schoolId) => ({
+        url: `/school/${schoolId}/notifications/mark-all-read`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
+    deleteNotification: builder.mutation({
+      query: ({ schoolId, notificationId }) => ({
+        url: `/school/${schoolId}/notifications/${notificationId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Notifications'],
+    }),
     // Announcements
     getAnnouncements: builder.query({
       query: ({ schoolId, type, userId }) => `/announcements/${schoolId}/${type}/${userId}`,
@@ -46,6 +87,11 @@ export const notificationApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetNotificationsQuery,
+  useGetUnreadCountQuery,
+  useMarkReadMutation,
+  useMarkAllReadMutation,
+  useDeleteNotificationMutation,
   useGetAnnouncementsQuery, useCreateAnnouncementMutation,
   useGetComplaintsQuery, useCreateComplaintMutation, useGetComplaintByStudentQuery,
   useGetEventsQuery, useCreateEventMutation, useGetAwardsQuery,

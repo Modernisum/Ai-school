@@ -2,11 +2,11 @@
 
 ## Test: Get Wallet Ledger
 
-- **Endpoint**: `GET /api/admin/schools/TEST001/billing/ledger`
+- **Endpoint**: `GET /api/admin/schools/689225/billing/ledger`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/admin/schools/TEST001/billing/ledger \
+curl -s http://localhost:8080/api/admin/schools/689225/billing/ledger \
   -H "Authorization: Bearer $SA_TOKEN" | jq .
 ```
 
@@ -14,11 +14,11 @@ curl -s http://localhost:8080/api/admin/schools/TEST001/billing/ledger \
 
 ## Test: Process Refund
 
-- **Endpoint**: `POST /api/admin/schools/TEST001/billing/refund`
+- **Endpoint**: `POST /api/admin/schools/689225/billing/refund`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/admin/schools/TEST001/billing/refund \
+curl -s -X POST http://localhost:8080/api/admin/schools/689225/billing/refund \
   -H "Authorization: Bearer $SA_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -114,10 +114,10 @@ curl -s -X POST http://localhost:8080/api/admin/backup \
 
 ## Test: Export Data
 
-- **Endpoint**: `GET /api/admin/export?school_id=TEST001&format=csv`
+- **Endpoint**: `GET /api/admin/export?school_id=689225&format=csv`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/admin/export?school_id=TEST001&format=csv" \
+curl -s "http://localhost:8080/api/admin/export?school_id=689225&format=csv" \
   -H "Authorization: Bearer $SA_TOKEN" | jq .
 ```

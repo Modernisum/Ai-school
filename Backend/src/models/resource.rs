@@ -6,6 +6,14 @@ pub struct CreateSpaceRequest {
     pub space_name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSpaceCategoryRequest {
+    pub name: String,
+    #[serde(default)]
+    pub is_default: bool,
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

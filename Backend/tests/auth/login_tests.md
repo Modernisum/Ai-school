@@ -3,13 +3,13 @@
 ## Test: School Login (valid)
 
 - **Endpoint**: `POST /api/auth/school/login`
-- **Body**: `{ "schoolId": "TEST001", "password": "admin@123" }`
+- **Body**: `{ "schoolId": "689225", "password": "admin@123" }`
 - **Expected**: 200, `success: true`, `token` present
 
 ```bash
 curl -s -X POST http://localhost:8080/api/auth/school/login \
   -H "Content-Type: application/json" \
-  -d '{"schoolId":"TEST001","password":"admin@123"}' | jq .
+  -d '{"schoolId":"689225","password":"admin@123"}' | jq .
 ```
 
 ```json
@@ -17,7 +17,7 @@ curl -s -X POST http://localhost:8080/api/auth/school/login \
   "success": true,
   "data": {
     "token": "eyJ...",
-    "schoolId": "TEST001",
+    "schoolId": "689225",
     "schoolName": "Test School"
   }
 }
@@ -28,13 +28,13 @@ curl -s -X POST http://localhost:8080/api/auth/school/login \
 ## Test: School Login (invalid password)
 
 - **Endpoint**: `POST /api/auth/school/login`
-- **Body**: `{ "schoolId": "TEST001", "password": "wrong" }`
+- **Body**: `{ "schoolId": "689225", "password": "wrong" }`
 - **Expected**: 401, `success: false`
 
 ```bash
 curl -s -X POST http://localhost:8080/api/auth/school/login \
   -H "Content-Type: application/json" \
-  -d '{"schoolId":"TEST001","password":"wrong"}' | jq .
+  -d '{"schoolId":"689225","password":"wrong"}' | jq .
 ```
 
 ---
@@ -42,7 +42,7 @@ curl -s -X POST http://localhost:8080/api/auth/school/login \
 ## Test: School Login (rate limited)
 
 - **Endpoint**: `POST /api/auth/school/login`
-- **Body**: `{ "schoolId": "TEST001", "password": "wrong" }` (6 rapid requests)
+- **Body**: `{ "schoolId": "689225", "password": "wrong" }` (6 rapid requests)
 - **Expected**: 429 on 6th request
 
 ```bash
@@ -50,7 +50,7 @@ for i in {1..6}; do
   echo "Request $i:"
   curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/auth/school/login \
     -H "Content-Type: application/json" \
-    -d '{"schoolId":"TEST001","password":"wrong"}'
+    -d '{"schoolId":"689225","password":"wrong"}'
   echo ""
 done
 ```
@@ -116,13 +116,13 @@ curl -s -X POST http://localhost:8080/api/auth/refresh \
 ## Test: Forgot Password
 
 - **Endpoint**: `POST /api/auth/school/forgot-password`
-- **Body**: `{ "schoolId": "TEST001" }`
+- **Body**: `{ "schoolId": "689225" }`
 - **Expected**: 200
 
 ```bash
 curl -s -X POST http://localhost:8080/api/auth/school/forgot-password \
   -H "Content-Type: application/json" \
-  -d '{"schoolId":"TEST001"}' | jq .
+  -d '{"schoolId":"689225"}' | jq .
 ```
 
 ---
@@ -146,11 +146,11 @@ curl -s -X POST http://localhost:8080/api/auth/school/change-password \
 ## Test: Verify OTP
 
 - **Endpoint**: `POST /api/auth/school/verify-otp`
-- **Body**: `{ "schoolId": "TEST001", "otp": "123456" }`
+- **Body**: `{ "schoolId": "689225", "otp": "123456" }`
 - **Expected**: 200
 
 ```bash
 curl -s -X POST http://localhost:8080/api/auth/school/verify-otp \
   -H "Content-Type: application/json" \
-  -d '{"schoolId":"TEST001","otp":"123456"}' | jq .
+  -d '{"schoolId":"689225","otp":"123456"}' | jq .
 ```

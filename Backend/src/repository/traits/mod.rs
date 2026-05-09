@@ -23,6 +23,7 @@ pub mod leave;
 pub mod analytics;
 pub mod audit;
 pub mod global_user;
+pub mod notification;
 pub mod storage;
 pub mod grading;
 
@@ -45,5 +46,6 @@ pub use leave::LeaveRepository;
 pub use analytics::AnalyticsRepository;
 pub use audit::AuditRepository;
 pub use global_user::GlobalUserRepository;
+pub use notification::NotificationRepository;
 pub use storage::StorageRepository;
 pub use grading::GradingRepository;

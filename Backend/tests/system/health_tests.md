@@ -37,26 +37,26 @@ docker exec $(docker ps -q -f name=backend) curl -f http://localhost:8080/health
 
 ## Test: Get System Config
 
-- **Endpoint**: `GET /api/system/TEST001/config`
+- **Endpoint**: `GET /api/system/689225/config`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/system/TEST001/config \
+curl -s http://localhost:8080/api/system/689225/config \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Update System Config
 
-- **Endpoint**: `PUT /api/system/TEST001/config`
+- **Endpoint**: `PUT /api/system/689225/config`
 - **Expected**: 200
 
 ```bash
-curl -s -X PUT http://localhost:8080/api/system/TEST001/config \
+curl -s -X PUT http://localhost:8080/api/system/689225/config \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"config_key":"MAX_STUDENTS_PER_CLASS","config_value":"60"}' | jq .
 ```
@@ -65,26 +65,26 @@ curl -s -X PUT http://localhost:8080/api/system/TEST001/config \
 
 ## Test: Get API Keys
 
-- **Endpoint**: `GET /api/system/TEST001/api-keys`
+- **Endpoint**: `GET /api/system/689225/api-keys`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/system/TEST001/api-keys \
+curl -s http://localhost:8080/api/system/689225/api-keys \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Create API Key
 
-- **Endpoint**: `POST /api/system/TEST001/api-keys`
+- **Endpoint**: `POST /api/system/689225/api-keys`
 - **Expected**: 201
 
 ```bash
-curl -s -X POST http://localhost:8080/api/system/TEST001/api-keys \
+curl -s -X POST http://localhost:8080/api/system/689225/api-keys \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"name":"Integration Key","scopes":["read:students","read:fees"]}' | jq .
 ```
@@ -93,11 +93,11 @@ curl -s -X POST http://localhost:8080/api/system/TEST001/api-keys \
 
 ## Test: Revoke API Key
 
-- **Endpoint**: `DELETE /api/system/TEST001/api-keys/KEY_ID`
+- **Endpoint**: `DELETE /api/system/689225/api-keys/KEY_ID`
 - **Expected**: 200
 
 ```bash
-curl -s -X DELETE http://localhost:8080/api/system/TEST001/api-keys/KEY_ID \
+curl -s -X DELETE http://localhost:8080/api/system/689225/api-keys/KEY_ID \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```

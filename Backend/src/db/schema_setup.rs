@@ -32,6 +32,7 @@ impl SchemaSetup {
         self.initialize_files_table().await?;
         self.initialize_profile_image_support().await?;
         self.initialize_global_notifications_tables().await?;
+        self.initialize_notifications_table().await?;
         Ok(())
     }
 
@@ -1087,6 +1088,47 @@ impl SchemaSetup {
         Ok(())
     }
 
+    async fn initialize_notifications_table(&self) -> Result<(), Box<dyn Error>> {
+        println!("Creating notifications table...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(50) NOT NULL,
+                user_id VARCHAR(50),
+                category VARCHAR(50) NOT NULL DEFAULT 'general',
+                severity VARCHAR(20) NOT NULL DEFAULT 'info',
+                title VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                data JSONB DEFAULT '{}',
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                read_at TIMESTAMPTZ
+            )",
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_notifications_school_user ON notifications(school_id, user_id, is_read)"
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_notifications_school_category ON notifications(school_id, category, created_at DESC)"
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_notifications_school_unread ON notifications(school_id, user_id) WHERE is_read = FALSE"
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
     /// Initialize performance-critical indexes for multi-tenant queries
     pub async fn initialize_indexes(&self) -> Result<(), Box<dyn Error>> {
         println!("Ensuring performance indexes exist...");
@@ -1128,6 +1170,8 @@ impl SchemaSetup {
             "CREATE INDEX IF NOT EXISTS idx_billing_ledger_school ON billing_ledger(school_id, created_at DESC)",
             // Webhooks
             "CREATE INDEX IF NOT EXISTS idx_webhook_endpoints_school ON webhook_endpoints(school_id)",
+            // Notifications
+            "CREATE INDEX IF NOT EXISTS idx_notifications_school_created ON notifications(school_id, created_at DESC)",
         ];
 
         for idx_sql in &indexes {

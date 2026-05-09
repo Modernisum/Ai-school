@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { SimpleThemeToggle } from "./ThemeToggle";
 import { MobileNav } from "./MobileNav";
+import NotificationBell from "./NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, NavLink, Link } from "react-router-dom";
@@ -19,12 +20,10 @@ import GlobalSearchSelect from "./GlobalSearchSelect";
 export default function TopBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [schoolName, setSchoolName] = useState("School");
 
-  const notifRef = useRef(null);
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -175,53 +174,8 @@ export default function TopBar() {
         <div className="flex items-center justify-end gap-1 flex-1">
           <SimpleThemeToggle />
 
-          {/* Notifications */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--accent-color)] ring-2 ring-[#030712]" />
-            </button>
-
-            <AnimatePresence>
-              {notificationsOpen && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-40"
-                    onClick={() => setNotificationsOpen(false)}
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
-                    className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  >
-                    <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                      <h3 className="font-semibold text-white text-sm">Notifications</h3>
-                      <button className="text-xs text-[var(--primary-color)] hover:underline">Mark all read</button>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto p-2 space-y-1">
-                      <div className="p-8 text-center text-slate-600 text-sm">No new notifications</div>
-                    </div>
-                    <div className="p-3 border-t border-white/5">
-                      <button
-                        onClick={() => { navigate('/dashboard/notifications/announcements'); setNotificationsOpen(false); }}
-                        className="w-full py-2 text-center text-sm text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
-                      >
-                        View all notifications
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Notifications — Centralized */}
+          <NotificationBell />
 
           {/* Profile */}
           <div className="relative" ref={profileRef}>

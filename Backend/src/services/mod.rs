@@ -22,6 +22,7 @@ pub mod gradebook_service;
 pub mod grading_service;
 pub mod leave_service;
 
+pub mod notification_service;
 pub mod operations_service;
 pub mod payroll;
 pub mod payroll_service;
@@ -63,6 +64,7 @@ use crate::services::fee_service::PostgresFeeService;
 use crate::services::gradebook_service::GradebookService;
 use crate::services::grading_service::GradingService;
 use crate::services::leave_service::PostgresLeaveService;
+use crate::services::notification_service::PostgresNotificationService;
 use crate::services::operations_service::PostgresOperationsService;
 use crate::services::payroll_service::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
@@ -110,6 +112,7 @@ pub struct Services {
     pub gradebook: Arc<dyn GradebookServiceTrait>,
     pub admin_automation: Arc<dyn AdminAutomationServiceTrait>,
     pub content_generation: Arc<dyn ContentGenerationService>,
+    pub notification: Arc<dyn NotificationService>,
     pub fcm: Arc<crate::logic::FcmService>,
 }
 
@@ -213,6 +216,7 @@ pub fn initialize_services(
         gradebook: gradebook_service,
         admin_automation: admin_automation_service,
         content_generation: content_generation_service,
+        notification: Arc::new(PostgresNotificationService { repos: repos.clone() }),
         fcm: fcm_service,
     }
 }

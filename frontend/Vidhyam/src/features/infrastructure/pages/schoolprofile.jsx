@@ -22,6 +22,7 @@ import PageHeader from '../../../components/ui/PageHeader';
 import KPIWidget, { KPITile } from '../../../components/ui/KPIWidget';
 import GlassCard from '../../../components/ui/GlassCard';
 import StandardButton from '../../../components/ui/StandardButton';
+import { ImageUploadField } from '../../../components/ui/StorageWidget';
 
 const CLASS_LEVELS = [
     { label: "Primary (Up to Class 5)", value: 5 },
@@ -116,33 +117,7 @@ export default function AccountPage() {
 
     const school = profileData?.data || profileData?.school || profileData || {};
 
-    const handleLogoUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setIsUploadingLogo(true);
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/storage/upload`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error("Upload failure");
-
-            const data = await response.json();
-            if (data.url) {
-                setDraft(prev => ({ ...prev, schoolLogoUrl: data.url }));
-                toast.success('Media Payload Synced. Commit to save.');
-            }
-        } catch (err) {
-            toast.error('Neural Sync Failure');
-        } finally {
-            setIsUploadingLogo(false);
-        }
-    };
+    // Logo Upload handler is now integrated into ImageUploadField
 
     const startEdit = (section) => {
         setDraft({
@@ -233,17 +208,13 @@ export default function AccountPage() {
                             <InputField label="LEADERSHIP IDENTIFIER" value={draft.principalName} onChange={v => setDraft(p => ({ ...p, principalName: v }))} />
                             <InputField label="ESTABLISHMENT NODE" type="number" value={draft.sinceEstablished} onChange={v => setDraft(p => ({ ...p, sinceEstablished: v }))} />
                             
-                            <div className="space-y-2">
-                                <label className="text-micro text-slate-700 font-black uppercase tracking-widest block">INSTITUTION_LOGO_PAYLOAD</label>
-                                <div className="flex items-center gap-4 p-2 bg-white/5 border border-white/10 rounded-xl">
-                                    <div className="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden border border-white/10 shadow-inner">
-                                        {draft.schoolLogoUrl ? <img src={draft.schoolLogoUrl} alt="Preview" className="w-full h-full object-cover" /> : <Upload className="w-full h-full p-2 text-slate-800" />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <input type="file" id="logo-sync" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                                        <StandardButton label={isUploadingLogo ? "SYNCING..." : "REPLACE_MEDIA"} icon={Upload} onClick={() => document.getElementById('logo-sync').click()} variant="ghost" size="xs" />
-                                    </div>
-                                </div>
+                            <div className="pt-2">
+                                <ImageUploadField 
+                                    label="INSTITUTION_LOGO_PAYLOAD" 
+                                    value={draft.schoolLogoUrl} 
+                                    onChange={url => setDraft(p => ({ ...p, schoolLogoUrl: url }))} 
+                                    fieldName="school_logo"
+                                />
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-white/5">
                                 <StandardButton label="COMMIT" icon={Save} onClick={handleSave} size="xs" className="flex-1" />

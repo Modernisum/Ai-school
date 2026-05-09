@@ -1,0 +1,24 @@
+name: Backend CI (Rust)
+
+on:
+  pull_request:
+    paths:
+      - 'Backend/**' # यह एक्शन सिर्फ तभी चलेगा जब Backend फोल्डर में कुछ बदलेगा
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        
+      - name: Run Cargo Check
+        run: cargo check
+        working-directory: ./Backend
+        
+      - name: Run Cargo Test
+        run: cargo test
+        working-directory: ./Backend

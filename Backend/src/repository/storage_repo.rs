@@ -123,13 +123,6 @@ impl StorageRepository for PostgresStorageRepository {
         Ok(())
     }
 
-    async fn mark_as_permanent(&self, url: &str) -> Result<(), AppError> {
-        sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
-            .bind(url)
-            .execute(&self.pool)
-            .await?;
-        Ok(())
-    }
 
     async fn list_files(&self, school_id: Option<&str>, user_id: Option<&str>) -> Result<JsonList, AppError> {
         let mut query_str = String::from("SELECT id, public_url, file_name, file_size, content_type, created_at FROM app_files WHERE 1=1");

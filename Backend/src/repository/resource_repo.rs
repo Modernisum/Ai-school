@@ -499,6 +499,20 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn create_space(&self, school_id: &str, category: &str, name: String) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // Check if space with same name already exists
+        let existing: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM spaces WHERE school_id = $1 AND name = $2"
+        )
+        .bind(school_id)
+        .bind(&name)
+        .fetch_optional(&mut *conn)
+        .await?;
+        
+        if existing.is_some() {
+            return Err(crate::error::AppError::Validation(format!("Space with name '{}' already exists", name)).into());
+        }
+        
         let space_id = format!("{}-{}", name.to_lowercase().replace(' ', "-"), &school_id[..4]);
 
         // Insert Space (space_id is school-scoped for global uniqueness)
@@ -552,6 +566,36 @@ impl ResourceRepository for PostgresResourceRepository {
         Ok(rows.into_iter()
             .map(|r| r.get::<String, _>("space_category"))
             .collect())
+    }
+
+async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // Check if category already exists for this school
+        let existing: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM space_categories WHERE school_id = $1 AND name = $2"
+        )
+        .bind(school_id)
+        .bind(name)
+        .fetch_optional(&mut *conn)
+        .await?;
+        
+        if existing.is_some() {
+            return Err(crate::error::AppError::Validation(format!("Space category '{}' already exists", name)).into());
+        }
+        
+        // Insert new category
+        sqlx::query(
+            "INSERT INTO space_categories (school_id, name) VALUES ($1, $2)"
+        )
+        .bind(school_id)
+        .bind(name)
+        .execute(&mut *conn)
+        .await?;
+        
+        Ok(json!({
+            "name": name
+        }))
     }
 
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError> {

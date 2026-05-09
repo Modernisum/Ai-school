@@ -2,13 +2,13 @@
 
 ## Test: Mark Present
 
-- **Endpoint**: `POST /api/attendance/TEST001/student/STU001/present`
+- **Endpoint**: `POST /api/attendance/689225/student/STU001/present`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/present \
+curl -s -X POST http://localhost:8080/api/attendance/689225/student/STU001/present \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"date":"2026-04-26"}' | jq .
 ```
@@ -17,13 +17,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/pres
 
 ## Test: Mark Absent
 
-- **Endpoint**: `POST /api/attendance/TEST001/student/STU001/absent`
+- **Endpoint**: `POST /api/attendance/689225/student/STU001/absent`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/absent \
+curl -s -X POST http://localhost:8080/api/attendance/689225/student/STU001/absent \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"date":"2026-04-26","reason":"Medical"}' | jq .
 ```
@@ -32,13 +32,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/abse
 
 ## Test: Mark Holiday
 
-- **Endpoint**: `POST /api/attendance/TEST001/student/STU001/holiday`
+- **Endpoint**: `POST /api/attendance/689225/student/STU001/holiday`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/holiday \
+curl -s -X POST http://localhost:8080/api/attendance/689225/student/STU001/holiday \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"date":"2026-04-26"}' | jq .
 ```
@@ -47,13 +47,13 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/student/STU001/holi
 
 ## Test: Bulk Mark Attendance
 
-- **Endpoint**: `POST /api/attendance/TEST001/bulk-attendance`
+- **Endpoint**: `POST /api/attendance/689225/bulk-attendance`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/attendance/TEST001/bulk-attendance \
+curl -s -X POST http://localhost:8080/api/attendance/689225/bulk-attendance \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
     "date": "2026-04-26",
@@ -69,52 +69,52 @@ curl -s -X POST http://localhost:8080/api/attendance/TEST001/bulk-attendance \
 
 ## Test: Get Attendance by Date
 
-- **Endpoint**: `GET /api/attendance/TEST001/date/2026-04-26`
+- **Endpoint**: `GET /api/attendance/689225/date/2026-04-26`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/attendance/TEST001/date/2026-04-26 \
+curl -s http://localhost:8080/api/attendance/689225/date/2026-04-26 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Get Student Attendance
 
-- **Endpoint**: `GET /api/attendance/TEST001/student/STU001`
+- **Endpoint**: `GET /api/attendance/689225/student/STU001`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/attendance/TEST001/student/STU001 \
+curl -s http://localhost:8080/api/attendance/689225/student/STU001 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Get Class Attendance
 
-- **Endpoint**: `GET /api/attendance/TEST001/class-attendance?class_name=10-A&date=2026-04-26`
+- **Endpoint**: `GET /api/attendance/689225/class-attendance?class_name=10-A&date=2026-04-26`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/attendance/TEST001/class-attendance?class_name=10-A&date=2026-04-26" \
+curl -s "http://localhost:8080/api/attendance/689225/class-attendance?class_name=10-A&date=2026-04-26" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" | jq .
+  -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
 ## Test: Update Attendance
 
-- **Endpoint**: `PUT /api/attendance/TEST001/student/STU001/2026-04-26`
+- **Endpoint**: `PUT /api/attendance/689225/student/STU001/2026-04-26`
 - **Expected**: 200
 
 ```bash
-curl -s -X PUT http://localhost:8080/api/attendance/TEST001/student/STU001/2026-04-26 \
+curl -s -X PUT http://localhost:8080/api/attendance/689225/student/STU001/2026-04-26 \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: TEST001" \
+  -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{"status":"present"}' | jq .
 ```

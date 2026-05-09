@@ -17,6 +17,7 @@ pub mod coupon_repo;
 pub mod payroll_repo;
 pub mod transaction_repo;
 pub mod misc_repo;
+pub mod notification_repo;
 pub mod storage_repo;
 pub mod query_builder;
 pub mod grading_repo;
@@ -47,6 +48,7 @@ pub struct Repositories {
     pub audit: Arc<dyn AuditRepository + Send + Sync>,
     pub global_user: Arc<dyn GlobalUserRepository + Send + Sync>,
     pub storage: Arc<dyn StorageRepository + Send + Sync>,
+    pub notification: Arc<dyn NotificationRepository + Send + Sync>,
     pub grading: Arc<dyn GradingRepository + Send + Sync>,
     pub db_client: Arc<crate::db::DbClient>,
 }
@@ -133,6 +135,10 @@ pub async fn initialize_repositories(
 
     let storage_repo: Arc<dyn traits::StorageRepository + Send + Sync> = Arc::new(storage_repo::PostgresStorageRepository::new(db_client.pool.clone()));
 
+    let notification_repo: Arc<dyn traits::NotificationRepository + Send + Sync> = Arc::new(notification_repo::PostgresNotificationRepository {
+        client: db_client.clone(),
+    });
+
     let grading_repo: Arc<dyn traits::GradingRepository + Send + Sync> = Arc::new(grading_repo::PostgresGradingRepository {
         client: db_client.clone(),
     });
@@ -155,6 +161,7 @@ pub async fn initialize_repositories(
         school: school_repo,
         responsibility: responsibility_repo,
         storage: storage_repo,
+        notification: notification_repo,
         task: task_repo,
         leave: leave_repo,
         analytics: analytics_repo,

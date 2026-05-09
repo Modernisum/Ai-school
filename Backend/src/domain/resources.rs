@@ -7,9 +7,10 @@ use axum::{
 
 pub fn routes(state: AppState) -> Router<AppState> {
     Router::new()
+        // Space Categories
+        .route("/spaces/categories", get(spaces::list_space_categories).post(spaces::create_space_category))
         // Spaces
         .route("/spaces", get(spaces::list_spaces))
-        .route("/spaces/categories", get(spaces::list_space_categories))
         .route("/spaces/:category", post(spaces::create_space_by_category))
         .route("/spaces/detail/:spaceName", get(spaces::get_space_details).put(spaces::update_space).delete(spaces::delete_space))
         .route("/spaces/:spaceName/materials", post(spaces::assign_space_materials))
