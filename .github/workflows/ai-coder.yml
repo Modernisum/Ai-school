@@ -40,8 +40,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           echo "Starting AI Developer for Issue: $ISSUE_TITLE"
-          # Piping exit to ensure Aider doesn't hang in interactive mode
-          echo "/exit" | aider --model openrouter/inclusionai/ring-2.6-1t:free --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
+          aider --model openrouter/meta-llama/llama-3.1-8b-instruct:free --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
