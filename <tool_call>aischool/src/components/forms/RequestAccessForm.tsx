@@ -1,0 +1,379 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { z } from "zod";
+import { Button } from "@/components/ui/Button";
+import { submitSchoolRequest } from "@/lib/api/lead-gen";
+import { sendSchoolAccessNotification } from "@/lib/api/notifications";
+
+const formSchema = z.object({
+  school_name: z.string().min(2, "School name is required"),
+  contact_name: z.string().min(2, "Contact name is required"),
+  email: z.string().email("Please enter a valid email"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  employee_count: z.enum(["", "1-10", "11-50", "51-100", "101-500", "500+"]),
+  student_count: z.enum(["", "1-100", "101-500", "501-1000", "1001-2000", "2000+"]),
+  message: z.string().max(500, "Message must be under 500 characters").optional(),
+  profile_image: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface FieldError {
+  [key: string]: string;
+}
+
+export function RequestAccessForm() {
+  const [formData, setFormData] = useState<FormData>({
+    school_name: "",
+    contact_name: "",
+    email: "",
+    phone: "",
+    employee_count: "",
+    student_count: "",
+    message: "",
+    profile_image: "",
+  });
+  const [errors, setErrors] = useState<FieldError>({});
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name as keyof FieldError];
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleProfileImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, profile_image: "Please upload a valid image file" }));
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, profile_image: "Image size should be less than 5MB" }));
+        return;
+      }
+      setProfileImage(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setFormData((prev) => ({ ...prev, profile_image: file.name }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.profile_image;
+        return next;
+      });
+    }
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setProfileImage(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    setFormData((prev) => ({ ...prev, profile_image: "" }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [previewUrl]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setStatus("submitting");
+
+      const result = formSchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: FieldError = {};
+        result.error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0] as string] = issue.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setStatus("idle");
+        return;
+      }
+
+      try {
+        const data = {
+          ...result.data,
+          employee_count: result.data.employee_count ? parseInt(result.data.employee_count.split("-")[0]) || null : null,
+          student_count: result.data.student_count ? parseInt(result.data.student_count.split("-")[0]) || null : null,
+          message: result.data.message || "",
+          profile_image: result.data.profile_image || null,
+        };
+
+        await submitSchoolRequest(data);
+        await sendSchoolAccessNotification(
+          result.data.school_name,
+          result.data.email
+        ).catch(() => {});
+        setStatus("success");
+      } catch {
+        setStatus("error");
+      }
+    },
+    [formData]
+  );
+
+  if (status === "success") {
+    return (
+      <div className="text-center py-12 animate-fade-in-up">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-text-primary mb-2">Request Submitted!</h3>
+        <p className="text-text-secondary max-w-md mx-auto">
+          Our team will contact you within 24 hours to set up your school&apos;s Vidhyam account.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      {/* Profile Upload - Top Left */}
+      <div className="flex items-start gap-4">
+        <div className="relative group">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleProfileImageChange}
+            className="hidden"
+            aria-label="Upload profile image"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-20 h-20 rounded-2xl border-2 border-dashed border-border bg-surface flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-primary-400 group-hover:bg-primary-50/50"
+          >
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Profile preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-1.5 text-text-tertiary">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                <span className="text-[10px] font-medium leading-tight">Upload</span>
+              </div>
+            )}
+          </button>
+          {/* Hover overlay */}
+          {!previewUrl && (
+            <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+            </div>
+          )}
+          {/* Remove button when image is set */}
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-600 transition-colors"
+              aria-label="Remove profile image"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <div className="flex flex-col pt-1">
+          <p className="text-sm text-text-secondary">School Logo</p>
+          <p className="text-xs text-text-tertiary">Upload your school logo (optional)</p>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <FormField
+          label="School Name"
+          name="school_name"
+          value={formData.school_name}
+          onChange={handleChange}
+          error={errors.school_name}
+          placeholder="e.g. Delhi Public School"
+          required
+        />
+        <FormField
+          label="Your Name"
+          name="contact_name"
+          value={formData.contact_name}
+          onChange={handleChange}
+          error={errors.contact_name}
+          placeholder="Your full name"
+          required
+        />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <FormField
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+          placeholder="you@school.edu"
+          required
+        />
+        <FormField
+          label="Phone Number"
+          name="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          placeholder="+91 98765 43210"
+          required
+        />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <FormSelect
+          label="No. of Employees"
+          name="employee_count"
+          value={formData.employee_count}
+          onChange={handleChange}
+          options={["", "1-10", "11-50", "51-100", "101-500", "500+"]}
+        />
+        <FormSelect
+          label="Student Count"
+          name="student_count"
+          value={formData.student_count}
+          onChange={handleChange}
+          options={["", "1-100", "101-500", "501-1000", "1001-2000", "2000+"]}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-text-primary mb-1.5">
+          Message / Requirements <span className="text-text-tertiary font-normal">(optional)</span>
+        </label>
+        <textarea
+          name="message"
+          value={formData.message}
+          onChange={handleChange}
+          rows={3}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-tertiary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-none"
+          placeholder="Tell us about your school's needs..."
+        />
+      </div>
+
+      {errors.profile_image && (
+        <p className="text-xs text-error mt-1">{errors.profile_image}</p>
+      )}
+
+      {status === "error" && (
+        <div className="text-sm text-error bg-red-50 px-4 py-3 rounded-xl border border-red-100">
+          Something went wrong. Please try again or email us directly at hello@vidhyam.in
+        </div>
+      )}
+
+      <Button type="submit" size="lg" isLoading={status === "submitting"} className="w-full">
+        Submit Request
+      </Button>
+
+      <p className="text-xs text-text-tertiary text-center">
+        By submitting, you agree to our Privacy Policy and Terms of Service.
+      </p>
+    </form>
+  );
+}
+
+function FormField({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  error,
+  placeholder,
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-text-primary mb-1.5">
+        {label}
+        {required && <span className="text-error ml-0.5">*</span>}
+      </label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 rounded-xl border bg-white text-text-primary placeholder:text-text-tertiary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+          error ? "border-error ring-1 ring-error/20" : "border-border"
+        }`}
+      />
+      {error && <p className="text-xs text-error mt-1">{error}</p>}
+    </div>
+  );
+}
+
+function FormSelect({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: string[];
+}) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-text-primary mb-1.5">
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="w-full px-4 py-3 rounded-xl border border-border bg-white text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt || "Select..."}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
