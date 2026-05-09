@@ -7,6 +7,7 @@ on:
 jobs:
   ai-coder:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
@@ -27,6 +28,11 @@ jobs:
           echo "Installing Aider (Open-Source AI Pair Programmer)..."
           python -m pip install aider-chat
 
+      - name: Configure Git
+        run: |
+          git config --global user.name "AI Developer"
+          git config --global user.email "ai@ai-school.com"
+
       - name: Run AI Coder
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -34,10 +40,8 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           echo "Starting AI Developer for Issue: $ISSUE_TITLE"
-          # Aider को बिना मैन्युअल अप्रूवल के रन करने के लिए --yes फ्लैग लगाया है
-          aider --model openrouter/inclusionai/ring-2.6-1t:free --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
-
-        
+          # Piping exit to ensure Aider doesn't hang in interactive mode
+          echo "/exit" | aider --model openrouter/inclusionai/ring-2.6-1t:free --message "Solve this issue: $ISSUE_TITLE. Details: $ISSUE_BODY" --yes --no-auto-commits
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
