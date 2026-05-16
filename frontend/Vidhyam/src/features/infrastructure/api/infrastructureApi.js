@@ -1,4 +1,4 @@
-import { baseApi } from '../../../app/api/baseApi';
+﻿import { baseApi } from '../../../app/api/baseApi';
 
 export const infrastructureApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -14,6 +14,38 @@ export const infrastructureApi = baseApi.injectEndpoints({
     createSpace: builder.mutation({
       query: ({ schoolId, category, ...body }) => ({ url: `/spaces/${schoolId}/spaces/${category}`, method: 'POST', body }),
       invalidatesTags: ['Spaces'],
+    }),
+    
+    getSpaceRequirements: builder.query({
+      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/requirements`,
+      providesTags: ['SpaceRequirements'],
+    }),
+    getMaterialRequirements: builder.query({
+      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/material-requirements`,
+      providesTags: ['MaterialRequirements'],
+    }),
+    getSpacesUsingMaterial: builder.query({
+      query: ({ schoolId, materialName }) => `/materials/${schoolId}/${materialName}/spaces`,
+      providesTags: ['MaterialRequirements'],
+    }),
+    // Space Materials Listing (NEW)
+    getSpaceMaterials: builder.query({
+      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/materials`,
+      providesTags: ['SpaceMaterials'],
+    }),
+    getAllSpacesMaterials: builder.query({
+      query: (schoolId) => `/spaces/${schoolId}/materials/all`,
+      providesTags: ['SpaceMaterials'],
+    }),
+    // Clone Space (NEW)
+    cloneSpace: builder.mutation({
+      query: ({ schoolId, spaceName, ...body }) => ({ url: `/spaces/${schoolId}/${spaceName}/clone`, method: 'POST', body }),
+      invalidatesTags: ['Spaces', 'SpaceMaterials'],
+    }),
+    // Transfer Material Between Spaces (NEW)
+    transferMaterial: builder.mutation({
+      query: ({ schoolId, fromSpace, materialName, ...body }) => ({ url: `/spaces/${schoolId}/${fromSpace}/materials/${materialName}/transfer`, method: 'POST', body }),
+      invalidatesTags: ['Spaces', 'SpaceMaterials', 'Materials'],
     }),
     getSpaceDetails: builder.query({
       query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}`,
@@ -63,6 +95,24 @@ export const infrastructureApi = baseApi.injectEndpoints({
     bulkImportMaterials: builder.mutation({
       query: ({ schoolId, ...body }) => ({ url: `/materials/${schoolId}/bulk`, method: 'POST', body }),
       invalidatesTags: ['Materials'],
+    }),
+    // Shortage Summary
+    getShortageSummary: builder.query({
+      query: ({ schoolId }) => `/materials/${schoolId}/shortage-summary`,
+      providesTags: ['MaterialShortage'],
+    }),
+    runShortageCheck: builder.mutation({
+      query: ({ schoolId }) => ({ url: `/materials/${schoolId}/run-shortage-check`, method: 'POST' }),
+      invalidatesTags: ['MaterialShortage', 'Notifications'],
+    }),
+    // Space Budget
+    getSpaceBudget: builder.query({
+      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/budget`,
+      providesTags: ['SpaceBudget'],
+    }),
+    updateSpaceBudget: builder.mutation({
+      query: ({ schoolId, spaceName, ...body }) => ({ url: `/spaces/${schoolId}/${spaceName}/budget`, method: 'PUT', body }),
+      invalidatesTags: ['SpaceBudget', 'Spaces'],
     }),
     // Webhooks
     getWebhooks: builder.query({
@@ -147,7 +197,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
 export const {
   useGetSpacesQuery, useGetSpaceCategoriesQuery, useCreateSpaceMutation,
-  useGetSpaceDetailsQuery, useUpdateSpaceMutation, useDeleteSpaceMutation,
+  useGetSpaceRequirementsQuery, useGetMaterialRequirementsQuery, useGetSpacesUsingMaterialQuery, useGetSpaceDetailsQuery, useUpdateSpaceMutation, useDeleteSpaceMutation,
   useAssignSpaceMaterialsMutation, useGetMaterialsQuery, useCreateMaterialMutation,
   useGetMaterialQuery, useUpdateMaterialMutation, useDeleteMaterialMutation,
   useBuyMaterialMutation, useSellMaterialMutation, useBulkImportMaterialsMutation,
@@ -158,4 +208,7 @@ export const {
   useGetDeveloperActivityQuery, useUpdateDeveloperRoleMutation, useEmergencyAccessMutation,
   useApproveAccessRequestMutation, useRejectAccessRequestMutation,
   useExtractOcrTextMutation, useGetPublicStudentsQuery, useGetPublicAttendanceQuery,
+  useGetSpaceMaterialsQuery, useGetAllSpacesMaterialsQuery, useCloneSpaceMutation, useTransferMaterialMutation,
+  useGetShortageSummaryQuery, useRunShortageCheckMutation,
+  useGetSpaceBudgetQuery, useUpdateSpaceBudgetMutation,
 } = infrastructureApi;

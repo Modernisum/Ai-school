@@ -386,7 +386,7 @@ impl ResponsibilityCrud {
 
         // Spaces covered
         let spaces_covered: i64 = sqlx::query_scalar(
-            "SELECT COUNT(DISTINCT unnest(space_ids)) FROM responsibilities WHERE school_id = $1"
+            "SELECT COUNT(DISTINCT jsonb_array_elements_text(space_ids)) FROM responsibilities WHERE school_id = $1"
         )
         .bind(school_id)
         .fetch_one(&mut *conn)
@@ -395,7 +395,7 @@ impl ResponsibilityCrud {
         // Monthly revenue
         let monthly_revenue: f64 = sqlx::query_scalar(
             "SELECT COALESCE(SUM(monthly_price), 0) FROM employee_responsibilities er
-             JOIN responsibilities r ON er.responsibility_id = r.responsibility_id
+             JOIN responsibilities r ON er.responsibility_id = r.responsibility_id AND er.school_id = r.school_id
              WHERE er.school_id = $1"
         )
         .bind(school_id)
@@ -404,11 +404,11 @@ impl ResponsibilityCrud {
 
         // Employee workload
         let employee_workload: Vec<sqlx::postgres::PgRow> = sqlx::query(
-            "SELECT e.name, COUNT(er.responsibility_id) as assignments
+            "SELECT COALESCE(e.data->>'name', 'Unnamed') AS name, COUNT(er.responsibility_id) as assignments
              FROM employees e
              LEFT JOIN employee_responsibilities er ON e.employee_id = er.employee_id
              WHERE e.school_id = $1
-             GROUP BY e.employee_id, e.name
+             GROUP BY e.employee_id, e.data->>'name'
              ORDER BY assignments DESC
              LIMIT 10"
         )
@@ -427,7 +427,7 @@ impl ResponsibilityCrud {
         let space_util: Vec<sqlx::postgres::PgRow> = sqlx::query(
             "SELECT s.name, COUNT(er.responsibility_id) as value
              FROM spaces s
-             LEFT JOIN responsibilities r ON r.space_ids @> ARRAY[s.space_id::text]
+             LEFT JOIN responsibilities r ON r.space_ids @> to_jsonb(ARRAY[s.space_id::text])
              LEFT JOIN employee_responsibilities er ON er.responsibility_id = r.responsibility_id
              WHERE s.school_id = $1
              GROUP BY s.space_id, s.name
@@ -449,7 +449,7 @@ impl ResponsibilityCrud {
         let revenue_trend = sqlx::query(
             "SELECT DATE(er.created_at) as date, SUM(r.monthly_price) as revenue
              FROM employee_responsibilities er
-             JOIN responsibilities r ON er.responsibility_id = r.responsibility_id
+             JOIN responsibilities r ON er.responsibility_id = r.responsibility_id AND er.school_id = r.school_id
              WHERE er.school_id = $1
                AND er.created_at >= NOW() - INTERVAL '1 day' * $2
              GROUP BY DATE(er.created_at)

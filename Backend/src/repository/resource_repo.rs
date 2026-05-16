@@ -551,7 +551,9 @@ impl ResourceRepository for PostgresResourceRepository {
             json!({
                 "name": r.get::<String, _>("name"),
                 "spaceName": r.get::<String, _>("name"),
-                "spaceCategory": r.get::<String, _>("space_category")
+                "spaceId": r.get::<String, _>("space_id"),
+                "spaceCategory": r.get::<String, _>("space_category"),
+                "budget": r.get::<Option<f64>, _>("budget"),
             })
         }).collect())
     }
@@ -610,7 +612,9 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
             Ok(Some(json!({
                 "name": r.get::<String, _>("name"),
                 "spaceName": r.get::<String, _>("name"),
+                "spaceId": r.get::<String, _>("space_id"),
                 "spaceCategory": r.get::<String, _>("space_category"),
+                "budget": r.get::<Option<f64>, _>("budget"),
                 "data": r.get::<Value, _>("data")
             })))
         } else {
@@ -808,6 +812,289 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
         })).collect())
     }
 
+    async fn get_space_materials(
+        &self,
+        school_id: &str,
+        space_name: &str,
+    ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        let rows = sqlx::query(
+            "SELECT m.*, COALESCE(req.required_count, 0) as required_count
+             FROM space_materials m
+             LEFT JOIN space_material_requirements req
+               ON req.school_id = m.school_id
+              AND req.space_id = m.space_id
+              AND req.material_name = m.material_name
+             WHERE m.school_id = $1 AND m.space_name = $2
+             ORDER BY m.material_name ASC"
+        )
+        .bind(school_id)
+        .bind(space_name)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        Ok(rows.into_iter().map(|r| {
+            let quantity: i32 = r.get("quantity");
+            let required: i32 = r.get("required_count");
+            json!({
+                "materialName": r.get::<String, _>("material_name"),
+                "materialId": r.get::<Option<String>, _>("material_id"),
+                "quantity": quantity,
+                "requiredCount": required,
+                "unit": r.get::<Option<String>, _>("unit"),
+                "unitPrice": r.get::<Option<f64>, _>("unit_price"),
+                "status": if required > 0 && quantity < required { "deficit" } else if required > 0 { "full" } else { "unset" }
+            })
+        }).collect())
+    }
+
+    async fn clone_space(
+        &self,
+        school_id: &str,
+        source_space_name: &str,
+        new_space_name: String,
+    ) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Get source space details
+        let source: (String, String, Value) = sqlx::query_as(
+            "SELECT space_category, space_id, data FROM spaces WHERE school_id = $1 AND name = $2"
+        )
+        .bind(school_id)
+        .bind(source_space_name)
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(|| crate::error::AppError::NotFound(format!("Source space '{}' not found", source_space_name)))?;
+
+        let source_category = source.0;
+        let source_space_id = source.1;
+
+        // 2. Generate new space_id
+        let new_space_id = format!("{}-{}", new_space_name.to_lowercase().replace(' ', "-"), &school_id[..4]);
+
+        // 3. Check if space with same name already exists
+        let existing: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM spaces WHERE school_id = $1 AND name = $2"
+        )
+        .bind(school_id)
+        .bind(&new_space_name)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        if existing.is_some() {
+            tx.commit().await?;
+            return Err(crate::error::AppError::Validation(format!("Space with name '{}' already exists", new_space_name)).into());
+        }
+
+        // 4. Insert new space
+        sqlx::query(
+            "INSERT INTO spaces (school_id, space_id, name, space_category, data)
+             VALUES ($1, $2, $3, $4, $5)"
+        )
+        .bind(school_id)
+        .bind(&new_space_id)
+        .bind(&new_space_name)
+        .bind(&source_category)
+        .bind(json!({"name": new_space_name, "category": source_category}))
+        .execute(&mut *tx)
+        .await?;
+
+        // 5. Copy space_material_requirements
+        let reqs = sqlx::query(
+            "SELECT material_name, required_count FROM space_material_requirements
+             WHERE school_id = $1 AND space_id = $2"
+        )
+        .bind(school_id)
+        .bind(&source_space_id)
+        .fetch_all(&mut *tx)
+        .await?;
+
+        for req in &reqs {
+            let material_name: String = req.get("material_name");
+            let required_count: i32 = req.get("required_count");
+            sqlx::query(
+                "INSERT INTO space_material_requirements (school_id, space_id, material_name, required_count)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (school_id, space_id, material_name) DO NOTHING"
+            )
+            .bind(school_id)
+            .bind(&new_space_id)
+            .bind(&material_name)
+            .bind(required_count)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        // 6. Copy space_requirements (responsibility requirements)
+        let resp_reqs = sqlx::query(
+            "SELECT responsibility_id, required_count FROM space_requirements
+             WHERE school_id = $1 AND space_id = $2"
+        )
+        .bind(school_id)
+        .bind(&source_space_id)
+        .fetch_all(&mut *tx)
+        .await?;
+
+        for req in &resp_reqs {
+            let resp_id: String = req.get("responsibility_id");
+            let req_count: i32 = req.get("required_count");
+            sqlx::query(
+                "INSERT INTO space_requirements (school_id, space_id, responsibility_id, required_count)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (school_id, space_id, responsibility_id) DO NOTHING"
+            )
+            .bind(school_id)
+            .bind(&new_space_id)
+            .bind(&resp_id)
+            .bind(req_count)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
+
+        Ok(json!({
+            "spaceId": new_space_id,
+            "spaceName": new_space_name,
+            "spaceCategory": source_category,
+            "clonedFrom": source_space_name
+        }))
+    }
+
+    async fn transfer_space_material(
+        &self,
+        school_id: &str,
+        from_space: &str,
+        to_space: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Validate source space has enough quantity
+        let source_qty: Option<i32> = sqlx::query_scalar(
+            "SELECT quantity FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+        )
+        .bind(school_id)
+        .bind(from_space)
+        .bind(material_name)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let current_qty = source_qty.unwrap_or(0);
+        if current_qty < quantity {
+            tx.commit().await?;
+            return Err(crate::error::AppError::Validation(
+                format!("Insufficient quantity in source space. Available: {}, Requested: {}", current_qty, quantity)
+            ).into());
+        }
+
+        // 2. Get material_id
+        let material_id: Option<String> = sqlx::query_scalar(
+            "SELECT material_id FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+        )
+        .bind(school_id)
+        .bind(from_space)
+        .bind(material_name)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let material_id = material_id.unwrap_or_else(|| format!("MAT-{:06}", rand::random::<u32>() % 900000 + 100000));
+
+        // 3. Decrement from source
+        let new_source_qty = current_qty - quantity;
+        if new_source_qty == 0 {
+            sqlx::query(
+                "DELETE FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+            )
+            .bind(school_id)
+            .bind(from_space)
+            .bind(material_name)
+            .execute(&mut *tx)
+            .await?;
+        } else {
+            sqlx::query(
+                "UPDATE space_materials SET quantity = $1 WHERE school_id = $2 AND space_name = $3 AND material_name = $4"
+            )
+            .bind(new_source_qty)
+            .bind(school_id)
+            .bind(from_space)
+            .bind(material_name)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        // 4. Get unit and unit_price from source for the insert/update
+        let unit: Option<String> = sqlx::query_scalar(
+            "SELECT unit FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+        )
+        .bind(school_id)
+        .bind(from_space)
+        .bind(material_name)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let unit_price: Option<f64> = sqlx::query_scalar(
+            "SELECT unit_price FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+        )
+        .bind(school_id)
+        .bind(from_space)
+        .bind(material_name)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        // 5. Increment in target
+        sqlx::query(
+            "INSERT INTO space_materials (school_id, space_name, material_id, material_name, quantity, unit, unit_price)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (school_id, space_name, material_name)
+             DO UPDATE SET quantity = space_materials.quantity + EXCLUDED.quantity"
+        )
+        .bind(school_id)
+        .bind(to_space)
+        .bind(&material_id)
+        .bind(material_name)
+        .bind(quantity)
+        .bind(&unit)
+        .bind(unit_price)
+        .execute(&mut *tx)
+        .await?;
+
+        // 6. Get new target quantity
+        let new_target_qty: i32 = sqlx::query_scalar(
+            "SELECT quantity FROM space_materials WHERE school_id = $1 AND space_name = $2 AND material_name = $3"
+        )
+        .bind(school_id)
+        .bind(to_space)
+        .bind(material_name)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // 7. Record history
+        sqlx::query(
+            "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_name, notes)
+             VALUES ($1, $2, 'TRANSFER', $3, $4, $5)"
+        )
+        .bind(school_id)
+        .bind(&material_id)
+        .bind(quantity)
+        .bind(from_space)
+        .bind(format!("Transferred from '{}' to '{}'", from_space, to_space))
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(json!({
+            "success": true,
+            "remainingInSource": new_source_qty,
+            "newQuantityInTarget": new_target_qty
+        }))
+    }
+
     async fn get_materials_dashboard(&self, school_id: &str) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
@@ -868,8 +1155,96 @@ mod tests {
     #[tokio::test]
     async fn test_get_default_materials() {
         let mats = get_default_materials();
-        assert!(mats.contains_key("classroom"));
+        assert!(mats.contains_key("classroom"), "Expected 'classroom' key in default materials");
         let classroom_mats = mats.get("classroom").unwrap();
-        assert!(classroom_mats.iter().any(|m| m["materialName"] == "Ceiling Fan"));
+        assert!(classroom_mats.iter().any(|m| m["materialName"] == "Ceiling Fan"), "Expected Ceiling Fan in classroom materials");
+        assert!(classroom_mats.iter().any(|m| m["materialName"] == "White Board"), "Expected White Board in classroom materials");
+        assert!(classroom_mats.iter().any(|m| m["materialName"] == "Benches"), "Expected Benches in classroom materials");
+
+        assert!(mats.contains_key("office"), "Expected 'office' key in default materials");
+        let office_mats = mats.get("office").unwrap();
+        assert!(office_mats.iter().any(|m| m["materialName"] == "Office Table"), "Expected Office Table in office materials");
+        assert!(office_mats.iter().any(|m| m["materialName"] == "Office Chair"), "Expected Office Chair in office materials");
+
+        for mat in classroom_mats {
+            assert!(mat["unitPrice"].as_f64().is_some(), "All materials should have a unitPrice");
+            assert!(mat["quantity"].as_i64().is_some(), "All materials should have a quantity");
+        }
+    }
+
+    #[test]
+    fn test_default_material_prices_are_positive() {
+        let mats = get_default_materials();
+        for (category, items) in &mats {
+            for item in items {
+                let price = item["unitPrice"].as_f64().unwrap_or(0.0);
+                assert!(price > 0.0, "Material '{}' in category '{}' should have positive price, got {}",
+                    item["materialName"], category, price);
+            }
+        }
+    }
+
+    #[test]
+    fn test_default_material_quantities_are_positive() {
+        let mats = get_default_materials();
+        for (category, items) in &mats {
+            for item in items {
+                let qty = item["quantity"].as_i64().unwrap_or(0);
+                assert!(qty > 0, "Material '{}' in category '{}' should have positive quantity, got {}",
+                    item["materialName"], category, qty);
+            }
+        }
+    }
+
+    #[test]
+    fn test_default_materials_contain_categories() {
+        let mats = get_default_materials();
+        assert!(!mats.is_empty(), "Default materials map should not be empty");
+        let categories: Vec<&String> = mats.keys().collect();
+        assert!(!categories.is_empty(), "Should have at least one category");
+    }
+
+    #[test]
+    fn test_get_default_materials_json_shape() {
+        let mats = get_default_materials();
+        for (_category, items) in &mats {
+            for item in items {
+                assert!(item.get("materialName").is_some(), "Material missing 'materialName'");
+                assert!(item.get("quantity").is_some(), "Material missing 'quantity'");
+                assert!(item.get("unitPrice").is_some(), "Material missing 'unitPrice'");
+                assert!(item.get("unit").is_some(), "Material missing 'unit'");
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_space_materials_summary_computation() {
+        let materials = vec![
+            json!({"materialName": "Fan", "quantity": 5, "unitPrice": 1500.0, "requiredCount": 10, "status": "deficit"}),
+            json!({"materialName": "Board", "quantity": 2, "unitPrice": 2000.0, "requiredCount": 1, "status": "full"}),
+            json!({"materialName": "Table", "quantity": 0, "unitPrice": 5000.0, "requiredCount": 3, "status": "deficit"}),
+        ];
+
+        let mut total_value = 0.0_f64;
+        let mut deficit_value = 0.0_f64;
+        let mut deficit_count = 0_usize;
+
+        for m in &materials {
+            let qty = m["quantity"].as_f64().unwrap_or(0.0);
+            let price = m["unitPrice"].as_f64().unwrap_or(0.0);
+            total_value += qty * price;
+
+            let required = m["requiredCount"].as_f64().unwrap_or(0.0);
+            if required > qty {
+                deficit_value += (required - qty) * price;
+                deficit_count += 1;
+            }
+        }
+
+        assert_eq!(total_value, 5.0 * 1500.0 + 2.0 * 2000.0 + 0.0 * 5000.0, "Total value should be 7500 + 4000 + 0 = 11500");
+        assert_eq!(total_value, 11500.0, "Total value should be 11500");
+        assert_eq!(deficit_value, (10.0 - 5.0) * 1500.0 + (3.0 - 0.0) * 5000.0, "Deficit value should be 7500 + 15000 = 22500");
+        assert_eq!(deficit_value, 22500.0, "Deficit value should be 22500");
+        assert_eq!(deficit_count, 2, "Should have 2 deficit items (Fan and Table)");
     }
 }

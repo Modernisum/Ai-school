@@ -114,4 +114,29 @@ pub trait ResourceRepository: Send + Sync {
     ) -> Result<JsonList, AppError>;
 
     async fn get_materials_dashboard(&self, school_id: &str) -> Result<Value, AppError>;
+
+    // Space materials listing
+    async fn get_space_materials(
+        &self,
+        school_id: &str,
+        space_name: &str,
+    ) -> Result<Vec<Value>, AppError>;
+
+    // Clone space with requirements
+    async fn clone_space(
+        &self,
+        school_id: &str,
+        source_space_name: &str,
+        new_space_name: String,
+    ) -> Result<Value, AppError>;
+
+    // Transfer material between spaces
+    async fn transfer_space_material(
+        &self,
+        school_id: &str,
+        from_space: &str,
+        to_space: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> Result<Value, AppError>;
 }

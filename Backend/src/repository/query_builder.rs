@@ -1,87 +1,92 @@
 //! Query builder utilities for constructing SQL queries dynamically
-//! This module provides a type-safe way to build SQL queries instead of using hardcoded strings
+//! Fixed: removed manual $N placeholder generation — let sqlx QueryBuilder auto-generate them
 
 use sqlx::{Postgres, QueryBuilder};
 use serde_json::Value;
 use std::collections::HashMap;
 
-/// Builder for responsibility queries
+/// Builder for responsibility queries (uses sqlx QueryBuilder internally for auto placeholders)
 pub struct ResponsibilityQueryBuilder {
     query: QueryBuilder<'static, Postgres>,
-    params_count: usize,
+    has_where: bool,
 }
 
 impl ResponsibilityQueryBuilder {
-    /// Create a new query builder for responsibilities
     pub fn new() -> Self {
         Self {
             query: QueryBuilder::new("SELECT * FROM responsibilities"),
-            params_count: 0,
+            has_where: false,
         }
     }
 
-    /// Add school_id filter
     pub fn school_id(mut self, school_id: &str) -> Self {
-        self.params_count += 1;
-        self.query.push(format!(" WHERE school_id = ${}", self.params_count));
+        self.query.push(" WHERE school_id = ");
         self.query.push_bind(school_id.to_string());
+        self.has_where = true;
         self
     }
 
-    /// Add employee_type filter
     pub fn employee_type(mut self, employee_type: Option<&str>) -> Self {
         if let Some(e_type) = employee_type {
-            self.params_count += 1;
-            self.query.push(format!(" AND employee_type = ${}", self.params_count));
+            if self.has_where {
+                self.query.push(" AND ");
+            } else {
+                self.query.push(" WHERE ");
+                self.has_where = true;
+            }
+            self.query.push("employee_type = ");
             self.query.push_bind(e_type.to_string());
         }
         self
     }
 
-    /// Add space_id filter
     pub fn space_id(mut self, space_id: Option<&str>) -> Self {
         if let Some(s_id) = space_id {
-            self.params_count += 1;
-            self.query.push(format!(" AND space_id = ${}", self.params_count));
+            if self.has_where {
+                self.query.push(" AND ");
+            } else {
+                self.query.push(" WHERE ");
+                self.has_where = true;
+            }
+            self.query.push("space_id = ");
             self.query.push_bind(s_id.to_string());
         }
         self
     }
 
-    /// Add search by name filter
     pub fn search(mut self, search_term: Option<&str>) -> Self {
         if let Some(term) = search_term {
-            self.params_count += 1;
-            self.query.push(format!(" AND name ILIKE ${}", self.params_count));
+            if self.has_where {
+                self.query.push(" AND ");
+            } else {
+                self.query.push(" WHERE ");
+                self.has_where = true;
+            }
+            self.query.push("name ILIKE ");
             self.query.push_bind(format!("%{}%", term));
         }
         self
     }
 
-    /// Add pagination (limit and offset)
     pub fn paginate(mut self, limit: Option<i64>, offset: Option<i64>) -> Self {
         if let Some(limit_val) = limit {
-            self.params_count += 1;
-            self.query.push(format!(" LIMIT ${}", self.params_count));
+            self.query.push(" LIMIT ");
             self.query.push_bind(limit_val);
         }
-        
         if let Some(offset_val) = offset {
-            self.params_count += 1;
-            self.query.push(format!(" OFFSET ${}", self.params_count));
+            self.query.push(" OFFSET ");
             self.query.push_bind(offset_val);
         }
         self
     }
 
-    /// Add ordering
     pub fn order_by(mut self, field: &str, direction: &str) -> Self {
         self.query.push(format!(" ORDER BY {} {}", field, direction));
         self
     }
 
-    /// Build the final query
-    pub fn build(self) -> QueryBuilder<'static, Postgres> {
+    /// Build — delegates to sqlx QueryBuilder::build() which returns a proper Query
+    pub fn build(mut self) -> QueryBuilder<'static, Postgres> {
         self.query
     }
 }
@@ -89,48 +94,53 @@ impl ResponsibilityQueryBuilder {
 /// Builder for employee_responsibilities queries
 pub struct EmployeeResponsibilityQueryBuilder {
     query: QueryBuilder<'static, Postgres>,
-    params_count: usize,
+    has_where: bool,
 }
 
 impl EmployeeResponsibilityQueryBuilder {
-    /// Create a new query builder for employee_responsibilities
     pub fn new() -> Self {
         Self {
             query: QueryBuilder::new("SELECT * FROM employee_responsibilities"),
-            params_count: 0,
+            has_where: false,
         }
     }
 
-    /// Add school_id filter
     pub fn school_id(mut self, school_id: &str) -> Self {
-        self.params_count += 1;
-        self.query.push(format!(" WHERE school_id = ${}", self.params_count));
+        self.query.push(" WHERE school_id = ");
         self.query.push_bind(school_id.to_string());
+        self.has_where = true;
         self
     }
 
-    /// Add employee_id filter
     pub fn employee_id(mut self, employee_id: Option<&str>) -> Self {
         if let Some(e_id) = employee_id {
-            self.params_count += 1;
-            self.query.push(format!(" AND employee_id = ${}", self.params_count));
+            if self.has_where {
+                self.query.push(" AND ");
+            } else {
+                self.query.push(" WHERE ");
+                self.has_where = true;
+            }
+            self.query.push("employee_id = ");
             self.query.push_bind(e_id.to_string());
         }
         self
     }
 
-    /// Add responsibility_id filter
     pub fn responsibility_id(mut self, responsibility_id: Option<&str>) -> Self {
         if let Some(r_id) = responsibility_id {
-            self.params_count += 1;
-            self.query.push(format!(" AND responsibility_id = ${}", self.params_count));
+            if self.has_where {
+                self.query.push(" AND ");
+            } else {
+                self.query.push(" WHERE ");
+                self.has_where = true;
+            }
+            self.query.push("responsibility_id = ");
             self.query.push_bind(r_id.to_string());
         }
         self
     }
 
-    /// Build the final query
-    pub fn build(self) -> QueryBuilder<'static, Postgres> {
+    pub fn build(mut self) -> QueryBuilder<'static, Postgres> {
         self.query
     }
 }
@@ -145,18 +155,10 @@ pub struct InsertQueryBuilder {
 }
 
 impl InsertQueryBuilder {
-    /// Create a new INSERT query builder
     pub fn new(table: &str) -> Self {
-        Self {
-            table: table.to_string(),
-            columns: Vec::new(),
-            values: Vec::new(),
-            params: Vec::new(),
-            on_conflict: None,
-        }
+        Self { table: table.to_string(), columns: Vec::new(), values: Vec::new(), params: Vec::new(), on_conflict: None }
     }
 
-    /// Add a column-value pair
     pub fn column(mut self, column: &str, value: Value) -> Self {
         self.columns.push(column.to_string());
         self.values.push(format!("${}", self.params.len() + 1));
@@ -164,7 +166,6 @@ impl InsertQueryBuilder {
         self
     }
 
-    /// Add multiple columns from a HashMap
     pub fn columns(mut self, data: &HashMap<String, Value>) -> Self {
         for (key, value) in data {
             self.columns.push(key.clone());
@@ -174,36 +175,18 @@ impl InsertQueryBuilder {
         self
     }
 
-    /// Set ON CONFLICT clause
     pub fn on_conflict(mut self, conflict_columns: &[&str], update_columns: &[&str]) -> Self {
         let conflict_clause = conflict_columns.join(", ");
-        let update_clause = update_columns
-            .iter()
-            .map(|col| format!("{} = EXCLUDED.{}", col, col))
-            .collect::<Vec<_>>()
-            .join(", ");
-        
-        self.on_conflict = Some(format!(
-            " ON CONFLICT ({}) DO UPDATE SET {}",
-            conflict_clause, update_clause
-        ));
+        let update_clause = update_columns.iter().map(|col| format!("{} = EXCLUDED.{}", col, col)).collect::<Vec<_>>().join(", ");
+        self.on_conflict = Some(format!(" ON CONFLICT ({}) DO UPDATE SET {}", conflict_clause, update_clause));
         self
     }
 
-    /// Build the final SQL query and parameters
     pub fn build(self) -> (String, Vec<Value>) {
         let columns_str = self.columns.join(", ");
         let values_str = self.values.join(", ");
-        
-        let mut sql = format!(
-            "INSERT INTO {} ({}) VALUES ({})",
-            self.table, columns_str, values_str
-        );
-        
-        if let Some(on_conflict) = self.on_conflict {
-            sql.push_str(&on_conflict);
-        }
-        
+        let mut sql = format!("INSERT INTO {} ({}) VALUES ({})", self.table, columns_str, values_str);
+        if let Some(on_conflict) = self.on_conflict { sql.push_str(&on_conflict); }
         (sql, self.params)
     }
 }
@@ -217,49 +200,31 @@ pub struct UpdateQueryBuilder {
 }
 
 impl UpdateQueryBuilder {
-    /// Create a new UPDATE query builder
     pub fn new(table: &str) -> Self {
-        Self {
-            table: table.to_string(),
-            set_clauses: Vec::new(),
-            where_clauses: Vec::new(),
-            params: Vec::new(),
-        }
+        Self { table: table.to_string(), set_clauses: Vec::new(), where_clauses: Vec::new(), params: Vec::new() }
     }
 
-    /// Add a SET clause
     pub fn set(mut self, column: &str, value: Value) -> Self {
         self.params.push(value);
         self.set_clauses.push(format!("{} = ${}", column, self.params.len()));
         self
     }
 
-    /// Add a WHERE clause
     pub fn r#where(mut self, condition: &str, value: Value) -> Self {
         self.params.push(value);
         self.where_clauses.push(format!("{} = ${}", condition, self.params.len()));
         self
     }
 
-    /// Build the final SQL query and parameters
     pub fn build(self) -> (String, Vec<Value>) {
         let set_clause = self.set_clauses.join(", ");
-        let where_clause = if !self.where_clauses.is_empty() {
-            format!(" WHERE {}", self.where_clauses.join(" AND "))
-        } else {
-            String::new()
-        };
-        
-        let sql = format!(
-            "UPDATE {} SET {}{}",
-            self.table, set_clause, where_clause
-        );
-        
+        let where_clause = if !self.where_clauses.is_empty() { format!(" WHERE {}", self.where_clauses.join(" AND ")) } else { String::new() };
+        let sql = format!("UPDATE {} SET {}{}", self.table, set_clause, where_clause);
         (sql, self.params)
     }
 }
 
-/// Helper function to build a responsibility query with common filters
+/// Helper: build a responsibility query with common filters
 pub fn build_responsibility_query(
     school_id: &str,
     employee_type: Option<&str>,
@@ -278,7 +243,7 @@ pub fn build_responsibility_query(
         .build()
 }
 
-/// Helper function to build an employee responsibility query
+/// Helper: build an employee responsibility query
 pub fn build_employee_responsibility_query(
     school_id: &str,
     employee_id: Option<&str>,

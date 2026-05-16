@@ -11,8 +11,7 @@ import FormWidget from '../../../components/ui/FormWidget';
 import { getSchoolIdFromStorage, callApiWithBackoff } from '../../../utils/api';
 import { useAddEmployeeMutation } from '../api/employeeApi';
 import { useGetSpacesQuery } from '../../infrastructure/api/infrastructureApi';
-import { useGetSpaceResponsibilitiesQuery } from '../../infrastructure/api/responsibilityApi';
-import { useGetResponsibilitiesQuery } from '../../infrastructure/api/responsibilityApi';
+import { useGetSpaceResponsibilitiesQuery, useGetResponsibilitiesQuery } from '../../infrastructure/infrastructureApi';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 const getSchoolId = () => getSchoolIdFromStorage() || "";

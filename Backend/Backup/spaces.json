@@ -6833,5 +6833,621 @@
     "space_id": "pre-nursery-5150",
     "space_name": null,
     "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "classroom"
+    },
+    "id": "514",
+    "name": "classroom",
+    "school_id": "986511",
+    "space_category": "classroom",
+    "space_id": "classroom-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "kitchen",
+      "name": "kitchen"
+    },
+    "id": "515",
+    "name": "kitchen",
+    "school_id": "986511",
+    "space_category": "kitchen",
+    "space_id": "kitchen-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "storeroom",
+      "name": "storeroom"
+    },
+    "id": "516",
+    "name": "storeroom",
+    "school_id": "986511",
+    "space_category": "storeroom",
+    "space_id": "storeroom-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "office",
+      "name": "office"
+    },
+    "id": "517",
+    "name": "office",
+    "school_id": "986511",
+    "space_category": "office",
+    "space_id": "office-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "ground",
+      "name": "ground"
+    },
+    "id": "518",
+    "name": "ground",
+    "school_id": "986511",
+    "space_category": "ground",
+    "space_id": "ground-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "parking",
+      "name": "parking"
+    },
+    "id": "519",
+    "name": "parking",
+    "school_id": "986511",
+    "space_category": "parking",
+    "space_id": "parking-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "canteen",
+      "name": "canteen"
+    },
+    "id": "520",
+    "name": "canteen",
+    "school_id": "986511",
+    "space_category": "canteen",
+    "space_id": "canteen-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "park",
+      "name": "park"
+    },
+    "id": "521",
+    "name": "park",
+    "school_id": "986511",
+    "space_category": "park",
+    "space_id": "park-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "Pre-Nursery"
+    },
+    "id": "522",
+    "name": "Pre-Nursery",
+    "school_id": "986511",
+    "space_category": "classroom",
+    "space_id": "pre-nursery-9865",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "classroom"
+    },
+    "id": "523",
+    "name": "classroom",
+    "school_id": "848426",
+    "space_category": "classroom",
+    "space_id": "classroom-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "kitchen",
+      "name": "kitchen"
+    },
+    "id": "524",
+    "name": "kitchen",
+    "school_id": "848426",
+    "space_category": "kitchen",
+    "space_id": "kitchen-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "storeroom",
+      "name": "storeroom"
+    },
+    "id": "525",
+    "name": "storeroom",
+    "school_id": "848426",
+    "space_category": "storeroom",
+    "space_id": "storeroom-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "office",
+      "name": "office"
+    },
+    "id": "526",
+    "name": "office",
+    "school_id": "848426",
+    "space_category": "office",
+    "space_id": "office-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "ground",
+      "name": "ground"
+    },
+    "id": "527",
+    "name": "ground",
+    "school_id": "848426",
+    "space_category": "ground",
+    "space_id": "ground-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "parking",
+      "name": "parking"
+    },
+    "id": "528",
+    "name": "parking",
+    "school_id": "848426",
+    "space_category": "parking",
+    "space_id": "parking-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "canteen",
+      "name": "canteen"
+    },
+    "id": "529",
+    "name": "canteen",
+    "school_id": "848426",
+    "space_category": "canteen",
+    "space_id": "canteen-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "park",
+      "name": "park"
+    },
+    "id": "530",
+    "name": "park",
+    "school_id": "848426",
+    "space_category": "park",
+    "space_id": "park-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "Pre-Nursery"
+    },
+    "id": "531",
+    "name": "Pre-Nursery",
+    "school_id": "848426",
+    "space_category": "classroom",
+    "space_id": "pre-nursery-8484",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "classroom"
+    },
+    "id": "532",
+    "name": "classroom",
+    "school_id": "555731",
+    "space_category": "classroom",
+    "space_id": "classroom-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "kitchen",
+      "name": "kitchen"
+    },
+    "id": "533",
+    "name": "kitchen",
+    "school_id": "555731",
+    "space_category": "kitchen",
+    "space_id": "kitchen-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "storeroom",
+      "name": "storeroom"
+    },
+    "id": "534",
+    "name": "storeroom",
+    "school_id": "555731",
+    "space_category": "storeroom",
+    "space_id": "storeroom-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "office",
+      "name": "office"
+    },
+    "id": "535",
+    "name": "office",
+    "school_id": "555731",
+    "space_category": "office",
+    "space_id": "office-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "ground",
+      "name": "ground"
+    },
+    "id": "536",
+    "name": "ground",
+    "school_id": "555731",
+    "space_category": "ground",
+    "space_id": "ground-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "parking",
+      "name": "parking"
+    },
+    "id": "537",
+    "name": "parking",
+    "school_id": "555731",
+    "space_category": "parking",
+    "space_id": "parking-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "canteen",
+      "name": "canteen"
+    },
+    "id": "538",
+    "name": "canteen",
+    "school_id": "555731",
+    "space_category": "canteen",
+    "space_id": "canteen-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "park",
+      "name": "park"
+    },
+    "id": "539",
+    "name": "park",
+    "school_id": "555731",
+    "space_category": "park",
+    "space_id": "park-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "Pre-Nursery"
+    },
+    "id": "540",
+    "name": "Pre-Nursery",
+    "school_id": "555731",
+    "space_category": "classroom",
+    "space_id": "pre-nursery-5557",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "classroom"
+    },
+    "id": "541",
+    "name": "classroom",
+    "school_id": "133199",
+    "space_category": "classroom",
+    "space_id": "classroom-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "kitchen",
+      "name": "kitchen"
+    },
+    "id": "542",
+    "name": "kitchen",
+    "school_id": "133199",
+    "space_category": "kitchen",
+    "space_id": "kitchen-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "storeroom",
+      "name": "storeroom"
+    },
+    "id": "543",
+    "name": "storeroom",
+    "school_id": "133199",
+    "space_category": "storeroom",
+    "space_id": "storeroom-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "office",
+      "name": "office"
+    },
+    "id": "544",
+    "name": "office",
+    "school_id": "133199",
+    "space_category": "office",
+    "space_id": "office-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "parking",
+      "name": "parking"
+    },
+    "id": "546",
+    "name": "parking",
+    "school_id": "133199",
+    "space_category": "parking",
+    "space_id": "parking-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "canteen",
+      "name": "canteen"
+    },
+    "id": "547",
+    "name": "canteen",
+    "school_id": "133199",
+    "space_category": "canteen",
+    "space_id": "canteen-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "park",
+      "name": "park"
+    },
+    "id": "548",
+    "name": "park",
+    "school_id": "133199",
+    "space_category": "park",
+    "space_id": "park-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "ground",
+      "name": "ground"
+    },
+    "id": "545",
+    "name": "ground",
+    "school_id": "133199",
+    "space_category": "ground",
+    "space_id": "ground-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "classroom",
+      "name": "Pre-Nursery"
+    },
+    "id": "549",
+    "name": "Pre-Nursery",
+    "school_id": "133199",
+    "space_category": "classroom",
+    "space_id": "pre-nursery-1331",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 101"
+    },
+    "id": "550",
+    "name": "Room 101",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-101-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 102"
+    },
+    "id": "551",
+    "name": "Room 102",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-102-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 103"
+    },
+    "id": "553",
+    "name": "Room 103",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-103-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 104"
+    },
+    "id": "554",
+    "name": "Room 104",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-104-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 105"
+    },
+    "id": "555",
+    "name": "Room 105",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-105-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Room 201"
+    },
+    "id": "556",
+    "name": "Room 201",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "room-201-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Classroom",
+      "name": "Lab-100"
+    },
+    "id": "557",
+    "name": "Lab-100",
+    "school_id": "TEST001",
+    "space_category": "Classroom",
+    "space_id": "lab-100-TEST",
+    "space_name": null,
+    "space_number": null
+  },
+  {
+    "capacity": 0,
+    "data": {
+      "category": "Lab",
+      "name": "ZooRoom77001"
+    },
+    "id": "558",
+    "name": "ZooRoom77001",
+    "school_id": "TEST001",
+    "space_category": "Lab",
+    "space_id": "zooroom77001-TEST",
+    "space_name": null,
+    "space_number": null
   }
 ]

@@ -152,4 +152,33 @@ pub trait ResourceService: Send + Sync {
         school_id: &str,
         material_id: &str,
     ) -> AppResult<Vec<Value>>;
+
+    async fn get_space_materials(
+        &self,
+        school_id: &str,
+        space_name: &str,
+    ) -> AppResult<Vec<Value>>;
+
+    async fn get_all_spaces_materials(
+        &self,
+        school_id: &str,
+    ) -> AppResult<Value>;
+
+    async fn clone_space(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        source_space_name: &str,
+        new_space_name: String,
+    ) -> AppResult<Value>;
+
+    async fn transfer_space_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        from_space: &str,
+        to_space: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> AppResult<Value>;
 }

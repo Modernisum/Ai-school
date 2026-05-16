@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TeacherContactCard extends StatelessWidget {
   final dynamic teacher;
@@ -62,22 +63,44 @@ class TeacherContactCard extends StatelessWidget {
             if (teacherPhone.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.call, color: Color(0xFFB298E7)),
-                onPressed: () {
-                  // Call functionality
-                },
+                onPressed: () => _makePhoneCall(context, teacherPhone),
                 tooltip: 'Call',
               ),
             if (teacherEmail.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.email, color: Color(0xFFB298E7)),
-                onPressed: () {
-                  // Email functionality
-                },
+                onPressed: () => _sendEmail(context, teacherEmail, teacherName),
                 tooltip: 'Email',
               ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _makePhoneCall(BuildContext context, String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch phone app for $phone')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendEmail(BuildContext context, String email, String name) async {
+    final uri = Uri.parse('mailto:$email?subject=Inquiry regarding $responsibilityName');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch email app for $email')),
+        );
+      }
+    }
   }
 }

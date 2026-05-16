@@ -51,6 +51,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         apiService.getStudentAttendance(event.studentId),
         apiService.getTimetable(),
         apiService.getStudentFees(event.studentId),
+        apiService.getStudentResponsibilities(),
       ], eagerError: false); // Continue even if one fails
 
       // Extract and check for errors
@@ -58,6 +59,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final attendanceResp = results[1];
       final timetableResp = results[2];
       final feesResp = results[3];
+      final responsibilitiesResp = results[4];
 
       // If profile fails, show error and abort
       if (profileResp is ApiError) {
@@ -71,6 +73,14 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final timetable = _extractDataOrEmpty(timetableResp, 'Timetable');
       final fees = _extractDataOrEmpty(feesResp, 'Fees');
 
+      List<dynamic> responsibilities = [];
+      if (responsibilitiesResp is ApiSuccess<dynamic>) {
+        final data = responsibilitiesResp.data;
+        if (data is List) {
+          responsibilities = data;
+        }
+      }
+
       // Check if any critical API failed (optional)
       final errors = <String>[];
       if (attendanceResp is ApiError) errors.add('Attendance');
@@ -82,6 +92,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         attendance: attendance,
         timetable: timetable,
         fees: fees,
+        responsibilities: responsibilities,
       ));
 
       // Log partial failures

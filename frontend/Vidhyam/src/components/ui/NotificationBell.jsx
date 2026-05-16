@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, AlertCircle, CheckCircle, Loader2, MessageCircle } from "lucide-react";
+import { Bell, AlertCircle, CheckCircle, Loader2, MessageCircle, Box } from "lucide-react";
 import { useGetUnreadCountQuery, useMarkAllReadMutation } from "../../features/dashboard/api/notificationApi";
 import { getSchoolIdFromStorage } from "../../utils/api";
 import { useWebSockets, MESSAGE_TYPES } from "../../hooks/useWebSockets";
@@ -102,10 +102,20 @@ function NotificationBell() {
     }
   };
 
-  const handleClick = (notificationId) => {
-    handleMarkRead(notificationId);
+  const handleClick = (notif) => {
+    const notifId = notif.id || notif._id;
+    if (notifId) handleMarkRead(notifId);
     setDropdownOpen(false);
-    navigate("/dashboard/notifications/announcements");
+    if (notif.category === "MATERIAL_SHORTAGE") {
+      const spaceName = notif.data?.spaceName;
+      if (spaceName) {
+        navigate(`/dashboard/infra/spaces/detail/${spaceName}`);
+      } else {
+        navigate("/dashboard/infra/spaces");
+      }
+    } else {
+      navigate("/dashboard/notifications/announcements");
+    }
   };
 
   const getSeverityIcon = (severity) => {
@@ -198,13 +208,15 @@ function NotificationBell() {
                   notifications.map((notif) => (
                     <button
                       key={notif.id || notif._id || Math.random()}
-                      onClick={() => handleClick(notif.id)}
+                      onClick={() => handleClick(notif)}
                       className={`w-full p-3 text-left hover:bg-white/5 transition-colors flex gap-3 items-start ${
                         !notif.isRead ? "bg-white/[0.02]" : ""
                       }`}
                     >
                       <span className="mt-0.5 shrink-0">
-                        {notif.category === "complaint" ? (
+                        {notif.category === "MATERIAL_SHORTAGE" ? (
+                          <Box size={16} className="text-amber-400" />
+                        ) : notif.category === "complaint" ? (
                           <AlertCircle className="w-4 h-4 text-amber-400" />
                         ) : notif.category === "announcement" ? (
                           <MessageCircle className="w-4 h-4 text-blue-400" />

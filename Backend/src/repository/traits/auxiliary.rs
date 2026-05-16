@@ -53,3 +53,22 @@ pub trait DocumentBoxRepository: Send + Sync {
 pub trait SchoolRepository: Send + Sync {
     async fn get_school(&self, school_id: &str) -> Result<Option<Value>, AppError>;
 }
+
+#[async_trait]
+pub trait NotificationPreferenceRepository: Send + Sync {
+    async fn get_preferences(
+        &self,
+        school_id: &str,
+        user_id: &str,
+    ) -> Result<Option<Value>, AppError>;
+
+    async fn update_preferences(
+        &self,
+        school_id: &str,
+        user_id: &str,
+        email_enabled: Option<bool>,
+        sms_enabled: Option<bool>,
+        push_enabled: Option<bool>,
+        in_app_enabled: Option<bool>,
+    ) -> Result<Value, AppError>;
+}

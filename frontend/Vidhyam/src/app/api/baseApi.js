@@ -82,7 +82,7 @@ export const baseApi = createApi({
     'Auth', 'Geo', 'Students', 'Employees', 'Academics', 'Complaints',
     'Spaces', 'SchoolProfile', 'Materials', 'Categories', 'Fees', 'CustomFees',
     'Attendance', 'Holidays', 'Leave', 'Exam', 'Class', 'Subject',
-    'Transport', 'AI', 'Chat', 'Responsibility', 'Announcements', 'Events',
+    'Transport', 'AI', 'Chat', 'Responsibility', 'Announcements', 'Events', 'SpaceMaterials',
     'Notifications', 'Storage', 'Documents', 'Timetable', 'Task',
     'Payment', 'Coupons', 'Awards', 'Setup', 'Webhooks', 'ApiKeys',
     'DeveloperAccess', 'Recovery', 'Audit', 'Reminders',

@@ -79,7 +79,7 @@ pub async fn upload_file(
 
         // Replace the original filename with sanitized version in the field
         // (process_upload will use sanitized_name via storage engine)
-        match state.storage.process_upload(field, folder, &sanitized_name).await {
+        match state.storage.process_upload(field, folder).await {
             Ok((hash, relative_path, public_url, size, content_type)) => {
                 // --- Duplicate Detection: Redis-first, then DB ---
                 // 1. Check Redis cache (sub-millisecond)

@@ -9,6 +9,7 @@ use crate::routes::responsibility_ws::publish_responsibility_event;
 use crate::routes::responsibility_ws::ResponsibilityEvent;
 use crate::services::responsibility_notifications::ResponsibilityNotificationService;
 use serde_json::{json, Value};
+use sqlx::Row;
 use std::collections::HashMap;
 use chrono::Utc;
 
@@ -35,16 +36,14 @@ pub async fn list_responsibilities(
                     response["pagination"] = pagination.clone();
                 }
                 Json(response).into_response()
-            },
-            Err(e) => (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"success": false, "message": e.to_string()})),
-            ).into_response(),
+            }
+            Err(e) => {
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"success": false, "message": e.to_string()}))).into_response()
+            }
         }
     } else {
         match state.services.responsibility.list_responsibilities(&school_id, emp_type.clone()).await {
             Ok(mut list) => {
-                // Priority Sort: If teacher is requested, put them first
                 if let Some(ref et) = emp_type {
                     if et == "teacher" {
                         list.sort_by(|a, b| {
@@ -54,13 +53,11 @@ pub async fn list_responsibilities(
                         });
                     }
                 }
-
                 let ids_only = params.get("idsOnly").map(|v| v == "true").unwrap_or(false);
                 if ids_only {
                     let id_list: Vec<serde_json::Value> = list.into_iter().map(|r| r["responsibilityId"].clone()).collect();
                     return Json(json!({"success": true, "data": id_list})).into_response();
                 }
-
                 if simple {
                     let simple_list: Vec<serde_json::Value> = list.into_iter().map(|r| {
                         json!({
@@ -71,15 +68,148 @@ pub async fn list_responsibilities(
                     return Json(json!({"success": true, "data": simple_list})).into_response();
                 }
                 Json(json!({"success": true, "data": list})).into_response()
-            },
-            Err(e) => (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"success": false, "message": e.to_string()})),
-            )
-                .into_response(),
+            }
+            Err(e) => {
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"success": false, "message": e.to_string()}))).into_response()
+            }
         }
     }
 }
+
+/// GET /schools/{schoolId}/responsibility/spaces/{spaceId}/financial-overview
+/// Get financial overview for a specific space
+pub async fn get_space_financial_overview(
+    State(state): State<AppState>,
+    Path((school_id, space_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let mut conn = match state.repos.db_client.acquire_tenant_connection(&school_id).await {
+        Ok(c) => c,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    // Total monthly salary cost for this space
+    let total_salary_cost: f64 = match sqlx::query_scalar(
+        "SELECT COALESCE(SUM(r.monthly_price), 0) FROM responsibilities r
+         JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+         WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+    )
+    .bind(&school_id)
+    .bind(&space_id)
+    .fetch_one(&mut *conn)
+    .await {
+        Ok(v) => v,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    // Total student fees generated from this space
+    let total_student_fees: f64 = match sqlx::query_scalar(
+        "SELECT COALESCE(SUM(r.student_fee), 0) FROM responsibilities r
+         JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+         WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+    )
+    .bind(&school_id)
+    .bind(&space_id)
+    .fetch_one(&mut *conn)
+    .await {
+        Ok(v) => v,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    // Count active employees assigned to this space
+    let employee_count: i64 = match sqlx::query_scalar(
+        "SELECT COUNT(DISTINCT er.employee_id) FROM employee_responsibilities er
+         WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+    )
+    .bind(&school_id)
+    .bind(&space_id)
+    .fetch_one(&mut *conn)
+    .await {
+        Ok(v) => v,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    // Count students in this space
+    let student_count: i64 = match sqlx::query_scalar(
+        "SELECT COUNT(*) FROM students WHERE school_id = $1 AND CONCAT(COALESCE(class_name, ''), '-', COALESCE(section, '')) = $2 AND status = 'active'"
+    )
+    .bind(&school_id)
+    .bind(&space_id)
+    .fetch_one(&mut *conn)
+    .await {
+        Ok(v) => v,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    let net_revenue = total_student_fees - total_salary_cost;
+
+    Json(json!({
+        "success": true,
+        "data": {
+            "spaceId": space_id,
+            "totalMonthlySalaryCost": total_salary_cost,
+            "totalStudentFees": total_student_fees,
+            "netRevenue": net_revenue,
+            "employeeCount": employee_count,
+            "studentCount": student_count
+        }
+    })).into_response()
+}
+
+/// GET /schools/{schoolId}/responsibility/alerts/missing-responsibilities
+/// Find spaces missing required responsibilities
+pub async fn get_missing_responsibility_alerts(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    let mut conn = match state.repos.db_client.acquire_tenant_connection(&school_id).await {
+        Ok(c) => c,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    // Find space_requirements that are NOT fulfilled by any employee_responsibilities assignment
+    let rows = match sqlx::query(
+        "SELECT sr.space_id, sr.responsibility_id, sr.requirement_type, r.name as responsibility_name,
+                s.name as space_name,
+                CASE WHEN er.employee_id IS NOT NULL THEN true ELSE false END as is_fulfilled
+         FROM space_requirements sr
+         JOIN responsibilities r ON sr.responsibility_id = r.responsibility_id AND sr.school_id = r.school_id
+         JOIN spaces s ON sr.space_id = s.space_id AND sr.school_id = s.school_id
+         LEFT JOIN employee_responsibilities er ON er.school_id = sr.school_id 
+             AND er.responsibility_id = sr.responsibility_id 
+             AND er.space_ids @> to_jsonb(sr.space_id::text)
+         WHERE sr.school_id = $1 AND sr.requirement_type = 'mandatory'
+         ORDER BY sr.space_id"
+    )
+    .bind(&school_id)
+    .fetch_all(&mut *conn)
+    .await {
+        Ok(r) => r,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+
+    let mut alerts: Vec<Value> = Vec::new();
+    for row in rows {
+        let is_fulfilled: bool = row.get("is_fulfilled");
+        if !is_fulfilled {
+            alerts.push(json!({
+                "spaceId": row.get::<String, _>("space_id"),
+                "spaceName": row.get::<String, _>("space_name"),
+                "responsibilityId": row.get::<String, _>("responsibility_id"),
+                "responsibilityName": row.get::<String, _>("responsibility_name"),
+                "requirementType": row.get::<String, _>("requirement_type"),
+                "severity": "critical"
+            }));
+        }
+    }
+
+    Json(json!({ "success": true, "data": alerts, "total": alerts.len() })).into_response() }
 
 pub async fn create_responsibility(
     State(state): State<AppState>,
@@ -291,21 +421,74 @@ pub async fn search_responsibilities(
     Path(school_id): Path<String>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let query = params.get("q").cloned().unwrap_or_default();
+    let search_q = params.get("q").cloned().unwrap_or_default();
     let page = params.get("page").and_then(|v| v.parse::<i32>().ok()).unwrap_or(1);
     let limit = params.get("limit").and_then(|v| v.parse::<i32>().ok()).unwrap_or(20);
+    let offset = (page - 1) * limit;
     
-    // This is a placeholder - need to implement in service layer
-    // For now, return empty array
+    if search_q.is_empty() {
+        let empty: Vec<Value> = Vec::new();
+        return Json(json!({
+            "success": true,
+            "data": empty,
+            "pagination": { "page": page, "limit": limit, "total": 0, "pages": 0 }
+        })).into_response();
+    }
+    
+    let pattern = format!("%{}%", search_q.replace('%', "\\%").replace('_', "\\_"));
+    
+    let mut conn = match state.repos.db_client.acquire_tenant_connection(&school_id).await {
+        Ok(c) => c,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+    
+    let total: i64 = match sqlx::query_scalar(
+        "SELECT COUNT(*) FROM responsibilities WHERE school_id = $1 AND (name ILIKE $2 OR description ILIKE $2 OR employee_type ILIKE $2)"
+    )
+    .bind(&school_id)
+    .bind(&pattern)
+    .fetch_one(&mut *conn)
+    .await {
+        Ok(t) => t,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+    
+    let rows = match sqlx::query(
+        "SELECT responsibility_id, name, description, employee_type, monthly_price, student_fee, created_at
+         FROM responsibilities WHERE school_id = $1 AND (name ILIKE $2 OR description ILIKE $2 OR employee_type ILIKE $2)
+         ORDER BY created_at DESC LIMIT $3 OFFSET $4"
+    )
+    .bind(&school_id)
+    .bind(&pattern)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(&mut *conn)
+    .await {
+        Ok(r) => r,
+        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
+    };
+    
+    let data: Vec<Value> = rows.iter().map(|row| {
+        json!({
+            "responsibilityId": row.get::<String, _>("responsibility_id"),
+            "name": row.get::<String, _>("name"),
+            "description": row.get::<Option<String>, _>("description"),
+            "employeeType": row.get::<Option<String>, _>("employee_type"),
+            "monthlyPrice": row.get::<bigdecimal::BigDecimal, _>("monthly_price").to_string(),
+            "studentFee": row.get::<bigdecimal::BigDecimal, _>("student_fee").to_string(),
+            "createdAt": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
+        })
+    }).collect();
+    
+    let pages = ((total as f64) / (limit as f64)).ceil() as i32;
+    
     Json(json!({
         "success": true,
-        "data": [],
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": 0,
-            "pages": 0
-        }
+        "data": data,
+        "pagination": { "page": page, "limit": limit, "total": total, "pages": pages }
     })).into_response()
 }
 
@@ -334,47 +517,66 @@ pub async fn bulk_assign_responsibility(
         ).into_response();
     }
     
-    // Get responsibility name for notifications
-    let responsibility_name = match state.services.responsibility.list_responsibilities(&school_id, None).await {
-        Ok(list) => {
-            list.iter()
-                .find(|r| r["responsibilityId"].as_str() == Some(&responsibility_id))
-                .and_then(|r| r["name"].as_str())
-                .unwrap_or("Unknown Responsibility")
-                .to_string()
-        }
-        Err(_) => "Unknown Responsibility".to_string(),
-    };
+    // Build updates: each employee gets the same space_ids
+    let updates: Vec<(String, Vec<String>)> = employee_ids.iter()
+        .map(|emp_id| (emp_id.clone(), space_ids.clone()))
+        .collect();
     
-    // Create notification service
-    let notification_service = ResponsibilityNotificationService::new(
-        state.repos.clone(),
-        std::sync::Arc::new(crate::logic::EmailService::new())
-    );
-    
-    // Send bulk assignment notifications
-    let _ = notification_service.send_bulk_update_notification(
+    // Perform the actual DB update
+    match state.services.responsibility.bulk_update_responsibility(
         &school_id,
         &responsibility_id,
-        &responsibility_name,
-        &employee_ids,
-        "assigned",
         &tenant_ctx.admin_id,
-    ).await;
-    
-    // Publish bulk assignment event
-    let _ = publish_responsibility_event(&school_id, ResponsibilityEvent::BulkUpdate {
-        responsibility_id: responsibility_id.clone(),
-        update_type: "bulk_assign".to_string(),
-        affected_count: employee_ids.len() as i32,
-        performed_by: tenant_ctx.admin_id.clone(),
-        timestamp: Utc::now().to_rfc3339(),
-    }).await;
-    
-    Json(json!({
-        "success": true,
-        "message": format!("Bulk assignment queued for {} employees", employee_ids.len())
-    })).into_response()
+        updates,
+    ).await {
+        Ok(count) => {
+            // Get responsibility name for notifications
+            let responsibility_name = match state.services.responsibility.list_responsibilities(&school_id, None).await {
+                Ok(list) => {
+                    list.iter()
+                        .find(|r| r["responsibilityId"].as_str() == Some(&responsibility_id))
+                        .and_then(|r| r["name"].as_str())
+                        .unwrap_or("Unknown Responsibility")
+                        .to_string()
+                }
+                Err(_) => "Unknown Responsibility".to_string(),
+            };
+            
+            // Create notification service
+            let notification_service = ResponsibilityNotificationService::new(
+                state.repos.clone(),
+                std::sync::Arc::new(crate::logic::EmailService::new())
+            );
+            
+            // Send bulk assignment notifications
+            let _ = notification_service.send_bulk_update_notification(
+                &school_id,
+                &responsibility_id,
+                &responsibility_name,
+                &employee_ids,
+                "assigned",
+                &tenant_ctx.admin_id,
+            ).await;
+            
+            // Publish bulk assignment event
+            let _ = publish_responsibility_event(&school_id, ResponsibilityEvent::BulkUpdate {
+                responsibility_id: responsibility_id.clone(),
+                update_type: "bulk_assign".to_string(),
+                affected_count: count as i32,
+                performed_by: tenant_ctx.admin_id.clone(),
+                timestamp: Utc::now().to_rfc3339(),
+            }).await;
+            
+            Json(json!({
+                "success": true,
+                "message": format!("Bulk assignment completed for {} employees", count)
+            })).into_response()
+        },
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
 }
 
 /// DELETE /schools/{schoolId}/responsibilities/{responsibilityId}/bulk-remove
@@ -395,6 +597,15 @@ pub async fn bulk_remove_responsibility(
             axum::http::StatusCode::BAD_REQUEST,
             Json(json!({"success": false, "message": "employeeIds array is required"})),
         ).into_response();
+    }
+    
+    // Perform the actual DB removal for each employee
+    let mut success_count: usize = 0;
+    for emp_id in &employee_ids {
+        match state.repos.responsibility.remove_responsibility(&school_id, emp_id, &responsibility_id).await {
+            Ok(_) => success_count += 1,
+            Err(_) => {} // Skip individual failures, continue with rest
+        }
     }
     
     // Get responsibility name for notifications
@@ -429,16 +640,14 @@ pub async fn bulk_remove_responsibility(
     let _ = publish_responsibility_event(&school_id, ResponsibilityEvent::BulkUpdate {
         responsibility_id: responsibility_id.clone(),
         update_type: "bulk_remove".to_string(),
-        affected_count: employee_ids.len() as i32,
+        affected_count: success_count as i32,
         performed_by: tenant_ctx.admin_id.clone(),
         timestamp: Utc::now().to_rfc3339(),
     }).await;
     
-    // This is a placeholder - need to implement in service layer
-    // For now, return success
     Json(json!({
         "success": true,
-        "message": format!("Bulk removal queued for {} employees", employee_ids.len())
+        "message": format!("Bulk removal completed for {} employees", success_count)
     })).into_response()
 }
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api_service.dart';
 import 'space_assignment_view.dart';
 import '../../blocs/tasks/tasks_bloc.dart';
 import '../../blocs/tasks/tasks_event.dart';
 import '../../blocs/tasks/tasks_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ResponsibilityDetailScreen extends StatefulWidget {
   final String responsibilityId;
@@ -27,6 +27,7 @@ class _ResponsibilityDetailScreenState extends State<ResponsibilityDetailScreen>
   Map<String, dynamic>? _responsibility;
   bool _isLoading = true;
   String? _errorMessage;
+  String? _schoolId;
 
   @override
   void initState() {
@@ -40,8 +41,8 @@ class _ResponsibilityDetailScreenState extends State<ResponsibilityDetailScreen>
       _errorMessage = null;
     });
 
-    final schoolId = await storage.read(key: 'school_id');
-    if (schoolId == null) {
+    _schoolId = await storage.read(key: 'school_id');
+    if (_schoolId == null) {
       setState(() {
         _isLoading = false;
         _errorMessage = 'School ID not found';
@@ -49,7 +50,7 @@ class _ResponsibilityDetailScreenState extends State<ResponsibilityDetailScreen>
       return;
     }
 
-    final result = await _apiService.getResponsibilityDetail(schoolId, widget.responsibilityId);
+    final result = await _apiService.getResponsibilityDetail(_schoolId!, widget.responsibilityId);
 
     setState(() {
       _isLoading = false;
@@ -330,8 +331,12 @@ class _ResponsibilityDetailScreenState extends State<ResponsibilityDetailScreen>
   }
 
   Widget _buildTasksSection() {
+    final sid = _schoolId ?? '';
     return BlocProvider(
-      create: (context) => TasksBloc(),
+      create: (context) => TasksBloc(apiService: _apiService)..add(LoadTasks(
+        schoolId: sid,
+        responsibilityId: widget.responsibilityId,
+      )),
       child: Card(
         elevation: 2,
         child: Padding(
@@ -421,64 +426,58 @@ class _ResponsibilityDetailScreenState extends State<ResponsibilityDetailScreen>
     );
   }
 
-  Widget _buildTaskItem(dynamic task) {
-    final isCompleted = task['isCompleted'] == true;
-    final taskType = task['type'] ?? 'general';
-    
+  Widget _buildTaskItem(DutyItem task) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: isCompleted
+        backgroundColor: task.isCompleted
             ? Colors.green.withOpacity(0.2)
             : const Color(0xFFB298E7).withOpacity(0.2),
         child: Icon(
-          _getTaskIcon(taskType),
-          color: isCompleted ? Colors.green : const Color(0xFFB298E7),
+          _getTaskIcon(task.type),
+          color: task.isCompleted ? Colors.green : const Color(0xFFB298E7),
         ),
       ),
       title: Text(
-        task['title'] ?? 'Unknown Task',
+        task.title,
         style: TextStyle(
-          decoration: isCompleted ? TextDecoration.lineThrough : null,
-          color: isCompleted ? Colors.grey : null,
+          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+          color: task.isCompleted ? Colors.grey : null,
         ),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (task['subtitle'] != null)
-            Text(task['subtitle']),
+          if (task.subtitle.isNotEmpty)
+            Text(task.subtitle),
           const SizedBox(height: 4),
           Row(
             children: [
               Icon(
-                isCompleted ? Icons.check_circle : Icons.pending,
+                task.isCompleted ? Icons.check_circle : Icons.pending,
                 size: 14,
-                color: isCompleted ? Colors.green : Colors.orange,
+                color: task.isCompleted ? Colors.green : Colors.orange,
               ),
               const SizedBox(width: 4),
               Text(
-                isCompleted ? 'Completed' : 'Pending',
+                task.isCompleted ? 'Completed' : 'Pending',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isCompleted ? Colors.green : Colors.orange,
+                  color: task.isCompleted ? Colors.green : Colors.orange,
                 ),
               ),
             ],
           ),
         ],
       ),
-      trailing: !isCompleted
+      trailing: !task.isCompleted
           ? ElevatedButton(
-              onPressed: () async {
-                final schoolId = await storage.read(key: 'school_id');
-                if (schoolId != null) {
-                  final success = await _apiService.completeTask(schoolId, task['id']);
-                  if (success && mounted) {
-                    context.read<TasksBloc>().add(CompleteTask(task['id']));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Task completed')),
-                    );
-                  }
+              onPressed: () {
+                final sid = _schoolId;
+                if (sid != null) {
+                  context.read<TasksBloc>().add(CompleteTask(
+                    schoolId: sid,
+                    taskId: task.id,
+                  ));
                 }
               },
               style: ElevatedButton.styleFrom(

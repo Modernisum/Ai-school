@@ -14,16 +14,18 @@ class DashboardLoaded extends DashboardState {
   final Map<String, dynamic> attendance;
   final Map<String, dynamic> timetable;
   final Map<String, dynamic> fees;
+  final List<dynamic> responsibilities;
 
   const DashboardLoaded({
     required this.profile,
     required this.attendance,
     required this.timetable,
     required this.fees,
+    this.responsibilities = const [],
   });
 
   @override
-  List<Object?> get props => [profile, attendance, timetable, fees];
+  List<Object?> get props => [profile, attendance, timetable, fees, responsibilities];
 }
 
 class DashboardError extends DashboardState {

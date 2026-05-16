@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'framer-motion';
-import { Box, Package, Briefcase } from 'lucide-react';
+import { Box, Package, Briefcase, LayoutDashboard } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 import { selectPollingInterval, selectIsOnline, setOnline } from '../../settings/settingsSlice';
 import MaterialPage from './MaterialPage';
 import ResponsibilityPage from './ResponsibilityPage';
 import SpacePage from './SpacePage';
+import FloorPlanPage from './FloorPlanPage';
 
 import NoConnection from '../../../components/ui/NoConnection.jsx';
 
@@ -27,7 +28,7 @@ export default function SpaceManagement({ tab }) {
 
   useEffect(() => {
     if (tab) {
-      const tabMap = { 'manifest': 'spaces', 'materials': 'materials', 'protocols': 'responsibilities' };
+      const tabMap = { 'manifest': 'spaces', 'materials': 'materials', 'protocols': 'responsibilities', 'floorplan': 'floorplan' };
       setActiveMainTab(tabMap[tab] || tab);
     }
   }, [tab]);
@@ -53,6 +54,8 @@ export default function SpaceManagement({ tab }) {
           <SpacePage schoolId={schoolId} pollingInterval={pollingInterval} />
         ) : activeMainTab === 'materials' ? (
           <MaterialPage schoolId={schoolId} pollingInterval={pollingInterval} />
+        ) : activeMainTab === 'floorplan' ? (
+          <FloorPlanPage schoolId={schoolId} pollingInterval={pollingInterval} />
         ) : (
           <ResponsibilityPage schoolId={schoolId} pollingInterval={pollingInterval} />
         )}

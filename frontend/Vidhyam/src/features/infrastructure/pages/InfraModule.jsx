@@ -10,6 +10,7 @@ const InfraModule = () => {
         <Route path="manifest" element={<InfraPage tab="manifest" />} />
         <Route path="materials" element={<InfraPage tab="materials" />} />
         <Route path="protocols" element={<InfraPage tab="protocols" />} />
+        <Route path="floorplan" element={<InfraPage tab="floorplan" />} />
         <Route path="*" element={<Navigate to="/dashboard/infra/manifest" replace />} />
       </Routes>
     </div>

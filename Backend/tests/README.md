@@ -1,59 +1,67 @@
-# Backend API Tests
+# Test Suite Documentation
 
-Run the backend server locally before executing tests:
+## Overview
+This directory contains a **one‑click** test suite for all backend API routes of the Vidhyam School Management System. The suite is implemented in Bash using `curl` and can be run with a single command.
 
+## Prerequisites
+- **Running backend server** (`cargo run` or equivalent) listening on the URL defined in `test_config.sh`.
+- **Environment variables** set in `test_config.sh`:
+  - `BASE_URL` – Base URL of the API (e.g., `http://localhost:8080`).
+  - `SCHOOL_ID` – Identifier of the school you are testing against.
+  - Authentication credentials for:
+    - **Admin** (`ADMIN_USERNAME`, `ADMIN_PASSWORD`)
+    - **School** (`SCHOOL_USERNAME`, `SCHOOL_PASSWORD`)
+    - **Student** (`STUDENT_USERNAME`, `STUDENT_PASSWORD`)
+- **Test data** seeded in the database (run any migration/seed scripts provided by the project).
+
+## Running the Tests
 ```bash
-cd Backend
-cargo run
+# From the repository root
+chmod +x Backend/tests/*.sh   # Ensure scripts are executable
+./Backend/tests/test_all_routes.sh
 ```
+The script will:
+1. Load configuration (`test_config.sh`).
+2. Authenticate each user role and store JWT tokens.
+3. Execute health checks, authentication, CRUD, file‑upload, WebSocket, and security tests.
+4. Output clear **PASS/FAIL** messages with a summary at the end.
 
-## Authentication
+## Test Structure
+- `test_config.sh` – Holds URLs, IDs, and credentials.
+- `test_utils.sh` – Helper functions for logging, assertions, and authentication.
+- `test_all_routes.sh` – Master runner that sources the above files and sequentially calls each module test.
+- Individual module test files (e.g., `test_auth.sh`, `test_student.sh`, `test_attendance.sh`, …) are sourced by `test_all_routes.sh` and focus on a specific functional area.
 
-All tests require a valid JWT token. Obtain one by logging in:
+## Adding New Tests
+1. Create a new `test_<feature>.sh` file in this directory.
+2. Follow the existing pattern:
+   ```bash
+   source "$(dirname "$0")/test_utils.sh"
+   
+   function test_new_feature() {
+       log "Testing New Feature..."
+       # Example request
+       response=$(curl -s -X GET "$BASE_URL/new_feature/$SCHOOL_ID" -H "Authorization: Bearer $ADMIN_TOKEN")
+       assert_status 200 "$response"
+   }
+   ```
+3. Add a call to `test_new_feature` in `test_all_routes.sh` under the appropriate section.
 
-```bash
-export TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/school/login \
-  -H "Content-Type: application/json" \
-  -d '{"schoolId":"DEMO","password":"admin@123"}' | jq -r '.token // .data.token')
+## Debugging Failing Tests
+- The script prints the request and response details for any failed assertion.
+- Check that the server is running and the correct `BASE_URL` is set.
+- Verify that the required test data exists in the database.
+- Use `./Backend/tests/test_<module>.sh` directly to isolate failures.
+
+## Continuous Integration
+The test suite can be integrated into CI pipelines:
+```yaml
+- name: Run Backend API Tests
+  run: |
+    chmod +x Backend/tests/*.sh
+    ./Backend/tests/test_all_routes.sh
 ```
+Ensure the CI environment provides the same environment variables as `test_config.sh`.
 
-## Universal Query Parameters
-
-All list endpoints support:
-
-| Param     | Format                                                     |
-|-----------|------------------------------------------------------------|
-| filters   | `[{"field":"status","op":"eq","value":"active"}]`          |
-| sort      | `field:asc,field2:desc`                                    |
-| page      | number (default 1)                                         |
-| per_page  | number (default 25, max 100)                               |
-| fields    | comma-separated field names (sparse fieldsets)             |
-| search    | full-text search term                                      |
-| from      | start date (YYYY-MM-DD)                                    |
-| to        | end date (YYYY-MM-DD)                                      |
-
-Supported filter ops: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`, `like`, `between`
-
-## Response Format
-
-All endpoints return:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "pagination": { "page": 1, "per_page": 25, "total": 100, "total_pages": 4 },
-  "message": "optional message"
-}
-```
-
-## Test Data Setup
-
-Before running domain tests, seed test data:
-
-```bash
-# Initialize test school with sample data
-curl -X POST http://localhost:8080/api/admin/test/seed \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json"
-```
+---
+**Happy testing!**

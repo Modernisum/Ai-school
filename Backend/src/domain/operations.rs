@@ -42,6 +42,8 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/sync-student-fees", post(responsibility::sync_student_fees))
         .route("/:responsibilityId/sync-student-fees", post(responsibility::sync_student_fees_for_resp))
         .route("/generate-salaries/:month/:year", post(responsibility::generate_salaries))
+        .route("/spaces/:spaceId/financial-overview", get(responsibility::get_space_financial_overview))
+        .route("/alerts/missing-responsibilities", get(responsibility::get_missing_responsibility_alerts))
         .nest("/ws", responsibility_ws::router());
 
     Router::new()

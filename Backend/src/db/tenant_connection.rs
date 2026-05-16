@@ -11,16 +11,17 @@ impl TenantConnection {
     }
 
     /// Acquires a new database connection from the pool and sets the current tenant context.
-    /// This ensures that PostgreSQL Row-Level Security (RLS) policies automatically apply.
+    /// Uses SET SESSION (not LOCAL) to work outside a transaction block.
+    /// NOTE: Connections are reset via pool config on return.
     pub async fn acquire_tenant_connection(
         &self,
         school_id: &str,
     ) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
         let mut conn = self.pool.acquire().await?;
 
-        // Set RLS context for security isolation
+        // Use SET (session scope) instead of SET LOCAL to avoid transaction requirement
         let rls_query = format!(
-            "SET LOCAL app.current_school_id = '{}'",
+            "SET app.current_school_id = '{}'",
             school_id.replace('\'', "''")
         );
         sqlx::query(&rls_query).execute(&mut *conn).await?;

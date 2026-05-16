@@ -539,17 +539,18 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             Some(offset as i64),
         );
 
-        // Get total count
-        let total_query = format!(
-            "SELECT COUNT(*) FROM responsibilities WHERE school_id = '{}'{}",
-            school_id,
-            employee_type
-                .as_ref()
-                .map(|et| format!(" AND employee_type = '{}'", et))
-                .unwrap_or_default()
-        );
+        // Get total count with parameterized query
+        let mut total_query = "SELECT COUNT(*) FROM responsibilities WHERE school_id = $1".to_string();
+        if employee_type.is_some() {
+            total_query.push_str(" AND employee_type = $2");
+        }
         
-        let total_row = sqlx::query(&total_query)
+        let mut total_query_builder = sqlx::query(&total_query).bind(school_id);
+        if let Some(ref et) = employee_type {
+            total_query_builder = total_query_builder.bind(et);
+        }
+        
+        let total_row = total_query_builder
             .fetch_one(&mut *conn)
             .await?;
         let total: i64 = total_row.get::<i64, _>("count");
@@ -603,7 +604,11 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             .collect::<Vec<_>>()
             .join("_");
 
-        sqlx::query("INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, employee_type, monthly_price, data, space_id, student_fee) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, $10) ON CONFLICT (responsibility_id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description")
+        sqlx::query(
+            "INSERT INTO responsibilities (responsibility_id, school_id, name, description, per_day_price, time_period, employee_type, monthly_price, student_fee, data)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             ON CONFLICT (responsibility_id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description"
+        )
             .bind(&responsibility_id)
             .bind(school_id)
             .bind(name)
@@ -612,8 +617,8 @@ impl crate::repository::traits::ResponsibilityRepository for PostgresResponsibil
             .bind(data["timePeriod"].as_i64().unwrap_or(0) as i32)
             .bind(data["employeeType"].as_str())
             .bind(data["monthlyPrice"].as_f64().unwrap_or(0.0))
-            .bind(json!({})) // Empty JSON for now
             .bind(data["studentFee"].as_f64().unwrap_or(0.0))
+            .bind(json!({})) // Empty JSON for now
             .execute(&mut *conn).await?;
 
         let mut ret = data.clone();

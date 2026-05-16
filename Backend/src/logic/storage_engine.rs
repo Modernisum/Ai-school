@@ -292,7 +292,7 @@ impl StorageEngine {
         let hash = format!("{:x}", hasher.finalize());
 
         // ─── Security: Magic byte validation ───────────────────────────────
-        if let Err(e) = self.validate_by_magic_bytes(&file_data, &content_type) {
+        if let Err(e) = StorageEngine::validate_by_magic_bytes(&file_data, &content_type) {
             return Err(e);
         }
 

@@ -109,6 +109,26 @@ pub async fn sell_material(
 // Handlers for dashboard and history have been removed as their functionality
 // is now integrated into list_materials and get_material respectively.
 
+pub async fn get_shortage_summary(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> AppResult<Json<Value>> {
+    let result = state.services.material_monitor.get_shortage_summary(&school_id).await?;
+    Ok(Json(result))
+}
+
+pub async fn run_shortage_check(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> AppResult<Json<Value>> {
+    let alerts = state.services.material_monitor.check_and_alert_school(&school_id).await?;
+    Ok(Json(json!({
+        "success": true,
+        "alertsCreated": alerts.len(),
+        "alerts": alerts,
+    })))
+}
+
 pub async fn bulk_import_materials(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,

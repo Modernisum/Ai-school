@@ -21,6 +21,7 @@ pub mod fee_service;
 pub mod gradebook_service;
 pub mod grading_service;
 pub mod leave_service;
+pub mod material_monitor;
 
 pub mod notification_service;
 pub mod operations_service;
@@ -76,6 +77,7 @@ use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
 use crate::services::task_service::PostgresTaskService;
 use crate::services::recovery_service::PostgresRecoveryService;
+use crate::services::material_monitor::MaterialMonitor;
 use crate::services::traits::*;
 use std::sync::Arc;
 
@@ -114,6 +116,7 @@ pub struct Services {
     pub content_generation: Arc<dyn ContentGenerationService>,
     pub notification: Arc<dyn NotificationService>,
     pub fcm: Arc<crate::logic::FcmService>,
+    pub material_monitor: Arc<MaterialMonitor>,
 }
 
 pub fn initialize_services(
@@ -145,6 +148,9 @@ pub fn initialize_services(
     let admin_automation_service = Arc::new(AdminAutomationService::new(repos.clone()));
     let content_generation_service = Arc::new(ContentGenerationServiceImpl::new(repos.clone(), ai_service.clone()));
     
+    // Create Material Monitor for shortage alerts
+    let material_monitor = Arc::new(MaterialMonitor::new(repos.clone()));
+
     // Create FCM config
     let fcm_service = Arc::new(crate::logic::FcmService::new());
     
@@ -178,7 +184,7 @@ pub fn initialize_services(
         fee: fee_service.clone(),
         payroll: Arc::new(PostgresPayrollService::new(repos.clone())),
         coupon: fee_service,
-        resource: Arc::new(PostgresResourceService::new(repos.clone())),
+        resource: Arc::new(PostgresResourceService::new(repos.clone(), Some(material_monitor.clone()))),
         award: Arc::new(PostgresAwardService {
             repos: repos.clone(),
         }),
@@ -218,5 +224,6 @@ pub fn initialize_services(
         content_generation: content_generation_service,
         notification: Arc::new(PostgresNotificationService { repos: repos.clone() }),
         fcm: fcm_service,
+        material_monitor,
     }
 }

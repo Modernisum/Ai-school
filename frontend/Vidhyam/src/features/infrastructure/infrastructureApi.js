@@ -394,8 +394,32 @@ export const infrastructureApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Responsibilities', id: 'METRICS' }],
     }),
 
+    getWorkloadMetrics: builder.query({
+      query: ({ schoolId }) => `/responsibility/${schoolId}/metrics/workload`,
+    }),
+
+    getSpaceDistributionMetrics: builder.query({
+      query: ({ schoolId }) => `/responsibility/${schoolId}/metrics/space-distribution`,
+    }),
+
+    getRevenueMetrics: builder.query({
+      query: ({ schoolId }) => `/responsibility/${schoolId}/metrics/revenue`,
+    }),
+
     generateUtilizationReport: builder.query({
       query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/utilization/${startDate}/${endDate}`,
+    }),
+
+    generateWorkloadReport: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/workload/${startDate}/${endDate}`,
+    }),
+
+    generateSpaceDistributionReport: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/space-distribution/${startDate}/${endDate}`,
+    }),
+
+    generateRevenueReport: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/revenue/${startDate}/${endDate}`,
     }),
 
     exportResponsibilitiesCSV: builder.query({
@@ -403,6 +427,72 @@ export const infrastructureApi = baseApi.injectEndpoints({
         url: `/responsibility/${schoolId}/export/csv`,
         responseHandler: (response) => response.blob(),
       }),
+    }),
+
+    importResponsibilitiesCSV: builder.mutation({
+      query: ({ schoolId, body }) => ({ url: `/responsibility/${schoolId}/import/csv`, method: 'POST', body }),
+      invalidatesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+    }),
+
+    getStudentResponsibilities: builder.query({
+      query: ({ schoolId, studentId }) => `/responsibility/${schoolId}/students/${studentId}/responsibilities`,
+      providesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+    }),
+
+    getSpaceResponsibilities: builder.query({
+      query: ({ schoolId, spaceId }) => `/responsibility/${schoolId}/spaces/${spaceId}/responsibilities`,
+      providesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+    }),
+
+    getSpaceFinancialOverview: builder.query({
+      query: ({ schoolId, spaceId }) => `/responsibility/${schoolId}/spaces/${spaceId}/financial-overview`,
+      providesTags: (result, error, { spaceId }) => [{ type: 'SpaceFinancial', id: spaceId }],
+    }),
+
+    getMissingResponsibilityAlerts: builder.query({
+      query: (schoolId) => `/responsibility/${schoolId}/alerts/missing-responsibilities`,
+      providesTags: [{ type: 'Responsibilities', id: 'ALERTS' }],
+    }),
+
+    bulkRemoveResponsibilities: builder.mutation({
+      query: ({ schoolId, responsibilityId, body }) => ({
+        url: `/responsibility/${schoolId}/responsibilities/${responsibilityId}/bulk-remove`,
+        method: 'DELETE',
+        body,
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'ResponsibilityHistory', id: responsibilityId },
+        { type: 'ResponsibilityDetails', id: responsibilityId },
+      ],
+    }),
+
+    bulkUpdateResponsibilities: builder.mutation({
+      query: ({ schoolId, responsibilityId, body }) => ({
+        url: `/responsibility/${schoolId}/responsibilities/${responsibilityId}/bulk-update`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (result, error, { responsibilityId }) => [
+        { type: 'ResponsibilityHistory', id: responsibilityId },
+        { type: 'ResponsibilityDetails', id: responsibilityId },
+      ],
+    }),
+
+    // PDF Reports
+    getUtilizationReportPdf: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/utilization/${startDate}/${endDate}_pdf`,
+    }),
+
+    getWorkloadReportPdf: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/workload/${startDate}/${endDate}_pdf`,
+    }),
+
+    getSpaceDistributionReportPdf: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/space-distribution/${startDate}/${endDate}_pdf`,
+    }),
+
+    getRevenueReportPdf: builder.query({
+      query: ({ schoolId, startDate, endDate }) => `/responsibility/${schoolId}/reports/revenue/${startDate}/${endDate}_pdf`,
     }),
   }),
   overrideExisting: false,
@@ -453,6 +543,23 @@ export const {
   useGetOverviewAnalyticsQuery,
   useBulkAssignResponsibilitiesMutation,
   useGetUtilizationMetricsQuery,
+  useGetWorkloadMetricsQuery,
+  useGetSpaceDistributionMetricsQuery,
+  useGetRevenueMetricsQuery,
   useGenerateUtilizationReportQuery,
+  useGenerateWorkloadReportQuery,
+  useGenerateSpaceDistributionReportQuery,
+  useGenerateRevenueReportQuery,
   useExportResponsibilitiesCSVQuery,
+  useImportResponsibilitiesCSVMutation,
+  useGetStudentResponsibilitiesQuery,
+  useGetSpaceResponsibilitiesQuery,
+  useGetSpaceFinancialOverviewQuery,
+  useGetMissingResponsibilityAlertsQuery,
+  useBulkRemoveResponsibilitiesMutation,
+  useBulkUpdateResponsibilitiesMutation,
+  useGetUtilizationReportPdfQuery,
+  useGetWorkloadReportPdfQuery,
+  useGetSpaceDistributionReportPdfQuery,
+  useGetRevenueReportPdfQuery,
 } = infrastructureApi;

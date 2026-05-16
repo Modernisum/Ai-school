@@ -861,29 +861,33 @@ impl ResponsibilityService for PostgresResponsibilityService {
     ) -> AppResult<Value> {
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
         
-        let date_filter = if let (Some(start), Some(end)) = (start_date, end_date) {
-            format!(" AND er.created_at BETWEEN '{}' AND '{}'", start, end)
-        } else {
-            String::new()
+        let has_date_range = start_date.is_some() && end_date.is_some();
+        
+        let total_responsibilities: i64 = {
+            let mut q = "SELECT COUNT(*) FROM responsibilities WHERE school_id = $1".to_string();
+            if has_date_range {
+                q.push_str(" AND created_at BETWEEN $2 AND $3");
+            }
+            let mut query = sqlx::query_scalar::<_, i64>(&q).bind(school_id);
+            if let (Some(start), Some(end)) = (start_date, end_date) {
+                query = query.bind(start).bind(end);
+            }
+            query.fetch_one(&mut *conn).await.map_err(|e| AppError::Internal(e.to_string()))?
         };
         
-        let total_responsibilities: i64 = sqlx::query_scalar(
-            &format!("SELECT COUNT(*) FROM responsibilities WHERE school_id = $1{}", date_filter)
-        )
-        .bind(school_id)
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-        
-        let assigned_responsibilities: i64 = sqlx::query_scalar(
-            &format!("SELECT COUNT(DISTINCT responsibility_id) FROM employee_responsibilities er
-                      JOIN responsibilities r ON er.responsibility_id = r.responsibility_id
-                      WHERE r.school_id = $1{}", date_filter)
-        )
-        .bind(school_id)
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        let assigned_responsibilities: i64 = {
+            let mut q = "SELECT COUNT(DISTINCT er.responsibility_id) FROM employee_responsibilities er
+                         JOIN responsibilities r ON er.responsibility_id = r.responsibility_id
+                         WHERE r.school_id = $1".to_string();
+            if has_date_range {
+                q.push_str(" AND er.created_at BETWEEN $2 AND $3");
+            }
+            let mut query = sqlx::query_scalar::<_, i64>(&q).bind(school_id);
+            if let (Some(start), Some(end)) = (start_date, end_date) {
+                query = query.bind(start).bind(end);
+            }
+            query.fetch_one(&mut *conn).await.map_err(|e| AppError::Internal(e.to_string()))?
+        };
         
         let utilization_rate = if total_responsibilities > 0 {
             (assigned_responsibilities as f64 / total_responsibilities as f64) * 100.0

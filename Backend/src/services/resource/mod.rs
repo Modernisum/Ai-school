@@ -12,20 +12,24 @@ pub use equipment::EquipmentOperations;
 pub use inventory::InventoryOperations;
 pub use material::MaterialOperations;
 
+use super::material_monitor::MaterialMonitor;
+
 pub struct PostgresResourceService {
     pub repos: Arc<Repositories>,
     pub material: MaterialOperations,
     pub equipment: EquipmentOperations,
     pub inventory: InventoryOperations,
+    pub material_monitor: Option<Arc<MaterialMonitor>>,
 }
 
 impl PostgresResourceService {
-    pub fn new(repos: Arc<Repositories>) -> Self {
+    pub fn new(repos: Arc<Repositories>, material_monitor: Option<Arc<MaterialMonitor>>) -> Self {
         Self {
             material: MaterialOperations::new(repos.clone()),
             equipment: EquipmentOperations::new(repos.clone()),
             inventory: InventoryOperations::new(repos.clone()),
             repos,
+            material_monitor,
         }
     }
 }
@@ -58,7 +62,11 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         data: Value,
     ) -> AppResult<Value> {
-        self.material.create_material(school_id, admin_id, data).await
+        let res = self.material.create_material(school_id, admin_id, data).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(res)
     }
 
     async fn list_materials(
@@ -83,7 +91,11 @@ impl ResourceService for PostgresResourceService {
         material_name: &str,
         data: Value,
     ) -> AppResult<()> {
-        self.material.update_material(school_id, admin_id, material_name, data).await
+        self.material.update_material(school_id, admin_id, material_name, data).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(())
     }
 
     async fn delete_material(
@@ -92,7 +104,11 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         material_name: &str,
     ) -> AppResult<()> {
-        self.material.delete_material(school_id, admin_id, material_name).await
+        self.material.delete_material(school_id, admin_id, material_name).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(())
     }
 
     async fn sell_material(
@@ -102,7 +118,11 @@ impl ResourceService for PostgresResourceService {
         material_name: &str,
         data: Value,
     ) -> AppResult<()> {
-        self.material.sell_material(school_id, admin_id, material_name, data).await
+        self.material.sell_material(school_id, admin_id, material_name, data).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(())
     }
 
     async fn create_event(
@@ -179,7 +199,11 @@ impl ResourceService for PostgresResourceService {
         space_name: &str,
         materials: Vec<Value>,
     ) -> AppResult<()> {
-        self.inventory.assign_space_materials(school_id, admin_id, space_name, materials).await
+        self.inventory.assign_space_materials(school_id, admin_id, space_name, materials).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(())
     }
 
     async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value> {
@@ -188,5 +212,50 @@ impl ResourceService for PostgresResourceService {
 
     async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>> {
         self.material.get_material_history(school_id, material_id).await
+    }
+
+    async fn get_space_materials(
+        &self,
+        school_id: &str,
+        space_name: &str,
+    ) -> AppResult<Vec<Value>> {
+        self.inventory.get_space_materials(school_id, space_name).await
+    }
+
+    async fn get_all_spaces_materials(
+        &self,
+        school_id: &str,
+    ) -> AppResult<Value> {
+        self.inventory.get_all_spaces_materials(school_id).await
+    }
+
+    async fn clone_space(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        source_space_name: &str,
+        new_space_name: String,
+    ) -> AppResult<Value> {
+        let res = self.inventory.clone_space(school_id, admin_id, source_space_name, new_space_name).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(res)
+    }
+
+    async fn transfer_space_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        from_space: &str,
+        to_space: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> AppResult<Value> {
+        let res = self.inventory.transfer_space_material(school_id, admin_id, from_space, to_space, material_name, quantity).await?;
+        if let Some(monitor) = &self.material_monitor {
+            let _ = monitor.check_and_alert_school(school_id).await;
+        }
+        Ok(res)
     }
 }
