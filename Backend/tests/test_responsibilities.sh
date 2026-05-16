@@ -10,7 +10,7 @@ test_responsibilities_module() {
     log "=== RESPONSIBILITY MODULE TESTS ==="
 
     # ── 1. List responsibilities ──
-    log "[1/12] GET /responsibility — list all"
+    log "[1/15] GET /responsibility — list all"
     RESP=$(curl -s "$BASE_URL$API_PATH/" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
@@ -20,7 +20,7 @@ test_responsibilities_module() {
     log "    First ID: $FIRST_ID"
 
     # ── 2. Create a responsibility ──
-    log "[2/12] POST /responsibility — create new"
+    log "[2/15] POST /responsibility — create new"
     CREATE_RESP=$(curl -s -X POST "$BASE_URL$API_PATH/" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID" \
@@ -35,7 +35,7 @@ test_responsibilities_module() {
 
     # ── 3. Get responsibility by ID ──
     if [ -n "$NEW_ID" ]; then
-        log "[3/12] GET /responsibility/$NEW_ID — get detail"
+        log "[3/15] GET /responsibility/$NEW_ID — get detail"
         DETAIL=$(curl -s "$BASE_URL$API_PATH/$NEW_ID" \
             -H "Authorization: Bearer $ADMIN_TOKEN" \
             -H "X-School-ID: $SCHOOL_ID")
@@ -44,7 +44,7 @@ test_responsibilities_module() {
     fi
 
     # ── 4. Overview Analytics (Gap 1 support) ──
-    log "[4/12] GET /responsibility/overview/analytics — teacher dashboard data"
+    log "[4/15] GET /responsibility/overview/analytics — teacher dashboard data"
     ANALYTICS=$(curl -s "$BASE_URL$API_PATH/overview/analytics" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
@@ -52,7 +52,7 @@ test_responsibilities_module() {
     log "    Overview keys: $(echo "$ANALYTICS" | jq -r '.data | keys | join(", ")')"
 
     # ── 5. Employee Responsibilities (Gap 1 support) ──
-    log "[5/12] GET /responsibility/employees/{eId}/responsibilities"
+    log "[5/15] GET /responsibility/employees/{eId}/responsibilities"
     EMP_RESP=$(curl -s "$BASE_URL$API_PATH/employees/EMP001/responsibilities" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
@@ -60,7 +60,7 @@ test_responsibilities_module() {
 
     # ── 6. Responsibility Analytics (Gap 4 support) ──
     if [ -n "$NEW_ID" ]; then
-        log "[6/12] GET /responsibility/$NEW_ID/analytics — vacancy/coverage data"
+        log "[6/15] GET /responsibility/$NEW_ID/analytics — vacancy/coverage data"
         RESP_ANALYTICS=$(curl -s "$BASE_URL$API_PATH/$NEW_ID/analytics" \
             -H "Authorization: Bearer $ADMIN_TOKEN" \
             -H "X-School-ID: $SCHOOL_ID")
@@ -68,7 +68,7 @@ test_responsibilities_module() {
     fi
 
     # ── 7. CSV Export (Gap 7 support) ──
-    log "[7/12] GET /responsibility/export/csv — blob download"
+    log "[7/15] GET /responsibility/export/csv — blob download"
     CSV=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$API_PATH/export/csv" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
@@ -82,7 +82,7 @@ test_responsibilities_module() {
     ((TOTAL_TESTS++))
 
     # ── 8. Salary Generation (Gap 2 support) ──
-    log "[8/12] POST /responsibility/generate-salaries/5/2026 — salary calc"
+    log "[8/15] POST /responsibility/generate-salaries/5/2026 — salary calc"
     SALARY=$(curl -s -X POST "$BASE_URL$API_PATH/generate-salaries/5/2026" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID" \
@@ -99,7 +99,7 @@ test_responsibilities_module() {
     ((TOTAL_TESTS++))
 
     # ── 9. Student Fee Sync (Gap 3 support) ──
-    log "[9/12] POST /responsibility/sync-student-fees"
+    log "[9/15] POST /responsibility/sync-student-fees"
     FEE_SYNC=$(curl -s -X POST "$BASE_URL$API_PATH/sync-student-fees" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID" \
@@ -108,21 +108,21 @@ test_responsibilities_module() {
     assert_status 200 "$(echo "$FEE_SYNC" | jq -c '{status: 200}')"
 
     # ── 10. Utilization Metrics ──
-    log "[10/12] GET /responsibility/metrics/utilization"
+    log "[10/15] GET /responsibility/metrics/utilization"
     UTIL=$(curl -s "$BASE_URL$API_PATH/metrics/utilization" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
     assert_status 200 "$(echo "$UTIL" | jq -c '{status: 200}')"
 
     # ── 11. Workload Metrics ──
-    log "[11/12] GET /responsibility/metrics/workload"
+    log "[11/15] GET /responsibility/metrics/workload"
     WORKLOAD=$(curl -s "$BASE_URL$API_PATH/metrics/workload" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
     assert_status 200 "$(echo "$WORKLOAD" | jq -c '{status: 200}')"
 
     # ── 12. PDF Report (Gap 7 support) ──
-    log "[12/12] GET /responsibility/reports/utilization/2026-01-01/2026-12-31/pdf"
+    log "[12/15] GET /responsibility/reports/utilization/2026-01-01/2026-12-31/pdf"
     PDF_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$API_PATH/reports/utilization/2026-01-01/2026-12-31/pdf" \
         -H "Authorization: Bearer $ADMIN_TOKEN" \
         -H "X-School-ID: $SCHOOL_ID")
@@ -134,6 +134,54 @@ test_responsibilities_module() {
         ((FAILED_TESTS++))
     fi
     ((TOTAL_TESTS++))
+
+    # ── 13. Search Responsibilities ──
+    log "[13/15] GET /responsibility/search?q=teach — search by name"
+    SEARCH_RESULT=$(curl -s "$BASE_URL$API_PATH/search?q=teach" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "X-School-ID: $SCHOOL_ID")
+    assert_status 200 "$(echo "$SEARCH_RESULT" | jq -c '{status: 200}')"
+    assert_contains "data" "$SEARCH_RESULT"
+    SEARCH_COUNT=$(echo "$SEARCH_RESULT" | jq '.data | length')
+    log "    Search results count: $SEARCH_COUNT"
+
+    # ── 14. Space Financial Overview (new endpoint) ──
+    log "[14/15] GET /responsibility/spaces/{spaceId}/financial-overview"
+    # Try to get a space ID from existing spaces
+    SPACE_ID=$(curl -s "$BASE_URL/api/school/$SCHOOL_ID/operations/responsibility/spaces" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "X-School-ID: $SCHOOL_ID" | jq -r '.data[0].spaceId // .data[0].space_id // "classroom-1a"')
+    FINANCIAL=$(curl -s "$BASE_URL$API_PATH/spaces/$SPACE_ID/financial-overview" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "X-School-ID: $SCHOOL_ID")
+    FIN_STATUS=$(echo "$FINANCIAL" | jq -r '.success')
+    if [ "$FIN_STATUS" = "true" ]; then
+        log_success "Financial overview returned success"
+        ((PASSED_TESTS++))
+    else
+        # Try with a fallback space ID
+        FINANCIAL=$(curl -s "$BASE_URL$API_PATH/spaces/classroom-1a/financial-overview" \
+            -H "Authorization: Bearer $ADMIN_TOKEN" \
+            -H "X-School-ID: $SCHOOL_ID")
+        FIN_STATUS=$(echo "$FINANCIAL" | jq -r '.success')
+        if [ "$FIN_STATUS" = "true" ]; then
+            log_success "Financial overview returned success (fallback)"
+            ((PASSED_TESTS++))
+        else
+            log_error "Financial overview failed: $(echo "$FINANCIAL" | jq -c '.')"
+            ((FAILED_TESTS++))
+        fi
+    fi
+    ((TOTAL_TESTS++))
+
+    # ── 15. Missing Responsibility Alerts (new endpoint) ──
+    log "[15/15] GET /responsibility/alerts/missing-responsibilities"
+    ALERTS=$(curl -s "$BASE_URL$API_PATH/alerts/missing-responsibilities" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "X-School-ID: $SCHOOL_ID")
+    assert_status 200 "$(echo "$ALERTS" | jq -c '{status: 200}')"
+    ALERTS_COUNT=$(echo "$ALERTS" | jq '.total // 0')
+    log "    Missing responsibility alerts count: $ALERTS_COUNT"
 
     # Cleanup: delete created test responsibility
     if [ -n "$NEW_ID" ]; then

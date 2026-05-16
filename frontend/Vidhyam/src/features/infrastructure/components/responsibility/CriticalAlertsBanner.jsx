@@ -34,10 +34,11 @@ export default function CriticalAlertsBanner({ alerts, isLoading, onDismiss, onN
                 <StandardButton
                   variant="ghost"
                   size="xs"
-                  label="ASSIGN"
                   className="text-rose-400 border-rose-500/30"
                   onClick={() => onNavigate(alert)}
-                />
+                >
+                  ASSIGN
+                </StandardButton>
               )}
               {onDismiss && (
                 <StandardButton

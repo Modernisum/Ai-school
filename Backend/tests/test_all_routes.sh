@@ -94,6 +94,12 @@ source "$(dirname "$0")/test_resources.sh"
 test_resources_module
 separator
 
+# ===== RESPONSIBILITY TESTS =====
+log "Testing Responsibility Module..."
+source "$(dirname "$0")/test_responsibilities.sh"
+test_responsibilities_module
+separator
+
 # ===== COUPONS TESTS =====
 log "Testing Coupon Module..."
 source "$(dirname "$0")/test_coupons.sh"
