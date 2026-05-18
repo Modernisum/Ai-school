@@ -13,6 +13,8 @@ pub trait AiService: Send + Sync {
         -> AppResult<Value>;
     async fn reorganize_tasks(&self, school_id: &str, employee_id: &str) -> AppResult<Value>;
     async fn generate_exam_questions(&self, school_id: &str, payload: &Value) -> AppResult<Value>;
+    async fn regenerate_exam_question(&self, school_id: &str, payload: &Value) -> AppResult<Value>;
+    async fn grade_test_submission(&self, school_id: &str, payload: &Value) -> AppResult<Value>;
 }
 
 #[async_trait]
@@ -105,6 +107,8 @@ pub trait ResourceService: Send + Sync {
 
     // Events
     async fn create_event(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
+    async fn list_events(&self, school_id: &str) -> AppResult<Vec<Value>>;
+    async fn update_event(&self, school_id: &str, admin_id: &str, event_id: i32, data: Value) -> AppResult<()>;
     async fn delete_event(&self, school_id: &str, admin_id: &str, event_id: i32) -> AppResult<()>;
 
     // Spaces

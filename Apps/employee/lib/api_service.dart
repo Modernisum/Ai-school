@@ -595,6 +595,228 @@ class ApiService {
     }
   }
 
+  // ── Exam Checker Workflow ───────────────────────────────────────────────
+
+  Future<List<dynamic>?> getAllExams() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/exams');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) {
+      debugPrint("getAllExams Error: $e");
+      return null;
+    }
+  }
+
+  Future<List<dynamic>?> getCheckerPendingExams() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/exams/checker/pending');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) {
+      debugPrint("getCheckerPendingExams Error: $e");
+      return null;
+    }
+  }
+
+  Future<List<dynamic>?> getExamSubmissionsForChecker(String examId, {String? status}) async {
+    try {
+      final sid = await _getSchoolId();
+      final url = status != null
+          ? '$apiBase/school/$sid/academic/exams/checker/submissions/$examId?status=$status'
+          : '$apiBase/school/$sid/academic/exams/checker/submissions/$examId';
+      final response = await _get(url);
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) {
+      debugPrint("getExamSubmissionsForChecker Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> submitCheckerReview(
+      String examId, String submissionId, Map<String, dynamic> reviewData) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post(
+          '$apiBase/school/$sid/academic/exams/checker/review/$examId/$submissionId',
+          body: reviewData);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("submitCheckerReview Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> submitTeacherApproval(
+      String examId, String submissionId, Map<String, dynamic> approvalData) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post(
+          '$apiBase/school/$sid/academic/exams/approve/$examId/$submissionId',
+          body: approvalData);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("submitTeacherApproval Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> submitTeacherRejection(
+      String examId, String submissionId, Map<String, dynamic> rejectionData) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post(
+          '$apiBase/school/$sid/academic/exams/reject/$examId/$submissionId',
+          body: rejectionData);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("submitTeacherRejection Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> publishExamResults(String examId) async {
+    try {
+      final sid = await _getSchoolId();
+      final response =
+          await _post('$apiBase/school/$sid/academic/exams/publish/$examId');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("publishExamResults Error: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> gradeTestSubmission(Map<String, dynamic> payload) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post(
+          '$apiBase/school/$sid/academic/exams/submit-test', body: payload);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) {
+      debugPrint("gradeTestSubmission Error: $e");
+      return null;
+    }
+  }
+
+  // ── Syllabus & Period Plans ──────────────────────────────────────────────────────
+
+  Future<List<dynamic>?> getQuarterReport(String quarter) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/syllabus/quarter/$quarter');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) { debugPrint("getQuarterReport: $e"); return null; }
+  }
+
+  Future<List<dynamic>?> getDailyTodo({String teacherId = '', String? date}) async {
+    try {
+      final sid = await _getSchoolId();
+      final d = date ?? DateTime.now().toIso8601String().substring(0, 10);
+      final url = '$apiBase/school/$sid/academic/period-plans/today?teacherId=$teacherId&date=$d';
+      final response = await _get(url);
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) { debugPrint("getDailyTodo: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> updatePeriodStatus(int planId, String status) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post('$apiBase/school/$sid/academic/period-plans/$planId/status',
+          body: {'status': status});
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("updatePeriodStatus: $e"); return null; }
+  }
+
+  Future<List<dynamic>?> getMissedReports() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/reports/missed');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) { debugPrint("getMissedReports: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> submitDailyReport(Map<String, dynamic> payload) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post('$apiBase/school/$sid/academic/reports/daily', body: payload);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("submitDailyReport: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> requestScheduleChange(Map<String, dynamic> payload) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post('$apiBase/school/$sid/academic/changes/request', body: payload);
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("requestScheduleChange: $e"); return null; }
+  }
+
+  Future<List<dynamic>?> getPendingChanges() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/changes/pending');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) { debugPrint("getPendingChanges: $e"); return null; }
+  }
+
+  // ── Transport / Attendance ─────────────────────────────────────────────────
+
+  Future<List<dynamic>?> getDriverStudents() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/system/transport/driver-students');
+      if (response.statusCode == 200) return jsonDecode(response.body)['data'];
+      return null;
+    } catch (e) { debugPrint("getDriverStudents: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> markPickupAttendance(List<String> studentIds, String status, String vehicleId) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _post('$apiBase/school/$sid/system/transport/mark-pickup', body: {
+        'studentIds': studentIds,
+        'status': status,
+        'vehicleId': vehicleId,
+      });
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("markPickupAttendance: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> getBusLocation(String vehicleId) async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/system/transport/bus-location/$vehicleId');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("getBusLocation: $e"); return null; }
+  }
+
+  Future<Map<String, dynamic>?> autoAssignTeacher() async {
+    try {
+      final sid = await _getSchoolId();
+      final response = await _get('$apiBase/school/$sid/attendance/auto-assign-teacher');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { debugPrint("autoAssignTeacher: $e"); return null; }
+  }
+
   // ── AI Integration ──────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> aiQuery(String query) async {

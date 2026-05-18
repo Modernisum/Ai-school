@@ -69,7 +69,9 @@ pub trait ResourceRepository: Send + Sync {
 
     // Events
     async fn add_event_summary(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
+    async fn get_events(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_event(&self, school_id: &str, event_id: i32) -> Result<Option<Value>, AppError>;
+    async fn update_event(&self, school_id: &str, event_id: i32, data: Value) -> Result<(), AppError>;
 
     async fn get_materials(
         &self,

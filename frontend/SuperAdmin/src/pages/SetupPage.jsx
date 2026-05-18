@@ -1,4 +1,40 @@
  
+    import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config.js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, School, Shield, BookOpen, ChevronLeft, ChevronRight, X, Upload, Loader, CheckCircle, Copy } from 'lucide-react';
+import Field from '../components/Field.jsx';
+import { toast } from '../components/Toast.jsx';
+import { uploadFile, deleteFileByUrl } from '../utils/fileUpload.js';
+
+export default function SetupPage() {
+    const [countries, setCountries] = useState([])
+    const [statesList, setStatesList] = useState([])
+    const [districts, setDistricts] = useState([])
+    const [form, setForm] = useState({
+        schoolName: '', password: '', principalName: '', addressLine: '', countryId: '', stateId: '', districtId: '', pincode: '',
+        phone: '', email: '', affiliatedBoard: '', medium: 'English',
+        classLevelStart: 'Pre-Nursery', classLevelEnd: 'Class 12', schoolType: 'Co-Ed',
+        schoolLogoUrl: ''
+    })
+    const [errors, setErrors] = useState({})
+    const [step, setStep] = useState(1)
+    const [loading, setLoading] = useState(false)
+    const [pendingLogoFile, setPendingLogoFile] = useState(null)
+    const [localLogoPreview, setLocalLogoPreview] = useState('')
+    const [logoLoading, setLogoLoading] = useState(false)
+    const [success, setSuccess] = useState(null)
+
+    useEffect(() => {
+        fetch(`${API_BASE}/geo/countries`).then(res => res.json()).then(setCountries).catch(console.error)
+    }, [])
+
+    useEffect(() => {
+        if (form.countryId) {
+            setStatesList([])
+            setDistricts([])
+            fetch(`${API_BASE}/geo/states/${form.countryId}`).then(res => res.json()).then(setStatesList).catch(console.error)
+        }
     }, [form.countryId])
 
     useEffect(() => {

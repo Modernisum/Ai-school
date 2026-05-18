@@ -17,6 +17,11 @@ import "../teacher/classroom_hub_screen.dart";
 import "../community/staff_room_screen.dart";
 import "../ai/teacher_ai_assistant.dart";
 import "../responsibility/responsibility_list_screen.dart";
+import "../teacher/checker_exam_list_screen.dart";
+import "../teacher/teacher_approval_screen.dart";
+import "../teacher/syllabus_calendar_screen.dart";
+import "../teacher/period_plan_screen.dart";
+import "../teacher/schedule_change_screen.dart";
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -240,6 +245,32 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               }),
               _buildActionCard(context, Icons.receipt_long, "Salary Analytics", onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const SalaryAnalyticsScreen()));
+              }),
+              _buildActionCard(context, Icons.rate_review, "Exam Checker", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckerExamListScreen()));
+              }),
+              _buildActionCard(context, Icons.fact_check, "Exam Approval", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherApprovalScreen()));
+              }),
+              _buildActionCard(context, Icons.today, "Daily Plan", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const PeriodPlanScreen()));
+              }),
+              _buildActionCard(context, Icons.calendar_month, "Syllabus", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const SyllabusCalendarScreen()));
+              }),
+              _buildActionCard(context, Icons.swap_horiz, "Request Change", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ScheduleChangeScreen()));
+              }),
+              _buildActionCard(context, Icons.how_to_reg, "Mark Attendance", onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen(classId: "10-A")));
+              }),
+              _buildActionCard(context, Icons.auto_awesome, "Auto-Assign", onTap: () async {
+                final api = context.read<ApiService>();
+                final res = await api.autoAssignTeacher();
+                if (res?['success'] == true && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("${res['unmarked_classes']} classes need attendance"), backgroundColor: Colors.orange));
+                }
               }),
             ],
           )

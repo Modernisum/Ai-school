@@ -94,6 +94,15 @@ impl DbClient {
 
         Ok(DbClient { pool, redis })
     }
+
+    #[cfg(test)]
+    pub fn new_test() -> Result<Self, Box<dyn Error>> {
+        let pool = PgPool::connect_lazy("postgresql://localhost/test")?;
+        let redis = deadpool_redis::Config::from_url("redis://localhost:6379")
+            .create_pool(None)
+            .map_err(|e| Box::new(e) as Box<dyn Error>)?;
+        Ok(DbClient { pool, redis })
+    }
 }
 
 pub async fn init() -> Result<DbClient, Box<dyn Error>> {

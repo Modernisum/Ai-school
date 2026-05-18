@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sqlx::query("ALTER TABLE public.subjects ADD PRIMARY KEY (school_id, id)").execute(&pool).await?;
 
     // Exams: (school_id, name) - Ensure name is NOT NULL
+    sqlx::query("ALTER TABLE public.exams ADD PRIMARY KEY (id)").execute(&pool).await.ok();
     sqlx::query("UPDATE public.exams SET name = exam_name WHERE name IS NULL").execute(&pool).await?;
     sqlx::query("ALTER TABLE public.exams ALTER COLUMN name SET NOT NULL").execute(&pool).await?;
     sqlx::query("ALTER TABLE public.exams ADD CONSTRAINT exams_school_name_unique UNIQUE (school_id, name)").execute(&pool).await?;

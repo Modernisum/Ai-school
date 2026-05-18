@@ -23,6 +23,6 @@ Vidhyam is a multi-school platform. **Data Isolation is absolute.**
 - **No Sudden Crashes:** Backend and frontend logic must be written to prevent sudden panics or crashes (e.g., absolutely NO raw `.unwrap()` or `.expect()` in Rust without proper fallback handling).
 - **Predictable Responses:** If data is missing or a calculation fails, the system must degrade gracefully and return a structured, readable error message to the user rather than failing silently or crashing.
 
-## 🧩 5. Modularity & Responsibility Division
+## 🧩 5. Modularity and features Division
 - **Feature Independence:** Every feature (e.g., Student Management, Employee Payroll, Inventory) is an independent module. 
 - **Strict Boundaries:** The internal logic of one feature must not tightly couple with another. If cross-feature communication is required, it must happen through defined Service channels, not by directly altering another module's core files.

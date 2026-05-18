@@ -11,12 +11,17 @@ class AcademicLoading extends AcademicState {}
 
 class AcademicLoaded extends AcademicState {
   final List<Map<String, dynamic>> upcomingExams;
-  final List<Map<String, dynamic>> reportCards; // GCS document links
+  final List<Map<String, dynamic>> reportCards;
+  final List<Map<String, dynamic>> examResults;
 
-  const AcademicLoaded({required this.upcomingExams, required this.reportCards});
+  const AcademicLoaded({
+    required this.upcomingExams,
+    required this.reportCards,
+    this.examResults = const [],
+  });
 
   @override
-  List<Object?> get props => [upcomingExams, reportCards];
+  List<Object?> get props => [upcomingExams, reportCards, examResults];
 }
 
 class AcademicError extends AcademicState {

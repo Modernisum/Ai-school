@@ -4,7 +4,7 @@ import {
   Users, UserCheck, CreditCard, School, Box, Layers,
   AlertCircle, FileText, CalendarCheck, CalendarDays,
   UserPlus, ClipboardList, DollarSign, IndianRupee,
-  Megaphone, History, Bot, Palette
+  Megaphone, History, Bot, Palette, CheckCircle, BookOpen, BarChart3, GitMerge, FileCheck
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +33,7 @@ const NAV_CONFIG = [
         subLinks: [
           { label: "All Students", path: "/dashboard/student/all", icon: Users },
           { label: "Admission", path: "/dashboard/student/add", icon: UserPlus },
+          { label: "Form Fill", path: "/dashboard/student/form-fill", icon: FileCheck },
         ],
       },
       {
@@ -52,6 +53,10 @@ const NAV_CONFIG = [
         path: "/dashboard/academic",
         subLinks: [
           { label: "Exams", path: "/dashboard/academic/exam", icon: FileText },
+          { label: "Exam Approval", path: "/dashboard/academic/teacher-approval", icon: CheckCircle },
+          { label: "Syllabus Planner", path: "/dashboard/academic/syllabus-planner", icon: BookOpen },
+          { label: "Period Plans", path: "/dashboard/academic/period-plans", icon: BarChart3 },
+          { label: "Change Approvals", path: "/dashboard/academic/change-approval", icon: GitMerge },
           { label: "Events", path: "/dashboard/academic/events", icon: CalendarCheck },
           { label: "Attendance", path: "/dashboard/academic/attendance", icon: CalendarDays },
           { label: "Timetable", path: "/dashboard/academic/timetable", icon: History },

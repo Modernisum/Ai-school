@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, Briefcase, GraduationCap,
   Shield, Calendar, FileText, DollarSign, Award, CheckCircle, AlertCircle,
-  Building, MapPin, ClipboardList, ShieldCheck, FileUp, Users, LayoutGrid, CheckSquare
+  Building, MapPin, ClipboardList, ShieldCheck, FileUp, Users, LayoutGrid, CheckSquare, Heart, TrendingUp
 } from 'lucide-react';
 import FormWidget from '../../../components/ui/FormWidget';
+import DocumentUploadStep from '../../../components/ocr/DocumentUploadStep';
+import PinCodeAutoFill from '../../../components/geo/PinCodeAutoFill';
+import SalaryBreakdownWidget from '../../../components/salary/SalaryBreakdownWidget';
+import { useAgeCalculator } from '../../../hooks/useAgeCalculator';
 import { getSchoolIdFromStorage, callApiWithBackoff } from '../../../utils/api';
 import { useAddEmployeeMutation } from '../api/employeeApi';
 import { useGetSpacesQuery } from '../../infrastructure/api/infrastructureApi';
-import { useGetSpaceResponsibilitiesQuery, useGetResponsibilitiesQuery } from '../../infrastructure/infrastructureApi';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 const getSchoolId = () => getSchoolIdFromStorage() || "";
@@ -23,15 +26,16 @@ export default function AddEmployeePage() {
   const [searchParams] = useSearchParams();
   const [addEmployee] = useAddEmployeeMutation();
 
-  const mode = searchParams.get('mode') || (pathname.includes('/leave') ? 'leave' : 'add');
+  const mode = searchParams.get('mode') || (pathname.includes('/leave') ? 'leave' : (pathname.includes('/edit') ? 'edit' : 'add'));
   const employeeId = searchParams.get('employeeId');
 
   const [activeSection, setActiveSection] = useState(mode === 'leave' ? 'request' : 'personal');
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [showOcrStep, setShowOcrStep] = useState(mode === 'add' && !employeeId);
+  const [ocrFields, setOcrFields] = useState({});
 
-  // ─── Comprehensive Default Values ─────────────────────────────────────────────
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: {
       name: '', dob: '', gender: '', fatherName: '', motherName: '', maritalStatus: 'Single', religion: '', 
       aadhaarNumber: '', panNumber: '',
@@ -42,9 +46,17 @@ export default function AddEmployeePage() {
       educationLevel: '', institutionName: '', stream: '', passingYear: '', grade: '',
       experienceYears: '', prevOrg: '', prevDesignation: '',
       leaveType: 'Casual', fromDate: '', toDate: '', reason: '', attachments: [], 
-      priority: 'Normal', coverageRequired: true, handoverNotes: ''
+      priority: 'Normal', coverageRequired: true, handoverNotes: '',
+      bloodGroup: '', bankAccountNumber: '', bankIfscCode: '',
+      experienceStatus: 'Fresher', experienceIncrementPercent: 0,
     }
   });
+
+  const watchedDob = watch('dob');
+  const watchedExpStatus = watch('experienceStatus');
+  const watchedBaseSalary = watch('baseSalary');
+  const watchedExpIncPct = watch('experienceIncrementPercent');
+  const { ageString } = useAgeCalculator(watchedDob);
 
   useEffect(() => {
     if (mode === 'edit' && employeeId) {
@@ -98,8 +110,53 @@ export default function AddEmployeePage() {
     return Array.from(seen.values());
   }, [spaceResps]);
 
+  const baseSalaryForWidget = useMemo(() => {
+    if (watchedBaseSalary) return watchedBaseSalary;
+    if (mergedResponsibilities.length > 0) {
+      const r = mergedResponsibilities[0];
+      return r.monthlyPrice || r.monthly_price || 0;
+    }
+    return 0;
+  }, [watchedBaseSalary, mergedResponsibilities]);
+
+  // ─── OCR Auto-Fill Handler ─────────────────────────────────────────────────
+  const handleOcrAutoFill = useCallback((extracted) => {
+    setOcrFields(extracted);
+    if (extracted.name) setValue('name', extracted.name);
+    if (extracted.dob) setValue('dob', extracted.dob);
+    if (extracted.gender) setValue('gender', extracted.gender);
+    if (extracted.aadhaarNumber) setValue('aadhaarNumber', extracted.aadhaarNumber);
+    if (extracted.panNumber) setValue('panNumber', extracted.panNumber);
+    if (extracted.address) setValue('address', extracted.address);
+    if (extracted.fatherName) setValue('fatherName', extracted.fatherName);
+    if (extracted.motherName) setValue('motherName', extracted.motherName);
+    setShowOcrStep(false);
+    setActiveSection('personal');
+  }, [setValue]);
+
+  const handleOcrSkip = useCallback(() => {
+    setShowOcrStep(false);
+    setActiveSection('personal');
+  }, []);
+
+  // ─── Pincode Auto-Fill ─────────────────────────────────────────────────────
+  const handleAddressFilled = useCallback((location) => {
+    if (location.city && !watch('address')) {
+      setValue('address', `${location.city}, ${location.state}`);
+    }
+  }, [setValue, watch]);
+
   const spaceResponsibilityContent = (
     <div className="space-y-4">
+      {/* Salary Preview */}
+      <SalaryBreakdownWidget
+        baseSalary={baseSalaryForWidget}
+        spacesCount={selectedSpaces.length || 1}
+        experienceIncrementPercent={watchedExpIncPct}
+        onIncrementChange={(val) => setValue('experienceIncrementPercent', val)}
+      />
+
+      {/* Space Selection */}
       <div>
         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
           Select Spaces (classrooms / departments)
@@ -127,6 +184,7 @@ export default function AddEmployeePage() {
         </div>
       </div>
 
+      {/* Responsibility Selection */}
       {mergedResponsibilities.length > 0 && (
         <div>
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
@@ -162,14 +220,16 @@ export default function AddEmployeePage() {
     </div>
   );
 
-  // ─── Refined Employee Schema ────────────────────────────────────────────────
+  // ─── Employee Schema ──────────────────────────────────────────────────────
   const EMPLOYEE_SCHEMA = useMemo(() => [
     {
       id: 'personal', label: 'Identity', icon: User,
       fields: [
         { name: 'name', label: 'Full Legal Name', type: 'text', required: true, icon: User },
-        { name: 'dob', label: 'Birth Date', type: 'date', required: true, icon: Calendar },
+        { name: 'dob', label: 'Birth Date', type: 'date', required: true, icon: Calendar,
+          helperText: ageString ? `Age: ${ageString}` : '' },
         { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Other'], required: true },
+        { name: 'bloodGroup', label: 'Blood Group', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
         { name: 'maritalStatus', label: 'Marital Status', type: 'select', options: ['Single', 'Married', 'Divorced', 'Widowed'] },
         { name: 'religion', label: 'Religion', type: 'select', options: ['Hindu', 'Muslim', 'Sikh', 'Christian', 'Jain', 'Buddhist', 'Other'] },
         { name: 'aadhaarNumber', label: 'Aadhaar ID', type: 'text', icon: ShieldCheck },
@@ -184,8 +244,16 @@ export default function AddEmployeePage() {
         { name: 'phone', label: 'Primary Contact', type: 'tel', required: true, icon: Phone },
         { name: 'altPhone', label: 'Alternative No', type: 'tel', icon: Phone },
         { name: 'email', label: 'Work Email', type: 'email', icon: FileText },
-        { name: 'emergencyContact', label: 'Emergency Name / Phone', type: 'text', icon: AlertCircle },
+        { name: 'emergencyContact', label: 'Emergency Contact Name / Phone', type: 'text', icon: AlertCircle },
         { name: 'address', label: 'Permanent Address', type: 'textarea', className: 'md:col-span-2' },
+      ]
+    },
+    {
+      id: 'bank', label: 'Bank Details', icon: DollarSign,
+      description: 'Salary transfer bank account information.',
+      fields: [
+        { name: 'bankAccountNumber', label: 'Bank Account Number', type: 'text', required: true },
+        { name: 'bankIfscCode', label: 'IFSC Code', type: 'text', required: true },
       ]
     },
     {
@@ -216,9 +284,12 @@ export default function AddEmployeePage() {
       fields: [
         { name: 'educationLevel', label: 'Highest Qualification', type: 'select', options: ['Diploma', 'Bachelor', 'Master', 'PhD', 'Other'] },
         { name: 'institutionName', label: 'Institution', type: 'text' },
-        { name: 'experienceYears', label: 'Work Exp (Years)', type: 'number', icon: Briefcase },
-        { name: 'prevOrg', label: 'Last Employer', type: 'text' },
-        { name: 'prevDesignation', label: 'Last Designation', type: 'text' },
+        { name: 'experienceStatus', label: 'Experience Status', type: 'select', options: ['Fresher', 'Experienced'], required: true },
+        ...(watchedExpStatus === 'Experienced' ? [
+          { name: 'experienceYears', label: 'Work Exp (Years)', type: 'number', icon: Briefcase },
+          { name: 'prevOrg', label: 'Previous School / Organization', type: 'text' },
+          { name: 'prevDesignation', label: 'Last Designation', type: 'text' },
+        ] : []),
         { name: 'attachments', label: 'Verification Docs', type: 'file', multiple: true },
       ]
     },
@@ -230,7 +301,7 @@ export default function AddEmployeePage() {
       ],
       customContent: spaceResponsibilityContent
     }
-  ], [spaceResponsibilityContent]);
+  ], [spaceResponsibilityContent, ageString, watchedExpStatus]);
 
   const LEAVE_SCHEMA = useMemo(() => [
     {
@@ -254,7 +325,6 @@ export default function AddEmployeePage() {
 
   const activeSchema = mode === 'leave' ? LEAVE_SCHEMA : EMPLOYEE_SCHEMA;
 
-  // ─── Submission Logic ───────────────────────────────────────────────────────
   const onFormSubmit = async (data) => {
     setIsLoading(true);
     setFeedback(null);
@@ -275,6 +345,8 @@ export default function AddEmployeePage() {
           type: data.employeeType,
           spaces: selectedSpaces,
           responsibilityIds: selectedResponsibilities,
+          experienceIncrementPercent: parseFloat(data.experienceIncrementPercent) || 0,
+          experienceYears: data.experienceStatus === 'Experienced' ? (parseInt(data.experienceYears) || 0) : 0,
         };
         if (mode === 'edit') {
             await fetch(`${API_BASE}/employees/${schoolId}/${employeeId}`, {
@@ -294,6 +366,20 @@ export default function AddEmployeePage() {
       setIsLoading(false);
     }
   };
+
+  if (showOcrStep) {
+    return (
+      <div className="max-w-lg mx-auto mt-8">
+        <div className="border border-white/5 rounded-2xl bg-white/[0.02] p-6">
+          <DocumentUploadStep
+            entityType="employee"
+            onAutoFill={handleOcrAutoFill}
+            onSkip={handleOcrSkip}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

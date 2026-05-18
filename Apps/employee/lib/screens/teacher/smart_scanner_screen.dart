@@ -13,7 +13,16 @@ import '../../core/widgets/glass_card.dart';
 import 'unassigned_vault_screen.dart';
 
 class SmartScannerScreen extends StatefulWidget {
-  const SmartScannerScreen({super.key});
+  final String examId;
+  final String examName;
+  final String strictnessLevel;
+
+  const SmartScannerScreen({
+    super.key,
+    required this.examId,
+    required this.examName,
+    this.strictnessLevel = 'medium',
+  });
 
   @override
   State<SmartScannerScreen> createState() => _SmartScannerScreenState();
@@ -313,36 +322,38 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
     setState(() => _isScanning = true);
     
     try {
-      final baseUrl = dotenv.env['VITE_API_BASE_URL'] ?? 'http://localhost:8080/api';
-      final schoolId = await context.read<ApiService>().getSchoolId() ?? "";
+      final api = context.read<ApiService>();
       
-      // 1. In a real flow, we'd first upload to GCS, then send the URL to OCR
-      // For this implementation, we simulate the OCR + AI pipeline call
-      final response = await http.post(
-        Uri.parse('$baseUrl/ai/$schoolId/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "query": "Grade this handwritten math paper and provide mark-wise reasoning.",
-          "context": "OCR_RESULT_PLACEHOLDER: Student solved 5 problems. Problem 3 has a carry-over error."
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        // Backend returns AI reasoning in the data
+      // Upload scanned image (if captured) and send to grading API
+      final payload = {
+        "examId": widget.examId,
+        "studentId": "auto",  // Would be detected via roll number OCR
+        "submissionType": "exam",
+        "isOmr": false,
+        "strictness": widget.strictnessLevel,
+        "answers": [
+          {
+            "questionIndex": 0,
+            "answerText": "OCR_RESULT_PLACEHOLDER: Scanned page content would be here"
+          }
+        ]
+      };
+      
+      final result = await api.gradeTestSubmission(payload);
+      
+      if (result != null && result['success'] == true) {
+        final score = result['overallScore']?.toDouble() ?? 0.0;
+        final feedback = result['feedback'] ?? '';
+        final criteria = result['criteriaScores'] as List? ?? [];
+        
         _showGradingResult(
-          marks: 8.0, 
-          reasoning: [
-            "AI OCR detected 5 mathematical expressions.",
-            "Problem 1: Correct (+2)",
-            "Problem 2: Correct (+2)",
-            "Problem 3: Calculation Error in subtraction step (-2)",
-            "Problem 4: Correct (+2)",
-            "Problem 5: Correct (+2)"
-          ]
+          submissionId: result['submissionId']?.toString(),
+          marks: score,
+          criteriaScores: criteria,
+          feedback: feedback,
         );
       } else {
-        throw Exception("Server Error");
+        throw Exception(result?['message'] ?? "Grading failed");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("AI Grading Failed: $e")));
@@ -351,9 +362,21 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
     }
   }
 
-  void _showGradingResult({double? marks, List<String>? reasoning}) {
-    double currentMarks = marks ?? 9.0;
+  String? _reviewSubmissionId;
+
+  void _showGradingResult({
+    String? submissionId,
+    double? marks,
+    List<dynamic>? criteriaScores,
+    String? feedback,
+  }) {
+    _reviewSubmissionId = submissionId;
+    double currentMarks = marks ?? 0.0;
     bool showReasoning = true;
+    final reasoningList = (criteriaScores as List?)
+            ?.map((c) => "Q${c['question_index'] ?? '?'}: Score ${c['score'] ?? 0} — ${c['feedback'] ?? ''}")
+            .toList() ??
+        [feedback ?? 'No detailed feedback'];
 
     showModalBottomSheet(
       context: context,
@@ -370,11 +393,11 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.auto_awesome, color: Color(0xFFF5B8D5), size: 24),
-                      SizedBox(width: 8),
-                      Text("AI Grading Result", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Icon(Icons.auto_awesome, color: Color(0xFFF5B8D5), size: 24),
+                      const SizedBox(width: 8),
+                      Text(widget.examName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   IconButton(
@@ -384,7 +407,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildResultRow("Student", "Aarav Sharma (Roll: 104)"),
+              _buildResultRow("Exam", widget.examName),
               const Divider(color: Colors.white10),
               
               if (showReasoning) ...[
@@ -394,12 +417,9 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("AI REASONING LOGIC", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 10)),
+                        const Text("AI REASONING & FEEDBACK", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 10)),
                         const SizedBox(height: 8),
-                        if (reasoning != null)
-                          ...reasoning.map((r) => Text("• $r", style: const TextStyle(fontSize: 11, color: Colors.white70))).toList()
-                        else
-                           const Text("No detailed reasoning provided by AI.", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                        ...reasoningList.map((r) => Text("• $r", style: const TextStyle(fontSize: 11, color: Colors.white70))).toList(),
                       ],
                     ),
                   ),
@@ -409,21 +429,21 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("ASSIGNED MARKS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  const Text("AI SCORE", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                    child: Text("${currentMarks.toInt()}/10", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amber)),
+                    child: Text("${currentMarks.toStringAsFixed(1)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.amber)),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              const Text("TEACHER OVERRIDE", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+              const Text("CHECKER OVERRIDE", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
               Slider(
-                value: currentMarks, 
-                min: 0, 
-                max: 10, 
-                divisions: 10,
+                value: currentMarks.clamp(0, 100),
+                min: 0,
+                max: 100,
+                divisions: 100,
                 activeColor: const Color(0xFFB298E7),
                 onChanged: (val) {
                   setModalState(() => currentMarks = val);
@@ -434,14 +454,28 @@ class _SmartScannerScreenState extends State<SmartScannerScreen> {
                 children: [
                   Expanded(
                     child: _buildLargeButton(
-                      "CONFIRM & AUDIT", 
+                      "SUBMIT REVIEW", 
                       Icons.check_circle, 
                       Colors.green, 
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Marks Saved. Audit Log: Teacher confirmed AI score of ${currentMarks.toInt()}")),
+                      onTap: () async {
+                        if (_reviewSubmissionId == null) return;
+                        final api = context.read<ApiService>();
+                        final result = await api.submitCheckerReview(
+                          widget.examId,
+                          _reviewSubmissionId!,
+                          {
+                            "adjustedScore": currentMarks,
+                            "checkerNotes": "Checker reviewed AI grading; score adjusted to $currentMarks",
+                            "strictnessUsed": widget.strictnessLevel,
+                          },
                         );
-                        Navigator.pop(context);
+                        if (result?['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Review submitted for $submissionId")),
+                          );
+                          Navigator.pop(context);
+                          Navigator.pop(context); // Go back to exam list
+                        }
                       },
                     ),
                   ),

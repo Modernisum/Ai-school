@@ -75,3 +75,17 @@ pub async fn auto_close_month(
         .await?;
     Ok(Json(json!({"success": true, "message": "Month closed successfully"})))
 }
+
+pub async fn record_salary_payment(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, employee_id)): Path<(String, String)>,
+    Json(payload): Json<serde_json::Value>,
+) -> AppResult<impl IntoResponse> {
+    let data = state
+        .services
+        .payroll
+        .add_payment(&school_id, &employee_id, &tenant_ctx.admin_id, payload)
+        .await?;
+    Ok(Json(json!({"success": true, "data": data})))
+}

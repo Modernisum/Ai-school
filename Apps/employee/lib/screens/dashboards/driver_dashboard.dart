@@ -7,6 +7,7 @@ import '../../blocs/transport/transport_event.dart';
 import '../../blocs/transport/transport_state.dart';
 import '../../core/widgets/animated_gradient_bg.dart';
 import '../../core/widgets/glass_card.dart';
+import '../driver/pickup_attendance_screen.dart';
 
 class DriverDashboard extends StatelessWidget {
   const DriverDashboard({super.key});
@@ -89,6 +90,19 @@ class DriverDashboard extends StatelessWidget {
                           context.read<TransportBloc>().add(StopTrip());
                         },
                       ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.how_to_reg, size: 22),
+                      label: const Text('PICKUP ATTENDANCE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigoAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PickupAttendanceScreen()));
+                      },
+                    ),
                   ],
                 );
               },

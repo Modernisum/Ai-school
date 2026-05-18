@@ -372,9 +372,14 @@ pub async fn generate_qr_attendance(
     let token = uuid::Uuid::new_v4().to_string();
     let expires_in = payload.expires_in_minutes.unwrap_or(30);
     let expires_at = chrono::Utc::now() + chrono::Duration::minutes(expires_in as i64);
-    
-    // Store the token in database with metadata (optional)
-    // For now, we'll just generate QR code with token
+
+    // Persist the token to database
+    let _ = sqlx::query(
+        "INSERT INTO attendance_qr_tokens (school_id, class_id, token, expires_at, created_by) VALUES ($1, $2, $3, $4, $5)"
+    )
+    .bind(&school_id).bind(&payload.class_id).bind(&token).bind(expires_at)
+    .bind(&tenant_ctx.admin_id)
+    .execute(&state.db.pool).await;
     
     // Create QR code data
     let qr_data = format!("attendance://{}/{}?token={}&expires={}",
@@ -426,23 +431,42 @@ pub async fn mobile_mark_attendance(
     Path(school_id): Path<String>,
     Json(payload): Json<MobileAttendanceRequest>,
 ) -> AppResult<impl IntoResponse> {
-    validate_role(&payload.role)?;
-    
-    // TODO: Validate token against stored QR tokens
-    // For now, we'll just check token format (UUID)
-    let token_uuid = uuid::Uuid::parse_str(&payload.token)
-        .map_err(|_| "Invalid token format".to_string())?;
-    
-    // TODO: Check if token exists and is not expired
-    // This would require querying a database table `attendance_qr_tokens`
-    // For now, we'll accept any valid UUID token
-    
-    // GPS location verification
-    // Get school location from database (placeholder)
-    // For now, we'll just accept any coordinates within reasonable bounds
-    let school_lat = 0.0; // Should be fetched from school profile
-    let school_lon = 0.0;
-    let max_distance_meters = 500.0; // 500 meters radius
+    // Validate token against stored QR tokens
+    let token_valid = sqlx::query(
+        "SELECT id FROM attendance_qr_tokens WHERE token = $1 AND school_id = $2 AND is_used = FALSE AND expires_at > NOW()"
+    )
+    .bind(&payload.token).bind(&school_id)
+    .fetch_optional(&state.db.pool)
+    .await
+    .map_err(|_| "Database error".to_string())?;
+
+    if token_valid.is_none() {
+        return Err("Invalid, expired or already used token".into());
+    }
+
+    // Mark token as used
+    let _ = sqlx::query(
+        "UPDATE attendance_qr_tokens SET is_used = TRUE, used_by = $1, used_at = NOW() WHERE token = $2"
+    )
+    .bind(&payload.user_id).bind(&payload.token)
+    .execute(&state.db.pool).await;
+
+    // GPS location verification — read from school config
+    let config_row = sqlx::query(
+        "SELECT data FROM system_config WHERE key = 'school_location' LIMIT 1"
+    )
+    .fetch_optional(&state.db.pool)
+    .await
+    .map_err(|_| "Config read error".to_string())?;
+
+    let (school_lat, school_lon) = if let Some(row) = config_row {
+        let data: serde_json::Value = sqlx::Row::get(&row, "data");
+        (data["latitude"].as_f64().unwrap_or(0.0), data["longitude"].as_f64().unwrap_or(0.0))
+    } else {
+        (0.0, 0.0)
+    };
+
+    let max_distance_meters = 500.0;
     
     let distance = haversine_distance(
         payload.latitude, payload.longitude,

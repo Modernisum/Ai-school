@@ -30,7 +30,28 @@ const authFetch = async (path, opts = {}) => {
             ...(opts.headers || {}),
         },
     });
-    return res.json();
+
+    // Handle common error codes gracefully
+    if (res.status === 401) {
+        // Token expired or invalid – clear storage and redirect to login
+        localStorage.removeItem("sa_token");
+        localStorage.removeItem("user_role");
+        window.location.href = "/login";
+        return { success: false, error_code: "UNAUTHORIZED", message: "Session expired. Please log in again." };
+    }
+
+    if (res.status === 429) {
+        console.warn(`[API] Rate limited on ${path}. Retrying is not needed — consider reducing polling frequency.`);
+        return { success: false, error_code: "RATE_LIMITED", message: "Too many requests. Please wait a moment and try again.", data: null };
+    }
+
+    const data = await res.json().catch(() => ({ success: false, message: "Invalid response from server" }));
+
+    if (!res.ok && !data.success) {
+        console.error(`[API] Error ${res.status} on ${path}:`, data.message || "Unknown error");
+    }
+
+    return data;
 };
 
 export const listSchools = () => authFetch("/schools");

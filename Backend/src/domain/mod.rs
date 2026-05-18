@@ -9,5 +9,6 @@ pub mod communication;
 pub mod operations;
 pub mod ai;
 pub mod admin;
+pub mod ocr;
 pub mod system;
 pub mod cms;

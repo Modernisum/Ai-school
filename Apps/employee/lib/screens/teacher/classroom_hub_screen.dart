@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/widgets/animated_gradient_bg.dart';
 import '../../core/widgets/glass_card.dart';
-import 'smart_scanner_screen.dart';
+import 'checker_exam_list_screen.dart';
 
 class ClassroomHubScreen extends StatelessWidget {
   final String className;
@@ -331,7 +331,7 @@ class ClassroomHubScreen extends StatelessWidget {
           const Color(0xFFF5B8D5),
           isWide: true,
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartScannerScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckerExamListScreen()));
           },
         ),
         const SizedBox(height: 12),

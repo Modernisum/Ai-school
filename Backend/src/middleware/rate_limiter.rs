@@ -1,11 +1,12 @@
 use axum::{
-    extract::Request,
+    extract::{ConnectInfo, Request},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use serde_json::json;
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -25,9 +26,9 @@ impl RateLimiter {
         }
     }
 
-    /// Create a general API rate limiter (100 req/min per IP)
+    /// Create a general API rate limiter (500 req/min per IP)
     pub fn general() -> Self {
-        Self::new(60, 100)
+        Self::new(60, 500)
     }
 
     /// Create an auth rate limiter (5 req/min per IP)
@@ -40,7 +41,12 @@ impl RateLimiter {
         Self::new(60, 20)
     }
 
-    /// Extract client IP from request headers (synchronous, no await)
+    /// Create an admin rate limiter (10000 req/min per IP)
+    pub fn admin() -> Self {
+        Self::new(60, 10000)
+    }
+
+    /// Extract client IP from request headers or fallback to socket info
     pub fn extract_client_ip(request: &Request) -> String {
         request
             .headers()
@@ -48,14 +54,20 @@ impl RateLimiter {
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.split(',').next())
             .map(|s| s.trim().to_string())
-            .unwrap_or_else(|| {
+            .or_else(|| {
                 request
                     .headers()
                     .get("x-real-ip")
                     .and_then(|v| v.to_str().ok())
                     .map(|s| s.to_string())
-                    .unwrap_or_else(|| "unknown".to_string())
             })
+            .or_else(|| {
+                request
+                    .extensions()
+                    .get::<ConnectInfo<SocketAddr>>()
+                    .map(|c| c.0.ip().to_string())
+            })
+            .unwrap_or_else(|| "unknown".to_string())
     }
 
     /// Check and increment rate limit counter. Returns Ok(()) if allowed, Err(Response) if limited.

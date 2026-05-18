@@ -22,5 +22,5 @@ pub trait TransactionRepository: Send + Sync {
         gateway_order_id: &str,
         gateway_payment_id: &str,
         gateway_signature: &str,
-    ) -> Result<Option<String>, AppError>;
+    ) -> Result<Option<(String, String, f64)>, AppError>;
 }

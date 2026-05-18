@@ -27,7 +27,8 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/materials/:materialName/buy", post(materials::buy_material))
         .route("/materials/:materialName/sell", post(materials::sell_material))
         // Events
-        .route("/events", post(events::create_event))
+        .route("/events", post(events::create_event).get(events::list_events))
+        .route("/events/:eventId", patch(events::update_event).delete(events::delete_event))
         // Awards
         .route("/awards", get(award::list_awards))
         // Documents

@@ -53,6 +53,14 @@ pub async fn create_employee(
         "bankDetails": payload.bank_details,
         "profileImageUrl": payload.profile_image_url,
         "roles": payload.roles,
+        "bloodGroup": payload.blood_group,
+        "emergencyContact": payload.emergency_contact,
+        "bankAccountNumber": payload.bank_account_number,
+        "bankIfscCode": payload.bank_ifsc_code,
+        "experienceStatus": payload.experience_status,
+        "experienceYears": payload.experience_years,
+        "previousSchool": payload.previous_school,
+        "experienceIncrementPercent": payload.experience_increment_percent,
     });
 
     match state
@@ -177,6 +185,14 @@ pub async fn update_employee(
         "bankDetails": payload.bank_details,
         "profileImageUrl": payload.profile_image_url,
         "roles": payload.roles,
+        "bloodGroup": payload.blood_group,
+        "emergencyContact": payload.emergency_contact,
+        "bankAccountNumber": payload.bank_account_number,
+        "bankIfscCode": payload.bank_ifsc_code,
+        "experienceStatus": payload.experience_status,
+        "experienceYears": payload.experience_years,
+        "previousSchool": payload.previous_school,
+        "experienceIncrementPercent": payload.experience_increment_percent,
     });
 
     match state

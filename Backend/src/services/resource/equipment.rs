@@ -80,6 +80,24 @@ impl EquipmentOperations {
         Ok(res)
     }
 
+    pub async fn list_events(&self, school_id: &str) -> AppResult<Vec<Value>> {
+        Ok(self.repos.resource.get_events(school_id).await?)
+    }
+
+    pub async fn update_event(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        event_id: i32,
+        data: Value,
+    ) -> AppResult<()> {
+        self.repos.resource.update_event(school_id, event_id, data.clone()).await?;
+        let _ = self.repos.audit.log_action(
+            school_id, admin_id, "EVENT", &event_id.to_string(), "UPDATE", data
+        ).await;
+        Ok(())
+    }
+
     pub async fn delete_event(
         &self,
         school_id: &str,

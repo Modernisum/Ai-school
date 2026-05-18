@@ -114,6 +114,14 @@ export const infrastructureApi = baseApi.injectEndpoints({
       query: ({ schoolId, spaceName, ...body }) => ({ url: `/spaces/${schoolId}/${spaceName}/budget`, method: 'PUT', body }),
       invalidatesTags: ['SpaceBudget', 'Spaces'],
     }),
+    getSpaceResponsibilities: builder.query({
+      query: ({ schoolId, spaceId }) => `/responsibility/${schoolId}/spaces/${spaceId}/responsibilities`,
+      providesTags: ['Spaces'],
+    }),
+    getSpaceFinancialOverview: builder.query({
+      query: ({ schoolId, spaceId }) => `/responsibility/${schoolId}/spaces/${spaceId}/financial-overview`,
+      providesTags: (result, error, { spaceId }) => [{ type: 'Spaces', id: spaceId }],
+    }),
     // Webhooks
     getWebhooks: builder.query({
       query: (schoolId) => `/school/${schoolId}/webhooks/`,
@@ -209,6 +217,7 @@ export const {
   useApproveAccessRequestMutation, useRejectAccessRequestMutation,
   useExtractOcrTextMutation, useGetPublicStudentsQuery, useGetPublicAttendanceQuery,
   useGetSpaceMaterialsQuery, useGetAllSpacesMaterialsQuery, useCloneSpaceMutation, useTransferMaterialMutation,
+  useGetSpaceResponsibilitiesQuery, useGetSpaceFinancialOverviewQuery,
   useGetShortageSummaryQuery, useRunShortageCheckMutation,
   useGetSpaceBudgetQuery, useUpdateSpaceBudgetMutation,
 } = infrastructureApi;

@@ -29,7 +29,7 @@ impl ConnectionPool {
         let pool = PgPoolOptions::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
-            .acquire_timeout(Duration::from_secs(3))
+            .acquire_timeout(Duration::from_secs(15))
             .idle_timeout(Duration::from_secs(300))
             .max_lifetime(Duration::from_secs(1800))
             .connect(&database_url)

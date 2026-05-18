@@ -25,6 +25,7 @@ const BillingPage = lazy(() => import('./pages/Billing/BillingPage.jsx'))
 const PromoPage = lazy(() => import('./pages/PromoPage.jsx'))
 const AISettings = lazy(() => import('./pages/AISettings.jsx'))
 const Monitoring = lazy(() => import('./pages/Monitoring.jsx'))
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage.jsx'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center" style={{ height: 200, width: '100%' }}>
@@ -197,6 +198,7 @@ function PrivateLayout() {
                                 <Route path="backup" element={<BackupPage />} />
                                 <Route path="ai-settings" element={<AISettings />} />
                                 <Route path="monitoring" element={<Monitoring />} />
+                                <Route path="audit-logs" element={<AuditLogsPage />} />
                                 <Route index element={<Navigate to="dashboard" replace />} />
                             </Routes>
                         </Suspense>

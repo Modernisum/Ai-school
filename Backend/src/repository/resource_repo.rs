@@ -328,6 +328,40 @@ impl ResourceRepository for PostgresResourceRepository {
             "endTime": r.get::<Option<chrono::NaiveDateTime>, _>("end_time").map(|t| t.to_string())
         })))
     }
+
+    async fn get_events(&self, school_id: &str) -> Result<JsonList, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query("SELECT * FROM events WHERE school_id = $1 ORDER BY start_time DESC LIMIT 100")
+            .bind(school_id)
+            .fetch_all(&mut *conn)
+            .await?;
+        Ok(rows.into_iter().map(|r| json!({
+            "id": r.get::<i32, _>("id"),
+            "title": r.get::<String, _>("title"),
+            "description": r.get::<Option<String>, _>("description"),
+            "startTime": r.get::<chrono::NaiveDateTime, _>("start_time").to_string(),
+            "endTime": r.get::<Option<chrono::NaiveDateTime>, _>("end_time").map(|t| t.to_string()),
+            "location": r.get::<Option<String>, _>("location"),
+            "status": r.get::<Option<String>, _>("status"),
+        })).collect())
+    }
+
+    async fn update_event(&self, school_id: &str, event_id: i32, data: Value) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "UPDATE events SET title = COALESCE($1, title), description = COALESCE($2, description), \
+             start_time = COALESCE($3::timestamp, start_time), end_time = COALESCE($4::timestamp, end_time), \
+             location = COALESCE($5, location), status = COALESCE($6, status) \
+             WHERE school_id = $7 AND id = $8"
+        )
+        .bind(data["title"].as_str()).bind(data["description"].as_str())
+        .bind(data["startTime"].as_str()).bind(data["endTime"].as_str())
+        .bind(data["location"].as_str()).bind(data["status"].as_str())
+        .bind(school_id).bind(event_id)
+        .execute(&mut *conn).await?;
+        Ok(())
+    }
+
     async fn get_materials(
         &self,
         school_id: &str,

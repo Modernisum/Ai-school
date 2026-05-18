@@ -3,7 +3,8 @@ import {
     Clock, User, Shield, Database, Download, Eye, RefreshCw
 } from 'lucide-react'
 import { ToastCtx } from '../App.jsx'
-import { useRBAC, PERMISSIONS, PermissionGuard } from '../contexts/RBACContext.jsx'
+import { useRBAC, PermissionGuard } from '../contexts/RBACContext.jsx'
+import { PERMISSIONS } from '../rbac.js'
 import { StatusBadge, DataTable, GlassCard, PageHeader, StandardButton } from '../components/ui/'
 
 const mockAuditLogs = [

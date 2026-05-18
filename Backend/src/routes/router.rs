@@ -4,7 +4,7 @@ use crate::AppState;
 use axum::{
     extract::DefaultBodyLimit,
     extract::Request,
-    http::StatusCode,
+    http::{header, StatusCode},
     middleware::{self, Next},
     response::Response,
     routing::{get, post},
@@ -19,20 +19,35 @@ use tower_http::trace::TraceLayer;
 
 async fn upload_auth_middleware(request: Request, next: Next) -> Result<Response, StatusCode> {
     if let Ok(expected_token) = env::var("UPLOAD_TOKEN") {
+        // Prefer Authorization header over query param (prevents URL leak)
         let token = request
-            .uri()
-            .query()
-            .and_then(|q| {
-                q.split('&')
-                    .find(|pair| pair.starts_with("token="))
+            .headers()
+            .get("Authorization")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.strip_prefix("Bearer "))
+            .unwrap_or_else(|| {
+                request.uri().query()
+                    .and_then(|q| q.split('&').find(|pair| pair.starts_with("token=")))
                     .map(|pair| pair.trim_start_matches("token="))
-            })
-            .unwrap_or("");
+                    .unwrap_or("")
+            });
         if token != expected_token {
             return Err(StatusCode::UNAUTHORIZED);
         }
     }
     Ok(next.run(request).await)
+}
+
+async fn security_headers_middleware(request: Request, next: Next) -> Result<Response, StatusCode> {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(header::X_FRAME_OPTIONS, header::HeaderValue::from_static("DENY"));
+    headers.insert(header::X_CONTENT_TYPE_OPTIONS, header::HeaderValue::from_static("nosniff"));
+    headers.insert(header::X_XSS_PROTECTION, header::HeaderValue::from_static("1; mode=block"));
+    headers.insert(header::REFERRER_POLICY, header::HeaderValue::from_static("strict-origin-when-cross-origin"));
+    headers.insert(header::STRICT_TRANSPORT_SECURITY, header::HeaderValue::from_static("max-age=31536000; includeSubDomains"));
+    headers.insert(header::CONTENT_SECURITY_POLICY, header::HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:* ws://localhost:*; frame-ancestors 'none'"));
+    Ok(response)
 }
 
 fn make_cors() -> CorsLayer {
@@ -69,6 +84,7 @@ pub fn create_router(state: AppState) -> Router {
     let auth_limiter = state.auth_limiter.clone();
     let ai_limiter = state.ai_limiter.clone();
     let general_limiter = state.general_limiter.clone();
+    let admin_limiter = state.admin_limiter.clone();
 
     let api = Router::new()
         // Auth — no schoolId needed (strict rate limit: 5 req/min)
@@ -108,10 +124,22 @@ pub fn create_router(state: AppState) -> Router {
                             }
                         })),
                 )
+                .nest("/ocr", domain::ocr::routes(state.clone()))
                 .nest("/system", domain::system::routes(state.clone()))
         })
-        // Admin — separate scope
-        .nest("/admin", domain::admin::routes(state.clone()))
+        // Admin — separate scope with its own permissive rate limiter
+        .nest(
+            "/admin",
+            domain::admin::routes(state.clone())
+                .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
+                    let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
+                    let limiter = admin_limiter.clone();
+                    async move {
+                        limiter.check(&client_ip).await?;
+                        Ok::<Response, Response>(next.run(req).await)
+                    }
+                }))
+        )
         // Geo routes (superadmin setup forms)
         .route("/geo/countries", get(crate::routes::geo::get_countries))
         .route("/geo/states/:country_id", get(crate::routes::geo::get_states))
@@ -143,6 +171,48 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/school/:schoolId/holidays/:holidayId",
             axum::routing::delete(crate::routes::attendance::delete_school_holiday),
+        )
+        // Top-level compat routes for classes
+        .route(
+            "/class/:schoolId/classes",
+            get(crate::routes::class_subject_compat::get_classes_compat)
+                .post(crate::routes::class_subject_compat::add_class_compat),
+        )
+        .route(
+            "/class/:schoolId/classes/:classId",
+            axum::routing::delete(crate::routes::class_subject_compat::delete_class_compat),
+        )
+        // Top-level compat routes for subjects
+        .route(
+            "/subjects/:schoolId",
+            get(crate::routes::class_subject_compat::get_subjects_compat)
+                .post(crate::routes::class_subject_compat::add_subject_compat),
+        )
+        .route(
+            "/subjects/:schoolId/:subjectId",
+            axum::routing::delete(crate::routes::class_subject_compat::delete_subject_compat),
+        )
+        // Top-level compat routes for students of a class
+        .route(
+            "/students/:schoolId/class/:class_name",
+            get(crate::routes::students::list_students_by_class),
+        )
+        // Academic Exam Compatibility Routes
+        .route(
+            "/academic/:schoolId/:className/ids",
+            get(crate::routes::class_subject_compat::get_subjects_by_class_compat),
+        )
+        .route(
+            "/academic/topic/:schoolId/class/:className/subject/:subjectName/chapter/names",
+            get(crate::routes::class_subject_compat::get_chapters_by_subject_compat),
+        )
+        .route(
+            "/academic/:schoolId/generate-paper",
+            post(crate::routes::class_subject_compat::generate_paper_compat),
+        )
+        .route(
+            "/academic/:schoolId/exams",
+            post(crate::routes::class_subject_compat::approve_exam_compat),
         )
         // General rate limit (100 req/min) on all /api routes
         .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
@@ -190,6 +260,7 @@ pub fn create_router(state: AppState) -> Router {
                 ),
         )
         .layer(CompressionLayer::new())
+        .layer(axum::middleware::from_fn(security_headers_middleware))
         .nest("/api/cms", crate::domain::cms::public_routes(state.clone()))
         .layer(make_cors());
 

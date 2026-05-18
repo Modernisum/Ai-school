@@ -24,6 +24,7 @@ pub mod leave_service;
 pub mod material_monitor;
 
 pub mod notification_service;
+pub mod ocr_service;
 pub mod operations_service;
 pub mod payroll;
 pub mod payroll_service;
@@ -66,6 +67,7 @@ use crate::services::gradebook_service::GradebookService;
 use crate::services::grading_service::GradingService;
 use crate::services::leave_service::PostgresLeaveService;
 use crate::services::notification_service::PostgresNotificationService;
+use crate::services::ocr_service::OcrService;
 use crate::services::operations_service::PostgresOperationsService;
 use crate::services::payroll_service::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
@@ -117,6 +119,7 @@ pub struct Services {
     pub notification: Arc<dyn NotificationService>,
     pub fcm: Arc<crate::logic::FcmService>,
     pub material_monitor: Arc<MaterialMonitor>,
+    pub ocr: Arc<OcrService>,
 }
 
 pub fn initialize_services(
@@ -139,6 +142,7 @@ pub fn initialize_services(
     let academic_service = Arc::new(PostgresAcademicService {
         repos: repos.clone(),
         responsibility: responsibility_service.clone(),
+        storage: None,
     });
 
     // Create new service instances
@@ -150,6 +154,12 @@ pub fn initialize_services(
     
     // Create Material Monitor for shortage alerts
     let material_monitor = Arc::new(MaterialMonitor::new(repos.clone()));
+
+    // Create OCR Service with provider registry
+    let provider_registry = Arc::new(
+        crate::logic::ai::providers::registry::ProviderRegistry::new(repos.db_client.clone())
+    );
+    let ocr_service = Arc::new(OcrService::new(provider_registry));
 
     // Create FCM config
     let fcm_service = Arc::new(crate::logic::FcmService::new());
@@ -225,5 +235,6 @@ pub fn initialize_services(
         notification: Arc::new(PostgresNotificationService { repos: repos.clone() }),
         fcm: fcm_service,
         material_monitor,
+        ocr: ocr_service,
     }
 }

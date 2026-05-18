@@ -137,18 +137,25 @@ pub async fn razorpay_webhook(
                 let payment_id = payload["payload"]["payment"]["entity"]["id"]
                     .as_str()
                     .unwrap_or("");
-                if let Ok(Some(school_id)) = state
+                if let Ok(Some((school_id, student_id, amount))) = state
                     .repos
                     .transaction
                     .complete_online_transaction(order_id, payment_id, signature)
                     .await
                 {
+                    let _ = state.services.fee.pay_fee(&school_id, &student_id, "razorpay_webhook", json!({
+                        "amount": amount,
+                        "paymentMethod": "online",
+                        "paymentReference": payment_id,
+                        "date": chrono::Utc::now().format("%Y-%m-%d").to_string()
+                    })).await;
+
                     let webhook_engine =
                         crate::logic::webhook_engine::WebhookEngine::new(state.db.pool.clone());
                     let _ = webhook_engine.trigger(&school_id, "fee.paid", json!({
                             "order_id": order_id,
                             "payment_id": payment_id,
-                            "amount": payload["payload"]["payment"]["entity"]["amount"].as_f64().unwrap_or(0.0) / 100.0
+                            "amount": payload["payment"]["entity"]["amount"].as_f64().unwrap_or(0.0) / 100.0
                         })).await;
                 }
             }

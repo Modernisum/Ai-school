@@ -1,4 +1,4 @@
-use crate::routes::{employees, emppay, students};
+use crate::routes::{employees, emppay, student_forms, students};
 use crate::AppState;
 use axum::{
     routing::{delete, get, post, put},
@@ -15,6 +15,10 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/students/class/:class_name", get(students::list_students_by_class))
         .route("/students/studentIds", get(students::list_student_ids))
         .route("/students/:studentId", get(students::get_student).put(students::update_student).delete(students::delete_student))
+        // Student Form Fill Workflow
+        .route("/students/form-status", get(student_forms::get_form_status))
+        .route("/students/:studentId/auto-fill", get(student_forms::auto_fill_form))
+        .route("/students/:studentId/form-complete", post(student_forms::mark_form_complete))
         // Employees
         .route("/employees", post(employees::create_employee).get(employees::list_employees))
         .route("/employees/validate", post(employees::validate_employee))
@@ -24,6 +28,7 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/employees/:employeeId/bonus", post(emppay::add_bonus))
         .route("/employees/:employeeId/aid", post(emppay::add_aid))
         .route("/employees/:employeeId/close-month", post(emppay::auto_close_month))
+        .route("/employees/:employeeId/pay", post(emppay::record_salary_payment))
         .route("/employees/:employeeId/salary", post(emppay::set_base_salary))
         .with_state(state)
 }

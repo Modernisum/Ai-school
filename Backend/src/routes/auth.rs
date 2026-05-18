@@ -30,11 +30,7 @@ fn generate_token_id() -> String {
 
 #[allow(dead_code)]
 async fn verify_password(stored: &str, candidate: &str) -> bool {
-    if stored.starts_with("$2") {
-        verify(candidate, stored).unwrap_or(false)
-    } else {
-        stored == candidate
-    }
+    verify(candidate, stored).unwrap_or(false)
 }
 
 /* ----------------------- Handlers ----------------------- */
@@ -142,7 +138,7 @@ pub async fn change_password_handler(
 }
 
 pub async fn verify_otp_handler(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<Value>,
 ) -> AppResult<Json<Value>> {
     let id_token = payload["idToken"].as_str().unwrap_or("");
@@ -150,12 +146,14 @@ pub async fn verify_otp_handler(
         return Err(AppError::Validation("Missing idToken".to_string()));
     }
 
+    // Validate against stored tokens or JWT
+    let token_data = state.services.auth.verify_token(id_token).await?;
     Ok(Json(json!({
         "success": true,
         "message": "OTP verified successfully",
         "user": {
-            "uid": "migrated-user-uid",
-            "email": "migrated@school.com"
+            "uid": token_data["sub"].as_str().unwrap_or("unknown"),
+            "email": token_data["sub"].as_str().unwrap_or("unknown")
         }
     })))
 }

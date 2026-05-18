@@ -6,18 +6,21 @@ use std::sync::Arc;
 mod chat_handler;
 mod analysis;
 mod prediction;
+mod syllabus_planner;
 pub mod providers;
 mod utils;
 
 pub use chat_handler::ChatHandler;
 pub use analysis::AnalysisEngine;
 pub use prediction::PredictionEngine;
+pub use syllabus_planner::SyllabusPlanner;
 
 pub struct AiOrchestrator {
     pub repos: Arc<Repositories>,
     pub chat_handler: ChatHandler,
     pub analysis: AnalysisEngine,
     pub prediction: PredictionEngine,
+    pub syllabus_planner: SyllabusPlanner,
 }
 
 impl AiOrchestrator {
@@ -26,6 +29,7 @@ impl AiOrchestrator {
             chat_handler: ChatHandler::new(repos.clone()),
             analysis: AnalysisEngine::new(repos.clone()),
             prediction: PredictionEngine::new(repos.clone()),
+            syllabus_planner: SyllabusPlanner::new(repos.clone()),
             repos,
         }
     }
@@ -48,5 +52,13 @@ impl AiOrchestrator {
 
     pub async fn generate_exam_questions(&self, school_id: &str, payload: &Value) -> Result<Value> {
         self.prediction.generate_exam_questions(school_id, payload).await
+    }
+
+    pub async fn regenerate_exam_question(&self, school_id: &str, payload: &Value) -> Result<Value> {
+        self.prediction.regenerate_exam_question(school_id, payload).await
+    }
+
+    pub async fn grade_test_submission(&self, school_id: &str, payload: &Value) -> Result<Value> {
+        self.prediction.grade_test_submission(school_id, payload).await
     }
 }

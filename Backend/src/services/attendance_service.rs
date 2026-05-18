@@ -3,6 +3,7 @@ use crate::services::traits::*;
 use async_trait::async_trait;
 use chrono::{Datelike, Local};
 use serde_json::{json, Value};
+use sqlx::Row;
 use std::sync::Arc;
 
 pub struct PostgresAttendanceService {
@@ -391,49 +392,165 @@ impl AttendanceService for PostgresAttendanceService {
 
     async fn bulk_mark_attendance(
         &self,
-        _school_id: &str,
-        _role: &str,
-        _admin_id: &str,
-        _date: &str,
-        _class_name: Option<&str>,
-        _attendances: Vec<Value>,
+        school_id: &str,
+        role: &str,
+        admin_id: &str,
+        date: &str,
+        class_name: Option<&str>,
+        attendances: Vec<Value>,
     ) -> AppResult<Value> {
-        Ok(json!({}))
+        let mut marked = 0;
+        let mut failed = 0;
+        let mut details = Vec::new();
+
+        for att in &attendances {
+            let user_id = match att["id"].as_str().or(att["userId"].as_str()).or(att["user_id"].as_str()) {
+                Some(id) => id.to_string(),
+                None => { failed += 1; continue; }
+            };
+            let status = att["status"].as_str().unwrap_or("present");
+            let note = att["note"].as_str().unwrap_or("");
+            let in_time = att["inTime"].as_str().unwrap_or("");
+            let out_time = att["outTime"].as_str();
+            let location = att.get("location").cloned();
+
+            let mut data = json!({
+                "date": date,
+                "status": status,
+                "note": note,
+                "markedBy": admin_id,
+                "inTime": if in_time.is_empty() { chrono::Utc::now().format("%H:%M").to_string() } else { in_time.to_string() },
+            });
+            if let Some(ot) = out_time { data["outTime"] = json!(ot); }
+            if let Some(loc) = location { data["location"] = loc; }
+
+            match self.repos.attendance.mark_attendance(school_id, role, &user_id, date, data).await {
+                Ok(_) => {
+                    marked += 1;
+                    details.push(json!({"userId": user_id, "status": "ok"}));
+                }
+                Err(_) => {
+                    failed += 1;
+                    details.push(json!({"userId": user_id, "status": "failed"}));
+                }
+            }
+        }
+
+        Ok(json!({
+            "success": true,
+            "marked": marked,
+            "failed": failed,
+            "total": attendances.len(),
+            "details": details
+        }))
     }
-    
+
     async fn get_class_attendance(
         &self,
-        _school_id: &str,
-        _class_name: &str,
-        _date: &str,
+        school_id: &str,
+        class_name: &str,
+        date: &str,
     ) -> AppResult<Vec<Value>> {
-        Ok(vec![])
+        let rows = sqlx::query(
+            "SELECT a.user_id, a.data, s.name as student_name \
+             FROM attendance a \
+             JOIN students s ON s.student_id = a.user_id AND s.school_id = a.school_id \
+             WHERE a.school_id = $1 AND a.role = 'student' AND a.date = $2::date \
+             AND s.class_id = $3"
+        )
+        .bind(school_id).bind(date).bind(class_name)
+        .fetch_all(&self.repos.db_client.pool)
+        .await?;
+
+        Ok(rows.into_iter().map(|r| {
+            let uid: String = sqlx::Row::get(&r, "user_id");
+            let name: String = sqlx::Row::get(&r, "student_name");
+            let data: Value = sqlx::Row::get(&r, "data");
+            json!({
+                "userId": uid,
+                "studentName": name,
+                "status": data["status"].as_str().unwrap_or("unknown"),
+                "inTime": data["inTime"].as_str(),
+                "note": data["note"].as_str()
+            })
+        }).collect())
     }
-    
+
     async fn auto_mark_absent_after_cutoff(
         &self,
-        _school_id: &str,
-        _cutoff_time: &str,
-        _date: &str,
+        school_id: &str,
+        cutoff_time: &str,
+        date: &str,
     ) -> AppResult<Value> {
-        Ok(json!({}))
+        let students = sqlx::query(
+            "SELECT s.student_id, s.name FROM students s \
+             WHERE s.school_id = $1 \
+             AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = s.student_id AND a.date = $2::date AND a.school_id = s.school_id)"
+        )
+        .bind(school_id).bind(date)
+        .fetch_all(&self.repos.db_client.pool)
+        .await?;
+
+        let mut marked = 0;
+        for row in &students {
+            let uid: String = sqlx::Row::get(row, "student_id");
+            let data = json!({
+                "date": date,
+                "status": "absent",
+                "note": format!("Auto-marked absent after cutoff {}", cutoff_time),
+                "markedBy": "system",
+                "inTime": ""
+            });
+            if self.repos.attendance.mark_attendance(school_id, "student", &uid, date, data).await.is_ok() {
+                marked += 1;
+            }
+        }
+
+        Ok(json!({"success": true, "auto_marked_absent": marked, "total_unmarked": students.len()}))
     }
-    
+
     async fn generate_daily_attendance_report(
         &self,
-        _school_id: &str,
-        _date: &str,
+        school_id: &str,
+        date: &str,
     ) -> AppResult<Value> {
-        Ok(json!({"summary": {"attendance_percentage": 100.0, "present_count": 0, "absent_count": 0, "total_users": 0}}))
+        let count_row = sqlx::query(
+            "SELECT COUNT(*) FILTER (WHERE data->>'status' = 'present') as present, \
+             COUNT(*) FILTER (WHERE data->>'status' = 'absent') as absent, \
+             COUNT(*) as total FROM attendance \
+             WHERE school_id = $1 AND date = $2::date AND role = 'student'"
+        )
+        .bind(school_id).bind(date)
+        .fetch_one(&self.repos.db_client.pool)
+        .await?;
+        let present: i64 = count_row.get("present");
+        let absent: i64 = count_row.get("absent");
+        let total: i64 = count_row.get("total");
+        let pct = if total > 0 { (present as f64 / total as f64) * 100.0 } else { 0.0 };
+        Ok(json!({"summary": {"attendance_percentage": pct, "present_count": present, "absent_count": absent, "total_users": total}}))
     }
-    
+
     async fn get_unmarked_attendance_count(
         &self,
-        _school_id: &str,
-        _date: &str,
-        _role: Option<&str>,
+        school_id: &str,
+        date: &str,
+        role: Option<&str>,
     ) -> AppResult<Value> {
-        Ok(json!({"unmarked_count": 0}))
+        let r = role.unwrap_or("student");
+        let (total, marked) = if r == "student" {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students WHERE school_id = $1")
+                .bind(school_id).fetch_one(&self.repos.db_client.pool).await?;
+            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = 'student'")
+                .bind(school_id).bind(date).fetch_one(&self.repos.db_client.pool).await?;
+            (total, marked)
+        } else {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees WHERE school_id = $1 AND employee_type = $2")
+                .bind(school_id).bind(r).fetch_one(&self.repos.db_client.pool).await?;
+            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = $3")
+                .bind(school_id).bind(date).bind(r).fetch_one(&self.repos.db_client.pool).await?;
+            (total, marked)
+        };
+        Ok(json!({"unmarked_count": total.saturating_sub(marked).max(0), "total": total}))
     }
 }
 

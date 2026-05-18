@@ -9,8 +9,17 @@ use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    sub: String,  // phone / ident
-    role: String, // app_type (student/employee)
+    sub: String,
+    role: String,
+    exp: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AdminClaims {
+    sub: String,
+    school_id: String,
+    role: String,
+    permissions: Vec<String>,
     exp: usize,
 }
 
@@ -64,7 +73,16 @@ impl AuthService for PostgresAuthService {
                     }
                 }
 
-                let token = format!("{:x}", rand::random::<u128>());
+                let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev_secret".to_string());
+                let claims = AdminClaims {
+                    sub: school_id.to_string(),
+                    school_id: school_id.to_string(),
+                    role: "admin".to_string(),
+                    permissions: vec!["admin".to_string()],
+                    exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+                };
+                let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
+                    .map_err(|e| AppError::Internal(format!("JWT Error: {}", e)))?;
                 let token_data = json!({
                     "tokenId": token,
                     "schoolId": school_id,
@@ -107,15 +125,32 @@ impl AuthService for PostgresAuthService {
             &Validation::default(),
         ) {
             Ok(token_data) => {
-                Ok(json!({
+                return Ok(json!({
                     "sub": token_data.claims.sub,
                     "role": token_data.claims.role,
                     "status": "valid",
                     "expiresAt": token_data.claims.exp
-                }))
+                }));
             }
-            Err(e) => Err(AppError::Unauthorized(format!("Invalid or expired token: {}", e))),
+            Err(_) => {
+                // Try AdminClaims
+                if let Ok(admin_data) = decode::<AdminClaims>(
+                    token,
+                    &DecodingKey::from_secret(secret.as_ref()),
+                    &Validation::default(),
+                ) {
+                    return Ok(json!({
+                        "sub": admin_data.claims.sub,
+                        "schoolId": admin_data.claims.school_id,
+                        "role": admin_data.claims.role,
+                        "permissions": admin_data.claims.permissions,
+                        "status": "valid",
+                        "expiresAt": admin_data.claims.exp
+                    }));
+                }
+            }
         }
+        Err(AppError::Unauthorized("Invalid or expired token".to_string()))
     }
 
     async fn logout(&self, token: &str) -> AppResult<()> {

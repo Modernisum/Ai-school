@@ -1,4 +1,5 @@
 use crate::routes::attendance;
+use crate::routes::attendance_automation;
 use crate::AppState;
 use axum::{
     routing::{delete, get, post, put},
@@ -25,5 +26,6 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/reports/class", get(attendance::get_class_report))
         .route("/reports/employee", get(attendance::get_employee_report))
         .route("/reports/custom", post(attendance::generate_custom_report))
+        .route("/auto-assign-teacher", get(attendance_automation::auto_assign_teacher))
         .with_state(state)
 }

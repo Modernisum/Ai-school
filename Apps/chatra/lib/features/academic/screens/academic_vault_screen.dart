@@ -60,6 +60,18 @@ class AcademicVaultScreen extends StatelessWidget {
                           ),
                         ),
                       const SizedBox(height: 24),
+                      _buildSectionHeader("📊  Published Results"),
+                      const SizedBox(height: 8),
+                      if (state.examResults.isEmpty)
+                        _buildEmpty("No results published yet")
+                      else
+                        ...state.examResults.asMap().entries.map(
+                          (e) => _buildResultCard(e.value).animate().slideX(
+                            begin: 0.3,
+                            delay: Duration(milliseconds: e.key * 80),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
                       _buildSectionHeader("📂  Report Cards & Documents"),
                       const SizedBox(height: 8),
                       if (state.reportCards.isEmpty)
@@ -177,6 +189,75 @@ class AcademicVaultScreen extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultCard(Map<String, dynamic> result) {
+    final score = result['teacherAdjustedScore'] ?? result['overallScore'] ?? '—';
+    final grade = result['grade'] ?? '—';
+    final isFinalized = result['isFinalized'] == true;
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      borderRadius: 16,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isFinalized ? Colors.green.withOpacity(0.2) : Colors.amber.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isFinalized ? Icons.check_circle : Icons.pending,
+              color: isFinalized ? Colors.greenAccent : Colors.amber,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  result['examName'] ?? 'Exam',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                Text(
+                  '${result['subjectId'] ?? ''} • Class ${result['classId'] ?? ''}',
+                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.score, color: Colors.white54, size: 12),
+                    const SizedBox(width: 4),
+                    Text('Score: $score', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.grade, color: Colors.white54, size: 12),
+                    const SizedBox(width: 4),
+                    Text('Grade: $grade', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isFinalized ? Colors.green.withOpacity(0.2) : Colors.amber.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              isFinalized ? 'Final' : 'Pending',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isFinalized ? Colors.greenAccent : Colors.amber,
+              ),
             ),
           ),
         ],

@@ -175,6 +175,28 @@ export const infrastructureApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
     }),
 
+    getSpacesUsingMaterial: builder.query({
+      query: ({ schoolId, materialName }) => `/materials/${schoolId}/${materialName}/spaces`,
+    }),
+
+    cloneSpace: builder.mutation({
+      query: ({ schoolId, spaceName, ...body }) => ({ url: `/spaces/${schoolId}/${spaceName}/clone`, method: 'POST', body }),
+      invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
+    }),
+
+    transferMaterial: builder.mutation({
+      query: ({ schoolId, fromSpace, materialName, ...body }) => ({ url: `/spaces/${schoolId}/${fromSpace}/materials/${materialName}/transfer`, method: 'POST', body }),
+      invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
+    }),
+
+    getSpaceMaterials: builder.query({
+      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/materials`,
+    }),
+
+    getAllSpacesMaterials: builder.query({
+      query: (schoolId) => `/spaces/${schoolId}/materials/all`,
+    }),
+
     getSpaceCategories: builder.query({
       query: (schoolId) => `/spaces/${schoolId}/categories`,
       providesTags: [{ type: 'Categories', id: 'LIST' }],
@@ -522,6 +544,11 @@ export const {
   useCreateSpaceCategoryMutation,
   useDeleteSpaceCategoryMutation,
   useGetSpaceDetailsQuery,
+  useGetSpacesUsingMaterialQuery,
+  useCloneSpaceMutation,
+  useTransferMaterialMutation,
+  useGetSpaceMaterialsQuery,
+  useGetAllSpacesMaterialsQuery,
   useAssignSpaceMaterialsMutation,
   useAssignSpaceEmployeesMutation,
   useRemoveSpaceEmployeeMutation,

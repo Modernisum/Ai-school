@@ -33,6 +33,9 @@ impl SchemaSetup {
         self.initialize_profile_image_support().await?;
         self.initialize_global_notifications_tables().await?;
         self.initialize_notifications_table().await?;
+        self.initialize_grading_tables().await?;
+        self.initialize_exam_checker_workflow().await?;
+        self.initialize_syllabus_calendar_tables().await?;
         Ok(())
     }
 
@@ -238,13 +241,13 @@ impl SchemaSetup {
         .execute(&self.pool)
         .await?;
 
-        // Seed GEMINI_API_KEY if not already present
-        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
-            sqlx::query("INSERT INTO system_config (config_key, config_value) VALUES ('GEMINI_API_KEY', $1) ON CONFLICT DO NOTHING")
-                .bind(key)
-                .execute(&self.pool)
-                .await?;
-        }
+        // Seed GEMINI_API_KEY if not already present or force update the user's provided key
+        let gemini_key = std::env::var("GEMINI_API_KEY")
+            .unwrap_or_else(|_| "AIzaSyAcpd2loWLizjNP1TgenvHiA7WbaEguvbU".to_string());
+        sqlx::query("INSERT INTO system_config (config_key, config_value) VALUES ('GEMINI_API_KEY', $1) ON CONFLICT (config_key) DO UPDATE SET config_value = $1")
+            .bind(gemini_key)
+            .execute(&self.pool)
+            .await?;
 
         // Seed default super admin if table is empty
         let default_password = std::env::var("DEFAULT_SUPERADMIN_PASSWORD")
@@ -863,14 +866,16 @@ impl SchemaSetup {
     }
 
     async fn initialize_exams_table(&self) -> Result<(), Box<dyn Error>> {
-        // 12. Exams
+        // 12. Exams (Quarterly structure)
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS exams (
                 id SERIAL PRIMARY KEY,
                 school_id TEXT NOT NULL,
                 name TEXT NOT NULL,
+                quarter TEXT, -- Q1, Q2, Q3, Q4
                 start_date DATE,
                 end_date DATE,
+                status TEXT DEFAULT 'DRAFT',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(school_id, name)
             )"
@@ -878,19 +883,60 @@ impl SchemaSetup {
 
         sqlx::query(
             "ALTER TABLE exams
-             ADD COLUMN IF NOT EXISTS school_id TEXT,
-             ADD COLUMN IF NOT EXISTS name TEXT,
-             ADD COLUMN IF NOT EXISTS start_date DATE,
-             ADD COLUMN IF NOT EXISTS end_date DATE"
+             ADD COLUMN IF NOT EXISTS quarter TEXT,
+             ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'DRAFT',
+             ADD COLUMN IF NOT EXISTS exam_type TEXT DEFAULT 'MAIN'"
+        ).execute(&self.pool).await?;
+
+        // Exam Sections (Syllabus & Question Papers)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS exam_sections (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                exam_id INTEGER NOT NULL REFERENCES public.exams(id) ON DELETE CASCADE,
+                class_id TEXT NOT NULL,
+                subject_id TEXT NOT NULL,
+                syllabus JSONB DEFAULT '[]', -- Array of chapter/topic IDs
+                ai_generated_paper BOOLEAN DEFAULT FALSE,
+                questions JSONB DEFAULT '[]', -- The structured question paper
+                total_marks INTEGER,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, exam_id, class_id, subject_id)
+            )"
+        ).execute(&self.pool).await?;
+
+        // Chapters Table for syllabus division & tracking
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS chapters (
+                id SERIAL PRIMARY KEY,
+                school_id TEXT NOT NULL,
+                subject_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                sequence_order INTEGER DEFAULT 1,
+                is_taught BOOLEAN DEFAULT FALSE,
+                weightage INTEGER DEFAULT 1, -- for auto-syllabus division
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, subject_id, name)
+            )"
         ).execute(&self.pool).await?;
 
         sqlx::query(
-            "DO $$ 
-             BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_class t ON c.conrelid = t.oid JOIN pg_namespace n ON t.relnamespace = n.oid WHERE t.relname = 'exams' AND n.nspname = 'public' AND c.contype = 'u' AND pg_get_constraintdef(c.oid) LIKE '%school_id, name%') THEN
-                    ALTER TABLE public.exams ADD CONSTRAINT exams_school_name_unique UNIQUE (school_id, name);
-                END IF;
-             END $$;"
+            "ALTER TABLE chapters
+             ADD COLUMN IF NOT EXISTS is_taught BOOLEAN DEFAULT FALSE,
+             ADD COLUMN IF NOT EXISTS weightage INTEGER DEFAULT 1,
+             ADD COLUMN IF NOT EXISTS quarter TEXT,
+             ADD COLUMN IF NOT EXISTS periods_allocated INTEGER DEFAULT 0"
+        ).execute(&self.pool).await?;
+
+        // Topics Table (referenced by academic_repo)
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS topics (
+                id SERIAL PRIMARY KEY,
+                subject_id TEXT,
+                name TEXT NOT NULL,
+                description TEXT
+            )"
         ).execute(&self.pool).await?;
 
         Ok(())
@@ -929,7 +975,9 @@ impl SchemaSetup {
              ADD COLUMN IF NOT EXISTS period_duration_minutes INTEGER DEFAULT 40,
              ADD COLUMN IF NOT EXISTS break_duration_minutes INTEGER DEFAULT 10,
              ADD COLUMN IF NOT EXISTS approved_by TEXT,
-             ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ"
+             ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ,
+             ADD COLUMN IF NOT EXISTS view_type TEXT DEFAULT 'global',
+             ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT FALSE"
         ).execute(&self.pool).await?;
 
         sqlx::query(
@@ -1181,6 +1229,267 @@ impl SchemaSetup {
         }
 
         println!("Performance indexes verified.");
+        Ok(())
+    }
+
+    async fn initialize_grading_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Ensuring grading tables exist...");
+
+        sqlx::query("CREATE TABLE IF NOT EXISTS grading_rubrics (
+            rubric_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            school_id VARCHAR(255) NOT NULL,
+            rubric_name VARCHAR(255) NOT NULL,
+            rubric_type VARCHAR(100) NOT NULL,
+            subject_name VARCHAR(255),
+            class_name VARCHAR(255),
+            criteria JSONB NOT NULL,
+            total_score DECIMAL(5,2) NOT NULL DEFAULT 100.0,
+            passing_score DECIMAL(5,2) NOT NULL DEFAULT 40.0,
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(school_id, rubric_name, rubric_type)
+        )").execute(&self.pool).await?;
+
+        sqlx::query("CREATE TABLE IF NOT EXISTS student_submissions (
+            submission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            school_id VARCHAR(255) NOT NULL,
+            student_id VARCHAR(255) NOT NULL,
+            exam_id VARCHAR(255),
+            assignment_name VARCHAR(255),
+            submission_type VARCHAR(100) NOT NULL,
+            content TEXT,
+            file_url TEXT,
+            file_type VARCHAR(50),
+            word_count INTEGER,
+            character_count INTEGER,
+            submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            due_date TIMESTAMP WITH TIME ZONE,
+            status VARCHAR(50) DEFAULT 'submitted'
+        )").execute(&self.pool).await?;
+
+        sqlx::query("CREATE TABLE IF NOT EXISTS ai_grading_results (
+            grading_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            submission_id UUID NOT NULL REFERENCES student_submissions(submission_id) ON DELETE CASCADE,
+            school_id VARCHAR(255) NOT NULL,
+            rubric_id UUID REFERENCES grading_rubrics(rubric_id),
+            overall_score DECIMAL(5,2),
+            grade VARCHAR(10),
+            criteria_scores JSONB,
+            feedback TEXT,
+            confidence_score DECIMAL(5,2),
+            grading_provider VARCHAR(100),
+            grading_model VARCHAR(100),
+            graded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            reviewed_by_teacher BOOLEAN DEFAULT false,
+            teacher_notes TEXT,
+            teacher_adjusted_score DECIMAL(5,2)
+        )").execute(&self.pool).await?;
+
+        sqlx::query("CREATE TABLE IF NOT EXISTS exam_answer_keys (
+            key_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            school_id VARCHAR(255) NOT NULL,
+            exam_id VARCHAR(255) NOT NULL,
+            question_number INTEGER NOT NULL,
+            question_type VARCHAR(50) NOT NULL,
+            correct_answer TEXT NOT NULL,
+            model_answer TEXT,
+            keywords TEXT[],
+            max_marks DECIMAL(5,2) NOT NULL DEFAULT 1.0
+        )").execute(&self.pool).await?;
+
+        sqlx::query("CREATE TABLE IF NOT EXISTS grading_config (
+            id SERIAL PRIMARY KEY,
+            school_id VARCHAR(255) NOT NULL,
+            subject_name VARCHAR(255),
+            rigor_level VARCHAR(20) DEFAULT 'medium',
+            fuzzy_threshold DECIMAL(5,4) DEFAULT 0.8500,
+            ai_feedback_enabled BOOLEAN DEFAULT true,
+            UNIQUE(school_id, subject_name)
+        )").execute(&self.pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_student_submissions_school ON student_submissions(school_id)").execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_student_submissions_exam ON student_submissions(school_id, exam_id)").execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_ai_grading_results_submission ON ai_grading_results(submission_id)").execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_ai_grading_results_school ON ai_grading_results(school_id)").execute(&self.pool).await?;
+
+        println!("Grading tables verified.");
+        Ok(())
+    }
+
+    async fn initialize_exam_checker_workflow(&self) -> Result<(), Box<dyn Error>> {
+        println!("Setting up exam checker workflow schema...");
+
+        // Add checker assignment and status columns to exams table
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS checker_employee_id TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS checker_assigned_at TIMESTAMP WITH TIME ZONE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS checked_by TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS checked_at TIMESTAMP WITH TIME ZONE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS approved_by TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS results_published BOOLEAN DEFAULT FALSE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS results_published_at TIMESTAMP WITH TIME ZONE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE exams ADD COLUMN IF NOT EXISTS strictness_level TEXT DEFAULT 'medium'").execute(&self.pool).await?;
+
+        // Add checker columns to student_submissions
+        sqlx::query("ALTER TABLE student_submissions ADD COLUMN IF NOT EXISTS checked_by TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE student_submissions ADD COLUMN IF NOT EXISTS checked_at TIMESTAMP WITH TIME ZONE").execute(&self.pool).await?;
+
+        // Add approval columns to ai_grading_results
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS reviewed_by_checker BOOLEAN DEFAULT FALSE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS checker_id TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS checker_notes TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS teacher_approved BOOLEAN DEFAULT FALSE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS teacher_id TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS teacher_notes TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS is_finalized BOOLEAN DEFAULT FALSE").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE ai_grading_results ADD COLUMN IF NOT EXISTS strictness_used TEXT").execute(&self.pool).await?;
+
+        // Create exam_submission_pages table for page-level image tracking
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS exam_submission_pages (
+                page_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                submission_id UUID NOT NULL REFERENCES student_submissions(submission_id) ON DELETE CASCADE,
+                school_id VARCHAR(255) NOT NULL,
+                page_number INTEGER NOT NULL,
+                image_url TEXT NOT NULL,
+                ocr_text TEXT,
+                ocr_confidence DECIMAL(5,2),
+                is_permanent BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(submission_id, page_number)
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_esp_submission ON exam_submission_pages(submission_id)").execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_esp_school ON exam_submission_pages(school_id)").execute(&self.pool).await?;
+
+        // RLS for exam_submission_pages
+        sqlx::query("ALTER TABLE exam_submission_pages ENABLE ROW LEVEL SECURITY").execute(&self.pool).await.map(|_| ())?;
+        sqlx::query(
+            "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='exam_submission_pages' AND policyname='exam_submission_pages_school_isolation') THEN
+             CREATE POLICY exam_submission_pages_school_isolation ON exam_submission_pages
+             USING (school_id = current_setting('app.current_school_id')); END IF; END $$"
+        ).execute(&self.pool).await?;
+
+        println!("Exam checker workflow schema verified.");
+        Ok(())
+    }
+
+    async fn initialize_syllabus_calendar_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Setting up syllabus calendar tables...");
+
+        // Extend chapters with quarter and period count
+        sqlx::query("ALTER TABLE chapters ADD COLUMN IF NOT EXISTS quarter TEXT").execute(&self.pool).await?;
+        sqlx::query("ALTER TABLE chapters ADD COLUMN IF NOT EXISTS periods_allocated INTEGER DEFAULT 0").execute(&self.pool).await?;
+
+        // Extend tasks with period_plan_id reference
+        sqlx::query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS period_plan_id INTEGER").execute(&self.pool).await.map(|_| ())?;
+
+        // 1. Syllabus Calendar: one row per class-subject-chapter with date planning
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS syllabus_calendar (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                class_id VARCHAR(255) NOT NULL,
+                subject_id VARCHAR(255) NOT NULL,
+                chapter_id INTEGER NOT NULL,
+                planned_start_date DATE NOT NULL,
+                planned_end_date DATE NOT NULL,
+                actual_start_date DATE,
+                actual_end_date DATE,
+                period_count INTEGER DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'pending',
+                quarter VARCHAR(5),
+                UNIQUE(school_id, class_id, subject_id, chapter_id, quarter)
+            )"
+        ).execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_syllabus_calendar_school ON syllabus_calendar(school_id, class_id, subject_id)").execute(&self.pool).await?;
+
+        // 2. Period-Level Plan: one row per teaching block
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS period_plans (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                class_id VARCHAR(255) NOT NULL,
+                subject_id VARCHAR(255) NOT NULL,
+                config_id TEXT NOT NULL,
+                day_of_week INTEGER NOT NULL,
+                period_number INTEGER NOT NULL,
+                date DATE NOT NULL,
+                chapter_id INTEGER,
+                topic_name TEXT,
+                teacher_id TEXT NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                teacher_note TEXT,
+                completed_at TIMESTAMP WITH TIME ZONE,
+                UNIQUE(school_id, config_id, day_of_week, period_number, date)
+            )"
+        ).execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_period_plans_teacher_date ON period_plans(school_id, teacher_id, date)").execute(&self.pool).await?;
+
+        // 3. Schedule Change Requests
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS schedule_change_requests (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                type VARCHAR(30) NOT NULL,
+                requested_by TEXT NOT NULL,
+                approved_by TEXT,
+                status VARCHAR(20) DEFAULT 'pending',
+                source_class_id TEXT,
+                source_subject_id TEXT,
+                target_class_id TEXT,
+                target_subject_id TEXT,
+                reason TEXT,
+                admin_note TEXT,
+                date_from DATE,
+                date_to DATE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE
+            )"
+        ).execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_change_requests_status ON schedule_change_requests(school_id, status)").execute(&self.pool).await?;
+
+        // 4. Daily Teacher Reports
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS daily_teacher_reports (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                teacher_id TEXT NOT NULL,
+                report_date DATE NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                summary TEXT,
+                pending_topics JSONB DEFAULT '[]',
+                completed_periods INTEGER DEFAULT 0,
+                total_periods INTEGER DEFAULT 0,
+                submitted_at TIMESTAMP WITH TIME ZONE,
+                UNIQUE(school_id, teacher_id, report_date)
+            )"
+        ).execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_daily_reports_missed ON daily_teacher_reports(school_id, report_date, status)").execute(&self.pool).await?;
+
+        // Block cap override for temporary period duration increases
+        sqlx::query("ALTER TABLE schedule_change_requests ADD COLUMN IF NOT EXISTS block_cap_minutes INTEGER").execute(&self.pool).await?;
+
+        // Attendance QR tokens table
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS attendance_qr_tokens (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                class_id VARCHAR(255),
+                token VARCHAR(64) UNIQUE NOT NULL,
+                expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                created_by TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                is_used BOOLEAN DEFAULT FALSE,
+                used_by TEXT,
+                used_at TIMESTAMP WITH TIME ZONE
+            )"
+        ).execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_qr_tokens_token ON attendance_qr_tokens(token)").execute(&self.pool).await?;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_qr_tokens_valid ON attendance_qr_tokens(school_id, is_used, expires_at)").execute(&self.pool).await?;
+
+        println!("Syllabus calendar tables verified.");
         Ok(())
     }
 }

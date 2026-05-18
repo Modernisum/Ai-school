@@ -134,6 +134,20 @@ impl ResourceService for PostgresResourceService {
         self.equipment.create_event(school_id, admin_id, data).await
     }
 
+    async fn list_events(&self, school_id: &str) -> AppResult<Vec<Value>> {
+        self.equipment.list_events(school_id).await
+    }
+
+    async fn update_event(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        event_id: i32,
+        data: Value,
+    ) -> AppResult<()> {
+        self.equipment.update_event(school_id, admin_id, event_id, data).await
+    }
+
     async fn delete_event(
         &self,
         school_id: &str,

@@ -353,6 +353,7 @@ impl crate::repository::traits::SchoolRepository for PostgresSchoolRepository {
 mod responsibility_repository_tests {
     use super::*;
     use crate::db::DbClient;
+    use crate::logic::cache_service::ResponsibilityCacheService;
     use sqlx::{Execute, Pool, Postgres};
     use std::sync::Arc;
     use mockall::predicate::*;
@@ -391,13 +392,11 @@ mod responsibility_repository_tests {
     #[test]
     fn test_responsibility_cache_service_creation() {
         use crate::logic::cache_service::ResponsibilityCacheService;
-        use deadpool_redis::Pool;
         
-        // This test verifies the cache service can be created
-        // (actual Redis pool creation would require Redis running)
-        let redis_pool = Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379"));
+        let redis_pool = deadpool_redis::Config::from_url("redis://localhost:6379")
+            .create_pool(None)
+            .expect("Failed to create Redis pool");
         
-        // The service should be created without panic
         let _service = ResponsibilityCacheService::new(redis_pool);
     }
 
@@ -405,20 +404,20 @@ mod responsibility_repository_tests {
     fn test_cached_repository_wrapper() {
         use crate::logic::cache_service::CachedResponsibilityRepository;
         
-        // Create a mock base repository
-        let base_repo = PostgresResponsibilityRepository {
-            client: Arc::new(DbClient {
-                pool: Pool::<Postgres>::connect_lazy("postgresql://localhost/test").unwrap(),
-                redis: deadpool_redis::Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379")),
-            }),
-        };
+        let test_client = DbClient::new_test().expect("Failed to create test DbClient");
+        let redis_pool = deadpool_redis::Config::from_url("redis://localhost:6379")
+            .create_pool(None)
+            .expect("Failed to create Redis pool");
+        let cache_service = Arc::new(ResponsibilityCacheService::new(redis_pool));
         
-        let redis_pool = deadpool_redis::Pool::new(deadpool_redis::Config::from_url("redis://localhost:6379"));
+        let base_repo = PostgresResponsibilityRepository {
+            client: Arc::new(test_client),
+        };
         
         // Create cached repository
         let cached_repo = CachedResponsibilityRepository::new(
             Arc::new(base_repo),
-            redis_pool,
+            cache_service,
         );
         
         // Verify the repository implements the trait
@@ -459,18 +458,14 @@ mod responsibility_repository_tests {
     fn test_employee_responsibility_query_builder() {
         let mut query = query_builder::build_employee_responsibility_query(
             "school123",
-            "emp456",
+            Some("emp456"),
             Some("space789"),
-            Some(5),
-            Some(0),
         );
         
         let sql = query.build().sql();
         assert!(sql.contains("WHERE er.school_id = $1"));
         assert!(sql.contains("AND er.employee_id = $2"));
         assert!(sql.contains("AND er.space_ids @> $3"));
-        assert!(sql.contains("LIMIT $4"));
-        assert!(sql.contains("OFFSET $5"));
     }
 }
 

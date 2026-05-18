@@ -6,7 +6,7 @@ import {
   UserCheck, Box, Layers, ClipboardList,
   Users, UserPlus, Clock, CreditCard,
   IndianRupee, CalendarCheck,
-  FileText, CalendarDays, History,
+  FileText, CalendarDays, History, CheckCircle, BookOpen, BarChart3, GitMerge, FileCheck,
   Settings, LogOut, User
 } from "lucide-react";
 import { SimpleThemeToggle } from "./ThemeToggle";
@@ -55,6 +55,7 @@ export default function TopBar() {
     if (path.includes('/dashboard/student')) {
       return [
         { label: "All Students", path: "/dashboard/student/all", icon: Users },
+        { label: "Form Fill", path: "/dashboard/student/form-fill", icon: FileCheck },
         { label: "Admission", path: "/dashboard/student/add", icon: UserPlus },
         { label: "Leave", path: "/dashboard/student/leave", icon: Clock },
         { label: "Attendance", path: "/dashboard/student/attendance", icon: Clock },
@@ -72,6 +73,10 @@ export default function TopBar() {
     if (path.includes('/dashboard/academic')) {
       return [
         { label: "Exams", path: "/dashboard/academic/exam", icon: FileText },
+        { label: "Exam Approval", path: "/dashboard/academic/teacher-approval", icon: CheckCircle },
+        { label: "Syllabus Planner", path: "/dashboard/academic/syllabus-planner", icon: BookOpen },
+        { label: "Period Plans", path: "/dashboard/academic/period-plans", icon: BarChart3 },
+        { label: "Change Approvals", path: "/dashboard/academic/change-approval", icon: GitMerge },
         { label: "Events", path: "/dashboard/academic/events", icon: CalendarCheck },
         { label: "Attendance", path: "/dashboard/academic/attendance", icon: CalendarDays },
         { label: "Timetable", path: "/dashboard/academic/timetable", icon: History },

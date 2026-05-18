@@ -123,6 +123,11 @@ pub async fn create_student(
         "totalFees": payload.total_fee,
         "selectedSubjects": payload.selected_subjects,
         "profileImageUrl": payload.profile_image_url,
+        "bloodGroup": payload.blood_group,
+        "caste": payload.caste,
+        "medicalHistory": payload.medical_history,
+        "allergies": payload.allergies,
+        "emergencyContact": payload.emergency_contact,
     });
 
     let data = state.services.student

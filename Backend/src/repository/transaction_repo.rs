@@ -31,14 +31,22 @@ impl crate::repository::traits::TransactionRepository for PostgresTransactionRep
         gateway_order_id: &str,
         gateway_payment_id: &str,
         gateway_signature: &str,
-    ) -> Result<Option<String>, AppError> {
-        let row = sqlx::query("UPDATE transactions SET gateway_payment_id = $1, gateway_signature = $2, status = 'completed', completed_at = NOW() WHERE gateway_order_id = $3 RETURNING school_id")
+    ) -> Result<Option<(String, String, f64)>, AppError> {
+        let row = sqlx::query(
+            "UPDATE transactions SET gateway_payment_id = $1, gateway_signature = $2, status = 'completed', completed_at = NOW() \
+             WHERE gateway_order_id = $3 AND status = 'pending' \
+             RETURNING school_id, student_id, amount"
+        )
             .bind(gateway_payment_id)
             .bind(gateway_signature)
             .bind(gateway_order_id)
             .fetch_optional(&self.client.pool)
             .await?;
         
-        Ok(row.map(|r| r.get::<String, _>("school_id")))
+        Ok(row.map(|r| (
+            r.get::<String, _>("school_id"),
+            r.get::<String, _>("student_id"),
+            r.get::<bigdecimal::BigDecimal, &str>("amount").to_string().parse::<f64>().unwrap_or(0.0),
+        )))
     }
 }

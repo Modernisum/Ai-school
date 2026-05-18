@@ -35,6 +35,11 @@ pub struct CreateStudentRequest {
     pub total_fee: f64,
     pub selected_subjects: Option<Vec<String>>,
     pub profile_image_url: String,
+    pub blood_group: Option<String>,
+    pub caste: Option<String>,
+    pub medical_history: Option<String>,
+    pub allergies: Option<String>,
+    pub emergency_contact: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,6 +94,14 @@ pub struct CreateEmployeeRequest {
     pub bank_details: Option<serde_json::Value>,
     pub profile_image_url: Option<String>,
     pub roles: Option<Vec<serde_json::Value>>,
+    pub blood_group: Option<String>,
+    pub emergency_contact: Option<String>,
+    pub bank_account_number: Option<String>,
+    pub bank_ifsc_code: Option<String>,
+    pub experience_status: Option<String>,
+    pub experience_years: Option<i32>,
+    pub previous_school: Option<String>,
+    pub experience_increment_percent: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -269,6 +269,26 @@ class ApiService {
     }
   }
 
+  Future<ApiResponse<Map<String, dynamic>>> getExamResults(String studentId) async {
+    try {
+      final sid = await getSchoolId();
+      final response = await _get('$apiBase/school/$sid/academic/exams/results/$studentId');
+      if (response.statusCode == 200) return ApiSuccess(jsonDecode(response.body));
+      return ApiError("Results error: ${response.statusCode}", statusCode: response.statusCode);
+    } catch (e) {
+      return ApiError(e.toString());
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> getBusLocation(String vehicleId) async {
+    try {
+      final sid = await getSchoolId();
+      final response = await _get('$apiBase/school/$sid/system/transport/bus-location/$vehicleId');
+      if (response.statusCode == 200) return ApiSuccess(jsonDecode(response.body));
+      return ApiError("Bus location unavailable: ${response.statusCode}");
+    } catch (e) { return ApiError(e.toString()); }
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> getDocumentBox(String studentId) async {
     try {
       final sid = await getSchoolId();

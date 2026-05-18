@@ -13,18 +13,31 @@ pub async fn create_leave(
     Path(school_id): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    match state
-        .services
-        .leave
-        .create_leave(&school_id, &tenant_ctx.admin_id, payload)
-        .await
-    {
+    let from_date = payload["fromDate"].as_str().unwrap_or("");
+    let to_date = payload["toDate"].as_str().unwrap_or("");
+    let role = payload["role"].as_str().unwrap_or("employee");
+
+    // Auto-escalate student leaves >3 days to admin approval
+    let mut modified = payload.clone();
+    if role == "student" {
+        if let (Ok(from), Ok(to)) = (
+            chrono::NaiveDate::parse_from_str(from_date, "%Y-%m-%d"),
+            chrono::NaiveDate::parse_from_str(to_date, "%Y-%m-%d")
+        ) {
+            let days = (to - from).num_days() + 1;
+            if days > 3 {
+                modified["requiresAdminApproval"] = json!(true);
+                modified["escalationReason"] = json!(format!("Leave duration exceeds 3 days ({} days)", days));
+            }
+        }
+    }
+
+    match state.services.leave.create_leave(&school_id, &tenant_ctx.admin_id, modified).await {
         Ok(data) => Json(json!({"success": true, "data": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
+        ).into_response(),
     }
 }
 

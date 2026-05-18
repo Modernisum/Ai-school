@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import {
-  CheckCircle, User, GraduationCap, Users, Truck, FileUp, Calendar, ClipboardList, AlertCircle
+  CheckCircle, User, GraduationCap, Users, Truck, FileUp, Calendar, ClipboardList, AlertCircle, Heart, Phone
 } from 'lucide-react';
 import FormWidget from '../../../components/ui/FormWidget';
+import DocumentUploadStep from '../../../components/ocr/DocumentUploadStep';
+import PinCodeAutoFill from '../../../components/geo/PinCodeAutoFill';
+import FeeBreakdownWidget from '../../../components/fees/FeeBreakdownWidget';
+import { useAgeCalculator } from '../../../hooks/useAgeCalculator';
 import { getSchoolIdFromStorage } from '../../../utils/api';
 import { useGetClassesQuery } from '../../academics/api/academicApi';
 
@@ -17,19 +21,21 @@ export default function AddStudentPage() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
 
-  const mode = searchParams.get('mode') || (pathname.includes('/leave') ? 'leave' : 'add');
+  const mode = searchParams.get('mode') || (pathname.includes('/leave') ? 'leave' : (pathname.includes('/edit') ? 'edit' : 'add'));
   const studentId = searchParams.get('studentId');
 
   const [activeSection, setActiveSection] = useState(mode === 'leave' ? 'request' : 'identity');
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [showOcrStep, setShowOcrStep] = useState(mode === 'add' && !studentId);
+  const [ocrFields, setOcrFields] = useState({});
 
   const { data: classData } = useGetClassesQuery(schoolId, { skip: !schoolId });
   const classOptions = useMemo(() => {
     return (classData || []).map(c => ({ label: c.className || c.name || c, value: c.className || c.id || c }));
   }, [classData]);
 
-  const { control, handleSubmit, reset, watch } = useForm({
+  const { control, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: {
       admissionNumber: '', admissionDate: new Date().toISOString().split('T')[0],
       name: '', dob: '', gender: '', bloodGroup: '', religion: '', category: 'General', aadhaarNumber: '',
@@ -37,12 +43,15 @@ export default function AddStudentPage() {
       fatherName: '', fatherOccupation: '', motherName: '', motherOccupation: '',
       phone: '', altPhone: '', email: '', address: '',
       transportMode: 'none', busRoute: '',
-      leaveType: 'casual', fromDate: '', toDate: '', reason: '', attachments: []
+      leaveType: 'casual', fromDate: '', toDate: '', reason: '', attachments: [],
+      caste: '', medicalHistory: '', allergies: '', emergencyContact: '',
     }
   });
 
   const watchedClass = watch('class');
   const watchedSection = watch('section');
+  const watchedDob = watch('dob');
+  const { ageString } = useAgeCalculator(watchedDob);
 
   useEffect(() => {
     if (mode === 'edit' && studentId) {
@@ -96,24 +105,60 @@ export default function AddStudentPage() {
     mandatoryResps.reduce((sum, r) => sum + (parseFloat(r.studentFee || r.student_fee || 0) || 0), 0),
   [mandatoryResps]);
 
+  // ─── OCR Auto-Fill Handler ─────────────────────────────────────────────────
+  const handleOcrAutoFill = useCallback((extracted) => {
+    setOcrFields(extracted);
+    if (extracted.name) setValue('name', extracted.name);
+    if (extracted.dob) setValue('dob', extracted.dob);
+    if (extracted.gender) setValue('gender', extracted.gender);
+    if (extracted.aadhaarNumber) setValue('aadhaarNumber', extracted.aadhaarNumber);
+    if (extracted.address) setValue('address', extracted.address);
+    if (extracted.fatherName) setValue('fatherName', extracted.fatherName);
+    if (extracted.motherName) setValue('motherName', extracted.motherName);
+    setShowOcrStep(false);
+    setActiveSection('identity');
+  }, [setValue]);
+
+  const handleOcrSkip = useCallback(() => {
+    setShowOcrStep(false);
+    setActiveSection('identity');
+  }, []);
+
+  // ─── Pincode Auto-Fill ─────────────────────────────────────────────────────
+  const handleAddressFilled = useCallback((location) => {
+    if (location.city && !watch('address')) {
+      setValue('address', `${location.city}, ${location.state}`);
+    }
+  }, [setValue, watch]);
+
+  // ─── Toggle Optional Responsibility ─────────────────────────────────────────
+  const handleToggleOptional = useCallback((rId) => {
+    setSelectedOptionalResps(prev =>
+      prev.includes(rId) ? prev.filter(v => v !== rId) : [...prev, rId]
+    );
+  }, []);
+
+  // ─── Schema Definition ─────────────────────────────────────────────────────
   const STUDENT_SCHEMA = useMemo(() => [
     {
       id: 'identity', label: 'Identity & Core Information', icon: User,
-      description: 'Provide biometric and family details for student identification.',
+      description: 'Student personal and family details.',
       fields: [
         { name: 'name', label: 'Full Name of Student', type: 'text', required: true },
-        { name: 'dob', label: 'Date of Birth', type: 'date', required: true },
+        { name: 'dob', label: 'Date of Birth', type: 'date', required: true,
+          helperText: ageString ? `Age: ${ageString}` : '' },
         { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Other'], required: true },
         { name: 'bloodGroup', label: 'Blood Group', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+        { name: 'caste', label: 'Caste / Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST', 'Other'], required: true },
         { name: 'religion', label: 'Religion', type: 'select', options: ['Hindu', 'Muslim', 'Sikh', 'Christian', 'Other'] },
-        { name: 'category', label: 'Social Category', type: 'select', options: ['General', 'OBC', 'SC', 'ST'], required: true },
         { name: 'aadhaarNumber', label: 'Aadhaar Card Number', type: 'text' },
         { name: 'fatherName', label: "Father's Full Name", type: 'text', required: true },
-        { name: 'fatherOccupation', label: "Father's Profession / Occupation", type: 'text' },
+        { name: 'fatherOccupation', label: "Father's Profession", type: 'text' },
         { name: 'motherName', label: "Mother's Full Name", type: 'text' },
-        { name: 'motherOccupation', label: "Mother's Profession / Occupation", type: 'text' },
+        { name: 'motherOccupation', label: "Mother's Profession", type: 'text' },
         { name: 'phone', label: 'Primary Mobile Number', type: 'tel', required: true },
         { name: 'email', label: 'Parent Email Address', type: 'email' },
+        { name: 'emergencyContact', label: 'Emergency Contact Number', type: 'tel' },
         { name: 'address', label: 'Complete Residential Address', type: 'textarea', className: 'md:col-span-2' },
         { name: 'image_url', label: 'Upload Student Photo', type: 'image', fieldName: 'profile_photo' },
       ]
@@ -129,72 +174,18 @@ export default function AddStudentPage() {
         { name: 'admissionDate', label: 'Date of Admission', type: 'date', required: true },
         { name: 'studentType', label: 'Enrollment Type', type: 'select', options: ['Regular', 'Private', 'Transfer'], required: true },
         { name: 'prevSchool', label: 'Previous School Attended', type: 'text', className: 'md:col-span-3' },
+        { name: 'medicalHistory', label: 'Medical History / Conditions', type: 'textarea', className: 'md:col-span-3' },
+        { name: 'allergies', label: 'Allergies (if any)', type: 'textarea', className: 'md:col-span-3' },
       ],
       customContent: (
         <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
-          {/* Mandatory Responsibilities */}
-          {mandatoryResps.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle size={14} className="text-amber-400" />
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-400">Mandatory Fees (Automatically Applied)</h4>
-              </div>
-              <div className="border border-amber-500/10 rounded-xl bg-amber-500/[0.02] overflow-hidden">
-                {mandatoryResps.map(r => {
-                  const fee = parseFloat(r.studentFee || r.student_fee || 0) || 0;
-                  return (
-                    <div key={r.responsibilityId || r.id} className="flex items-center justify-between px-3 py-2 border-b border-white/5 text-xs">
-                      <span className="text-white">{r.name}</span>
-                      <span className="text-amber-300 font-medium">₹{fee.toFixed(2)}/mo</span>
-                    </div>
-                  );
-                })}
-                <div className="flex items-center justify-between px-3 py-2 bg-amber-500/5 text-xs font-bold">
-                  <span className="text-amber-300">Total Mandatory</span>
-                  <span className="text-amber-300">₹{totalMandatoryFees.toFixed(2)}/mo</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Optional Responsibilities */}
-          {optionalResps.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={14} className="text-primary" />
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Optional Services</h4>
-              </div>
-              <div className="border border-white/5 rounded-xl bg-white/[0.02] overflow-hidden">
-                {optionalResps.map(r => {
-                  const rId = r.responsibilityId || r.id;
-                  const fee = parseFloat(r.studentFee || r.student_fee || 0) || 0;
-                  const isSelected = selectedOptionalResps.includes(rId);
-                  return (
-                    <label key={rId} className={`flex items-center gap-3 px-3 py-2.5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/[0.02] ${isSelected ? 'bg-primary/10' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => setSelectedOptionalResps(prev =>
-                          prev.includes(rId) ? prev.filter(v => v !== rId) : [...prev, rId]
-                        )}
-                        className="w-4 h-4 rounded accent-primary"
-                      />
-                      <span className="flex-1 text-xs text-white">{r.name}</span>
-                      <span className="text-xs text-slate-400">₹{fee.toFixed(2)}/mo</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Loading or empty state */}
-          {fetchingResps && (
-            <div className="text-center text-xs text-slate-600 py-2">Loading space responsibilities...</div>
-          )}
-          {!fetchingResps && spaceResponsibilities.length === 0 && watchedClass && watchedSection && (
-            <div className="text-center text-xs text-slate-600 py-2">No responsibilities assigned to {watchedClass}-{watchedSection}</div>
-          )}
+          {/* Fee Breakdown Widget */}
+          <FeeBreakdownWidget
+            mandatoryFees={mandatoryResps}
+            optionalFees={optionalResps}
+            selectedOptionals={selectedOptionalResps}
+            onToggleOptional={handleToggleOptional}
+          />
 
           {/* Manual Fee Entry */}
           <div>
@@ -235,7 +226,8 @@ export default function AddStudentPage() {
         { name: 'attachments', label: 'Upload Documents (Aadhaar, TC, Birth Certificate)', type: 'file', multiple: true, className: 'md:col-span-3' },
       ]
     }
-  ], [classOptions, mandatoryResps, optionalResps, selectedOptionalResps, totalMandatoryFees, fetchingResps, spaceResponsibilities, watchedClass, watchedSection]);
+  ], [classOptions, mandatoryResps, optionalResps, selectedOptionalResps, totalMandatoryFees,
+      fetchingResps, spaceResponsibilities, watchedClass, watchedSection, ageString, handleToggleOptional]);
 
   const STUDENT_LEAVE_SCHEMA = useMemo(() => [
     {
@@ -277,6 +269,20 @@ export default function AddStudentPage() {
       setIsLoading(false);
     }
   };
+
+  if (showOcrStep) {
+    return (
+      <div className="max-w-lg mx-auto mt-8">
+        <div className="border border-white/5 rounded-2xl bg-white/[0.02] p-6">
+          <DocumentUploadStep
+            entityType="student"
+            onAutoFill={handleOcrAutoFill}
+            onSkip={handleOcrSkip}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -55,7 +55,10 @@ impl PayrollCalculation {
             spaces_component += current_comp;
         }
 
-        let gross_salary = spaces_component + exp_component + tenure_component + bonus + aid;
+        let experience_increment_pct = emp["experienceIncrementPercent"].as_f64().unwrap_or(0.0);
+        let experience_increment = spaces_component * (experience_increment_pct / 100.0);
+
+        let gross_salary = spaces_component + exp_component + tenure_component + experience_increment + bonus + aid;
 
         let now = Local::now();
         let (month, year) = if now.month() == 1 {
@@ -86,6 +89,8 @@ impl PayrollCalculation {
             "spacesComponent": spaces_component,
             "experienceComponent": exp_component,
             "tenureComponent": tenure_component,
+            "experienceIncrement": experience_increment,
+            "experienceIncrementPercent": experience_increment_pct,
             "bonus": bonus,
             "aid": aid,
             "grossSalary": gross_salary,

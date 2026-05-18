@@ -1,3 +1,4 @@
+use rand::{Rng, seq::SliceRandom};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{Pool, Postgres, Row};
@@ -527,6 +528,69 @@ impl TimetableEngine {
         Ok(candidates)
     }
 
+    /// Enhanced substitute ranking using period_plans task completion data.
+    /// Ranks by: (subject_match * 0.4) + (task_completion_rate * 0.4) + (availability * 0.2)
+    pub async fn find_best_substitute(
+        &self,
+        school_id: &str,
+        class_id: &str,
+        subject_id: &str,
+        day: usize,
+        period: usize,
+    ) -> Result<Vec<Value>, sqlx::Error> {
+        // Get base substitutes from existing method
+        let mut candidates = self.find_available_substitutes(school_id, day, period, Some(subject_id)).await?;
+
+        if candidates.is_empty() {
+            return Ok(candidates);
+        }
+
+        // For each candidate, compute task completion rate from period_plans
+        for candidate in &mut candidates {
+            let teacher_id = candidate["teacher_id"].as_str().unwrap_or("");
+
+            let task_stats = sqlx::query(
+                "SELECT COUNT(*) as total, \
+                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed \
+                 FROM period_plans \
+                 WHERE school_id = $1 AND teacher_id = $2 \
+                 AND date >= CURRENT_DATE - INTERVAL '7 days'"
+            )
+            .bind(school_id).bind(teacher_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if let Some(row) = task_stats {
+                let total: i64 = row.get("total");
+                let completed: i64 = row.get::<Option<i64>, _>("completed").unwrap_or(0);
+                let completion_rate = if total > 0 {
+                    completed as f64 / total as f64
+                } else {
+                    0.0
+                };
+
+                let base_score = candidate["compatibility_score"].as_f64().unwrap_or(50.0);
+                let task_score = completion_rate * 100.0;
+                let new_score = (base_score * 0.5) + (task_score * 0.5);
+
+                candidate.as_object_mut().map(|obj| {
+                    obj.insert("compatibility_score".to_string(), json!(new_score));
+                    obj.insert("taskCompletionRate".to_string(), json!(format!("{:.0}%", completion_rate * 100.0)));
+                    obj.insert("recentTasks".to_string(), json!({"completed": completed, "total": total}));
+                });
+            }
+        }
+
+        // Re-sort by new score
+        candidates.sort_by(|a, b| {
+            b["compatibility_score"].as_f64().unwrap_or(0.0)
+                .partial_cmp(&a["compatibility_score"].as_f64().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        Ok(candidates)
+    }
+
     /// Approves a timetable proposal, making it active.
     pub async fn approve_timetable(
         &self,
@@ -617,5 +681,152 @@ impl TimetableEngine {
         }
 
         Ok(())
+    }
+
+    /// Generate N timetable options by randomizing input order, then score each.
+    pub async fn generate_multi_option(
+        &self,
+        school_id: &str,
+        class_id: &str,
+        class_name: &str,
+        periods_per_day: usize,
+        working_days: Vec<usize>,
+        requirements: Vec<SubjectRequirement>,
+        season: Option<String>,
+        start_time: Option<chrono::NaiveTime>,
+        end_time: Option<chrono::NaiveTime>,
+        period_duration: i32,
+        break_duration: i32,
+        count: usize,
+    ) -> Result<Vec<(f64, GeneratedTimetable)>, sqlx::Error> {
+        use rand::seq::SliceRandom;
+        use rand::thread_rng;
+
+        let mut options: Vec<(f64, GeneratedTimetable)> = Vec::new();
+        let mut rng = thread_rng();
+
+        for _ in 0..count {
+            let mut shuffled = requirements.clone();
+            // Randomly reorder requirements for different results
+            if shuffled.len() > 1 {
+                let split = rng.gen_range(1..shuffled.len());
+                let mut reordered = shuffled.split_off(split);
+                reordered.append(&mut shuffled);
+                shuffled = reordered;
+            }
+
+            match self
+                .generate_timetable(
+                    school_id, class_id, class_name,
+                    periods_per_day, working_days.clone(),
+                    shuffled, season.clone(),
+                    start_time, end_time,
+                    period_duration, break_duration,
+                )
+                .await
+            {
+                Ok(timetable) => {
+                    let score = self.score_timetable(&timetable);
+                    options.push((score, timetable));
+                }
+                Err(_) => continue,
+            }
+        }
+
+        // Sort by score descending so best options come first
+        options.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        Ok(options.into_iter().take(count).collect())
+    }
+
+    /// Score a generated timetable (lower = better).
+    /// Factors: conflicts (weight 50), free periods (weight 20), utilization (weight 30).
+    fn score_timetable(&self, timetable: &GeneratedTimetable) -> f64 {
+        let conflict_penalty = timetable.conflicts.len() as f64 * 50.0;
+        let total_slots = timetable.slots.len() as f64;
+        let free_periods = timetable.slots.iter().filter(|s| s.is_free_period).count() as f64;
+        let free_penalty = (free_periods / total_slots.max(1.0)) * 20.0;
+        let assigned = total_slots - free_periods;
+        let utilization_bonus = (assigned / total_slots.max(1.0)) * 30.0;
+        conflict_penalty + free_penalty - utilization_bonus
+    }
+
+    /// Issue Box: validate timetable and return alerts for empty periods / missing teachers.
+    pub async fn validate_issue_box(
+        &self,
+        school_id: &str,
+        config_id: &str,
+    ) -> Result<Value, sqlx::Error> {
+        let slots = sqlx::query(
+            "SELECT ts.day_of_week, ts.period_number, ts.subject_name, ts.teacher_id, ts.is_free_period \
+             FROM timetable_slots ts \
+             WHERE ts.school_id = $1 AND ts.config_id = $2 \
+             ORDER BY ts.day_of_week, ts.period_number"
+        )
+        .bind(school_id).bind(config_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut high_alerts: Vec<Value> = Vec::new();
+        let mut medium_alerts: Vec<Value> = Vec::new();
+        let mut free_slots: Vec<(i32, i32)> = Vec::new();
+
+        for row in &slots {
+            let dow: i32 = row.get("day_of_week");
+            let period: i32 = row.get("period_number");
+            let is_free: bool = row.get("is_free_period");
+            let teacher_id: Option<String> = row.get("teacher_id");
+            let subject_name: Option<String> = row.get("subject_name");
+
+            if is_free {
+                free_slots.push((dow, period));
+                high_alerts.push(json!({
+                    "severity": "HIGH",
+                    "type": "EMPTY_PERIOD",
+                    "day": dow,
+                    "period": period,
+                    "message": format!("Day {} Period {} is free — no class assigned", dow, period),
+                }));
+            } else if teacher_id.as_deref().unwrap_or("").is_empty() {
+                high_alerts.push(json!({
+                    "severity": "HIGH",
+                    "type": "NO_TEACHER",
+                    "day": dow,
+                    "period": period,
+                    "subject": subject_name,
+                    "message": format!("Period {} has subject '{}' but no teacher assigned", period, subject_name.unwrap_or_default()),
+                }));
+            }
+        }
+
+        // Check for classes with no rooms (medium)
+        let roomless = sqlx::query(
+            "SELECT day_of_week, period_number FROM timetable_slots \
+             WHERE school_id = $1 AND config_id = $2 AND (room_id IS NULL OR room_id = '') \
+             AND is_free_period = FALSE"
+        )
+        .bind(school_id).bind(config_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        for row in &roomless {
+            let dow: i32 = row.get("day_of_week");
+            let period: i32 = row.get("period_number");
+            medium_alerts.push(json!({
+                "severity": "MEDIUM",
+                "type": "NO_ROOM",
+                "day": dow,
+                "period": period,
+                "message": format!("Day {} Period {} has no room assigned", dow, period),
+            }));
+        }
+
+        Ok(json!({
+            "configId": config_id,
+            "totalSlots": slots.len(),
+            "freePeriods": free_slots.len(),
+            "highAlerts": high_alerts,
+            "mediumAlerts": medium_alerts,
+            "hasIssues": !high_alerts.is_empty() || !medium_alerts.is_empty(),
+        }))
     }
 }

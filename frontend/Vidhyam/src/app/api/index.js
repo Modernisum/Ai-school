@@ -12,5 +12,4 @@ import '../../features/dashboard/api/notificationApi';
 import '../../features/infrastructure/api/storageApi';
 import '../../features/infrastructure/api/transportApi';
 import '../../features/infrastructure/infrastructureApi';
-import '../../features/infrastructure/api/responsibilityApi';
 import '../../features/academics/api/timetableApi';

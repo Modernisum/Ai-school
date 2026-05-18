@@ -58,4 +58,18 @@ impl AiService for PostAiService {
             .await
             .map_err(|e: anyhow::Error| AppError::from(e))
     }
+
+    async fn regenerate_exam_question(&self, school_id: &str, payload: &Value) -> AppResult<Value> {
+        self.orchestrator
+            .regenerate_exam_question(school_id, payload)
+            .await
+            .map_err(|e: anyhow::Error| AppError::from(e))
+    }
+
+    async fn grade_test_submission(&self, school_id: &str, payload: &Value) -> AppResult<Value> {
+        self.orchestrator
+            .grade_test_submission(school_id, payload)
+            .await
+            .map_err(|e: anyhow::Error| AppError::from(e))
+    }
 }

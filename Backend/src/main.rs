@@ -36,6 +36,7 @@ pub struct AppState {
     pub general_limiter: RateLimiter,
     pub auth_limiter: RateLimiter,
     pub ai_limiter: RateLimiter,
+    pub admin_limiter: RateLimiter,
 }
 
 #[tokio::main]
@@ -89,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         general_limiter: RateLimiter::general(),
         auth_limiter: RateLimiter::auth(),
         ai_limiter: RateLimiter::ai(),
+        admin_limiter: RateLimiter::admin(),
     };
 
     // Trigger auto-restore if DB is empty

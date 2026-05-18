@@ -12,7 +12,7 @@ export const academicApi = createApi({
         },
     }),
     keepUnusedDataFor: 300, // Keep data cached for 5 minutes instead of default 60s
-    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays', 'Attendance'],
+    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays', 'Attendance', 'ExamApproval', 'Syllabus', 'Changes'],
     endpoints: (builder) => ({
         // ---- Classes ----
         getClasses: builder.query({
@@ -91,6 +91,96 @@ export const academicApi = createApi({
                 body,
             }),
             invalidatesTags: ['Exam'],
+        }),
+
+        // ---- Exam Checker & Teacher Approval Workflow ----
+        listExams: builder.query({
+            query: (schoolId) => `/school/${schoolId}/academic/exams`,
+            providesTags: ['Exam'],
+            transformResponse: (response) => response.data || response || [],
+        }),
+        getExamSubmissionsForChecker: builder.query({
+            query: ({ schoolId, examId }) => `/school/${schoolId}/academic/exams/checker/submissions/${examId}`,
+            providesTags: ['ExamApproval'],
+            transformResponse: (response) => response.data || [],
+        }),
+        teacherApproveSubmission: builder.mutation({
+            query: ({ schoolId, examId, submissionId, ...body }) => ({
+                url: `/school/${schoolId}/academic/exams/approve/${examId}/${submissionId}`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['ExamApproval'],
+        }),
+        teacherRejectSubmission: builder.mutation({
+            query: ({ schoolId, examId, submissionId, ...body }) => ({
+                url: `/school/${schoolId}/academic/exams/reject/${examId}/${submissionId}`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['ExamApproval'],
+        }),
+        publishExamResults: builder.mutation({
+            query: ({ schoolId, examId }) => ({
+                url: `/school/${schoolId}/academic/exams/publish/${examId}`,
+                method: 'POST',
+            }),
+            invalidatesTags: ['Exam', 'ExamApproval'],
+        }),
+
+        // ---- Syllabus Calendar ----
+        getSyllabus: builder.query({
+            query: ({ schoolId, subjectId }) => `/school/${schoolId}/academic/syllabus/${subjectId}`,
+            providesTags: ['Syllabus'],
+            transformResponse: (response) => response.data || [],
+        }),
+        plotSyllabus: builder.mutation({
+            query: ({ schoolId, classId, subjectId, academicYear }) => ({
+                url: `/school/${schoolId}/academic/syllabus/${classId}/${subjectId}/plot`,
+                method: 'POST',
+                body: { academicYear },
+            }),
+            invalidatesTags: ['Syllabus'],
+        }),
+        getQuarterReport: builder.query({
+            query: ({ schoolId, quarter }) => `/school/${schoolId}/academic/syllabus/quarter/${quarter}`,
+            providesTags: ['Syllabus'],
+            transformResponse: (response) => response.data || [],
+        }),
+
+        // ---- Period Plans ----
+        getPeriodPlans: builder.query({
+            query: ({ schoolId, teacherId, date }) => `/school/${schoolId}/academic/period-plans/${date}?teacherId=${teacherId}`,
+            transformResponse: (response) => response.data || [],
+        }),
+        restructurePlans: builder.mutation({
+            query: ({ schoolId, teacherId, date }) => ({
+                url: `/school/${schoolId}/academic/period-plans/restructure`,
+                method: 'POST',
+                body: { teacherId, date },
+            }),
+        }),
+
+        // ---- Schedule Changes ----
+        getPendingChanges: builder.query({
+            query: (schoolId) => `/school/${schoolId}/academic/changes/pending`,
+            providesTags: ['Changes'],
+            transformResponse: (response) => response.data || [],
+        }),
+        approveChange: builder.mutation({
+            query: ({ schoolId, changeId }) => ({
+                url: `/school/${schoolId}/academic/changes/${changeId}/approve`,
+                method: 'POST',
+            }),
+            invalidatesTags: ['Changes'],
+        }),
+        rejectChange: builder.mutation({
+            query: ({ schoolId, changeId, adminNote }) => ({
+                url: `/school/${schoolId}/academic/changes/${changeId}/reject`,
+                method: 'POST',
+                body: { adminNote },
+            }),
+            invalidatesTags: ['Changes'],
         }),
 
         // ---- Materials ----
@@ -277,6 +367,19 @@ export const {
     useLazyGetChapterNamesQuery,
     useGeneratePaperMutation,
     useApproveExamMutation,
+    useListExamsQuery,
+    useGetExamSubmissionsForCheckerQuery,
+    useTeacherApproveSubmissionMutation,
+    useTeacherRejectSubmissionMutation,
+    usePublishExamResultsMutation,
+    useGetSyllabusQuery,
+    usePlotSyllabusMutation,
+    useGetQuarterReportQuery,
+    useGetPeriodPlansQuery,
+    useRestructurePlansMutation,
+    useGetPendingChangesQuery,
+    useApproveChangeMutation,
+    useRejectChangeMutation,
     useGetMaterialsQuery,
     useAddMaterialMutation,
     useEditMaterialMutation,

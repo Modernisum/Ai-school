@@ -17,13 +17,16 @@ class AcademicBloc extends Bloc<AcademicEvent, AcademicState> {
       final List<ApiResponse<Map<String, dynamic>>> results = await Future.wait([
         apiService.getExams(),
         apiService.getDocumentBox(event.studentId),
+        apiService.getExamResults(event.studentId),
       ]);
 
       final examsResp = results[0];
       final docsResp = results[1];
+      final resultsResp = results[2];
 
       List<Map<String, dynamic>> exams = [];
       List<Map<String, dynamic>> docs = [];
+      List<Map<String, dynamic>> examResults = [];
 
       if (examsResp is ApiSuccess<Map<String, dynamic>>) {
         final data = examsResp.data;
@@ -39,7 +42,14 @@ class AcademicBloc extends Bloc<AcademicEvent, AcademicState> {
             : [];
       }
 
-      emit(AcademicLoaded(upcomingExams: exams, reportCards: docs));
+      if (resultsResp is ApiSuccess<Map<String, dynamic>>) {
+        final data = resultsResp.data;
+        examResults = (data != null && data['data'] != null)
+            ? (data['data'] as List).map((r) => r as Map<String, dynamic>).toList()
+            : [];
+      }
+
+      emit(AcademicLoaded(upcomingExams: exams, reportCards: docs, examResults: examResults));
     } catch (e) {
       emit(AcademicError("$e"));
     }
