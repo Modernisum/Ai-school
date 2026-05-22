@@ -122,6 +122,7 @@ pub trait ResourceService: Send + Sync {
     async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>>;
     async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>>;
     async fn create_space_category(&self, school_id: &str, admin_id: &str, name: &str) -> AppResult<Value>;
+    async fn delete_space_category(&self, school_id: &str, admin_id: &str, name: &str) -> AppResult<()>;
     async fn update_space(
         &self,
         school_id: &str,
@@ -156,6 +157,15 @@ pub trait ResourceService: Send + Sync {
         school_id: &str,
         material_id: &str,
     ) -> AppResult<Vec<Value>>;
+
+    async fn remove_space_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> AppResult<()>;
 
     async fn get_space_materials(
         &self,

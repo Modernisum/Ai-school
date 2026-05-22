@@ -307,6 +307,4 @@ ALTER TABLE developer_activity_audit ENABLE ROW LEVEL SECURITY;
 CREATE POLICY developer_activity_audit_policy ON developer_activity_audit
     USING (developer_id = CURRENT_USER OR CURRENT_USER IN ('developer_audit', 'postgres'));
 
--- Log the migration
-INSERT INTO migration_log (migration_name, executed_at) 
-VALUES ('202604110001_developer_access_controls.sql', NOW());
+-- Log the migration (disabled as SQLx handles migration history)

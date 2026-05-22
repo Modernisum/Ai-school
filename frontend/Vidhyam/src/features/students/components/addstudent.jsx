@@ -178,7 +178,7 @@ export default function AddStudentPage() {
         { name: 'allergies', label: 'Allergies (if any)', type: 'textarea', className: 'md:col-span-3' },
       ],
       customContent: (
-        <div className="mt-8 pt-8 border-t border-white/5 space-y-6">
+        <div className="mt-8 pt-8 border-t border-[var(--glass-border)] space-y-6">
           {/* Fee Breakdown Widget */}
           <FeeBreakdownWidget
             mandatoryFees={mandatoryResps}
@@ -191,24 +191,24 @@ export default function AddStudentPage() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <ClipboardList size={16} className="text-primary" />
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Additional Fee Components</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-main)]">Additional Fee Components</h4>
             </div>
-            <div className="overflow-x-auto border border-white/5 rounded-2xl bg-white/[0.02]">
+            <div className="overflow-x-auto border border-[var(--glass-border)] rounded-2xl bg-[var(--bg-main)]">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-white/5 border-b border-white/5">
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Fee Component</th>
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Monthly Amount (₹)</th>
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Concession</th>
-                    <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
+                  <tr className="bg-[var(--bg-secondary)] border-b border-[var(--glass-border)]">
+                    <th className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Fee Component</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Monthly Amount (₹)</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Concession</th>
+                    <th className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="hover:bg-white/[0.01] border-b border-white/5">
-                    <td className="px-4 py-3"><input placeholder="e.g. Tuition" className="bg-transparent border-none text-xs text-white placeholder:text-slate-800 focus:outline-none w-full" /></td>
-                    <td className="px-4 py-3"><input placeholder="0.00" className="bg-transparent border-none text-xs text-white placeholder:text-slate-800 focus:outline-none w-full" /></td>
-                    <td className="px-4 py-3"><input placeholder="0%" className="bg-transparent border-none text-xs text-white placeholder:text-slate-800 focus:outline-none w-full" /></td>
-                    <td className="px-4 py-3 text-right text-slate-600">...</td>
+                  <tr className="hover:bg-white/[0.01] border-b border-[var(--glass-border)]">
+                    <td className="px-4 py-3"><input placeholder="e.g. Tuition" className="bg-transparent border-none text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none w-full" /></td>
+                    <td className="px-4 py-3"><input placeholder="0.00" className="bg-transparent border-none text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none w-full" /></td>
+                    <td className="px-4 py-3"><input placeholder="0%" className="bg-transparent border-none text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none w-full" /></td>
+                    <td className="px-4 py-3 text-right text-[var(--text-muted)]">...</td>
                   </tr>
                 </tbody>
               </table>
@@ -273,7 +273,7 @@ export default function AddStudentPage() {
   if (showOcrStep) {
     return (
       <div className="max-w-lg mx-auto mt-8">
-        <div className="border border-white/5 rounded-2xl bg-white/[0.02] p-6">
+        <div className="border border-[var(--glass-border)] rounded-2xl bg-[var(--bg-secondary)] p-6 shadow-2xl">
           <DocumentUploadStep
             entityType="student"
             onAutoFill={handleOcrAutoFill}

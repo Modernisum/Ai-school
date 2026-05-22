@@ -83,22 +83,22 @@ export default function StudentFees() {
       <div className="space-y-2">
         <header className="flex justify-between items-center">
           <h1 className="text-sm font-black text-white tracking-tight uppercase italic">
-            FEE_<span className="text-primary">LEDGER</span>
+            FEE <span className="text-primary">MANAGEMENT</span>
           </h1>
         </header>
         
         <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-1">
-          <KPITile label="Total Load" value={`₹${totals.totalAmount.toLocaleString('en-IN')}`} icon={DollarSign} color="primary" dense />
+          <KPITile label="Total Revenue" value={`₹${totals.totalAmount.toLocaleString('en-IN')}`} icon={DollarSign} color="primary" dense />
           <KPITile label="Collected" value={`₹${totals.totalPaid.toLocaleString('en-IN')}`} icon={CreditCard} color="success" dense />
-          <KPITile label="Backlog" value={`₹${totals.totalPending.toLocaleString('en-IN')}`} icon={AlertTriangle} color="warning" dense />
-          <KPITile label="C-Rate" value={`${((totals.totalPaid / totals.totalAmount) * 100).toFixed(1)}%`} icon={TrendingUp} color="accent" dense />
+          <KPITile label="Outstanding" value={`₹${totals.totalPending.toLocaleString('en-IN')}`} icon={AlertTriangle} color="warning" dense />
+          <KPITile label="Collection Rate" value={`${((totals.totalPaid / totals.totalAmount) * 100).toFixed(1)}%`} icon={TrendingUp} color="accent" dense />
         </motion.div>
         
         <GlassCard className="p-2 border border-white/5" dense>
           <div className="flex gap-1 items-center">
             <div className="relative flex-1 group">
               <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700" />
-              <input className="w-full bg-white/[0.02] border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-primary/20 transition-all font-black uppercase tracking-widest" placeholder="SCAN_NODE..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <input className="w-full bg-white/[0.02] border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-primary/20 transition-all font-black uppercase tracking-widest" placeholder="Search student fee records..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
             <div className="flex gap-1">
               <select className="bg-slate-900 border border-white/5 rounded-lg py-1.5 px-3 text-micro text-slate-500 font-black uppercase focus:outline-none" value={filterClass} onChange={e => setFilterClass(e.target.value)}>

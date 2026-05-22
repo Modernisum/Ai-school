@@ -49,4 +49,17 @@ impl crate::repository::traits::TransactionRepository for PostgresTransactionRep
             r.get::<bigdecimal::BigDecimal, &str>("amount").to_string().parse::<f64>().unwrap_or(0.0),
         )))
     }
+
+    async fn is_payment_processed(
+        &self,
+        gateway_payment_id: &str,
+    ) -> Result<bool, AppError> {
+        let row = sqlx::query("SELECT EXISTS(SELECT 1 FROM transactions WHERE gateway_payment_id = $1)")
+            .bind(gateway_payment_id)
+            .fetch_one(&self.client.pool)
+            .await?;
+        
+        let exists: bool = row.get(0);
+        Ok(exists)
+    }
 }

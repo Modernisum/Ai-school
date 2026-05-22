@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:chatra/core/network/api_service.dart';
+import 'package:chatra/core/network/api_response.dart';
 import 'classroom_event.dart';
 import 'classroom_state.dart';
 
@@ -24,10 +25,13 @@ class ClassroomBloc extends Bloc<ClassroomEvent, ClassroomState> {
     _currentStudentId = event.studentId;
     emit(ClassroomLoading());
     try {
-      // TODO: Implement actual API call when getClassrooms method is available
-      // For now, return empty list
-      await Future.delayed(const Duration(milliseconds: 500));
-      emit(ClassroomLoaded([]));
+      final result = await apiService.getClassrooms(event.studentId);
+      if (result is ApiSuccess<List<dynamic>>) {
+        final classrooms = result.data.map((e) => Map<String, dynamic>.from(e)).toList();
+        emit(ClassroomLoaded(classrooms));
+      } else {
+        emit(ClassroomLoaded([]));
+      }
     } catch (e) {
       emit(ClassroomError(e.toString()));
     }
@@ -39,10 +43,11 @@ class ClassroomBloc extends Bloc<ClassroomEvent, ClassroomState> {
   ) async {
     if (_currentSchoolId != null && _currentStudentId != null) {
       try {
-        // TODO: Implement actual API call when getClassrooms method is available
-        // For now, return empty list
-        await Future.delayed(const Duration(milliseconds: 500));
-        emit(ClassroomLoaded([]));
+        final result = await apiService.getClassrooms(_currentStudentId!);
+        if (result is ApiSuccess<List<dynamic>>) {
+          final classrooms = result.data.map((e) => Map<String, dynamic>.from(e)).toList();
+          emit(ClassroomLoaded(classrooms));
+        }
       } catch (e) {
         emit(ClassroomError(e.toString()));
       }

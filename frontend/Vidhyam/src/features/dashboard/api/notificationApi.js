@@ -5,7 +5,7 @@ export const notificationApi = baseApi.injectEndpoints({
     // Notifications (Centralized)
     getNotifications: builder.query({
       query: ({ schoolId, userId, category, unreadOnly, limit = 50, offset = 0 }) => ({
-        url: `/school/${schoolId}/notifications`,
+        url: `/school/${schoolId}/system/notifications`,
         params: {
           user_id: userId,
           ...(category && { category }),
@@ -18,27 +18,27 @@ export const notificationApi = baseApi.injectEndpoints({
     }),
     getUnreadCount: builder.query({
       query: (schoolId) => ({
-        url: `/school/${schoolId}/notifications/unread-count`,
+        url: `/school/${schoolId}/system/notifications/unread-count`,
       }),
       providesTags: ['Notifications'],
     }),
     markRead: builder.mutation({
       query: ({ schoolId, notificationId }) => ({
-        url: `/school/${schoolId}/notifications/${notificationId}/read`,
+        url: `/school/${schoolId}/system/notifications/${notificationId}/read`,
         method: 'POST',
       }),
       invalidatesTags: ['Notifications'],
     }),
     markAllRead: builder.mutation({
       query: (schoolId) => ({
-        url: `/school/${schoolId}/notifications/mark-all-read`,
+        url: `/school/${schoolId}/system/notifications/mark-all-read`,
         method: 'POST',
       }),
       invalidatesTags: ['Notifications'],
     }),
     deleteNotification: builder.mutation({
       query: ({ schoolId, notificationId }) => ({
-        url: `/school/${schoolId}/notifications/${notificationId}`,
+        url: `/school/${schoolId}/system/notifications/${notificationId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Notifications'],
@@ -58,29 +58,29 @@ export const notificationApi = baseApi.injectEndpoints({
     }),
     // Complaints
     getComplaints: builder.query({
-      query: ({ schoolId, ...params }) => ({ url: `/complains/${schoolId}`, params }),
+      query: ({ schoolId, ...params }) => ({ url: `/school/${schoolId}/operations/complains`, params }),
       providesTags: ['Complaints'],
     }),
     createComplaint: builder.mutation({
-      query: ({ schoolId, ...body }) => ({ url: `/complains/${schoolId}`, method: 'POST', body }),
+      query: ({ schoolId, ...body }) => ({ url: `/school/${schoolId}/operations/complains`, method: 'POST', body }),
       invalidatesTags: ['Complaints'],
     }),
     getComplaintByStudent: builder.query({
-      query: ({ schoolId, studentId }) => `/complains/${schoolId}/student/${studentId}`,
+      query: ({ schoolId, studentId }) => `/school/${schoolId}/operations/complains/student/${studentId}`,
       providesTags: ['Complaints'],
     }),
     // Events
     getEvents: builder.query({
-      query: (schoolId) => `/events/${schoolId}`,
+      query: (schoolId) => `/school/${schoolId}/resources/events`,
       providesTags: ['Events'],
     }),
     createEvent: builder.mutation({
-      query: ({ schoolId, ...body }) => ({ url: `/events/${schoolId}`, method: 'POST', body }),
+      query: ({ schoolId, ...body }) => ({ url: `/school/${schoolId}/resources/events`, method: 'POST', body }),
       invalidatesTags: ['Events'],
     }),
     // Awards
     getAwards: builder.query({
-      query: (schoolId) => `/award/${schoolId}`,
+      query: (schoolId) => `/school/${schoolId}/resources/awards`,
       providesTags: ['Awards'],
     }),
   }),

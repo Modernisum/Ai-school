@@ -134,43 +134,43 @@ export default function StudentAttendance() {
 
     return (
         <div className="max-w-full p-1 space-y-2 text-slate-400">
-            {/* ─── Neural Header ─── */}
+            {/* ─── Header ─── */}
             <header className="flex justify-between items-center bg-white/[0.02] p-1 rounded-lg border border-white/5">
                 <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
                         <CalendarCheck size={12} className="text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-black text-white tracking-tight uppercase italic leading-none">ATTENDANCE_REGISTRY</h1>
+                        <h1 className="text-sm font-black text-white tracking-tight uppercase italic leading-none">Attendance Registry</h1>
                         <p className="text-[7px] font-bold text-slate-700 uppercase tracking-widest mt-0.5 whitespace-nowrap">
-                            SYSTEM_TIME: {new Date().toLocaleTimeString()} • V_SYNC_OK
+                            Local Time: {new Date().toLocaleTimeString()} • Synchronized
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <StandardButton variant="secondary" size="xs" onClick={() => setShowHolidayModal(true)} icon={Clock} label="CONFIGURE_HOLIDAY" />
+                    <StandardButton variant="secondary" size="xs" onClick={() => setShowHolidayModal(true)} icon={Clock} label="Mark Holiday" />
                 </div>
             </header>
 
             {/* ─── Global Analytics ─── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
-                <KPITile label="Total Nodes" value={students.length} sub={`${regularStudents.length} REG`} icon={GraduationCap} color="primary" dense />
-                <KPITile label="Private Core" value={privateStudents.length} sub="INDEPENDENT" icon={ShieldCheck} color="accent" dense />
-                <KPITile label="Network Pulse" value={`${attPct}%`} sub={`${presentCount} LIVE`} icon={Activity} color="success" dense />
-                <KPITile label="Class Clusters" value={classes.length} sub="DATABASE_UNITS" icon={Database} color="warning" dense />
+                <KPITile label="Total Students" value={students.length} sub={`${regularStudents.length} Regular`} icon={GraduationCap} color="primary" dense />
+                <KPITile label="Private Students" value={privateStudents.length} sub="INDEPENDENT" icon={ShieldCheck} color="accent" dense />
+                <KPITile label="Attendance Rate" value={`${attPct}%`} sub={`${presentCount} Present`} icon={Activity} color="success" dense />
+                <KPITile label="Classes" value={classes.length} sub="Active Classes" icon={Database} color="warning" dense />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
-                {/* ─── Temporal Control ─── */}
+                {/* ─── Controls ─── */}
                 <aside className="lg:col-span-3 space-y-1">
                     <GlassCard className="p-0 border border-white/5 bg-white/[0.01]" dense>
                         <FormWidget
-                            title="TEMPORAL_CONTROL"
+                            title="Filter Parameters"
                             sections={[{
                                 fields: [
-                                    { name: 'date', label: 'SYSTEM_DATE', type: 'date', required: true },
-                                    { name: 'class', label: 'CLUSTER_SCAN', type: 'select', options: [
-                                        { label: 'FULL_NETWORK', value: 'All' },
+                                    { name: 'date', label: 'Date', type: 'date', required: true },
+                                    { name: 'class', label: 'Class', type: 'select', options: [
+                                        { label: 'All Classes', value: 'All' },
                                         ...classes.map(c => ({ label: c.toUpperCase(), value: c }))
                                     ], required: true }
                                 ]
@@ -189,10 +189,10 @@ export default function StudentAttendance() {
                     <div className="p-1.5 rounded bg-amber-500/5 border border-amber-500/10">
                         <div className="flex items-center gap-1.5 text-amber-500 mb-0.5">
                             <Info size={10} />
-                            <h4 className="text-[8px] font-black uppercase tracking-widest leading-none">PROTOCOL_TIP</h4>
+                            <h4 className="text-[8px] font-black uppercase tracking-widest leading-none">Quick Tip</h4>
                         </div>
                         <p className="text-[7px] font-bold text-amber-500/50 leading-tight italic uppercase">
-                            Attendance is synced in real-time. Nodes marked "Verified" are stored in the secure registry.
+                            Attendance is saved automatically in real-time. Present students are marked "Present".
                         </p>
                     </div>
                 </aside>
@@ -201,13 +201,13 @@ export default function StudentAttendance() {
                 <main className="lg:col-span-9">
                     <GlassCard className="h-[600px] flex flex-col p-0 border border-white/5 bg-white/[0.01]" dense>
                         <header className="p-1.5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                            <h3 className="text-[10px] font-black text-white uppercase italic tracking-tight">REGISTRY_NODES</h3>
+                            <h3 className="text-[10px] font-black text-white uppercase italic tracking-tight">Students List</h3>
                             <div className="relative group max-w-xs">
                                 <Search size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-700" />
                                 <input 
                                     className="w-48 bg-white/[0.02] border border-white/5 rounded py-1 pl-7 pr-2 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-primary/20 transition-all font-black uppercase tracking-widest" 
-                                    placeholder="SCAN_NODE..." value={attSearch} onChange={e => setAttSearch(e.target.value)} 
-                                />
+                                    placeholder="Search students..." value={attSearch} onChange={e => setAttSearch(e.target.value)} 
+                                    />
                             </div>
                         </header>
 
@@ -215,12 +215,12 @@ export default function StudentAttendance() {
                             {attLoading ? (
                                 <div className="py-20 flex flex-col items-center gap-2">
                                     <Loader size={20} className="animate-spin text-slate-800" />
-                                    <p className="text-micro font-black text-slate-700 uppercase tracking-widest">SCANNING_NETWORK...</p>
+                                    <p className="text-micro font-black text-slate-700 uppercase tracking-widest">Loading students...</p>
                                 </div>
                             ) : attStudents.length === 0 ? (
                                 <div className="py-20 text-center glass-card border-dashed">
                                     <Users size={24} className="mx-auto mb-2 text-slate-800" />
-                                    <p className="text-micro font-black text-slate-700 uppercase tracking-widest">ZERO_NODES_FOUND</p>
+                                    <p className="text-micro font-black text-slate-700 uppercase tracking-widest">No students found</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-1">
@@ -245,7 +245,7 @@ export default function StudentAttendance() {
                                                     disabled={marking[sid]} 
                                                     isLoading={marking[sid]}
                                                     className="!h-5 !px-1.5 !text-[7px] shrink-0"
-                                                    label={isPresent ? 'VERIFIED' : 'OFFLINE'}
+                                                    label={isPresent ? 'Present' : 'Absent'}
                                                 />
                                             </div>
                                         );

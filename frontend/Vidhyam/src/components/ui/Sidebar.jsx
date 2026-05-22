@@ -185,10 +185,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="sidebar-container relative z-50 h-screen flex flex-col flex-shrink-0 overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, rgba(10,22,40,0.95) 0%, rgba(5,10,26,0.98) 100%)',
-          backdropFilter: 'blur(32px)',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-          boxShadow: '4px 0 32px rgba(0,0,0,0.3)',
+          background: 'var(--bg-sidebar)',
+          backdropFilter: 'blur(var(--glass-blur, 24px))',
+          borderRight: '1px solid var(--glass-border)',
+          boxShadow: 'var(--panel-shadow)',
           position: isMobile ? 'fixed' : 'relative',
           left: 0,
           top: 0,
@@ -256,7 +256,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             <div key={group.section}>
               {sidebarOpen && (
                 <div className="px-2.5 mb-1">
-                  <span className="text-[9px] font-black text-slate-600 tracking-[0.15em] uppercase">{group.section}</span>
+                  <span className="text-[9px] font-black text-[var(--text-muted)] opacity-60 tracking-[0.15em] uppercase">{group.section}</span>
                 </div>
               )}
               <div className="space-y-0.5">
@@ -270,10 +270,10 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                       <NavLink
                         to={path}
                         className={`
-                          relative flex items-center gap-2.5 rounded-xl transition-all duration-200 overflow-hidden
+                          relative flex items-center gap-2.5 rounded-xl transition-all duration-200 overflow-hidden border border-transparent
                           ${active
-                            ? 'text-white bg-white/[0.06]'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                            ? 'sidebar-item-active font-semibold'
+                            : 'sidebar-item-inactive'
                           }
                           ${sidebarOpen ? 'px-2.5 py-2' : 'px-0 py-2 justify-center'}
                         `}
@@ -281,7 +281,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                         {active && (
                           <motion.div
                             layoutId="sidebar-active"
-                            className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/20 to-transparent border border-primary/20"
+                            className="absolute inset-0 rounded-xl sidebar-active-bg"
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                           />
                         )}
@@ -334,8 +334,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                                     className={`
                                       flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150
                                       ${subActive
-                                        ? 'text-[var(--primary-color)] bg-primary/5'
-                                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+                                        ? 'sidebar-subitem-active'
+                                        : 'sidebar-subitem-inactive'
                                       }
                                     `}
                                   >
@@ -357,21 +357,21 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         </nav>
 
         {/* ── Footer ── */}
-        <div className="border-t border-white/[0.04] p-2 flex-shrink-0">
+        <div className="border-t border-[var(--glass-border)] p-2 flex-shrink-0">
           {sidebarOpen ? (
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center flex-shrink-0">
-                <School size={14} className="text-slate-300" />
+                <School size={14} className="text-[var(--text-main)]" style={{ opacity: 0.8 }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-slate-300 truncate">{localStorage.getItem('schoolName') || "School"}</p>
-                <p className="text-[9px] text-slate-600">Administrator</p>
+                <p className="text-[11px] font-semibold text-[var(--text-main)] truncate">{localStorage.getItem('schoolName') || "School"}</p>
+                <p className="text-[9px] text-[var(--text-muted)]">Administrator</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center">
-                <School size={14} className="text-slate-300" />
+                <School size={14} className="text-[var(--text-main)]" style={{ opacity: 0.8 }} />
               </div>
             </div>
           )}

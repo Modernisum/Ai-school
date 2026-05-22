@@ -10,6 +10,7 @@ import GlassCard from '../../../components/ui/GlassCard';
 import FormWidget from '../../../components/ui/FormWidget';
 import DropdownWidget from '../../../components/ui/DropdownWidget';
 import StandardButton from '../../../components/ui/StandardButton';
+import PageHeader from '../../../components/ui/PageHeader';
 
 const { useGetClassesQuery } = academicApi;
 const API = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
@@ -77,7 +78,7 @@ export default function TimetableGenerator() {
     try {
       const token = localStorage.getItem('accessToken');
       const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
-      const res = await fetch(`${API}/school/${schoolId}/timetable`, { headers });
+      const res = await fetch(`${API}/school/${schoolId}/academic/timetable`, { headers });
       const data = await res.json();
       if (data.success) {
         setTimetables(Array.isArray(data.data) ? data.data : []);
@@ -96,7 +97,7 @@ export default function TimetableGenerator() {
     try {
       const token = localStorage.getItem('accessToken');
       const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
-      const res = await fetch(`${API}/school/${schoolId}/timetable/${configId}`, { method: 'DELETE', headers });
+      const res = await fetch(`${API}/school/${schoolId}/academic/timetable/${configId}`, { method: 'DELETE', headers });
       const data = await res.json();
       if (data.success) {
         fetchTimetables();
@@ -164,7 +165,7 @@ export default function TimetableGenerator() {
 
     try {
       const token = localStorage.getItem('accessToken');
-      const res = await fetch(`${API}/school/${schoolId}/timetable/generate`, {
+      const res = await fetch(`${API}/school/${schoolId}/academic/timetable/generate`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -196,7 +197,7 @@ export default function TimetableGenerator() {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
       };
-      const res = await fetch(`${API}/school/${schoolId}/timetable/${configId}/approve`, { 
+      const res = await fetch(`${API}/school/${schoolId}/academic/timetable/${configId}/approve`, { 
         method: 'POST', 
         headers 
       });
@@ -215,7 +216,7 @@ export default function TimetableGenerator() {
     try {
       const token = localStorage.getItem('accessToken');
       const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
-      const res = await fetch(`${API}/school/${schoolId}/timetable/${config.config_id}`, { headers });
+      const res = await fetch(`${API}/school/${schoolId}/academic/timetable/${config.config_id}`, { headers });
       const data = await res.json();
       if (data.success) {
         setViewingTimetable(data.data);
@@ -237,8 +238,8 @@ export default function TimetableGenerator() {
       <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead>
-            <tr className="bg-white/5 text-slate-500">
-              <th className="px-4 py-2 border-b border-white/10 font-bold uppercase tracking-wider text-micro">DAY/PER</th>
+            <tr className="bg-white/5 text-[var(--text-muted)]">
+              <th className="px-4 py-2 border-b border-white/10 font-bold uppercase tracking-wider text-micro">Day / Period</th>
               {Array.from({ length: periods }).map((_, i) => (
                 <th key={i} className="px-4 py-2 border-b border-white/10 font-bold uppercase tracking-wider text-micro text-center">P{i + 1}</th>
               ))}
@@ -247,7 +248,7 @@ export default function TimetableGenerator() {
           <tbody>
             {days.map(dayNum => (
               <tr key={dayNum} className="border-b border-white/5 hover:bg-white/[0.01] transition-colors">
-                <td className="px-4 py-2 border-r border-white/5 font-black text-slate-600 bg-white/[0.02] text-micro uppercase tracking-widest">
+                <td className="px-4 py-2 border-r border-white/5 font-semibold text-[var(--text-muted)] bg-white/[0.02] text-micro uppercase tracking-wider">
                   {DAYS_MAP[dayNum]?.substring(0, 3) || `DAY ${dayNum}`}
                 </td>
                 {Array.from({ length: periods }).map((_, p) => {
@@ -257,11 +258,11 @@ export default function TimetableGenerator() {
                     <td key={periodNum} className="px-2 py-1 border-r border-white/5 text-center min-w-[100px] align-middle">
                       {slot ? (
                         <div className="bg-primary/5 border border-primary/10 rounded-lg p-1.5 flex flex-col justify-center items-center">
-                          <span className="font-black text-primary text-micro uppercase tracking-wider truncate max-w-full leading-none">{slot.subject}</span>
-                          <span className="text-micro font-bold text-slate-700 mt-0.5 truncate max-w-full opacity-80 leading-none">{slot.teacher_name}</span>
+                          <span className="font-semibold text-primary text-micro uppercase tracking-wider truncate max-w-full leading-none">{slot.subject}</span>
+                          <span className="text-micro font-medium text-[var(--text-muted)] mt-0.5 truncate max-w-full opacity-80 leading-none">{slot.teacher_name}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-900 text-micro font-black uppercase tracking-widest opacity-20">---</span>
+                        <span className="text-[var(--text-muted)] opacity-20 text-micro font-medium">---</span>
                       )}
                     </td>
                   );
@@ -278,24 +279,20 @@ export default function TimetableGenerator() {
     <div className="max-w-full p-1 space-y-2 text-slate-400">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
-                  <Calendar size={18} className="text-primary" />
-              </div>
-              <div>
-                  <h1 className="text-sm font-black text-white tracking-tight uppercase italic">TIMETABLE_ENGINE</h1>
-                  <p className="text-micro font-medium text-slate-600 uppercase tracking-[0.2em] mt-0.5">Automated scheduling hub</p>
-              </div>
-          </div>
-          <StandardButton
-            onClick={() => setShowGenerateModal(true)}
-            icon={Settings}
-            size="xs"
-          >
-            GENERATE_TABLE
-          </StandardButton>
-      </div>
+      <PageHeader
+        title="Timetable"
+        accentTitle="Manager"
+        subtitle="Automated scheduling hub & allocations"
+        icon={Calendar}
+        actions={[
+          {
+            label: "Generate Timetable",
+            onClick: () => setShowGenerateModal(true),
+            icon: Settings,
+            variant: "primary"
+          }
+        ]}
+      />
 
       {error && (
         <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl text-accent flex items-center gap-3 mb-6 animate-pulse">
@@ -311,28 +308,28 @@ export default function TimetableGenerator() {
       )}
 
       {/* List */}
-      <GlassCard className="p-0 overflow-hidden border border-white/5" dense>
+      <GlassCard className="p-0 overflow-hidden border border-[var(--glass-border)]" dense>
         {loading ? (
           <div className="py-20 flex flex-col items-center gap-4">
             <Loader className="animate-spin text-primary" size={32} />
-            <p className="text-xs font-black uppercase tracking-widest text-slate-500">Accessing Database...</p>
+            <p className="text-xs font-semibold tracking-wider text-[var(--text-muted)]">Accessing Database...</p>
           </div>
         ) : timetables.length === 0 ? (
-          <div className="text-center py-20 text-slate-500">
+          <div className="text-center py-20 text-[var(--text-muted)]">
             <Database size={48} className="mx-auto mb-4 opacity-10" />
-            <p className="text-lg font-bold text-slate-400 mb-1">No Timetables Found</p>
+            <p className="text-lg font-bold text-[var(--text-main)] mb-1">No Timetables Found</p>
             <p className="text-sm">Click "Generate Timetable" to build a new schedule.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-white/[0.02] border-b border-white/5">
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-slate-600">CLUSTER</th>
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-slate-600">STATUS</th>
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-slate-600">SEASON</th>
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-slate-600">GEN_DATE</th>
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-slate-600 text-right">ACTIONS</th>
+                <tr className="bg-white/[0.02] border-b border-[var(--glass-border)]">
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Class</th>
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Status</th>
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Season</th>
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Date Generated</th>
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -340,23 +337,23 @@ export default function TimetableGenerator() {
                   <tr key={idx} className="hover:bg-white/[0.02] transition-all group">
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary border border-primary/20 text-micro font-black">
+                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary border border-primary/20 text-micro font-semibold">
                           {t.class_name?.[0]?.toUpperCase() || 'C'}
                         </div>
-                        <span className="font-bold text-white tracking-tight text-micro uppercase italic">{t.class_name}</span>
+                        <span className="font-semibold text-[var(--text-main)] tracking-tight text-micro uppercase">{t.class_name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`px-1.5 py-0.5 rounded text-micro font-black uppercase tracking-wider border ${
+                      <span className={`px-1.5 py-0.5 rounded text-micro font-semibold uppercase tracking-wider border ${
                         t.status === 'APPROVED' ? 'bg-success/10 text-success border-success/20' : 'bg-primary/10 text-primary border-primary/20'
                       }`}>
-                        {t.status || 'PROPOSAL'}
+                        {t.status || 'Proposal'}
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <span className="text-micro font-medium text-slate-600 capitalize bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{t.season || 'N/A'}</span>
+                      <span className="text-micro font-medium text-[var(--text-muted)] capitalize bg-white/5 px-1.5 py-0.5 rounded border border-[var(--glass-border)]">{t.season || 'N/A'}</span>
                     </td>
-                    <td className="px-4 py-2 text-micro font-medium text-slate-700">{new Date(t.created_at || Date.now()).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 text-micro font-medium text-[var(--text-muted)]">{new Date(t.created_at || Date.now()).toLocaleDateString()}</td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {t.status !== 'APPROVED' && (
@@ -570,36 +567,36 @@ export default function TimetableGenerator() {
           <div className="fixed inset-0 z-50 flex justify-center items-center py-10 px-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setViewingTimetable(null)} />
             <motion.div initial={{ scale: 0.98, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.98, opacity: 0, y: 10 }} 
-              className="relative w-full max-w-7xl bg-slate-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[95vh]">
+              className="relative w-full max-w-7xl bg-[var(--bg-secondary)] rounded-2xl shadow-2xl border border-[var(--glass-border)] overflow-hidden flex flex-col max-h-[95vh]">
               
-              <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-800/50 backdrop-blur-xl">
+              <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)]/50 backdrop-blur-xl">
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-tight uppercase italic">SYSTEM_PROPOSAL: {viewingTimetable.class_name}</h2>
+                  <h2 className="text-sm font-bold text-[var(--text-main)] tracking-tight">Timetable Draft: {viewingTimetable.class_name}</h2>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-micro font-black text-primary px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded uppercase tracking-widest">ID: {viewingTimetable.config_id}</span>
-                    <span className="text-micro font-black text-slate-600 uppercase tracking-widest flex items-center gap-1">
+                    <span className="text-micro font-semibold text-primary px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded uppercase tracking-wider">ID: {viewingTimetable.config_id}</span>
+                    <span className="text-micro font-medium text-[var(--text-muted)] tracking-wider flex items-center gap-1">
                       <Clock size={10} /> {viewingTimetable.season} | {viewingTimetable.start_time} - {viewingTimetable.end_time}
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setViewingTimetable(null)} className="p-1.5 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
+                <button onClick={() => setViewingTimetable(null)} className="p-1.5 bg-white/5 hover:bg-white/10 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all">
                   <X size={18} />
                 </button>
               </div>
               
-              <div className="flex-1 overflow-auto bg-slate-950/50 p-2">
+              <div className="flex-1 overflow-auto bg-[var(--bg-main)]/50 p-2">
                 {renderTimetableGrid()}
               </div>
-
-              <div className="p-3 bg-slate-900/80 border-t border-white/10 flex justify-between items-center">
-                <p className="text-micro text-slate-700 font-medium italic">VIDHYAM_AI_SCHEDULER_V2.4</p>
+ 
+              <div className="p-3 bg-[var(--bg-secondary)]/80 border-t border-[var(--glass-border)] flex justify-between items-center">
+                <p className="text-micro text-[var(--text-muted)] font-medium">Vidhyam Academic Scheduler</p>
                 <div className="flex gap-2">
                    <StandardButton 
                     variant="ghost" 
                     size="xs"
                     onClick={() => setViewingTimetable(null)}
                    >
-                     CLOSE
+                     Close
                    </StandardButton>
                    <StandardButton 
                     variant="success"
@@ -607,7 +604,7 @@ export default function TimetableGenerator() {
                     onClick={() => { approveTimetable(viewingTimetable.config_id); setViewingTimetable(null); }}
                     className="px-4"
                    >
-                     APPROVE_PROPOSAL
+                     Approve Timetable
                    </StandardButton>
                 </div>
               </div>

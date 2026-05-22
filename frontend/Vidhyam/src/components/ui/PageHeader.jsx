@@ -32,12 +32,12 @@ const PageHeader = ({
           </motion.div>
         )}
         <div>
-          <h1 className="text-xl font-black text-white tracking-tighter italic uppercase leading-none">
-            {title} {accentTitle && <span className={iconColor}>{accentTitle}</span>}
+          <h1 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none">
+            {title} {accentTitle && <span className="text-[var(--primary-color)]">{accentTitle}</span>}
           </h1>
           {subtitle && (
-            <p className="text-micro font-black text-slate-500 uppercase tracking-[0.2em] mt-0.5 flex items-center gap-2">
-              <Zap size={8} className="text-blue-500 animate-pulse" /> {subtitle}
+            <p className="text-micro font-medium text-[var(--text-muted)] tracking-wide mt-1 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-[var(--primary-color)]" /> {subtitle}
             </p>
           )}
         </div>

@@ -604,7 +604,7 @@ impl ResourceRepository for PostgresResourceRepository {
             .collect())
     }
 
-async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError> {
+    async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
         // Check if category already exists for this school
@@ -632,6 +632,16 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
         Ok(json!({
             "name": name
         }))
+    }
+
+    async fn delete_space_category(&self, school_id: &str, name: &str) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query("DELETE FROM space_categories WHERE school_id = $1 AND name = $2")
+            .bind(school_id)
+            .bind(name)
+            .execute(&mut *conn)
+            .await?;
+        Ok(())
     }
 
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError> {
@@ -767,7 +777,7 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
 
             // 4. Record history
             sqlx::query(
-                "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_name, notes)
+                "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_id, notes)
                  VALUES ($1, $2, 'BORROW', $3, $4, $5)"
             )
             .bind(school_id).bind(&real_material_id).bind(qty).bind(space_name).bind(format!("Borrowed by Space: {}", space_name))
@@ -811,7 +821,7 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
 
         // 4. Record history
         sqlx::query(
-            "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_name, notes)
+            "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_id, notes)
              VALUES ($1, $2, 'RETURN', $3, $4, $5)"
         )
         .bind(school_id).bind(&material_id).bind(quantity).bind(space_name).bind(format!("Returned from Space: {}", space_name))
@@ -858,7 +868,7 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
              FROM space_materials m
              LEFT JOIN space_material_requirements req
                ON req.school_id = m.school_id
-              AND req.space_id = m.space_id
+              AND req.space_name = m.space_name
               AND req.material_name = m.material_name
              WHERE m.school_id = $1 AND m.space_name = $2
              ORDER BY m.material_name ASC"
@@ -1109,7 +1119,7 @@ async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Val
 
         // 7. Record history
         sqlx::query(
-            "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_name, notes)
+            "INSERT INTO material_history (school_id, material_id, action_type, quantity, space_id, notes)
              VALUES ($1, $2, 'TRANSFER', $3, $4, $5)"
         )
         .bind(school_id)

@@ -37,7 +37,7 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/syllabus/:subjectId", get(syllabus_calendar::get_syllabus))
         .route("/syllabus/:subjectId/plot", post(syllabus_calendar::plot_annual))
         .route("/syllabus/:subjectId/micro-plan", post(syllabus_calendar::micro_plan_periods))
-        .route("/syllabus/:chapterId", axum::routing::patch(syllabus_calendar::update_chapter_plan))
+        .route("/syllabus/chapter/:chapterId", axum::routing::patch(syllabus_calendar::update_chapter_plan))
         .route("/syllabus/quarter/:quarter", get(syllabus_calendar::quarter_report))
         // Period Plans
         .route("/period-plans/today", get(period_plan::get_daily_todo))

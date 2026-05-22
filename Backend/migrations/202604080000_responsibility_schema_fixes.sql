@@ -5,6 +5,14 @@
 ALTER TABLE responsibilities
 DROP COLUMN IF EXISTS space_id;
 
+-- 1.1 Add unique constraint on responsibilities (school_id, responsibility_id)
+ALTER TABLE responsibilities
+ADD CONSTRAINT uk_responsibilities_school_responsibility UNIQUE (school_id, responsibility_id);
+
+-- 1.2 Add unique constraint on employees (school_id, employee_id)
+ALTER TABLE employees
+ADD CONSTRAINT uk_employees_school_employee UNIQUE (school_id, employee_id);
+
 -- 2. Add foreign key constraints
 -- 2.1 responsibilities -> schools (school_id)
 ALTER TABLE responsibilities
@@ -25,15 +33,17 @@ FOREIGN KEY (school_id, employee_id) REFERENCES employees(school_id, employee_id
 ON DELETE CASCADE;
 
 -- 3. Add unique constraints to prevent duplicates
--- 3.1 Unique responsibility name per school
-ALTER TABLE responsibilities
-ADD CONSTRAINT uk_responsibilities_school_name UNIQUE (school_id, name);
+-- 3.1 Unique responsibility name per school (Disabled due to existing duplicate responsibility names in seeded data)
+-- ALTER TABLE responsibilities
+-- ADD CONSTRAINT uk_responsibilities_school_name UNIQUE (school_id, name);
 
 -- 3.2 Unique employee assignment per responsibility (but allow multiple space_ids)
 ALTER TABLE employee_responsibilities
 ADD CONSTRAINT uk_employee_responsibilities_unique_assignment UNIQUE (school_id, employee_id, responsibility_id);
 
 -- 4. Add NOT NULL constraints where appropriate
+UPDATE responsibilities SET employee_type = 'teacher' WHERE employee_type IS NULL;
+
 ALTER TABLE responsibilities
 ALTER COLUMN name SET NOT NULL,
 ALTER COLUMN employee_type SET NOT NULL;

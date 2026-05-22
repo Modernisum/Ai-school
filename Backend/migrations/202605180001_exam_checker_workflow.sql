@@ -46,6 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_esp_school ON exam_submission_pages(school_id);
 
 ALTER TABLE exam_submission_pages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS exam_submission_pages_school_isolation ON exam_submission_pages;
 CREATE POLICY exam_submission_pages_school_isolation ON exam_submission_pages
     USING (school_id = current_setting('app.current_school_id'));
 

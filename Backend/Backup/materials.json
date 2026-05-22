@@ -3253,6 +3253,18 @@
   },
   {
     "attachment_path": null,
+    "description": null,
+    "extra_unit": 100,
+    "id": "mat-chair",
+    "name": "Chair",
+    "need_unit": 0,
+    "quantity": 100,
+    "school_id": "test-school",
+    "unit": "pcs",
+    "unit_price": 15.0
+  },
+  {
+    "attachment_path": null,
     "description": "",
     "extra_unit": 0,
     "id": "MAT-336626",

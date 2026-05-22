@@ -10,7 +10,7 @@ ADD COLUMN IF NOT EXISTS submitted_via VARCHAR(20),
 ADD COLUMN IF NOT EXISTS emergency_contact VARCHAR,
 ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]'::JSONB,
 ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
-ADD COLUMN IF NOT EXISTS total_days INTEGER GENERATED ALWAYS AS (EXTRACT(DAY FROM (to_date - from_date)) + 1) STORED;
+ADD COLUMN IF NOT EXISTS total_days INTEGER GENERATED ALWAYS AS ((to_date - from_date) + 1) STORED;
 
 -- 2. Create leave_quotas table
 CREATE TABLE IF NOT EXISTS leave_quotas (
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS leave_quotas (
 -- 3. Create conditional_approvals table
 CREATE TABLE IF NOT EXISTS conditional_approvals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    leave_id UUID NOT NULL,
+    leave_id VARCHAR NOT NULL,
     conditions JSONB NOT NULL DEFAULT '[]'::JSONB,
     response_deadline TIMESTAMPTZ NOT NULL,
     auto_reject BOOLEAN DEFAULT TRUE,
@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS conditional_approvals (
 -- 4. Create responsibility_coverage table
 CREATE TABLE IF NOT EXISTS responsibility_coverage (
     coverage_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    leave_id UUID NOT NULL,
+    leave_id VARCHAR NOT NULL,
+    school_id VARCHAR NOT NULL,
     original_employee_id VARCHAR NOT NULL,
     covering_employee_id VARCHAR NOT NULL,
     responsibility_id VARCHAR NOT NULL,
@@ -99,7 +100,7 @@ CREATE TABLE IF NOT EXISTS conditional_approval_templates (
 -- 7. Create workload_assessment table
 CREATE TABLE IF NOT EXISTS workload_assessment (
     assessment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    leave_id UUID NOT NULL,
+    leave_id VARCHAR NOT NULL,
     school_id VARCHAR NOT NULL,
     employee_id VARCHAR NOT NULL,
     assessment_date DATE NOT NULL,

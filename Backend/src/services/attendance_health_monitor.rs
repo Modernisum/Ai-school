@@ -28,7 +28,7 @@ impl AttendanceHealthMonitor {
         let db_check = self.check_database_connectivity(school_id).await;
         health_status["checks"]["database"] = json!({
             "status": if db_check.is_ok() { "healthy" } else { "unhealthy" },
-            "message": if db_check.is_ok() { "Connected successfully".to_string() } else { db_check.err().unwrap().to_string() },
+            "message": if db_check.is_ok() { "Connected successfully".to_string() } else { db_check.err().map(|e| e.to_string()).unwrap_or_default() },
             "timestamp": Utc::now().to_rfc3339()
         });
 
@@ -36,7 +36,7 @@ impl AttendanceHealthMonitor {
         let job_check = self.check_background_jobs(school_id).await;
         health_status["checks"]["background_jobs"] = json!({
             "status": if job_check.is_ok() { "healthy" } else { "unhealthy" },
-            "message": if job_check.is_ok() { "Jobs running normally".to_string() } else { job_check.err().unwrap().to_string() },
+            "message": if job_check.is_ok() { "Jobs running normally".to_string() } else { job_check.err().map(|e| e.to_string()).unwrap_or_default() },
             "timestamp": Utc::now().to_rfc3339()
         });
 
@@ -44,7 +44,7 @@ impl AttendanceHealthMonitor {
         let automation_check = self.check_recent_automation_runs(school_id).await;
         health_status["checks"]["automation"] = json!({
             "status": if automation_check.is_ok() { "healthy" } else { "unhealthy" },
-            "message": if automation_check.is_ok() { "Automation running normally".to_string() } else { automation_check.err().unwrap().to_string() },
+            "message": if automation_check.is_ok() { "Automation running normally".to_string() } else { automation_check.err().map(|e| e.to_string()).unwrap_or_default() },
             "timestamp": Utc::now().to_rfc3339()
         });
 
@@ -52,7 +52,7 @@ impl AttendanceHealthMonitor {
         let notification_check = self.check_notification_service(school_id).await;
         health_status["checks"]["notifications"] = json!({
             "status": if notification_check.is_ok() { "healthy" } else { "unhealthy" },
-            "message": if notification_check.is_ok() { "Notification service available".to_string() } else { notification_check.err().unwrap().to_string() },
+            "message": if notification_check.is_ok() { "Notification service available".to_string() } else { notification_check.err().map(|e| e.to_string()).unwrap_or_default() },
             "timestamp": Utc::now().to_rfc3339()
         });
 
@@ -60,12 +60,12 @@ impl AttendanceHealthMonitor {
         let storage_check = self.check_storage_availability(school_id).await;
         health_status["checks"]["storage"] = json!({
             "status": if storage_check.is_ok() { "healthy" } else { "unhealthy" },
-            "message": if storage_check.is_ok() { "Storage accessible".to_string() } else { storage_check.err().unwrap().to_string() },
+            "message": if storage_check.is_ok() { "Storage accessible".to_string() } else { storage_check.err().map(|e| e.to_string()).unwrap_or_default() },
             "timestamp": Utc::now().to_rfc3339()
         });
 
         // Determine overall status
-        let checks = health_status["checks"].as_object().unwrap();
+        let checks = health_status["checks"].as_object().cloned().unwrap_or_default();
         let unhealthy_count = checks.values()
             .filter(|check| check["status"] == "unhealthy")
             .count();
@@ -398,19 +398,27 @@ impl AttendanceHealthMonitor {
                 match health_monitor.check_system_health(&school_id).await {
                     Ok(health_status) => {
                         let status = health_status["status"].as_str().unwrap_or("unknown");
-                        println!("[Health Monitor] School {} health status: {}", school_id, status);
+                        tracing::info!("School {} health status: {}", school_id, status);
                         
                         // Log the health check
                         let _ = health_monitor.log_health_check(&school_id, &health_status).await;
                         
                         // If status is critical, send alert
                         if status == "critical" {
-                            println!("[Health Monitor] CRITICAL: School {} system health is critical!", school_id);
-                            // TODO: Send alert notification
+                            tracing::error!("CRITICAL: School {} system health is critical!", school_id);
+                            let _ = health_monitor.repos.notification.create(
+                                &school_id,
+                                None,
+                                "system_health",
+                                "critical",
+                                "System Health Critical",
+                                &format!("System health is critical for school {}", school_id),
+                                health_status.clone(),
+                            ).await;
                         }
                     }
                     Err(e) => {
-                        eprintln!("[Health Monitor] Error checking health for school {}: {}", school_id, e);
+                        tracing::error!("Error checking health for school {}: {}", school_id, e);
                     }
                 }
             }

@@ -5,28 +5,7 @@ use serde_json::{json, Value};
 use chrono::{Utc, Datelike};
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub enum ResponsibilityNotificationType {
-    Assigned,
-    Removed,
-    Updated,
-    SpaceAssigned,
-    SpaceRemoved,
-    BulkUpdate,
-}
-
-impl ResponsibilityNotificationType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ResponsibilityNotificationType::Assigned => "responsibility_assigned",
-            ResponsibilityNotificationType::Removed => "responsibility_removed",
-            ResponsibilityNotificationType::Updated => "responsibility_updated",
-            ResponsibilityNotificationType::SpaceAssigned => "space_assigned",
-            ResponsibilityNotificationType::SpaceRemoved => "space_removed",
-            ResponsibilityNotificationType::BulkUpdate => "bulk_update",
-        }
-    }
-}
+use super::ResponsibilityNotificationType;
 
 pub struct AssignmentNotifier {
     repos: Arc<Repositories>,

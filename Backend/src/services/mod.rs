@@ -149,7 +149,8 @@ pub fn initialize_services(
     let feedback_service = Arc::new(FeedbackService::new(repos.clone()));
     let plagiarism_service = Arc::new(PlagiarismService::new(repos.clone()));
     let gradebook_service = Arc::new(GradebookService::new(repos.clone()));
-    let admin_automation_service = Arc::new(AdminAutomationService::new(repos.clone()));
+    let email_service = Arc::new(crate::logic::EmailService::new());
+    let admin_automation_service = Arc::new(AdminAutomationService::new(repos.clone(), email_service.clone()));
     let content_generation_service = Arc::new(ContentGenerationServiceImpl::new(repos.clone(), ai_service.clone()));
     
     // Create Material Monitor for shortage alerts

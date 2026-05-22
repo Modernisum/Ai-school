@@ -23,4 +23,9 @@ pub trait TransactionRepository: Send + Sync {
         gateway_payment_id: &str,
         gateway_signature: &str,
     ) -> Result<Option<(String, String, f64)>, AppError>;
+
+    async fn is_payment_processed(
+        &self,
+        gateway_payment_id: &str,
+    ) -> Result<bool, AppError>;
 }

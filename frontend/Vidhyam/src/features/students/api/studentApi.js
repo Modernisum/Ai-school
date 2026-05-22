@@ -90,12 +90,12 @@ export const studentApi = createApi({
     }),
     // Complaints
     getStudentComplaints: builder.query({
-      query: ({ schoolId, studentId }) => `/complains/${schoolId}/student/${studentId}`,
+      query: ({ schoolId, studentId }) => `/school/${schoolId}/operations/complains/student/${studentId}`,
       providesTags: (r, e, a) => [{ type: 'Student', id: a.studentId }],
     }),
     // Documents
     getStudentDocuments: builder.query({
-      query: (schoolId) => `/documentbox/${schoolId}`,
+      query: (schoolId) => `/school/${schoolId}/resources/documents/box`,
       providesTags: ['Student'],
     }),
     uploadStudentDocument: builder.mutation({

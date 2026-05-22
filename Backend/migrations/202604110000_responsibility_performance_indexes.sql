@@ -1,5 +1,5 @@
--- Migration: 202604110000_responsibility_performance_indexes.sql
--- Description: Add performance indexes for responsibility system queries (Phase 7 - Code Quality & Performance)
+-- 0. Enable pg_trgm extension if not already enabled (required for trigram indexes)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- 1. Composite index for filtering responsibilities by school and employee_type
 -- This optimizes the common query: SELECT * FROM responsibilities WHERE school_id = ? AND employee_type = ?
@@ -38,20 +38,7 @@ BEGIN
     END IF;
 END $$;
 
--- 7. Index for scheduled_reports table (added in Phase 6)
-DO $$
-BEGIN
-    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'scheduled_reports') THEN
-        CREATE INDEX IF NOT EXISTS idx_scheduled_reports_school_id 
-        ON scheduled_reports(school_id);
-        
-        CREATE INDEX IF NOT EXISTS idx_scheduled_reports_report_type 
-        ON scheduled_reports(report_type);
-        
-        CREATE INDEX IF NOT EXISTS idx_scheduled_reports_schedule_next_run 
-        ON scheduled_reports(schedule_next_run);
-    END IF;
-END $$;
+-- 7. Index for scheduled_reports table (removed as they are already created and schedule_next_run does not exist)
 
 -- 8. Index for analytics queries on monthly_price and student_fee
 -- Helps with aggregation queries in analytics
@@ -60,9 +47,6 @@ ON responsibilities(monthly_price);
 
 CREATE INDEX IF NOT EXISTS idx_responsibilities_student_fee 
 ON responsibilities(student_fee);
-
--- 9. Enable pg_trgm extension if not already enabled (required for trigram indexes)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- 10. Add comment for documentation
 COMMENT ON INDEX idx_responsibilities_school_employee_type IS 'Optimizes filtering responsibilities by school and employee type';

@@ -70,9 +70,9 @@ function AttendancePulse({ userId, schoolId }) {
     const attendancePct = attData?.summary?.attendance_percentage || 0;
 
     return (
-        <div className="space-y-4 mt-6 pt-6 border-t border-white/5">
+        <div className="space-y-4 mt-6 pt-6 border-t border-[var(--glass-border)]">
             <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest flex items-center gap-2">
                     <Activity size={14} className="text-primary" /> Attendance Pulse
                 </h4>
                 <span className={`text-[10px] font-black uppercase ${attendancePct >= 75 ? 'text-success' : 'text-accent'}`}>
@@ -115,7 +115,7 @@ function ProfileFeeSummary({ studentId, schoolId }) {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-sm font-black text-[var(--text-main)] uppercase tracking-widest flex items-center gap-2">
                   <DollarSign size={16} className="text-success" /> Financial Pulse
               </h4>
               <span className="text-[10px] bg-success/10 text-success px-3 py-1 rounded-full border border-success/20 font-black uppercase">Verified</span>
@@ -129,7 +129,7 @@ function ProfileFeeSummary({ studentId, schoolId }) {
                     ['Discounts', fmtMoney(profile.discount), 'text-warning', 'bg-warning/5', 'border-warning/10'],
                 ].map(([label, val, color, bg, border]) => (
                     <div key={label} className={`${bg} ${border} border rounded-2xl p-4 transition-all hover:scale-105`}>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mb-1">{label}</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-tighter mb-1">{label}</p>
                         <p className={`text-lg font-black ${color}`}>{val}</p>
                     </div>
                 ))}
@@ -138,20 +138,20 @@ function ProfileFeeSummary({ studentId, schoolId }) {
             <GlassCard className="p-5 border-primary/20 bg-gradient-to-br from-primary/10 to-transparent">
                 <div className="flex justify-between items-end">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Net Liability</p>
-                        <p className="text-2xl font-black text-white">{fmtMoney(profile.totalAmount)}</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Net Liability</p>
+                        <p className="text-2xl font-black text-[var(--text-main)]">{fmtMoney(profile.totalAmount)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-[10px] font-black text-accent uppercase tracking-widest">Pending</p>
                         <p className="text-xl font-black text-accent">{fmtMoney(profile.totalPending)}</p>
                     </div>
                 </div>
-                <div className="mt-4 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="mt-4 h-1.5 w-full bg-[var(--bg-main)] rounded-full overflow-hidden">
                    <motion.div 
                      initial={{ width: 0 }} animate={{ width: `${Math.min(100, (profile.totalPaid / (profile.totalAmount || 1)) * 100)}%` }}
                      className="h-full bg-success shadow-[0_0_10px_var(--success-color)]" />
                 </div>
-                <p className="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-widest text-center">Settled: {fmtMoney(profile.totalPaid)}</p>
+                <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest text-center">Settled: {fmtMoney(profile.totalPaid)}</p>
             </GlassCard>
         </div>
     );
@@ -184,9 +184,9 @@ export default function StudentManagement() {
     const handleDeleteStudent = async (sid) => {
         try {
             const res = await deleteStudent({ schoolId, studentId: sid }).unwrap();
-            if (res.success) showToast('success', 'Node Decommissioned');
+            if (res.success) showToast('success', 'Student Deleted');
             else throw new Error(res.message);
-        } catch (e) { showToast('error', 'Operation Restricted'); }
+        } catch (e) { showToast('error', 'Operation Failed'); }
         finally { setConfirmAction(null); }
     };
 
@@ -205,28 +205,28 @@ export default function StudentManagement() {
 
     const columns = [
         { 
-            header: 'IDX', 
+            header: 'Index', 
             key: 'index', 
             width: '60px',
-            render: (_, row) => <span className="text-micro font-mono text-slate-800">{String(students.indexOf(row) + 1).padStart(2, '0')}</span>
+            render: (_, row) => <span className="text-micro font-mono text-[var(--text-muted)]">{String(students.indexOf(row) + 1).padStart(2, '0')}</span>
         },
         { 
-            header: 'ENTITY_IDENTIFIER', 
+            header: 'Student Name', 
             key: 'name',
             render: (val, row) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-slate-900 border border-white/5 flex items-center justify-center text-primary text-[10px] font-black shrink-0 shadow-inner group-hover:border-primary/30 transition-all overflow-hidden">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--bg-main)] border border-[var(--glass-border)] flex items-center justify-center text-primary text-[10px] font-black shrink-0 shadow-inner group-hover:border-primary/30 transition-all overflow-hidden">
                         {row.profileImageUrl ? <img src={row.profileImageUrl} alt="" className="w-full h-full object-cover" /> : (row.studentName || val || 'S')[0].toUpperCase()}
                     </div>
                     <div className="truncate">
-                        <p className="text-[11px] font-black text-white leading-none uppercase tracking-tight italic truncate group-hover:text-primary transition-colors">{row.studentName || val || 'UNRESOLVED'}</p>
-                        <p className="text-[8px] font-bold text-slate-700 uppercase tracking-tighter leading-none mt-1">{row.gender || '???'}</p>
+                        <p className="text-[11px] font-black text-[var(--text-main)] leading-none uppercase tracking-tight italic truncate group-hover:text-primary transition-colors">{row.studentName || val || 'UNRESOLVED'}</p>
+                        <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-tighter leading-none mt-1">{row.gender || '???'}</p>
                     </div>
                 </div>
             )
         },
         { 
-            header: 'SERIAL_PK', 
+            header: 'Student ID', 
             key: 'studentId',
             render: (val, row) => (
                 <span className="text-[10px] font-black text-primary/80 font-mono tracking-tighter bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
@@ -235,10 +235,10 @@ export default function StudentManagement() {
             )
         },
         { 
-            header: 'CLUSTER_NODE', 
+            header: 'Class', 
             key: 'className',
             render: (val, row) => (
-                <span className="text-[10px] font-black text-slate-600 bg-white/5 border border-white/5 px-2 py-1 rounded uppercase tracking-widest">
+                <span className="text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-main)] border border-[var(--glass-border)] px-2 py-1 rounded uppercase tracking-widest">
                     {val || row.classId || 'NULL'}
                 </span>
             )
@@ -260,9 +260,9 @@ export default function StudentManagement() {
                 <div className="space-y-4">
                     <header className="flex justify-between items-center px-1">
                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-                            <h1 className="text-sm font-black text-white tracking-tight uppercase italic flex items-center gap-2">
+                            <h1 className="text-sm font-black text-[var(--text-main)] tracking-tight uppercase italic flex items-center gap-2">
                                 <Database size={16} className="text-primary" />
-                                STUDENT_<span className="text-primary">REGISTRY</span>
+                                STUDENT <span className="text-primary">REGISTRY</span>
                             </h1>
                         </motion.div>
                         <div className="flex items-center gap-1.5">
@@ -278,7 +278,7 @@ export default function StudentManagement() {
                               icon={Plus}
                               size="xs"
                             >
-                              INITIALIZE_NODE
+                              ADD STUDENT
                             </StandardButton>
                         </div>
                     </header>
@@ -290,8 +290,8 @@ export default function StudentManagement() {
                         kpis={[
                             { label: "Total Active", value: students.length, icon: GraduationCap, color: "primary" },
                             { label: "Private", value: privateStudents.length, icon: ShieldCheck, color: "accent" },
-                            { label: "Clusters", value: classes.length, icon: Layers, color: "warning" },
-                            { label: "System Load", value: "Optimal", icon: Zap, color: "success" }
+                            { label: "Classes", value: classes.length, icon: Layers, color: "warning" },
+                            { label: "Status", value: "Optimal", icon: ShieldCheck, color: "success" }
                         ]}
                     />
                 </div>
@@ -299,7 +299,7 @@ export default function StudentManagement() {
                 {/* ─── MAIN DATA GRID ─── */}
                 <div className="pt-2">
                     <DataGrid 
-                        title="Global Node Explorer"
+                        title="Student Registry"
                         columns={columns}
                         rows={filtered}
                         isLoading={sLoading}
@@ -307,14 +307,14 @@ export default function StudentManagement() {
                         showSearch
                         searchValue={searchTerm}
                         onSearchChange={setSearchTerm}
-                        searchPlaceholder="SCAN_STUDENT_HASH_ID..."
+                        searchPlaceholder="Search students..."
                         onRefresh={() => sData?.refetch?.()}
                         filters={[
                             <DropdownWidget
                                 dense
                                 key="class-filter"
                                 options={[
-                                    { label: 'ALL_UNITS', value: 'All' },
+                                    { label: 'ALL CLASSES', value: 'All' },
                                     ...classes.map(c => ({ label: c.toUpperCase(), value: c }))
                                 ]}
                                 value={filterClass}
@@ -332,38 +332,38 @@ export default function StudentManagement() {
                     {profileDrawer && (
                         <>
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]" onClick={() => setProfileDrawer(null)} />
-                            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[#0f172a] border-l border-white/10 z-[110] shadow-2xl p-8 overflow-y-auto custom-scrollbar">
+                            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-[var(--bg-secondary)] border-l border-[var(--glass-border)] z-[110] shadow-2xl p-8 overflow-y-auto custom-scrollbar">
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3 text-primary">
                                       <Info size={16} />
-                                      <span className="text-[10px] font-black uppercase tracking-widest">Intelligence Node Profile</span>
+                                      <span className="text-[10px] font-black uppercase tracking-widest">Student Profile</span>
                                     </div>
-                                    <button onClick={() => setProfileDrawer(null)} className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"><X size={20} /></button>
+                                    <button onClick={() => setProfileDrawer(null)} className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-2 rounded-xl hover:bg-[var(--bg-main)] transition-all"><X size={20} /></button>
                                 </div>
 
                                 <div className="flex flex-col items-center text-center mb-10">
-                                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/30 to-secondary/30 border border-white/10 p-1 mb-6 shadow-2xl">
-                                      <div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center overflow-hidden">
+                                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/30 to-secondary/30 border border-[var(--glass-border)] p-1 mb-6 shadow-2xl">
+                                      <div className="w-full h-full rounded-2xl bg-[var(--bg-main)] flex items-center justify-center overflow-hidden">
                                         {profileDrawer.student.profileImageUrl ? <img src={profileDrawer.student.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-4xl font-black text-primary">{(profileDrawer.student.studentName || 'S')[0]}</span>}
                                       </div>
                                     </div>
-                                    <h2 className="text-2xl font-black text-white tracking-tight">{profileDrawer.student.studentName || 'Unknown Entity'}</h2>
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mt-2 group cursor-pointer hover:text-primary transition-colors">{profileDrawer.student.studentId || 'X-000'}</p>
+                                    <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">{profileDrawer.student.studentName || 'Unknown Entity'}</h2>
+                                    <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-2 group cursor-pointer hover:text-primary transition-colors">{profileDrawer.student.studentId || 'X-000'}</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6 mb-10">
                                     {[
                                       ['Gender', profileDrawer.student.gender, Users],
-                                      ['Cluster', profileDrawer.student.className || profileDrawer.student.classId, Layers],
+                                      ['Class', profileDrawer.student.className || profileDrawer.student.classId, Layers],
                                       ['Join Date', fmtDate(profileDrawer.student.createdAt || profileDrawer.student.created_at), CalendarCheck],
-                                      ['Status', 'Active Integrity', ShieldCheck],
+                                      ['Status', 'Active', ShieldCheck],
                                     ].map(([label, val, Icon]) => (
                                       <div key={label}>
                                           <div className="flex items-center gap-2 mb-1.5 opacity-50">
-                                            <Icon size={12} className="text-slate-500" />
+                                            <Icon size={12} className="text-[var(--text-muted)]" />
                                             <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
                                           </div>
-                                          <p className="text-sm font-bold text-white px-1 whitespace-nowrap overflow-hidden text-ellipsis">{val || 'N/A'}</p>
+                                          <p className="text-sm font-bold text-[var(--text-main)] px-1 whitespace-nowrap overflow-hidden text-ellipsis">{val || 'N/A'}</p>
                                       </div>
                                     ))}
                                 </div>
@@ -372,20 +372,20 @@ export default function StudentManagement() {
                                 <AttendancePulse userId={profileDrawer.student.studentId || profileDrawer.student.student_id} schoolId={schoolId} />
                                 <ProfileFeeSummary studentId={profileDrawer.student.studentId || profileDrawer.student.student_id} schoolId={schoolId} />
 
-                                <div className="mt-10 pt-8 border-t border-white/5 grid grid-cols-2 gap-4">
+                                <div className="mt-10 pt-8 border-t border-[var(--glass-border)] grid grid-cols-2 gap-4">
                                   <StandardButton 
                                     variant="secondary" 
                                     onClick={() => navigate(`/dashboard/student/add?edit=${profileDrawer.student.studentId}`)}
                                     className="!py-4 !text-[10px] uppercase tracking-widest"
                                   >
-                                    Deep Edit
+                                    Edit Student
                                   </StandardButton>
                                   <StandardButton 
                                     variant="danger" 
                                     onClick={() => setConfirmAction({type:'delete', student: profileDrawer.student})}
                                     className="!py-4 !text-[10px] uppercase tracking-widest"
                                   >
-                                    Deactivate
+                                    Delete
                                   </StandardButton>
                                 </div>
                             </motion.div>
@@ -398,15 +398,15 @@ export default function StudentManagement() {
                     {confirmAction && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmAction(null)} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm bg-slate-900 border border-white/10 p-8 rounded-[2.5rem] relative z-20 shadow-2xl">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm bg-[var(--bg-secondary)] border border-[var(--glass-border)] p-8 rounded-[2.5rem] relative z-20 shadow-2xl">
                                 <div className="w-16 h-16 rounded-3xl bg-accent/20 text-accent flex items-center justify-center mb-6">
                                     <AlertTriangle size={32} />
                                 </div>
-                                <h3 className="text-xl font-black text-white mb-3">Critical Action Request</h3>
-                                <p className="text-sm text-slate-400 mb-8 leading-relaxed font-medium">
+                                <h3 className="text-xl font-black text-[var(--text-main)] mb-3">Delete Student</h3>
+                                <p className="text-sm text-[var(--text-muted)] mb-8 leading-relaxed font-medium">
                                     {confirmAction.type === 'delete'
-                                        ? `Are you sure you wish to permanently terminate node instance [${confirmAction.student.name}]? This operation cannot be reversed.`
-                                        : "Warning: Blocking this node will restrict all network access for this personnel."}
+                                        ? `Are you sure you want to delete student ${confirmAction.student.studentName || confirmAction.student.name || ''}? This action cannot be undone.`
+                                        : "Warning: Deactivating this student will restrict all system access."}
                                 </p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <StandardButton 
@@ -414,14 +414,14 @@ export default function StudentManagement() {
                                       onClick={() => setConfirmAction(null)}
                                       className="!py-4 !text-[10px] uppercase tracking-widest"
                                     >
-                                      Abort
+                                      Cancel
                                     </StandardButton>
                                     <StandardButton
                                         variant="danger"
                                         onClick={() => handleDeleteStudent(confirmAction.student.studentId || confirmAction.student.student_id)}
                                         className="!py-4 !text-[10px] uppercase tracking-widest"
                                     >
-                                        Execute
+                                        Delete
                                     </StandardButton>
                                 </div>
                             </motion.div>

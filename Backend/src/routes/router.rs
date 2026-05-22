@@ -145,7 +145,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/geo/states/:country_id", get(crate::routes::geo::get_states))
         .route("/geo/districts/:state_id", get(crate::routes::geo::get_districts))
         .route("/geo/export", get(crate::routes::geo::export_geo_json))
-        .route("/geo/import", post(crate::routes::geo::import_geo_json))
+        .route("/geo/import", post(crate::routes::geo::import_geo_json).layer(axum::middleware::from_fn_with_state(
+        state.clone(),
+        crate_middleware::rls::rls_middleware,
+    )))
         // Setup routes
         .route("/setup/school", post(crate::routes::setup::setup_school_handler))
         .route("/setup/:schoolId", get(crate::routes::setup::get_setup))
@@ -230,6 +233,14 @@ pub fn create_router(state: AppState) -> Router {
         .route(
             "/api/dashboard/:schoolId/leaves/proxy-suggestions",
             get(crate::routes::leave::get_proxy_suggestions),
+        )
+        .route(
+            "/api/dashboard/:schoolId/overview",
+            get(crate::routes::dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/dashboard/:schoolId/stats",
+            get(crate::routes::dashboard::get_dashboard_stats),
         )
         .nest("/api", api)
         // Legacy route compat — will be deprecated

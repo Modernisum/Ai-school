@@ -95,29 +95,29 @@ const KPIWidget = ({
     return (
       <motion.div
         whileHover={{ y: -5, transition: { duration: 0.2 } }}
-        className={`relative overflow-hidden bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-3 aspect-[4/3] group transition-all duration-500 ${colors.glow} ${cardClassName}`}
+        className={`relative overflow-hidden glass-card p-3 aspect-[4/3] group transition-all duration-500 ${colors.glow} ${cardClassName}`}
         style={delay}
       >
         {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
         
         <div className="relative z-10 h-full flex flex-col">
           {/* Content */}
           <div className="flex-1 flex flex-col p-1">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="flex flex-col gap-2 mb-2">
+              <div className="flex items-center gap-2 min-w-0">
                 {kpi.icon && (
-                  <div className={`p-2 rounded-xl ${colors.iconBg} border border-white/5 shrink-0`}>
-                    <kpi.icon size={18} className={colors.text.replace('text-', 'text-')} />
+                  <div className={`p-1.5 rounded-lg ${colors.iconBg} border border-[var(--glass-border)] shrink-0`}>
+                    <kpi.icon size={14} className={colors.text} />
                   </div>
                 )}
-                <h3 className="text-xs font-black text-white uppercase tracking-widest truncate">{displayLabel}</h3>
+                <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">{displayLabel}</h3>
               </div>
               <motion.h3 
                 key={displayValue}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-xl font-black text-white tracking-tight whitespace-nowrap"
+                className="text-2xl font-black text-[var(--text-main)] tracking-tight whitespace-nowrap"
               >
                 {displayValue}
               </motion.h3>
@@ -125,7 +125,7 @@ const KPIWidget = ({
             
             {/* In-tile Chart (optional) */}
             {kpi.chart && (
-              <div className="flex-1 w-full border-t border-white/5 pt-2 flex items-center justify-center overflow-hidden">
+              <div className="flex-1 w-full border-t border-[var(--glass-border)] pt-2 flex items-center justify-center overflow-hidden">
                 <ChartWidget
                   minimal
                   type={kpi.chart.type || 'line'}

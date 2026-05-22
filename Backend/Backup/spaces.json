@@ -1,578 +1,474 @@
 [
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "1",
     "name": null,
     "school_id": "834483",
     "space_category": "classroom",
-    "space_id": "834483-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "2",
     "name": null,
     "school_id": "299109",
     "space_category": "classroom",
-    "space_id": "299109-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "3",
     "name": null,
     "school_id": "791798",
     "space_category": "classroom",
-    "space_id": "791798-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "4",
     "name": null,
     "school_id": "135429",
     "space_category": "classroom",
-    "space_id": "135429-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "5",
     "name": null,
     "school_id": "209773",
     "space_category": "classroom",
-    "space_id": "209773-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "6",
     "name": null,
     "school_id": "484574",
     "space_category": "classroom",
-    "space_id": "484574-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "7",
     "name": null,
     "school_id": "618105",
     "space_category": "classroom",
-    "space_id": "618105-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "8",
     "name": null,
     "school_id": "740325",
     "space_category": "classroom",
-    "space_id": "740325-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "9",
     "name": null,
     "school_id": "566237",
     "space_category": "classroom",
-    "space_id": "566237-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "10",
     "name": null,
     "school_id": "812235",
     "space_category": "classroom",
-    "space_id": "812235-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "11",
     "name": null,
     "school_id": "117029",
     "space_category": "classroom",
-    "space_id": "117029-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "12",
     "name": null,
     "school_id": "957796",
     "space_category": "classroom",
-    "space_id": "957796-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "13",
     "name": null,
     "school_id": "297178",
     "space_category": "classroom",
-    "space_id": "297178-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "14",
     "name": null,
     "school_id": "487332",
     "space_category": "classroom",
-    "space_id": "487332-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "15",
     "name": null,
     "school_id": "897468",
     "space_category": "classroom",
-    "space_id": "897468-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "16",
     "name": null,
     "school_id": "267143",
     "space_category": "classroom",
-    "space_id": "267143-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "17",
     "name": null,
     "school_id": "189380",
     "space_category": "classroom",
-    "space_id": "189380-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "18",
     "name": null,
     "school_id": "179789",
     "space_category": "classroom",
-    "space_id": "179789-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "19",
     "name": null,
     "school_id": "291919",
     "space_category": "classroom",
-    "space_id": "291919-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "20",
     "name": null,
     "school_id": "756758",
     "space_category": "classroom",
-    "space_id": "756758-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "21",
     "name": null,
     "school_id": "603785",
     "space_category": "classroom",
-    "space_id": "603785-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "22",
     "name": null,
     "school_id": "285920",
     "space_category": "classroom",
-    "space_id": "285920-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "23",
     "name": null,
     "school_id": "747869",
     "space_category": "classroom",
-    "space_id": "747869-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "24",
     "name": null,
     "school_id": "948976",
     "space_category": "classroom",
-    "space_id": "948976-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "25",
     "name": null,
     "school_id": "958493",
     "space_category": "classroom",
-    "space_id": "958493-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "26",
     "name": null,
     "school_id": "418292",
     "space_category": "classroom",
-    "space_id": "418292-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "27",
     "name": null,
     "school_id": "678480",
     "space_category": "classroom",
-    "space_id": "678480-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "28",
     "name": null,
     "school_id": "564531",
     "space_category": "classroom",
-    "space_id": "564531-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "29",
     "name": null,
     "school_id": "228438",
     "space_category": "classroom",
-    "space_id": "228438-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "30",
     "name": null,
     "school_id": "765331",
     "space_category": "classroom",
-    "space_id": "765331-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "31",
     "name": null,
     "school_id": "765331",
     "space_category": "kitchen",
-    "space_id": "765331-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "32",
     "name": null,
     "school_id": "765331",
     "space_category": "storeroom",
-    "space_id": "765331-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "33",
     "name": null,
     "school_id": "765331",
     "space_category": "office",
-    "space_id": "765331-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "34",
     "name": null,
     "school_id": "765331",
     "space_category": "ground",
-    "space_id": "765331-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "35",
     "name": null,
     "school_id": "765331",
     "space_category": "parking",
-    "space_id": "765331-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "36",
     "name": null,
     "school_id": "765331",
     "space_category": "canteen",
-    "space_id": "765331-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "37",
     "name": null,
     "school_id": "765331",
     "space_category": "park",
-    "space_id": "765331-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "38",
     "name": null,
     "school_id": "572900",
     "space_category": "classroom",
-    "space_id": "572900-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "39",
     "name": null,
     "school_id": "572900",
     "space_category": "kitchen",
-    "space_id": "572900-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "40",
     "name": null,
     "school_id": "572900",
     "space_category": "storeroom",
-    "space_id": "572900-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "41",
     "name": null,
     "school_id": "572900",
     "space_category": "office",
-    "space_id": "572900-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "42",
     "name": null,
     "school_id": "572900",
     "space_category": "ground",
-    "space_id": "572900-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "43",
     "name": null,
     "school_id": "572900",
     "space_category": "parking",
-    "space_id": "572900-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "44",
     "name": null,
     "school_id": "572900",
     "space_category": "canteen",
-    "space_id": "572900-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "45",
     "name": null,
     "school_id": "572900",
     "space_category": "park",
-    "space_id": "572900-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "55",
     "name": null,
     "school_id": "519063",
     "space_category": "kitchen",
-    "space_id": "519063-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "56",
     "name": null,
     "school_id": "519063",
     "space_category": "storeroom",
-    "space_id": "519063-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "57",
     "name": null,
     "school_id": "519063",
     "space_category": "office",
-    "space_id": "519063-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "58",
     "name": null,
     "school_id": "519063",
     "space_category": "ground",
-    "space_id": "519063-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "59",
     "name": null,
     "school_id": "519063",
     "space_category": "parking",
-    "space_id": "519063-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "60",
     "name": null,
     "school_id": "519063",
     "space_category": "canteen",
-    "space_id": "519063-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "61",
     "name": null,
     "school_id": "519063",
     "space_category": "park",
-    "space_id": "519063-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 1,
@@ -584,12 +480,10 @@
     "name": null,
     "school_id": "519063",
     "space_category": "classroom",
-    "space_id": "SP472",
-    "space_name": "classroom 1",
-    "space_number": null
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 1,
@@ -612,540 +506,442 @@
     "name": null,
     "school_id": "519063",
     "space_category": "classroom",
-    "space_id": "SP014",
-    "space_name": "classroom 2",
-    "space_number": null
+    "space_name": "classroom 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "83",
     "name": null,
     "school_id": "775218",
     "space_category": "classroom",
-    "space_id": "775218-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "84",
     "name": null,
     "school_id": "775218",
     "space_category": "kitchen",
-    "space_id": "775218-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "85",
     "name": null,
     "school_id": "775218",
     "space_category": "storeroom",
-    "space_id": "775218-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "86",
     "name": null,
     "school_id": "775218",
     "space_category": "office",
-    "space_id": "775218-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "87",
     "name": null,
     "school_id": "775218",
     "space_category": "ground",
-    "space_id": "775218-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "88",
     "name": null,
     "school_id": "775218",
     "space_category": "parking",
-    "space_id": "775218-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "89",
     "name": null,
     "school_id": "775218",
     "space_category": "canteen",
-    "space_id": "775218-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "90",
     "name": null,
     "school_id": "775218",
     "space_category": "park",
-    "space_id": "775218-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "91",
     "name": null,
     "school_id": "195595",
     "space_category": "classroom",
-    "space_id": "195595-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "92",
     "name": null,
     "school_id": "195595",
     "space_category": "kitchen",
-    "space_id": "195595-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "93",
     "name": null,
     "school_id": "195595",
     "space_category": "storeroom",
-    "space_id": "195595-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "94",
     "name": null,
     "school_id": "195595",
     "space_category": "office",
-    "space_id": "195595-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "95",
     "name": null,
     "school_id": "195595",
     "space_category": "ground",
-    "space_id": "195595-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "96",
     "name": null,
     "school_id": "195595",
     "space_category": "parking",
-    "space_id": "195595-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "97",
     "name": null,
     "school_id": "195595",
     "space_category": "canteen",
-    "space_id": "195595-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "98",
     "name": null,
     "school_id": "195595",
     "space_category": "park",
-    "space_id": "195595-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "99",
     "name": null,
     "school_id": "726428",
     "space_category": "classroom",
-    "space_id": "726428-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "100",
     "name": null,
     "school_id": "726428",
     "space_category": "kitchen",
-    "space_id": "726428-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "101",
     "name": null,
     "school_id": "726428",
     "space_category": "storeroom",
-    "space_id": "726428-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "102",
     "name": null,
     "school_id": "726428",
     "space_category": "office",
-    "space_id": "726428-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "103",
     "name": null,
     "school_id": "726428",
     "space_category": "ground",
-    "space_id": "726428-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "104",
     "name": null,
     "school_id": "726428",
     "space_category": "parking",
-    "space_id": "726428-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "105",
     "name": null,
     "school_id": "726428",
     "space_category": "canteen",
-    "space_id": "726428-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "106",
     "name": null,
     "school_id": "726428",
     "space_category": "park",
-    "space_id": "726428-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "107",
     "name": null,
     "school_id": "787174",
     "space_category": "classroom",
-    "space_id": "787174-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "108",
     "name": null,
     "school_id": "787174",
     "space_category": "kitchen",
-    "space_id": "787174-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "109",
     "name": null,
     "school_id": "787174",
     "space_category": "storeroom",
-    "space_id": "787174-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "110",
     "name": null,
     "school_id": "787174",
     "space_category": "office",
-    "space_id": "787174-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "114",
     "name": null,
     "school_id": "787174",
     "space_category": "park",
-    "space_id": "787174-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "116",
     "name": null,
     "school_id": "682951",
     "space_category": "kitchen",
-    "space_id": "682951-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "117",
     "name": null,
     "school_id": "682951",
     "space_category": "storeroom",
-    "space_id": "682951-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "118",
     "name": null,
     "school_id": "682951",
     "space_category": "office",
-    "space_id": "682951-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "122",
     "name": null,
     "school_id": "682951",
     "space_category": "park",
-    "space_id": "682951-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "111",
     "name": null,
     "school_id": "787174",
     "space_category": "ground",
-    "space_id": "787174-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "112",
     "name": null,
     "school_id": "787174",
     "space_category": "parking",
-    "space_id": "787174-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "113",
     "name": null,
     "school_id": "787174",
     "space_category": "canteen",
-    "space_id": "787174-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "115",
     "name": null,
     "school_id": "682951",
     "space_category": "classroom",
-    "space_id": "682951-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "119",
     "name": null,
     "school_id": "682951",
     "space_category": "ground",
-    "space_id": "682951-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "120",
     "name": null,
     "school_id": "682951",
     "space_category": "parking",
-    "space_id": "682951-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "121",
     "name": null,
     "school_id": "682951",
     "space_category": "canteen",
-    "space_id": "682951-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "123",
     "name": null,
     "school_id": "210660",
     "space_category": "classroom",
-    "space_id": "210660-classroom",
-    "space_name": "classroom",
-    "space_number": null
+    "space_name": "classroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "124",
     "name": null,
     "school_id": "210660",
     "space_category": "kitchen",
-    "space_id": "210660-kitchen",
-    "space_name": "kitchen",
-    "space_number": null
+    "space_name": "kitchen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "125",
     "name": null,
     "school_id": "210660",
     "space_category": "storeroom",
-    "space_id": "210660-storeroom",
-    "space_name": "storeroom",
-    "space_number": null
+    "space_name": "storeroom"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "126",
     "name": null,
     "school_id": "210660",
     "space_category": "office",
-    "space_id": "210660-office",
-    "space_name": "office",
-    "space_number": null
+    "space_name": "office"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "127",
     "name": null,
     "school_id": "210660",
     "space_category": "ground",
-    "space_id": "210660-ground",
-    "space_name": "ground",
-    "space_number": null
+    "space_name": "ground"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "128",
     "name": null,
     "school_id": "210660",
     "space_category": "parking",
-    "space_id": "210660-parking",
-    "space_name": "parking",
-    "space_number": null
+    "space_name": "parking"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "129",
     "name": null,
     "school_id": "210660",
     "space_category": "canteen",
-    "space_id": "210660-canteen",
-    "space_name": "canteen",
-    "space_number": null
+    "space_name": "canteen"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {},
     "id": "130",
     "name": null,
     "school_id": "210660",
     "space_category": "park",
-    "space_id": "210660-park",
-    "space_name": "park",
-    "space_number": null
+    "space_name": "park"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1155,12 +951,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP892",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 483,
@@ -1170,12 +964,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "kitchen",
-    "space_id": "SP902",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 484,
@@ -1185,12 +977,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "storeroom",
-    "space_id": "SP983",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 485,
@@ -1200,12 +990,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "office",
-    "space_id": "SP001",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 486,
@@ -1215,12 +1003,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "ground",
-    "space_id": "SP038",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 487,
@@ -1230,12 +1016,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "parking",
-    "space_id": "SP051",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 488,
@@ -1245,12 +1029,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "canteen",
-    "space_id": "SP065",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 489,
@@ -1260,12 +1042,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "park",
-    "space_id": "SP070",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1275,12 +1055,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP096",
-    "space_name": "classroom 2",
-    "space_number": "pre-nursery"
+    "space_name": "classroom 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1290,12 +1068,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP192",
-    "space_name": "classroom 3",
-    "space_number": "nursery"
+    "space_name": "classroom 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1305,12 +1081,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP254",
-    "space_name": "classroom 4",
-    "space_number": "lkg"
+    "space_name": "classroom 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1320,12 +1094,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP309",
-    "space_name": "classroom 5",
-    "space_number": "ukg"
+    "space_name": "classroom 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1335,12 +1107,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP357",
-    "space_name": "classroom 6",
-    "space_number": "class-1"
+    "space_name": "classroom 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1350,12 +1120,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP414",
-    "space_name": "classroom 7",
-    "space_number": "class-2"
+    "space_name": "classroom 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1365,12 +1133,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP470",
-    "space_name": "classroom 8",
-    "space_number": "class-3"
+    "space_name": "classroom 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1380,12 +1146,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP523",
-    "space_name": "classroom 9",
-    "space_number": "class-4"
+    "space_name": "classroom 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1395,12 +1159,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP579",
-    "space_name": "classroom 10",
-    "space_number": "class-5"
+    "space_name": "classroom 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1410,12 +1172,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP629",
-    "space_name": "classroom 11",
-    "space_number": "class-6"
+    "space_name": "classroom 11"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1425,12 +1185,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP686",
-    "space_name": "classroom 12",
-    "space_number": "class-7"
+    "space_name": "classroom 12"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1440,12 +1198,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP737",
-    "space_name": "classroom 13",
-    "space_number": "class-8"
+    "space_name": "classroom 13"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1455,12 +1211,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP790",
-    "space_name": "classroom 14",
-    "space_number": "class-9"
+    "space_name": "classroom 14"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1470,12 +1224,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP841",
-    "space_name": "classroom 15",
-    "space_number": "class-10"
+    "space_name": "classroom 15"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1485,12 +1237,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP891",
-    "space_name": "classroom 16",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "classroom 16"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 482,
@@ -1500,12 +1250,10 @@
     "name": null,
     "school_id": "520411",
     "space_category": "classroom",
-    "space_id": "SP936",
-    "space_name": "classroom 17",
-    "space_number": "class-11-commerce"
+    "space_name": "classroom 17"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1515,12 +1263,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP959",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 491,
@@ -1530,12 +1276,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "kitchen",
-    "space_id": "SP962",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 492,
@@ -1545,12 +1289,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "storeroom",
-    "space_id": "SP985",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 493,
@@ -1560,12 +1302,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "office",
-    "space_id": "SP999",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 494,
@@ -1575,12 +1315,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "ground",
-    "space_id": "SP032",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 495,
@@ -1590,12 +1328,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "parking",
-    "space_id": "SP045",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 496,
@@ -1605,12 +1341,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "canteen",
-    "space_id": "SP058",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 497,
@@ -1620,12 +1354,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "park",
-    "space_id": "SP062",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1635,12 +1367,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP069",
-    "space_name": "classroom 2",
-    "space_number": "pre-nursery"
+    "space_name": "classroom 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1650,12 +1380,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP115",
-    "space_name": "classroom 3",
-    "space_number": "nursery"
+    "space_name": "classroom 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1665,12 +1393,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP161",
-    "space_name": "classroom 4",
-    "space_number": "lkg"
+    "space_name": "classroom 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1680,12 +1406,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP211",
-    "space_name": "classroom 5",
-    "space_number": "ukg"
+    "space_name": "classroom 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1695,12 +1419,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP260",
-    "space_name": "classroom 6",
-    "space_number": "class-1"
+    "space_name": "classroom 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1710,12 +1432,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP314",
-    "space_name": "classroom 7",
-    "space_number": "class-2"
+    "space_name": "classroom 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1725,12 +1445,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP365",
-    "space_name": "classroom 8",
-    "space_number": "class-3"
+    "space_name": "classroom 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1740,12 +1458,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP419",
-    "space_name": "classroom 9",
-    "space_number": "class-4"
+    "space_name": "classroom 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1755,12 +1471,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP744",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 504,
@@ -1770,12 +1484,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "canteen",
-    "space_id": "SP839",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1785,12 +1497,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP893",
-    "space_name": "classroom 3",
-    "space_number": "nursery"
+    "space_name": "classroom 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1800,12 +1510,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP027",
-    "space_name": "classroom 6",
-    "space_number": "class-1"
+    "space_name": "classroom 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1815,12 +1523,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP290",
-    "space_name": "classroom 11",
-    "space_number": "class-6"
+    "space_name": "classroom 11"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1830,12 +1536,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP343",
-    "space_name": "classroom 12",
-    "space_number": "class-7"
+    "space_name": "classroom 12"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1845,12 +1549,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP397",
-    "space_name": "classroom 13",
-    "space_number": "class-8"
+    "space_name": "classroom 13"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1860,12 +1562,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP449",
-    "space_name": "classroom 14",
-    "space_number": "class-9"
+    "space_name": "classroom 14"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1875,12 +1575,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP633",
-    "space_name": "classroom 18",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "classroom 18"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1890,12 +1588,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP862",
-    "space_name": "classroom 23",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "classroom 23"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 490,
@@ -1905,12 +1601,10 @@
     "name": null,
     "school_id": "474061",
     "space_category": "classroom",
-    "space_id": "SP473",
-    "space_name": "classroom 10",
-    "space_number": "class-5"
+    "space_name": "classroom 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 500,
@@ -1920,12 +1614,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "storeroom",
-    "space_id": "SP770",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 502,
@@ -1935,12 +1627,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "ground",
-    "space_id": "SP815",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1950,12 +1640,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP850",
-    "space_name": "classroom 2",
-    "space_number": "pre-nursery"
+    "space_name": "classroom 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1965,12 +1653,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP078",
-    "space_name": "classroom 7",
-    "space_number": "class-2"
+    "space_name": "classroom 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -1980,12 +1666,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP725",
-    "space_name": "classroom 20",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "classroom 20"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 499,
@@ -1995,12 +1679,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "kitchen",
-    "space_id": "SP749",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 505,
@@ -2010,12 +1692,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "park",
-    "space_id": "SP843",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2025,12 +1705,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP982",
-    "space_name": "classroom 5",
-    "space_number": "ukg"
+    "space_name": "classroom 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2040,12 +1718,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP134",
-    "space_name": "classroom 8",
-    "space_number": "class-3"
+    "space_name": "classroom 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2055,12 +1731,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP496",
-    "space_name": "classroom 15",
-    "space_number": "class-10"
+    "space_name": "classroom 15"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2070,12 +1744,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP589",
-    "space_name": "classroom 17",
-    "space_number": "class-11-commerce"
+    "space_name": "classroom 17"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2085,12 +1757,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP816",
-    "space_name": "classroom 22",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "classroom 22"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 501,
@@ -2100,12 +1770,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "office",
-    "space_id": "SP783",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 503,
@@ -2115,12 +1783,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "parking",
-    "space_id": "SP827",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2130,12 +1796,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP186",
-    "space_name": "classroom 9",
-    "space_number": "class-4"
+    "space_name": "classroom 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2145,12 +1809,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP679",
-    "space_name": "classroom 19",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "classroom 19"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2160,12 +1822,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP934",
-    "space_name": "classroom 4",
-    "space_number": "lkg"
+    "space_name": "classroom 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2175,12 +1835,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP239",
-    "space_name": "classroom 10",
-    "space_number": "class-5"
+    "space_name": "classroom 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2190,12 +1848,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP542",
-    "space_name": "classroom 16",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "classroom 16"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 498,
@@ -2205,12 +1861,10 @@
     "name": null,
     "school_id": "433087",
     "space_category": "classroom",
-    "space_id": "SP771",
-    "space_name": "classroom 21",
-    "space_number": "class-12-commerce"
+    "space_name": "classroom 21"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 506,
@@ -2220,12 +1874,10 @@
     "name": null,
     "school_id": "468488",
     "space_category": "classroom",
-    "space_id": "SP151",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 514,
@@ -2235,12 +1887,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "classroom",
-    "space_id": "SP635",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 515,
@@ -2250,12 +1900,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "kitchen",
-    "space_id": "SP639",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 516,
@@ -2265,12 +1913,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "storeroom",
-    "space_id": "SP800",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 517,
@@ -2280,12 +1926,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "office",
-    "space_id": "SP823",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 518,
@@ -2295,12 +1939,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "ground",
-    "space_id": "SP863",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 519,
@@ -2310,12 +1952,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "parking",
-    "space_id": "SP877",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 520,
@@ -2325,12 +1965,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "canteen",
-    "space_id": "SP890",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 521,
@@ -2340,12 +1978,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "park",
-    "space_id": "SP894",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 514,
@@ -2356,12 +1992,10 @@
     "name": null,
     "school_id": "382128",
     "space_category": "classroom",
-    "space_id": "SP905",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 522,
@@ -2371,12 +2005,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "classroom",
-    "space_id": "SP253",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 523,
@@ -2386,12 +2018,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "kitchen",
-    "space_id": "SP257",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 524,
@@ -2401,12 +2031,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "storeroom",
-    "space_id": "SP286",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 525,
@@ -2416,12 +2044,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "office",
-    "space_id": "SP302",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 526,
@@ -2431,12 +2057,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "ground",
-    "space_id": "SP335",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 527,
@@ -2446,12 +2070,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "parking",
-    "space_id": "SP348",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 528,
@@ -2461,12 +2083,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "canteen",
-    "space_id": "SP359",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 529,
@@ -2476,12 +2096,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "park",
-    "space_id": "SP364",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 522,
@@ -2492,12 +2110,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "classroom",
-    "space_id": "SP372",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 522,
@@ -2508,12 +2124,10 @@
     "name": null,
     "school_id": "837027",
     "space_category": "classroom",
-    "space_id": "SP424",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2523,12 +2137,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP336954",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 539,
@@ -2538,12 +2150,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "kitchen",
-    "space_id": "SP747573",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 540,
@@ -2553,12 +2163,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "storeroom",
-    "space_id": "SP106312",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 541,
@@ -2568,12 +2176,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "office",
-    "space_id": "SP166160",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 542,
@@ -2583,12 +2189,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "ground",
-    "space_id": "SP998286",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 543,
@@ -2598,12 +2202,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "parking",
-    "space_id": "SP132157",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 544,
@@ -2613,12 +2215,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "canteen",
-    "space_id": "SP916506",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 545,
@@ -2628,12 +2228,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "park",
-    "space_id": "SP985095",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2644,12 +2242,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP889660",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2660,12 +2256,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP893364",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2676,12 +2270,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP990794",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2692,12 +2284,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP889972",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2708,12 +2298,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP695586",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2724,12 +2312,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP781832",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2740,12 +2326,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP889736",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2756,12 +2340,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP179117",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2772,12 +2354,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP126340",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2788,12 +2368,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP462552",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 617,
@@ -2803,12 +2381,10 @@
     "name": "park ",
     "school_id": "366121",
     "space_category": "park",
-    "space_id": "SP513604",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2819,12 +2395,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP971087",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2835,12 +2409,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP632041",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2851,12 +2423,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP708402",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2867,12 +2437,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP111735",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2883,12 +2451,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP249817",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2899,12 +2465,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP592665",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2915,12 +2479,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP387900",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2931,12 +2493,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP928762",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2947,12 +2507,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP487788",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2963,12 +2521,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP380932",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2979,12 +2535,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP613208",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 538,
@@ -2995,12 +2549,10 @@
     "name": null,
     "school_id": "944614",
     "space_category": "classroom",
-    "space_id": "SP536869",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3010,12 +2562,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP630968",
-    "space_name": "classroom 1",
-    "space_number": ""
+    "space_name": "classroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 547,
@@ -3025,12 +2575,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "kitchen",
-    "space_id": "SP178510",
-    "space_name": "kitchen 1",
-    "space_number": ""
+    "space_name": "kitchen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 548,
@@ -3040,12 +2588,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "storeroom",
-    "space_id": "SP500512",
-    "space_name": "storeroom 1",
-    "space_number": ""
+    "space_name": "storeroom 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 549,
@@ -3055,12 +2601,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "office",
-    "space_id": "SP450778",
-    "space_name": "office 1",
-    "space_number": ""
+    "space_name": "office 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 550,
@@ -3070,12 +2614,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "ground",
-    "space_id": "SP608252",
-    "space_name": "ground 1",
-    "space_number": ""
+    "space_name": "ground 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 551,
@@ -3085,12 +2627,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "parking",
-    "space_id": "SP294147",
-    "space_name": "parking 1",
-    "space_number": ""
+    "space_name": "parking 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 552,
@@ -3100,12 +2640,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "canteen",
-    "space_id": "SP186079",
-    "space_name": "canteen 1",
-    "space_number": ""
+    "space_name": "canteen 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 553,
@@ -3115,12 +2653,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "park",
-    "space_id": "SP252634",
-    "space_name": "park 1",
-    "space_number": ""
+    "space_name": "park 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3131,12 +2667,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP333961",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3147,12 +2681,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP863851",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3163,12 +2695,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP254556",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3179,12 +2709,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP482377",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3195,12 +2723,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP513796",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3211,12 +2737,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP972899",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3227,12 +2751,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP916985",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3243,12 +2765,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP937653",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3259,12 +2779,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP471821",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3275,12 +2793,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP495759",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3291,12 +2807,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP761119",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3307,12 +2821,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP446942",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3323,12 +2835,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP328702",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3339,12 +2849,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP172869",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3355,12 +2863,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP221502",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3371,12 +2877,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP851487",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3387,12 +2891,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP971071",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3403,12 +2905,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP179060",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3419,12 +2919,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP709165",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3435,12 +2933,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP443400",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3451,12 +2947,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP136025",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 546,
@@ -3467,12 +2961,10 @@
     "name": null,
     "school_id": "517208",
     "space_category": "classroom",
-    "space_id": "SP358449",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -3481,12 +2973,10 @@
     "name": "kitchen",
     "school_id": "142736",
     "space_category": "kitchen",
-    "space_id": "kitchen",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3496,12 +2986,10 @@
     "name": "classroom ",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP522083",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 603,
@@ -3511,12 +2999,10 @@
     "name": "kitchen ",
     "school_id": "488369",
     "space_category": "kitchen",
-    "space_id": "SP719670",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 604,
@@ -3526,12 +3012,10 @@
     "name": "storeroom ",
     "school_id": "488369",
     "space_category": "storeroom",
-    "space_id": "SP619727",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 605,
@@ -3541,12 +3025,10 @@
     "name": "office ",
     "school_id": "488369",
     "space_category": "office",
-    "space_id": "SP938829",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 606,
@@ -3556,12 +3038,10 @@
     "name": "ground ",
     "school_id": "488369",
     "space_category": "ground",
-    "space_id": "SP675719",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 607,
@@ -3571,12 +3051,10 @@
     "name": "parking ",
     "school_id": "488369",
     "space_category": "parking",
-    "space_id": "SP776838",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 608,
@@ -3586,12 +3064,10 @@
     "name": "canteen ",
     "school_id": "488369",
     "space_category": "canteen",
-    "space_id": "SP235410",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 609,
@@ -3601,12 +3077,10 @@
     "name": "park ",
     "school_id": "488369",
     "space_category": "park",
-    "space_id": "SP110025",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3617,12 +3091,10 @@
     "name": "classroom pre-nursery",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP758032",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3633,12 +3105,10 @@
     "name": "classroom nursery",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP401847",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3649,12 +3119,10 @@
     "name": "classroom lkg",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP977922",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3665,12 +3133,10 @@
     "name": "classroom ukg",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP983576",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3681,12 +3147,10 @@
     "name": "classroom class-1",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP851739",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3697,12 +3161,10 @@
     "name": "classroom class-2",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP661907",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3713,12 +3175,10 @@
     "name": "classroom class-3",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP940235",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3729,12 +3189,10 @@
     "name": "classroom class-4",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP847328",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3745,12 +3203,10 @@
     "name": "classroom class-5",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP531761",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3761,12 +3217,10 @@
     "name": "classroom class-6",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP233439",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3777,12 +3231,10 @@
     "name": "classroom class-7",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP111741",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3793,12 +3245,10 @@
     "name": "classroom class-8",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP844439",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3809,12 +3259,10 @@
     "name": "classroom class-9",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP344551",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3825,12 +3273,10 @@
     "name": "classroom class-10",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP241154",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3841,12 +3287,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP363522",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3857,12 +3301,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP201162",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3873,12 +3315,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP224200",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3889,12 +3329,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP454103",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3905,12 +3343,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP594613",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3921,12 +3357,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP759498",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3937,12 +3371,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP778434",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 602,
@@ -3953,12 +3385,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "488369",
     "space_category": "classroom",
-    "space_id": "SP587738",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -3968,12 +3398,10 @@
     "name": "classroom ",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP830017",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 611,
@@ -3983,12 +3411,10 @@
     "name": "kitchen ",
     "school_id": "366121",
     "space_category": "kitchen",
-    "space_id": "SP467331",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 612,
@@ -3998,12 +3424,10 @@
     "name": "storeroom ",
     "school_id": "366121",
     "space_category": "storeroom",
-    "space_id": "SP787842",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 613,
@@ -4013,12 +3437,10 @@
     "name": "office ",
     "school_id": "366121",
     "space_category": "office",
-    "space_id": "SP451013",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 614,
@@ -4028,12 +3450,10 @@
     "name": "ground ",
     "school_id": "366121",
     "space_category": "ground",
-    "space_id": "SP826952",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 615,
@@ -4043,12 +3463,10 @@
     "name": "parking ",
     "school_id": "366121",
     "space_category": "parking",
-    "space_id": "SP487116",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 616,
@@ -4058,12 +3476,10 @@
     "name": "canteen ",
     "school_id": "366121",
     "space_category": "canteen",
-    "space_id": "SP482310",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4074,12 +3490,10 @@
     "name": "classroom pre-nursery",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP787737",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4090,12 +3504,10 @@
     "name": "classroom class-2",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP759347",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4106,12 +3518,10 @@
     "name": "classroom nursery",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP102465",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4122,12 +3532,10 @@
     "name": "classroom class-4",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP831234",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4138,12 +3546,10 @@
     "name": "classroom class-8",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP707695",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4154,12 +3560,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP504618",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4170,12 +3574,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP906077",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4186,12 +3588,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP474366",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4202,12 +3602,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP900896",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4218,12 +3616,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP128446",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4234,12 +3630,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP125377",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4250,12 +3644,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP822584",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4266,12 +3658,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP556159",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4282,12 +3672,10 @@
     "name": "classroom lkg",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP589354",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4298,12 +3686,10 @@
     "name": "classroom ukg",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP537916",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4314,12 +3700,10 @@
     "name": "classroom class-1",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP226695",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4330,12 +3714,10 @@
     "name": "classroom class-6",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP147238",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4346,12 +3728,10 @@
     "name": "classroom class-10",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP716182",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4362,12 +3742,10 @@
     "name": "classroom class-3",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP242617",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4378,12 +3756,10 @@
     "name": "classroom class-9",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP390697",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4394,12 +3770,10 @@
     "name": "classroom class-5",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP823961",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 610,
@@ -4410,12 +3784,10 @@
     "name": "classroom class-7",
     "school_id": "366121",
     "space_category": "classroom",
-    "space_id": "SP261988",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4425,12 +3797,10 @@
     "name": "classroom ",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP471438",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 619,
@@ -4440,12 +3810,10 @@
     "name": "kitchen ",
     "school_id": "578110",
     "space_category": "kitchen",
-    "space_id": "SP610979",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 620,
@@ -4455,12 +3823,10 @@
     "name": "storeroom ",
     "school_id": "578110",
     "space_category": "storeroom",
-    "space_id": "SP910383",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 621,
@@ -4470,12 +3836,10 @@
     "name": "office ",
     "school_id": "578110",
     "space_category": "office",
-    "space_id": "SP240425",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 622,
@@ -4485,12 +3849,10 @@
     "name": "ground ",
     "school_id": "578110",
     "space_category": "ground",
-    "space_id": "SP329295",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 623,
@@ -4500,12 +3862,10 @@
     "name": "parking ",
     "school_id": "578110",
     "space_category": "parking",
-    "space_id": "SP529798",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 624,
@@ -4515,12 +3875,10 @@
     "name": "canteen ",
     "school_id": "578110",
     "space_category": "canteen",
-    "space_id": "SP332747",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 625,
@@ -4530,12 +3888,10 @@
     "name": "park ",
     "school_id": "578110",
     "space_category": "park",
-    "space_id": "SP417438",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4546,12 +3902,10 @@
     "name": "classroom pre-nursery",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP322210",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4562,12 +3916,10 @@
     "name": "classroom nursery",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP493602",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4578,12 +3930,10 @@
     "name": "classroom lkg",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP295230",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4594,12 +3944,10 @@
     "name": "classroom ukg",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP810751",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4610,12 +3958,10 @@
     "name": "classroom class-1",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP644777",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4626,12 +3972,10 @@
     "name": "classroom class-2",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP174372",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4642,12 +3986,10 @@
     "name": "classroom class-3",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP503606",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4658,12 +4000,10 @@
     "name": "classroom class-4",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP315598",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4674,12 +4014,10 @@
     "name": "classroom class-5",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP266148",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4690,12 +4028,10 @@
     "name": "classroom class-6",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP824870",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4706,12 +4042,10 @@
     "name": "classroom class-7",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP567668",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4722,12 +4056,10 @@
     "name": "classroom class-8",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP314205",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4738,12 +4070,10 @@
     "name": "classroom class-9",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP723771",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4754,12 +4084,10 @@
     "name": "classroom class-10",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP907639",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4770,12 +4098,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP107448",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4786,12 +4112,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP804045",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4802,12 +4126,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP745143",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4818,12 +4140,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP323279",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4834,12 +4154,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP507459",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4850,12 +4168,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP681184",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4866,12 +4182,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP132500",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 618,
@@ -4882,12 +4196,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "578110",
     "space_category": "classroom",
-    "space_id": "SP445606",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -4897,12 +4209,10 @@
     "name": "classroom ",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP971029",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 627,
@@ -4912,12 +4222,10 @@
     "name": "kitchen ",
     "school_id": "428885",
     "space_category": "kitchen",
-    "space_id": "SP506361",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 628,
@@ -4927,12 +4235,10 @@
     "name": "storeroom ",
     "school_id": "428885",
     "space_category": "storeroom",
-    "space_id": "SP552308",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 629,
@@ -4942,12 +4248,10 @@
     "name": "office ",
     "school_id": "428885",
     "space_category": "office",
-    "space_id": "SP242345",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 630,
@@ -4957,12 +4261,10 @@
     "name": "ground ",
     "school_id": "428885",
     "space_category": "ground",
-    "space_id": "SP961925",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 631,
@@ -4972,12 +4274,10 @@
     "name": "parking ",
     "school_id": "428885",
     "space_category": "parking",
-    "space_id": "SP302561",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 632,
@@ -4987,12 +4287,10 @@
     "name": "canteen ",
     "school_id": "428885",
     "space_category": "canteen",
-    "space_id": "SP558782",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 633,
@@ -5002,12 +4300,10 @@
     "name": "park ",
     "school_id": "428885",
     "space_category": "park",
-    "space_id": "SP127480",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5018,12 +4314,10 @@
     "name": "classroom pre-nursery",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP542231",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5034,12 +4328,10 @@
     "name": "classroom class-1",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP710189",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5050,12 +4342,10 @@
     "name": "classroom class-2",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP793137",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5066,12 +4356,10 @@
     "name": "classroom class-3",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP209604",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5082,12 +4370,10 @@
     "name": "classroom class-4",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP157710",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5098,12 +4384,10 @@
     "name": "classroom class-5",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP422239",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5114,12 +4398,10 @@
     "name": "classroom class-6",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP305216",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5130,12 +4412,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP251967",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 636,
@@ -5145,12 +4425,10 @@
     "name": "storeroom ",
     "school_id": "952680",
     "space_category": "storeroom",
-    "space_id": "SP318383",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 638,
@@ -5160,12 +4438,10 @@
     "name": "ground ",
     "school_id": "952680",
     "space_category": "ground",
-    "space_id": "SP194257",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 641,
@@ -5175,12 +4451,10 @@
     "name": "park ",
     "school_id": "952680",
     "space_category": "park",
-    "space_id": "SP553443",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5191,12 +4465,10 @@
     "name": "classroom class-9",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP990490",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5207,12 +4479,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP749094",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5223,12 +4493,10 @@
     "name": "classroom nursery",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP346288",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5239,12 +4507,10 @@
     "name": "classroom lkg",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP475982",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5255,12 +4521,10 @@
     "name": "classroom ukg",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP646176",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5271,12 +4535,10 @@
     "name": "classroom class-8",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP482845",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5287,12 +4549,10 @@
     "name": "classroom class-10",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP140854",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5303,12 +4563,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP309167",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5319,12 +4577,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP532265",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5335,12 +4591,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP905183",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5351,12 +4605,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP119262",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 640,
@@ -5366,12 +4618,10 @@
     "name": "canteen ",
     "school_id": "952680",
     "space_category": "canteen",
-    "space_id": "SP755969",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5382,12 +4632,10 @@
     "name": "classroom nursery",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP950300",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5398,12 +4646,10 @@
     "name": "classroom lkg",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP346277",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5414,12 +4660,10 @@
     "name": "classroom ukg",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP790817",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5430,12 +4674,10 @@
     "name": "classroom class-8",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP960748",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5446,12 +4688,10 @@
     "name": "classroom class-10",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP670603",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5462,12 +4702,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP132704",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5478,12 +4716,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP116955",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5494,12 +4730,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP655061",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5510,12 +4744,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP323612",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5526,12 +4758,10 @@
     "name": "classroom class-7",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP834599",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5542,12 +4772,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP252895",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5558,12 +4786,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP243834",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5573,12 +4799,10 @@
     "name": "classroom ",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP130868",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 637,
@@ -5588,12 +4812,10 @@
     "name": "office ",
     "school_id": "952680",
     "space_category": "office",
-    "space_id": "SP202286",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 639,
@@ -5603,12 +4825,10 @@
     "name": "parking ",
     "school_id": "952680",
     "space_category": "parking",
-    "space_id": "SP242238",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5619,12 +4839,10 @@
     "name": "classroom pre-nursery",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP615161",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5635,12 +4853,10 @@
     "name": "classroom class-1",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP463945",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5651,12 +4867,10 @@
     "name": "classroom class-2",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP960898",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5667,12 +4881,10 @@
     "name": "classroom class-3",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP583872",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5683,12 +4895,10 @@
     "name": "classroom class-4",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP690548",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5699,12 +4909,10 @@
     "name": "classroom class-5",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP644798",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5715,12 +4923,10 @@
     "name": "classroom class-6",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP439747",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5731,12 +4937,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP964306",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5747,12 +4951,10 @@
     "name": "classroom class-9",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP392039",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 626,
@@ -5763,12 +4965,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "428885",
     "space_category": "classroom",
-    "space_id": "SP899277",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 635,
@@ -5778,12 +4978,10 @@
     "name": "kitchen ",
     "school_id": "952680",
     "space_category": "kitchen",
-    "space_id": "SP110069",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5794,12 +4992,10 @@
     "name": "classroom class-7",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP975747",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5810,12 +5006,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP475299",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 634,
@@ -5826,12 +5020,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "952680",
     "space_category": "classroom",
-    "space_id": "SP635918",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -5841,12 +5033,10 @@
     "name": "classroom ",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP128713",
-    "space_name": "classroom ",
-    "space_number": ""
+    "space_name": "classroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 643,
@@ -5856,12 +5046,10 @@
     "name": "kitchen ",
     "school_id": "689225",
     "space_category": "kitchen",
-    "space_id": "SP208472",
-    "space_name": "kitchen ",
-    "space_number": ""
+    "space_name": "kitchen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 644,
@@ -5871,12 +5059,10 @@
     "name": "storeroom ",
     "school_id": "689225",
     "space_category": "storeroom",
-    "space_id": "SP190065",
-    "space_name": "storeroom ",
-    "space_number": ""
+    "space_name": "storeroom "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 645,
@@ -5886,12 +5072,10 @@
     "name": "office ",
     "school_id": "689225",
     "space_category": "office",
-    "space_id": "SP945225",
-    "space_name": "office ",
-    "space_number": ""
+    "space_name": "office "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 646,
@@ -5901,12 +5085,10 @@
     "name": "ground ",
     "school_id": "689225",
     "space_category": "ground",
-    "space_id": "SP256944",
-    "space_name": "ground ",
-    "space_number": ""
+    "space_name": "ground "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 647,
@@ -5916,12 +5098,10 @@
     "name": "parking ",
     "school_id": "689225",
     "space_category": "parking",
-    "space_id": "SP425677",
-    "space_name": "parking ",
-    "space_number": ""
+    "space_name": "parking "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 648,
@@ -5931,12 +5111,10 @@
     "name": "canteen ",
     "school_id": "689225",
     "space_category": "canteen",
-    "space_id": "SP857288",
-    "space_name": "canteen ",
-    "space_number": ""
+    "space_name": "canteen "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 649,
@@ -5946,12 +5124,10 @@
     "name": "park ",
     "school_id": "689225",
     "space_category": "park",
-    "space_id": "SP225891",
-    "space_name": "park ",
-    "space_number": ""
+    "space_name": "park "
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -5962,12 +5138,10 @@
     "name": "classroom pre-nursery",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP545831",
-    "space_name": "Pre-Nursery",
-    "space_number": "pre-nursery"
+    "space_name": "Pre-Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -5978,12 +5152,10 @@
     "name": "classroom nursery",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP528880",
-    "space_name": "Nursery",
-    "space_number": "nursery"
+    "space_name": "Nursery"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -5994,12 +5166,10 @@
     "name": "classroom lkg",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP821030",
-    "space_name": "LKG",
-    "space_number": "lkg"
+    "space_name": "LKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6010,12 +5180,10 @@
     "name": "classroom ukg",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP711248",
-    "space_name": "UKG",
-    "space_number": "ukg"
+    "space_name": "UKG"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6026,12 +5194,10 @@
     "name": "classroom class-1",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP339422",
-    "space_name": "Class 1",
-    "space_number": "class-1"
+    "space_name": "Class 1"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6042,12 +5208,10 @@
     "name": "classroom class-2",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP568852",
-    "space_name": "Class 2",
-    "space_number": "class-2"
+    "space_name": "Class 2"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6058,12 +5222,10 @@
     "name": "classroom class-3",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP896380",
-    "space_name": "Class 3",
-    "space_number": "class-3"
+    "space_name": "Class 3"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6074,12 +5236,10 @@
     "name": "classroom class-4",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP500681",
-    "space_name": "Class 4",
-    "space_number": "class-4"
+    "space_name": "Class 4"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6090,12 +5250,10 @@
     "name": "classroom class-5",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP887643",
-    "space_name": "Class 5",
-    "space_number": "class-5"
+    "space_name": "Class 5"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6106,12 +5264,10 @@
     "name": "classroom class-6",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP106266",
-    "space_name": "Class 6",
-    "space_number": "class-6"
+    "space_name": "Class 6"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6122,12 +5278,10 @@
     "name": "classroom class-7",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP293055",
-    "space_name": "Class 7",
-    "space_number": "class-7"
+    "space_name": "Class 7"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6138,12 +5292,10 @@
     "name": "classroom class-8",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP760537",
-    "space_name": "Class 8",
-    "space_number": "class-8"
+    "space_name": "Class 8"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6154,12 +5306,10 @@
     "name": "classroom class-9",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP119706",
-    "space_name": "Class 9",
-    "space_number": "class-9"
+    "space_name": "Class 9"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6170,12 +5320,10 @@
     "name": "classroom class-10",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP426357",
-    "space_name": "Class 10",
-    "space_number": "class-10"
+    "space_name": "Class 10"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6186,12 +5334,10 @@
     "name": "classroom class-11-arts-/-humanities",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP837454",
-    "space_name": "Class 11 Arts / Humanities",
-    "space_number": "class-11-arts-/-humanities"
+    "space_name": "Class 11 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6202,12 +5348,10 @@
     "name": "classroom class-11-commerce",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP394983",
-    "space_name": "Class 11 Commerce",
-    "space_number": "class-11-commerce"
+    "space_name": "Class 11 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6218,12 +5362,10 @@
     "name": "classroom class-11-science-(pcb)",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP918998",
-    "space_name": "Class 11 Science (PCB)",
-    "space_number": "class-11-science-(pcb)"
+    "space_name": "Class 11 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6234,12 +5376,10 @@
     "name": "classroom class-11-science-(pcm)",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP549300",
-    "space_name": "Class 11 Science (PCM)",
-    "space_number": "class-11-science-(pcm)"
+    "space_name": "Class 11 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6250,12 +5390,10 @@
     "name": "classroom class-12-arts-/-humanities",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP897526",
-    "space_name": "Class 12 Arts / Humanities",
-    "space_number": "class-12-arts-/-humanities"
+    "space_name": "Class 12 Arts / Humanities"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6266,12 +5404,10 @@
     "name": "classroom class-12-commerce",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP474723",
-    "space_name": "Class 12 Commerce",
-    "space_number": "class-12-commerce"
+    "space_name": "Class 12 Commerce"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6282,12 +5418,10 @@
     "name": "classroom class-12-science-(pcb)",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP880118",
-    "space_name": "Class 12 Science (PCB)",
-    "space_number": "class-12-science-(pcb)"
+    "space_name": "Class 12 Science (PCB)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "capacity": 0,
       "categoryId": 642,
@@ -6298,12 +5432,10 @@
     "name": "classroom class-12-science-(pcm)",
     "school_id": "689225",
     "space_category": "classroom",
-    "space_id": "SP367522",
-    "space_name": "Class 12 Science (PCM)",
-    "space_number": "class-12-science-(pcm)"
+    "space_name": "Class 12 Science (PCM)"
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6312,12 +5444,10 @@
     "name": "classroom",
     "school_id": "108564",
     "space_category": "classroom",
-    "space_id": null,
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6326,12 +5456,10 @@
     "name": "classroom",
     "school_id": "142736",
     "space_category": "classroom",
-    "space_id": "classroom",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6340,12 +5468,10 @@
     "name": "storeroom",
     "school_id": "142736",
     "space_category": "storeroom",
-    "space_id": "storeroom",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -6354,12 +5480,10 @@
     "name": "office",
     "school_id": "142736",
     "space_category": "office",
-    "space_id": "office",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -6368,12 +5492,10 @@
     "name": "parking",
     "school_id": "142736",
     "space_category": "parking",
-    "space_id": "parking",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -6382,12 +5504,10 @@
     "name": "canteen",
     "school_id": "142736",
     "space_category": "canteen",
-    "space_id": "canteen",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -6396,12 +5516,10 @@
     "name": "park",
     "school_id": "142736",
     "space_category": "park",
-    "space_id": "park",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -6410,12 +5528,10 @@
     "name": "ground",
     "school_id": "142736",
     "space_category": "ground",
-    "space_id": "ground",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -6424,12 +5540,10 @@
     "name": "Pre-Nursery",
     "school_id": "142736",
     "space_category": "classroom",
-    "space_id": "pre-nursery",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6438,12 +5552,10 @@
     "name": "classroom",
     "school_id": "485897",
     "space_category": "classroom",
-    "space_id": "classroom-4858",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6452,12 +5564,10 @@
     "name": "classroom",
     "school_id": "347561",
     "space_category": "classroom",
-    "space_id": "classroom-3475",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6466,12 +5576,10 @@
     "name": "classroom",
     "school_id": "256956",
     "space_category": "classroom",
-    "space_id": "classroom-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -6480,12 +5588,10 @@
     "name": "kitchen",
     "school_id": "256956",
     "space_category": "kitchen",
-    "space_id": "kitchen-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6494,12 +5600,10 @@
     "name": "storeroom",
     "school_id": "256956",
     "space_category": "storeroom",
-    "space_id": "storeroom-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -6508,12 +5612,10 @@
     "name": "office",
     "school_id": "256956",
     "space_category": "office",
-    "space_id": "office-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -6522,12 +5624,10 @@
     "name": "ground",
     "school_id": "256956",
     "space_category": "ground",
-    "space_id": "ground-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -6536,12 +5636,10 @@
     "name": "parking",
     "school_id": "256956",
     "space_category": "parking",
-    "space_id": "parking-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -6550,12 +5648,10 @@
     "name": "canteen",
     "school_id": "256956",
     "space_category": "canteen",
-    "space_id": "canteen-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -6564,12 +5660,10 @@
     "name": "park",
     "school_id": "256956",
     "space_category": "park",
-    "space_id": "park-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -6578,12 +5672,10 @@
     "name": "Pre-Nursery",
     "school_id": "256956",
     "space_category": "classroom",
-    "space_id": "pre-nursery-2569",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6592,12 +5684,10 @@
     "name": "classroom",
     "school_id": "585963",
     "space_category": "classroom",
-    "space_id": "classroom-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -6606,12 +5696,10 @@
     "name": "kitchen",
     "school_id": "585963",
     "space_category": "kitchen",
-    "space_id": "kitchen-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6620,12 +5708,10 @@
     "name": "storeroom",
     "school_id": "585963",
     "space_category": "storeroom",
-    "space_id": "storeroom-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -6634,12 +5720,10 @@
     "name": "office",
     "school_id": "585963",
     "space_category": "office",
-    "space_id": "office-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -6648,12 +5732,10 @@
     "name": "ground",
     "school_id": "585963",
     "space_category": "ground",
-    "space_id": "ground-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -6662,12 +5744,10 @@
     "name": "parking",
     "school_id": "585963",
     "space_category": "parking",
-    "space_id": "parking-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -6676,12 +5756,10 @@
     "name": "canteen",
     "school_id": "585963",
     "space_category": "canteen",
-    "space_id": "canteen-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -6690,12 +5768,10 @@
     "name": "park",
     "school_id": "585963",
     "space_category": "park",
-    "space_id": "park-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -6704,12 +5780,10 @@
     "name": "Pre-Nursery",
     "school_id": "585963",
     "space_category": "classroom",
-    "space_id": "pre-nursery-5859",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6718,12 +5792,10 @@
     "name": "classroom",
     "school_id": "515004",
     "space_category": "classroom",
-    "space_id": "classroom-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -6732,12 +5804,10 @@
     "name": "kitchen",
     "school_id": "515004",
     "space_category": "kitchen",
-    "space_id": "kitchen-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6746,12 +5816,10 @@
     "name": "storeroom",
     "school_id": "515004",
     "space_category": "storeroom",
-    "space_id": "storeroom-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -6760,12 +5828,10 @@
     "name": "office",
     "school_id": "515004",
     "space_category": "office",
-    "space_id": "office-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -6774,12 +5840,10 @@
     "name": "ground",
     "school_id": "515004",
     "space_category": "ground",
-    "space_id": "ground-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -6788,12 +5852,10 @@
     "name": "parking",
     "school_id": "515004",
     "space_category": "parking",
-    "space_id": "parking-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -6802,12 +5864,10 @@
     "name": "canteen",
     "school_id": "515004",
     "space_category": "canteen",
-    "space_id": "canteen-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -6816,12 +5876,10 @@
     "name": "park",
     "school_id": "515004",
     "space_category": "park",
-    "space_id": "park-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -6830,12 +5888,10 @@
     "name": "Pre-Nursery",
     "school_id": "515004",
     "space_category": "classroom",
-    "space_id": "pre-nursery-5150",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6844,12 +5900,10 @@
     "name": "classroom",
     "school_id": "986511",
     "space_category": "classroom",
-    "space_id": "classroom-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -6858,12 +5912,10 @@
     "name": "kitchen",
     "school_id": "986511",
     "space_category": "kitchen",
-    "space_id": "kitchen-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6872,12 +5924,10 @@
     "name": "storeroom",
     "school_id": "986511",
     "space_category": "storeroom",
-    "space_id": "storeroom-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -6886,12 +5936,10 @@
     "name": "office",
     "school_id": "986511",
     "space_category": "office",
-    "space_id": "office-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -6900,12 +5948,10 @@
     "name": "ground",
     "school_id": "986511",
     "space_category": "ground",
-    "space_id": "ground-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -6914,12 +5960,10 @@
     "name": "parking",
     "school_id": "986511",
     "space_category": "parking",
-    "space_id": "parking-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -6928,12 +5972,10 @@
     "name": "canteen",
     "school_id": "986511",
     "space_category": "canteen",
-    "space_id": "canteen-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -6942,12 +5984,10 @@
     "name": "park",
     "school_id": "986511",
     "space_category": "park",
-    "space_id": "park-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -6956,12 +5996,10 @@
     "name": "Pre-Nursery",
     "school_id": "986511",
     "space_category": "classroom",
-    "space_id": "pre-nursery-9865",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -6970,12 +6008,10 @@
     "name": "classroom",
     "school_id": "848426",
     "space_category": "classroom",
-    "space_id": "classroom-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -6984,12 +6020,10 @@
     "name": "kitchen",
     "school_id": "848426",
     "space_category": "kitchen",
-    "space_id": "kitchen-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -6998,12 +6032,10 @@
     "name": "storeroom",
     "school_id": "848426",
     "space_category": "storeroom",
-    "space_id": "storeroom-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -7012,12 +6044,10 @@
     "name": "office",
     "school_id": "848426",
     "space_category": "office",
-    "space_id": "office-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -7026,12 +6056,10 @@
     "name": "ground",
     "school_id": "848426",
     "space_category": "ground",
-    "space_id": "ground-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -7040,12 +6068,10 @@
     "name": "parking",
     "school_id": "848426",
     "space_category": "parking",
-    "space_id": "parking-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -7054,12 +6080,10 @@
     "name": "canteen",
     "school_id": "848426",
     "space_category": "canteen",
-    "space_id": "canteen-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -7068,12 +6092,10 @@
     "name": "park",
     "school_id": "848426",
     "space_category": "park",
-    "space_id": "park-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -7082,12 +6104,10 @@
     "name": "Pre-Nursery",
     "school_id": "848426",
     "space_category": "classroom",
-    "space_id": "pre-nursery-8484",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -7096,12 +6116,10 @@
     "name": "classroom",
     "school_id": "555731",
     "space_category": "classroom",
-    "space_id": "classroom-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -7110,12 +6128,10 @@
     "name": "kitchen",
     "school_id": "555731",
     "space_category": "kitchen",
-    "space_id": "kitchen-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -7124,12 +6140,10 @@
     "name": "storeroom",
     "school_id": "555731",
     "space_category": "storeroom",
-    "space_id": "storeroom-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -7138,12 +6152,10 @@
     "name": "office",
     "school_id": "555731",
     "space_category": "office",
-    "space_id": "office-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -7152,12 +6164,10 @@
     "name": "ground",
     "school_id": "555731",
     "space_category": "ground",
-    "space_id": "ground-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -7166,12 +6176,10 @@
     "name": "parking",
     "school_id": "555731",
     "space_category": "parking",
-    "space_id": "parking-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -7180,12 +6188,10 @@
     "name": "canteen",
     "school_id": "555731",
     "space_category": "canteen",
-    "space_id": "canteen-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -7194,12 +6200,10 @@
     "name": "park",
     "school_id": "555731",
     "space_category": "park",
-    "space_id": "park-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -7208,12 +6212,10 @@
     "name": "Pre-Nursery",
     "school_id": "555731",
     "space_category": "classroom",
-    "space_id": "pre-nursery-5557",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "classroom"
@@ -7222,12 +6224,10 @@
     "name": "classroom",
     "school_id": "133199",
     "space_category": "classroom",
-    "space_id": "classroom-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "kitchen",
       "name": "kitchen"
@@ -7236,12 +6236,10 @@
     "name": "kitchen",
     "school_id": "133199",
     "space_category": "kitchen",
-    "space_id": "kitchen-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "storeroom",
       "name": "storeroom"
@@ -7250,12 +6248,10 @@
     "name": "storeroom",
     "school_id": "133199",
     "space_category": "storeroom",
-    "space_id": "storeroom-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "office",
       "name": "office"
@@ -7264,12 +6260,10 @@
     "name": "office",
     "school_id": "133199",
     "space_category": "office",
-    "space_id": "office-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "parking",
       "name": "parking"
@@ -7278,12 +6272,10 @@
     "name": "parking",
     "school_id": "133199",
     "space_category": "parking",
-    "space_id": "parking-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "canteen",
       "name": "canteen"
@@ -7292,12 +6284,10 @@
     "name": "canteen",
     "school_id": "133199",
     "space_category": "canteen",
-    "space_id": "canteen-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "park",
       "name": "park"
@@ -7306,12 +6296,10 @@
     "name": "park",
     "school_id": "133199",
     "space_category": "park",
-    "space_id": "park-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "ground",
       "name": "ground"
@@ -7320,12 +6308,10 @@
     "name": "ground",
     "school_id": "133199",
     "space_category": "ground",
-    "space_id": "ground-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "classroom",
       "name": "Pre-Nursery"
@@ -7334,12 +6320,10 @@
     "name": "Pre-Nursery",
     "school_id": "133199",
     "space_category": "classroom",
-    "space_id": "pre-nursery-1331",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 101"
@@ -7348,12 +6332,10 @@
     "name": "Room 101",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-101-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 102"
@@ -7362,12 +6344,10 @@
     "name": "Room 102",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-102-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 103"
@@ -7376,12 +6356,10 @@
     "name": "Room 103",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-103-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 104"
@@ -7390,12 +6368,10 @@
     "name": "Room 104",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-104-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 105"
@@ -7404,12 +6380,10 @@
     "name": "Room 105",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-105-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Room 201"
@@ -7418,12 +6392,10 @@
     "name": "Room 201",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "room-201-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Classroom",
       "name": "Lab-100"
@@ -7432,12 +6404,10 @@
     "name": "Lab-100",
     "school_id": "TEST001",
     "space_category": "Classroom",
-    "space_id": "lab-100-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
   },
   {
-    "capacity": 0,
+    "budget": null,
     "data": {
       "category": "Lab",
       "name": "ZooRoom77001"
@@ -7446,8 +6416,15 @@
     "name": "ZooRoom77001",
     "school_id": "TEST001",
     "space_category": "Lab",
-    "space_id": "zooroom77001-TEST",
-    "space_name": null,
-    "space_number": null
+    "space_name": null
+  },
+  {
+    "budget": "1000",
+    "data": {},
+    "id": "564",
+    "name": "Class 10-A",
+    "school_id": "test-school",
+    "space_category": "Classroom",
+    "space_name": null
   }
 ]

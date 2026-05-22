@@ -16,7 +16,6 @@ impl AdminService {
         username: &str,
         password: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        println!("[DEBUG] Login attempt for username: '{}'", username);
         let mut conn = self.db.acquire_super_admin_connection().await?;
         let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
             .bind(username)
@@ -25,10 +24,8 @@ impl AdminService {
 
         if let Some(r) = row {
             let hash: String = r.try_get("password_hash")?;
-            println!("[DEBUG] Found hash for user: '{}'", hash);
             match bcrypt::verify(password, &hash) {
                 Ok(true) => {
-                    println!("[DEBUG] Password verified SUCCESSFULLY");
                     let secret = std::env::var("SUPER_ADMIN_SECRET")
                     .expect("SUPER_ADMIN_SECRET environment variable must be set");
                 let ts = chrono::Utc::now().timestamp();
@@ -37,11 +34,11 @@ impl AdminService {
                 let token = general_purpose::STANDARD.encode(raw.as_bytes());
                 return Ok(token);
                 },
-                Ok(false) => println!("[DEBUG] Password verification FAILED (mismatch)"),
-                Err(e) => println!("[DEBUG] bcrypt error: {:?}", e),
+                Ok(false) => tracing::warn!("Failed super admin login attempt for '{}'", username),
+                Err(e) => tracing::error!("bcrypt error: {:?}", e),
             }
         } else {
-            println!("[DEBUG] User '{}' NOT FOUND in super_admin table", username);
+            tracing::warn!("Super admin login: user '{}' not found", username);
         }
         Err("Invalid super admin credentials".into())
     }
@@ -524,13 +521,13 @@ impl AdminService {
             "auth",
         ];
 
-        println!("[SuperAdmin] Deleting school data for: {}", school_id);
+        tracing::info!("Deleting school data for: {}", school_id);
 
         for table in &tables {
             let sp_name = format!("sp_{}", table);
             // Create a savepoint before attempting the deletion
             if let Err(e) = sqlx::query(&format!("SAVEPOINT {}", sp_name)).execute(&mut *tx).await {
-                println!("[Delete Error] Failed to create savepoint for {}: {:?}", table, e);
+                tracing::error!("Failed to create savepoint for {}: {:?}", table, e);
                 continue;
             }
 
@@ -538,7 +535,7 @@ impl AdminService {
                 .bind(school_id)
                 .execute(&mut *tx)
                 .await {
-                    println!("[Delete Error] Table {}: {:?}", table, e);
+                    tracing::error!("Error deleting from table {}: {:?}", table, e);
                     // Rollback to the savepoint so the main transaction is not aborted
                     let _ = sqlx::query(&format!("ROLLBACK TO SAVEPOINT {}", sp_name)).execute(&mut *tx).await;
                 } else {
@@ -554,7 +551,7 @@ impl AdminService {
             .await?;
 
         tx.commit().await?;
-        println!("[SuperAdmin] School {} and all associated data deleted.", school_id);
+        tracing::info!("School {} and all associated data deleted.", school_id);
         Ok(())
     }
 

@@ -15,7 +15,7 @@ import { ImageUploadField } from './StorageWidget';
 
 // ─── Input Styling Helper ──────────────────────────────────────────────────────
 export const inp = (error = false, className = '', dense = false) => {
-  return `w-full bg-white/5 border ${error ? 'border-accent/60' : 'border-white/10'} ${dense ? 'rounded-lg px-2 py-1 text-micro' : 'rounded-xl px-4 py-2 text-xs'} text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 focus:bg-white/[0.08] transition-all duration-300 ${className}`;
+  return `w-full bg-[var(--bg-secondary)] border ${error ? 'border-accent/60' : 'border-[var(--glass-border)]'} ${dense ? 'rounded-lg px-2 py-1 text-micro' : 'rounded-xl px-4 py-2 text-xs'} text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 focus:bg-[var(--bg-main)] transition-all duration-300 ${className}`;
 };
 
 // ─── Field Layout Component ───────────────────────────────────────────────────
@@ -23,7 +23,7 @@ export const Field = ({ label, children, error, required = false, className = ''
   return (
     <div className={`${dense ? 'space-y-0.5' : 'space-y-1.5'} ${className}`}>
       {label && (
-        <label className={`flex items-center gap-1.5 ${dense ? 'text-micro' : 'text-[9px]'} font-bold text-slate-500 uppercase tracking-widest ml-0.5`}>
+        <label className={`flex items-center gap-1.5 ${dense ? 'text-micro' : 'text-[9px]'} font-bold text-[var(--text-muted)] uppercase tracking-widest ml-0.5`}>
           {LabelIcon && <LabelIcon size={dense ? 8 : 10} className="text-primary" />}
           {label}
           {required && <span className="text-accent">*</span>}
@@ -41,7 +41,7 @@ export const Field = ({ label, children, error, required = false, className = ''
             {error}
           </motion.p>
         ) : helperText ? (
-          <p className="text-[10px] text-slate-500 mt-1 ml-1 leading-relaxed">{helperText}</p>
+          <p className="text-[10px] text-[var(--text-muted)] mt-1 ml-1 leading-relaxed">{helperText}</p>
         ) : null}
       </AnimatePresence>
     </div>
@@ -69,8 +69,8 @@ export const FormSection = ({ title, description, icon: Icon, children, columns 
             </div>
           )}
           <div>
-            <h3 className={`${dense ? 'text-xs' : 'text-lg'} font-black text-white tracking-tight italic uppercase`}>{title}</h3>
-            {description && <p className={`${dense ? 'text-micro' : 'text-xs'} text-slate-500 mt-0.5`}>{description}</p>}
+            <h3 className={`${dense ? 'text-xs' : 'text-lg'} font-black text-[var(--text-main)] tracking-tight italic uppercase`}>{title}</h3>
+            {description && <p className={`${dense ? 'text-micro' : 'text-xs'} text-[var(--text-muted)] mt-0.5`}>{description}</p>}
           </div>
         </div>
       )}
@@ -172,10 +172,10 @@ export const CheckboxInput = ({ name, control, rules, label, disabled, className
               className="peer sr-only" 
               disabled={disabled} 
             />
-            <div className="w-4 h-4 border-2 border-white/10 rounded bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/50" />
+            <div className="w-4 h-4 border-2 border-[var(--glass-border)] rounded bg-[var(--bg-secondary)] transition-all peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/50" />
             <svg className="absolute w-3 h-3 text-white scale-0 transition-transform peer-checked:scale-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">{label}</span>
+          <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{label}</span>
         </label>
         {error && <p className="text-[10px] text-red-400 font-semibold">{error.message}</p>}
       </div>
@@ -190,7 +190,7 @@ export const CheckboxGroup = ({ name, control, rules, label, options = [], disab
     rules={rules}
     render={({ field, fieldState: { error } }) => (
       <Field label={label} error={error?.message} required={!!rules?.required} className={`${className} md:col-span-2`}>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl max-h-[200px] overflow-y-auto custom-scrollbar">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-2xl max-h-[200px] overflow-y-auto custom-scrollbar">
           {options.map((opt) => {
             const isChecked = (field.value || []).includes(opt.value);
             return (
@@ -208,10 +208,10 @@ export const CheckboxGroup = ({ name, control, rules, label, options = [], disab
                       field.onChange(newVal);
                     }}
                   />
-                  <div className="w-4 h-4 border-2 border-white/10 rounded bg-white/5 transition-all peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/50" />
+                  <div className="w-4 h-4 border-2 border-[var(--glass-border)] rounded bg-[var(--bg-main)] transition-all peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/50" />
                   <svg className="absolute w-3 h-3 text-white scale-0 transition-transform peer-checked:scale-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors truncate">{opt.label}</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors truncate">{opt.label}</span>
               </label>
             );
           })}
@@ -237,11 +237,11 @@ export const FileUpload = ({ name, control, rules, label, multiple, accept = "*"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             onChange={(e) => onChange(multiple ? Array.from(e.target.files) : e.target.files[0])}
           />
-          <div className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all duration-300 ${error ? 'border-red-500/30 bg-red-500/5' : 'border-white/10 bg-white/5 group-hover/file:border-primary/30 group-hover/file:bg-primary/5'}`}>
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-slate-400 group-hover/file:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+          <div className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all duration-300 ${error ? 'border-red-500/30 bg-red-500/5' : 'border-[var(--glass-border)] bg-[var(--bg-secondary)] group-hover/file:border-primary/30 group-hover/file:bg-primary/5'}`}>
+            <div className="w-10 h-10 rounded-xl bg-[var(--bg-main)] flex items-center justify-center mb-3">
+              <svg className="w-5 h-5 text-[var(--text-muted)] group-hover/file:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </div>
-            <p className="text-xs font-bold text-slate-300">{value ? (multiple ? `${value.length} files selected` : value.name) : 'Upload Documents'}</p>
+            <p className="text-xs font-bold text-[var(--text-muted)]">{value ? (multiple ? `${value.length} files selected` : value.name) : 'Upload Documents'}</p>
           </div>
         </div>
       </Field>
@@ -318,20 +318,20 @@ export const CollectionRenderer = ({ section, control, mode, isActive, dense = f
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className={`${dense ? 'text-xs' : 'text-lg'} font-black text-white italic uppercase`}>{section.title || section.label}</h3>
-          <p className="text-micro text-slate-500 uppercase tracking-widest">{section.description}</p>
+          <h3 className={`${dense ? 'text-xs' : 'text-lg'} font-black text-[var(--text-main)] italic uppercase`}>{section.title || section.label}</h3>
+          <p className="text-micro text-[var(--text-muted)] uppercase tracking-widest">{section.description}</p>
         </div>
         <StandardButton variant="primary" size="xs" label="ADD_RECORD" />
       </div>
 
-      <div className="overflow-x-auto border border-white/5 rounded-2xl bg-white/[0.02]">
+      <div className="overflow-x-auto border border-[var(--glass-border)] rounded-2xl bg-[var(--bg-main)]">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-white/5 border-b border-white/5">
+            <tr className="bg-[var(--bg-secondary)] border-b border-[var(--glass-border)]">
               {section.fields?.map(f => (
-                <th key={f.name} className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">{f.label}</th>
+                <th key={f.name} className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{f.label}</th>
               ))}
-              <th className="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest text-right">Action</th>
+              <th className="px-4 py-2 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -340,7 +340,7 @@ export const CollectionRenderer = ({ section, control, mode, isActive, dense = f
                  <td key={f.name} className="px-4 py-2">
                    <input 
                      placeholder={f.placeholder} 
-                     className="w-full bg-transparent border-none text-xs text-white placeholder:text-slate-800 focus:outline-none"
+                     className="w-full bg-transparent border-none text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none"
                    />
                  </td>
                ))}
@@ -531,10 +531,10 @@ const FormWidget = ({
   // ─── SIDEBAR LAYOUT (MODERN STEPPER / BOXED) ──────────────────────────────────
   if (layout === 'sidebar') {
     return (
-      <div className={`flex flex-col lg:flex-row min-h-screen bg-[#0a0c10] ${className}`}>
+      <div className={`flex flex-col lg:flex-row min-h-screen bg-[var(--bg-main)] ${className}`}>
         {/* Left Sidebar Navigation */}
-        <div className="w-full lg:w-52 shrink-0 bg-[#0d0f17] border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col relative z-20">
-          <div className="flex flex-row lg:flex-col lg:h-full lg:divide-y divide-white/5">
+        <div className="w-full lg:w-52 shrink-0 bg-[var(--bg-sidebar)] border-b lg:border-b-0 lg:border-r border-[var(--glass-border)] flex flex-col relative z-20">
+          <div className="flex flex-row lg:flex-col lg:h-full lg:divide-y divide-[var(--glass-border)]">
             {sections.map((section, idx) => {
               const isActive = section.id === activeSection;
               const isCompleted = sections.findIndex(s => s.id === activeSection) > idx;
@@ -543,13 +543,13 @@ const FormWidget = ({
                 <button
                   key={section.id}
                   onClick={() => onSectionChange(section.id)}
-                  className={`flex-1 lg:flex-none flex items-center lg:items-start gap-4 p-4 lg:p-6 transition-all duration-300 group relative border-r lg:border-r-0 border-white/5 last:border-r-0 ${
-                    isActive ? 'bg-primary/10' : 'hover:bg-white/[0.02]'
+                  className={`flex-1 lg:flex-none flex items-center lg:items-start gap-4 p-4 lg:p-6 transition-all duration-300 group relative border-r lg:border-r-0 border-[var(--glass-border)] last:border-r-0 ${
+                    isActive ? 'bg-primary/10' : 'hover:bg-[var(--bg-main)]'
                   }`}
                 >
                   {/* Vertical Center Line logic (desktop) */}
                   {idx < sections.length - 1 && (
-                     <div className="hidden lg:block absolute left-9 top-14 bottom-0 w-[1px] bg-white/5 z-0" />
+                     <div className="hidden lg:block absolute left-9 top-14 bottom-0 w-[1px] bg-[var(--glass-border)] z-0" />
                   )}
 
                   <div className="relative z-10 flex flex-col items-center gap-1">
@@ -559,7 +559,7 @@ const FormWidget = ({
                         ? 'border-primary bg-primary/20 bg-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]' 
                         : isCompleted 
                           ? 'border-emerald-500 bg-emerald-500' 
-                          : 'border-slate-800 bg-transparent group-hover:border-slate-600'
+                          : 'border-slate-350 bg-transparent group-hover:border-slate-500'
                     }`}>
                       {isCompleted && <CheckCircle size={12} className="text-white" />}
                       {isActive && <div className="w-1.5 h-1.5 bg-white rounded-sm animate-pulse" />}
@@ -567,7 +567,7 @@ const FormWidget = ({
                   </div>
 
                   <div className="text-left py-0.5 relative z-10 hidden sm:block">
-                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}`}>
                       {section.label || section.title}
                     </p>
   
@@ -577,10 +577,10 @@ const FormWidget = ({
             })}
           </div>
 
-          <div className="hidden lg:flex p-6 border-t border-white/5 mt-auto">
+          <div className="hidden lg:flex p-6 border-t border-[var(--glass-border)] mt-auto">
              <div className="flex items-center gap-2 opacity-20">
                 <div className="w-1 h-1 rounded-full bg-primary" />
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">Module_Integrated_v5.2</span>
+                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Module_Integrated_v5.2</span>
              </div>
           </div>
         </div>
@@ -592,7 +592,7 @@ const FormWidget = ({
             <div className="max-w-5xl mx-auto">
                {/* Form Content Bordered Wrapper */}
 
-               <div className="p-8 rounded-[2.5rem] border border-white/10 bg-white/[0.01] shadow-2xl relative overflow-hidden group/form">
+               <div className="p-8 rounded-[2.5rem] border border-[var(--glass-border)] bg-[var(--bg-secondary)] shadow-2xl relative overflow-hidden group/form">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover/form:opacity-100 transition-opacity duration-700" />
                   <div className="relative z-10">
                     {formContent}
@@ -602,23 +602,23 @@ const FormWidget = ({
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="px-6 py-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between z-20 backdrop-blur-xl">
+          <div className="px-6 py-4 border-t border-[var(--glass-border)] bg-[var(--bg-secondary)] flex items-center justify-between z-20 backdrop-blur-xl">
             <div className="flex items-center gap-4">
-               <div className="text-[8px] font-bold text-slate-700 uppercase tracking-widest leading-none">Workflow Control Node</div>
-               <div className="h-4 w-[1px] bg-white/5" />
+               <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-none">Workflow Control Node</div>
+               <div className="h-4 w-[1px] bg-[var(--glass-border)]" />
                <div className="flex gap-4">
-                  <button onClick={handlePrev} disabled={currentSectionIdx === 0} className="text-[8px] font-black text-slate-600 hover:text-white uppercase disabled:opacity-10 transition-all">← Back</button>
-                  <button onClick={handleNext} disabled={currentSectionIdx === sections.length - 1} className="text-[8px] font-black text-primary hover:text-white uppercase disabled:opacity-10 transition-all">Next →</button>
+                  <button onClick={handlePrev} disabled={currentSectionIdx === 0} className="text-[8px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] uppercase disabled:opacity-10 transition-all">← Back</button>
+                  <button onClick={handleNext} disabled={currentSectionIdx === sections.length - 1} className="text-[8px] font-black text-primary hover:text-[var(--text-main)] uppercase disabled:opacity-10 transition-all">Next →</button>
                </div>
             </div>
 
             <div className="flex items-center gap-2">
               {showCancel && (
-                <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">
+                <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all">
                   {cancelLabel}
                 </button>
               )}
-              <div className="flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-xl gap-1">
+              <div className="flex items-center p-1 bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-xl gap-1">
                 <button 
                   type="submit" 
                   onClick={onSubmit} 
@@ -633,7 +633,7 @@ const FormWidget = ({
           </div>
 
           {/* Minimal Footer */}
-          <div className="px-8 py-2 border-t border-white/5 bg-black/20 flex justify-between items-center text-[7px] font-bold text-slate-800 uppercase tracking-[0.4em]">
+          <div className="px-8 py-2 border-t border-[var(--glass-border)] bg-[var(--bg-main)] flex justify-between items-center text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-[0.4em]">
              <div>Global Workspace v5.2</div>
              <div>Secure Registration Protocol Enabled</div>
           </div>

@@ -61,6 +61,25 @@ impl InventoryOperations {
         Ok(res)
     }
 
+    pub async fn delete_space_category(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        name: &str,
+    ) -> AppResult<()> {
+        self.repos.resource.delete_space_category(school_id, name).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "SPACE_CATEGORY",
+            name,
+            "DELETE",
+            serde_json::json!({})
+        ).await;
+        Ok(())
+    }
+
     pub async fn update_space(
         &self,
         school_id: &str,
@@ -233,6 +252,27 @@ impl InventoryOperations {
             space_name,
             "ASSIGN",
             serde_json::json!({ "materials": materials })
+        ).await;
+        Ok(())
+    }
+
+    pub async fn remove_space_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> AppResult<()> {
+        self.repos.resource.remove_space_material(school_id, space_name, material_name, quantity).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "SPACE_MATERIALS",
+            space_name,
+            "REMOVE",
+            serde_json::json!({ "materialName": material_name, "quantity": quantity })
         ).await;
         Ok(())
     }

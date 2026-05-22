@@ -16,7 +16,8 @@ import {
   useGetSpaceResponsibilitiesQuery,
   useGetSpaceFinancialOverviewQuery,
   useUpdateSpaceBudgetMutation,
-} from '../../api/infrastructureApi';
+  useTransferMaterialMutation,
+} from '../../infrastructureApi';
 import { useGetStudentsQuery } from '../../../students/api/studentApi';
 
 const TABS = [
@@ -42,6 +43,7 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
   const [editingBudget, setEditingBudget] = React.useState(false);
   const [budgetInput, setBudgetInput] = React.useState('');
   const [updateBudgetMutation] = useUpdateSpaceBudgetMutation();
+  const [transferMaterial] = useTransferMaterialMutation();
 
   const name = space?.spaceName || space?.name;
   const spaceId = space?.spaceId || name;
@@ -204,9 +206,16 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
           spaces={allSpaces || [space]}
           material={transferTarget}
           fromSpace={space}
+          materials={materials}
           onClose={() => setTransferTarget(null)}
-          onTransfer={(args) => {
-            // This creates the transfer call — the mutation hook will be passed from parent
+          onTransfer={async (args) => {
+            try {
+              await transferMaterial(args).unwrap();
+              toast.success('Material transferred');
+              setTransferTarget(null);
+            } catch (e) {
+              toast.error(e?.data?.message || 'Transfer failed');
+            }
           }}
         />
       )}

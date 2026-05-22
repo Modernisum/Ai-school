@@ -27,8 +27,6 @@ CREATE POLICY notification_prefs_school_isolation ON notification_preferences
 -- RLS policy: users can only access their own preferences
 CREATE POLICY notification_prefs_user_access ON notification_preferences
     USING (user_id = current_setting('app.current_user_id', TRUE)
-        OR EXISTS (
-            SELECT 1 FROM auth WHERE school_id = notification_preferences.school_id
-            AND (role = 'super_admin' OR is_admin = TRUE)
-            AND email = current_setting('app.current_user_email', TRUE)
-        ));
+        OR is_super_admin()
+        OR current_setting('app.user_role', TRUE) = 'admin'
+    );

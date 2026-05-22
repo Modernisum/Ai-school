@@ -177,6 +177,7 @@ export const deleteFileByUrl = async (url) => {
 };
 export const getConfig = (key) => authFetch(`/config/${key}`);
 export const updateConfig = (key, value) => authFetch("/config", { method: "POST", body: JSON.stringify({ key, value }) });
+export const getAdminStats = () => authFetch("/stats");
 
 export const getHealth = async () => {
     const res = await fetch(`${API_BASE}/health`);

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   GraduationCap, UserCheck, Banknote,
   CheckSquare, Zap, Sparkles, TrendingUp,
-  Clock, Calendar, Users
+  Clock, Calendar, Users, RotateCw
 } from "lucide-react";
 import SkeletonLoader from "../../../components/ui/SkeletonLoader";
 import GlassCard from "../../../components/ui/GlassCard";
@@ -12,8 +12,11 @@ import StandardButton from "../../../components/ui/StandardButton";
 import { useSelector } from "react-redux";
 import { selectSchoolId } from "../../auth/authSlice";
 import { useGetAdvancedAttendanceQuery } from "../../academics/api/academicApi";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
+import { useGetDashboardOverviewQuery, useGetDashboardStatsQuery } from "../api/dashboardApi";
+import { useGetProxySuggestionsQuery } from "../../employees/api/leaveApi";
+import { useGetTasksQuery, useAiGenerateTasksMutation } from "../../ai/api/taskApi";
+import { useGetEmployeesQuery } from "../../employees/api/employeeApi";
+import { useGetEventsQuery } from "../api/notificationApi";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,22 +32,50 @@ export default function HomePage() {
   const reduxSchoolId = useSelector(selectSchoolId);
   const schoolId = reduxSchoolId || "";
 
-  const [proxyLoading, setProxyLoading] = useState(true);
-  const [tasksLoading, setTasksLoading] = useState(true);
-  const [proxySuggestions, setProxySuggestions] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmp, setSelectedEmp] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [attendancePeriod, setAttendancePeriod] = useState('week');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedEmp, setSelectedEmp] = useState('');
 
-  const { data: studentAtt, isLoading: studentAttLoading } = useGetAdvancedAttendanceQuery({
+  // 1. Overview and Stats Queries
+  const { data: overviewRes, isLoading: overviewLoading, isFetching: overviewFetching, refetch: refetchOverview } = useGetDashboardOverviewQuery(schoolId, { skip: !schoolId });
+  const { data: statsRes, isLoading: statsLoading, refetch: refetchStats } = useGetDashboardStatsQuery(schoolId, { skip: !schoolId });
+
+  // 2. Attendance Queries (Period-based)
+  const { data: studentAtt, isLoading: studentAttLoading, isFetching: studentAttFetching, refetch: refetchStudentAtt } = useGetAdvancedAttendanceQuery({
     school_id: schoolId, period: attendancePeriod, user_type: 'student',
   }, { skip: !schoolId });
 
-  const { data: employeeAtt, isLoading: employeeAttLoading } = useGetAdvancedAttendanceQuery({
+  const { data: employeeAtt, isLoading: employeeAttLoading, isFetching: employeeAttFetching, refetch: refetchEmployeeAtt } = useGetAdvancedAttendanceQuery({
     school_id: schoolId, period: attendancePeriod, user_type: 'employee',
   }, { skip: !schoolId });
+
+  // 3. Proxy suggestions
+  const { data: proxySuggestionsRes, isLoading: proxyLoading, isFetching: proxyFetching, refetch: refetchProxy } = useGetProxySuggestionsQuery({
+    schoolId, date: selectedDate, period: 1
+  }, { skip: !schoolId });
+
+  // 4. Tasks Query & Mutation
+  const { data: tasksRes, isLoading: tasksLoading, isFetching: tasksFetching, refetch: refetchTasks } = useGetTasksQuery(schoolId, { skip: !schoolId });
+  const [aiGenerateTasks, { isLoading: isGenerating }] = useAiGenerateTasksMutation();
+
+  // 5. Employees Query (for selector)
+  const { data: employeesRes, refetch: refetchEmployees } = useGetEmployeesQuery(schoolId, { skip: !schoolId });
+
+  // 6. Events Query
+  const { data: eventsRes, isLoading: eventsLoading, isFetching: eventsFetching, refetch: refetchEvents } = useGetEventsQuery(schoolId, { skip: !schoolId });
+
+  // Computed data
+  const overviewData = overviewRes?.data;
+  const proxySuggestions = proxySuggestionsRes?.data || [];
+  const tasks = tasksRes?.data || [];
+  const employees = employeesRes?.employees || [];
+  const events = eventsRes?.data || [];
+
+  useEffect(() => {
+    if (employees.length > 0 && !selectedEmp) {
+      setSelectedEmp(employees[0].employee_id || employees[0].id || '');
+    }
+  }, [employees, selectedEmp]);
 
   const studentKpi = useMemo(() => {
     const s = studentAtt?.summary;
@@ -80,35 +111,33 @@ export default function HomePage() {
     return Object.values(byDate).sort((a, b) => a.label.localeCompare(b.label)).map(d => ({ label: d.label.slice(5), value: d.present }));
   }, [employeeAtt]);
 
-  useEffect(() => {
-    if (!schoolId) return;
-    fetch(`${API_BASE_URL}/dashboard/${schoolId}/leaves/proxy-suggestions?date=${new Date().toISOString().split('T')[0]}&period=1`)
-      .then(r => r.json()).then(d => setProxySuggestions(Array.isArray(d) ? d.slice(0, 3) : [])).catch(() => setProxySuggestions([])).finally(() => setProxyLoading(false));
-    fetch(`${API_BASE_URL}/task/${schoolId}`)
-      .then(r => r.json()).then(d => setTasks(d.success && Array.isArray(d.data) ? d.data.slice(0, 5) : [])).catch(() => setTasks([])).finally(() => setTasksLoading(false));
-    fetch(`${API_BASE_URL}/school/${schoolId}/people/employees`)
-      .then(r => r.json()).then(d => {
-        if (d.success && Array.isArray(d.data)?.length) {
-          setEmployees(d.data);
-          if (d.data[0].employee_id) setSelectedEmp(d.data[0].employee_id);
-        }
-      }).catch(() => setEmployees([]));
-  }, [schoolId]);
+  const revenueKpi = useMemo(() => {
+    const rev = overviewData?.revenue;
+    if (!rev) return { collected: 0, expected: 0, pct: 0 };
+    const collected = rev.totalCollected || 0;
+    const expected = rev.totalRevenueExpected || 0;
+    const pct = expected > 0 ? (collected / expected) * 100 : 0;
+    return { collected, expected, pct };
+  }, [overviewData]);
+
+  const isRefreshing = overviewFetching || studentAttFetching || employeeAttFetching || proxyFetching || tasksFetching || eventsFetching;
+
+  const handleRefresh = () => {
+    refetchOverview();
+    refetchStats();
+    refetchStudentAtt();
+    refetchEmployeeAtt();
+    refetchProxy();
+    refetchTasks();
+    refetchEmployees();
+    refetchEvents();
+  };
 
   const handleGenerateTasks = async () => {
     if (!selectedEmp) return;
-    setIsGenerating(true);
     try {
-      await fetch(`${API_BASE_URL}/task/ai/${schoolId}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId: selectedEmp }),
-      });
-      const tRes = await fetch(`${API_BASE_URL}/task/${schoolId}`);
-      const tData = await tRes.json();
-      if (tData.success && Array.isArray(tData.data)) setTasks(tData.data.slice(0, 5));
+      await aiGenerateTasks({ schoolId, employeeId: selectedEmp }).unwrap();
     } catch (e) { /* ignore */ }
-    finally { setIsGenerating(false); }
   };
 
   return (
@@ -121,26 +150,45 @@ export default function HomePage() {
       {/* ── Page Header ── */}
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Period:</span>
-          {['day', 'week', 'month'].map(p => (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Date:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-main)] outline-none focus:border-[var(--primary-color)]/40 transition-colors font-medium cursor-pointer"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Period:</span>
+            {['day', 'week', 'month'].map(p => (
+              <button
+                key={p}
+                onClick={() => setAttendancePeriod(p)}
+                className={`text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg transition-all ${
+                  attendancePeriod === p
+                    ? 'bg-[var(--primary-color)] text-white shadow-md shadow-primary/20'
+                    : 'text-slate-400 bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:text-slate-200'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
             <button
-              key={p}
-              onClick={() => setAttendancePeriod(p)}
-              className={`text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg transition-all ${
-                attendancePeriod === p
-                  ? 'bg-[var(--primary-color)] text-white shadow-md shadow-primary/20'
-                  : 'text-slate-400 bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:text-slate-200'
-              }`}
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center justify-center p-2 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/5 text-slate-400 hover:text-slate-200 transition-all disabled:opacity-50"
+              title="Refresh Dashboard Data"
             >
-              {p}
+              <RotateCw size={14} className={isRefreshing ? "animate-spin" : ""} />
             </button>
-          ))}
+          </div>
         </div>
       </motion.div>
 
@@ -171,8 +219,8 @@ export default function HomePage() {
             },
             {
               label: "Monthly Revenue",
-              value: '--',
-              sub: 'Revenue sync pending',
+              value: overviewLoading ? '...' : `₹${revenueKpi.collected.toLocaleString()}`,
+              sub: overviewLoading ? 'Loading' : `${revenueKpi.pct.toFixed(1)}% collected`,
               icon: Banknote, color: "warning",
             },
           ]}
@@ -186,13 +234,13 @@ export default function HomePage() {
           <GlassCard className="p-4 h-full min-h-[320px] flex flex-col" glowColor="primary">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                   <Sparkles size={15} className="text-[var(--primary-color)]" />
                   Proxy Suggestions
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">AI-ranked availability · Real-time</p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5">AI-ranked availability · Real-time</p>
               </div>
-              <span className="text-[10px] font-semibold text-slate-600 bg-white/[0.02] px-2 py-1 rounded-lg border border-white/5">
+              <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-main)] px-2 py-1 rounded-lg border border-[var(--glass-border)]">
                 {proxySuggestions.length} available
               </span>
             </div>
@@ -208,14 +256,14 @@ export default function HomePage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.08 }}
                     whileHover={{ x: 2 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.015] border border-white/[0.04] hover:border-primary/20 hover:bg-white/[0.03] transition-all cursor-pointer group"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--glass-border)] hover:border-[var(--primary-color)]/20 hover:bg-[var(--bg-secondary)] transition-all cursor-pointer group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 flex items-center justify-center text-[var(--primary-color)] font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
                       {proxy.name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-white truncate">{proxy.name}</h4>
+                        <h4 className="text-sm font-semibold text-[var(--text-main)] truncate">{proxy.name}</h4>
                         <span className="text-xs font-bold text-[var(--primary-color)] ml-2">{proxy.compatibility_score}%</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5 truncate">{proxy.subject} · Load: {proxy.current_load}</p>
@@ -238,7 +286,7 @@ export default function HomePage() {
           <GlassCard className="p-4 h-full min-h-[320px] flex flex-col" glowColor="primary">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                   <Zap size={15} className="text-[var(--primary-color)]" />
                   AI Task Engine
                 </h3>
@@ -254,11 +302,11 @@ export default function HomePage() {
               <select
                 value={selectedEmp}
                 onChange={(e) => setSelectedEmp(e.target.value)}
-                className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-primary/40 transition-colors font-medium"
+                className="flex-1 bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[var(--primary-color)]/40 transition-colors font-medium"
               >
-                <option value="">Select employee</option>
+                <option value="" className="bg-[var(--bg-secondary)] text-[var(--text-main)]">Select employee</option>
                 {employees.map(e => (
-                  <option key={e.employee_id} value={e.employee_id}>{e.name || e.employee_id}</option>
+                  <option key={e.employee_id || e.id} value={e.employee_id || e.id} className="bg-[var(--bg-secondary)] text-[var(--text-main)]">{e.name || e.employee_id || e.id}</option>
                 ))}
               </select>
               <StandardButton
@@ -283,11 +331,11 @@ export default function HomePage() {
                     initial={{ opacity: 0, x: 4 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition-all cursor-pointer group border border-transparent hover:border-white/5"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[var(--bg-main)] transition-all cursor-pointer group border border-transparent hover:border-[var(--glass-border)]"
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${t.is_ai_generated ? 'bg-[var(--primary-color)]' : 'bg-slate-600'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${t.is_ai_generated ? 'bg-[var(--primary-color)]' : 'bg-[var(--text-muted)]'}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-200 truncate">{t.task_name}</p>
+                      <p className="text-xs font-semibold text-[var(--text-main)] truncate">{t.task_name}</p>
                       <p className="text-[10px] text-slate-600 mt-0.5">
                         {t.deadline ? new Date(t.deadline).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'No deadline'} · {t.priority || 'Normal'}
                       </p>
@@ -310,22 +358,22 @@ export default function HomePage() {
       {/* ── Quick Stats Row ── */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: Users, label: "Total Students", value: "--", color: "primary" },
-          { icon: UserCheck, label: "Total Staff", value: "--", color: "success" },
-          { icon: Calendar, label: "Events Today", value: "--", color: "warning" },
-          { icon: TrendingUp, label: "Collection Rate", value: "--", color: "purple" },
+          { icon: Users, label: "Total Students", value: overviewLoading ? '...' : (overviewData?.totalStudents ?? "--"), color: "primary" },
+          { icon: UserCheck, label: "Total Staff", value: overviewLoading ? '...' : (overviewData?.totalEmployees ?? "--"), color: "success" },
+          { icon: Calendar, label: "Events Today", value: eventsLoading ? '...' : (events.length ?? "--"), color: "warning" },
+          { icon: TrendingUp, label: "Collection Rate", value: overviewLoading ? '...' : `${revenueKpi.pct.toFixed(1)}%`, color: "purple" },
         ].map((stat, i) => (
           <motion.div
             key={i}
             whileHover={{ y: -2 }}
             className="glass-card rounded-xl p-3 flex items-center gap-3 cursor-pointer"
           >
-            <div className={`p-2 rounded-xl bg-${stat.color === 'primary' ? '[var(--primary-color)]/10' : stat.color === 'success' ? 'emerald-500/10' : stat.color === 'warning' ? 'amber-500/10' : 'blue-500/10'} border border-white/5`}>
-              <stat.icon size={18} className={stat.color === 'primary' ? 'text-[var(--primary-color)]' : stat.color === 'success' ? 'text-emerald-400' : stat.color === 'warning' ? 'text-amber-400' : 'text-blue-400'} />
+            <div className="p-2 rounded-xl bg-[var(--bg-main)] border border-[var(--glass-border)]">
+              <stat.icon size={18} className={stat.color === 'primary' ? 'text-[var(--primary-color)]' : stat.color === 'success' ? 'text-[var(--success-color)]' : stat.color === 'warning' ? 'text-[var(--warning-color)]' : 'text-[var(--accent-color)]'} />
             </div>
             <div>
-              <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{stat.label}</p>
-              <p className="text-lg font-bold text-white">{stat.value}</p>
+              <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">{stat.label}</p>
+              <p className="text-lg font-bold text-[var(--text-main)]">{stat.value}</p>
             </div>
           </motion.div>
         ))}

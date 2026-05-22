@@ -56,7 +56,7 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
         >
             <div className="flex items-center justify-between mb-2">
                 <div>
-                    <h3 className="font-black text-white text-micro uppercase italic tracking-widest">SETTLEMENT_CORE</h3>
+                    <h3 className="font-black text-white text-micro uppercase italic tracking-widest">Salary Settlement</h3>
                     <p className="text-slate-700 text-micro font-black uppercase">{employee.name} • {employee.employeeId}</p>
                 </div>
                 <button 
@@ -70,12 +70,12 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                     <Loader size={24} className="animate-spin text-indigo-400" />
-                    <p className="text-slate-700 text-micro font-black uppercase tracking-widest">Computing...</p>
+                    <p className="text-slate-700 text-micro font-black uppercase tracking-widest">Loading...</p>
                 </div>
             ) : error ? (
                 <div className="py-8 text-center">
                     <AlertTriangle size={24} className="text-rose-500 mx-auto mb-2" />
-                    <p className="text-slate-700 text-micro font-black uppercase">Data Link Error</p>
+                    <p className="text-slate-700 text-micro font-black uppercase">Failed to load salary breakdown</p>
                 </div>
             ) : breakdown ? (
                 <div className="space-y-4">
@@ -117,7 +117,7 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
                     <div className="bg-amber-500/5 border border-amber-500/10 text-amber-500/60 p-2 rounded-lg text-micro flex gap-2">
                         <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
                         <p className="leading-tight font-bold uppercase">
-                            Closing month will lock node ledger and record transaction.
+                            Closing the month will lock the payroll ledger and record the transaction.
                         </p>
                     </div>
 
@@ -129,7 +129,7 @@ const BreakdownModal = memo(({ employee, onClose, schoolId }) => {
                         icon={isClosing ? Loader : RefreshCw}
                         className="w-full"
                     >
-                        {isClosing ? 'SYNCING...' : 'FINALIZE_MONTHLY_LEDGER'}
+                        {isClosing ? 'Processing...' : 'Finalize Monthly Payroll'}
                     </StandardButton>
                 </div>
             ) : null}
@@ -170,7 +170,7 @@ export default function PayrollManagement() {
                         <CreditCard size={14} className="text-blue-400" />
                     </div>
                     <div>
-                        <h1 className="text-sm font-black text-white leading-none uppercase italic">PAYROLL_LAB</h1>
+                        <h1 className="text-sm font-black text-white leading-none uppercase italic">Payroll Dashboard</h1>
                         <p className="text-micro uppercase tracking-widest font-bold text-slate-600 mt-0.5">Automated settlement system</p>
                     </div>
                 </div>
@@ -187,7 +187,7 @@ export default function PayrollManagement() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-blue-400 transition-colors" />
                     <input 
                         className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-micro text-white placeholder:text-slate-800 focus:outline-none focus:border-blue-500/30 transition-all"
-                        placeholder="SEARCH_PAYROLL_DATABASE..." 
+                        placeholder="Search payroll..." 
                         value={search} 
                         onChange={e => setSearch(e.target.value)} 
                     />
@@ -196,7 +196,7 @@ export default function PayrollManagement() {
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-2">
                         <Loader size={24} className="animate-spin text-blue-500" />
-                        <p className="text-micro text-slate-600 font-medium animate-pulse">Syncing nodes...</p>
+                        <p className="text-micro text-slate-600 font-medium animate-pulse">Loading payroll...</p>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/5">
@@ -226,9 +226,9 @@ export default function PayrollManagement() {
                                     <p className="text-slate-700 text-micro font-mono tracking-tighter uppercase">{emp.employeeId}</p>
                                 </div>
                                 <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-1.5">
-                                    <span className="text-micro font-black text-slate-800 uppercase tracking-widest">{emp.role || 'STAFF'}</span>
+                                    <span className="text-micro font-black text-slate-800 uppercase tracking-widest">{emp.role || 'Staff'}</span>
                                     <div className="flex items-center gap-1 text-micro font-black text-indigo-400">
-                                        SETTLE
+                                        Settle
                                         <FileText size={10} />
                                     </div>
                                 </div>

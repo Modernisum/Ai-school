@@ -81,9 +81,9 @@ export default function SalaryPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-white tracking-widest uppercase italic leading-none">
-                SALARY_COMPUTE_ENGINE
+                Salary Computation
               </h1>
-              <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">PROTOCOL_ACTIVE • {employees.length}_NODES</p>
+              <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">Active • {employees.length} Staff</p>
             </div>
           </div>
           <div className="flex gap-1">
@@ -96,8 +96,8 @@ export default function SalaryPage() {
         </header>
         
         <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-1">
-          <KPITile dense label="TOTAL_SALARY_POOL" value={`₹${totals.totalNet.toLocaleString('en-IN')}`} icon={IndianRupee} color="warning" />
-          <KPITile dense label="ACTIVE_ENTITIES" value={employees.length} icon={Users} color="primary" />
+          <KPITile dense label="Total Salary Pool" value={`₹${totals.totalNet.toLocaleString('en-IN')}`} icon={IndianRupee} color="warning" />
+          <KPITile dense label="Active Staff" value={employees.length} icon={Users} color="primary" />
         </motion.div>
         
         <div className="space-y-1">
@@ -105,13 +105,13 @@ export default function SalaryPage() {
             <div className="relative flex-1 group w-full">
               <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-amber-500 transition-colors" />
               <input className="w-full bg-white/[0.03] border border-white/10 rounded-lg h-8 pl-9 pr-3 text-micro text-white focus:outline-none focus:border-amber-500/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-800 font-black uppercase tracking-widest" 
-                placeholder="SCAN_SALARY_DATABASE..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                placeholder="Search salary..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
             <div className="flex gap-1 w-full md:w-auto">
               <DropdownWidget
                 dense
                 options={departments.map(dept => ({
-                    label: dept === 'All' ? 'ALL_DEPARTMENTS' : dept.toUpperCase(),
+                    label: dept === 'All' ? 'All Departments' : dept.toUpperCase(),
                     value: dept
                 }))}
                 value={filterDepartment}

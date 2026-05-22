@@ -63,14 +63,14 @@ export const infrastructureApi = baseApi.injectEndpoints({
         if (page) params.append('page', page);
         if (limit) params.append('limit', limit);
         const qs = params.toString();
-        return `/materials/${schoolId}${qs ? `?${qs}` : ''}`;
+        return `/school/${schoolId}/resources/materials${qs ? `?${qs}` : ''}`;
       },
       providesTags: [{ type: 'Materials', id: 'LIST' }],
     }),
 
     addMaterial: builder.mutation({
       query: ({ schoolId, body }) => ({
-        url: `/materials/${schoolId}`,
+        url: `/school/${schoolId}/resources/materials`,
         method: 'POST',
         body,
       }),
@@ -79,8 +79,8 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     editMaterial: builder.mutation({
       query: ({ schoolId, materialId, body }) => ({
-        url: `/materials/${schoolId}/${materialId}`,
-        method: 'PUT',
+        url: `/school/${schoolId}/resources/materials/${materialId}`,
+        method: 'PATCH',
         body,
       }),
       invalidatesTags: [{ type: 'Materials', id: 'LIST' }],
@@ -88,7 +88,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     deleteMaterial: builder.mutation({
       query: ({ schoolId, materialId }) => ({
-        url: `/materials/${schoolId}/${materialId}`,
+        url: `/school/${schoolId}/resources/materials/${materialId}`,
         method: 'DELETE',
       }),
       invalidatesTags: [{ type: 'Materials', id: 'LIST' }],
@@ -96,7 +96,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     buyMaterial: builder.mutation({
       query: ({ schoolId, materialId, body }) => ({
-        url: `/materials/${schoolId}/${materialId}/buy`,
+        url: `/school/${schoolId}/resources/materials/${materialId}/buy`,
         method: 'POST',
         body,
       }),
@@ -105,7 +105,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     sellMaterial: builder.mutation({
       query: ({ schoolId, materialId, body }) => ({
-        url: `/materials/${schoolId}/${materialId}/sell`,
+        url: `/school/${schoolId}/resources/materials/${materialId}/sell`,
         method: 'POST',
         body,
       }),
@@ -114,7 +114,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     bulkImportMaterials: builder.mutation({
       query: ({ schoolId, materials }) => ({
-        url: `/materials/${schoolId}/bulk`,
+        url: `/school/${schoolId}/resources/materials/bulk`,
         method: 'POST',
         body: { materials },
       }),
@@ -122,24 +122,23 @@ export const infrastructureApi = baseApi.injectEndpoints({
     }),
 
     getMaterialHistory: builder.query({
-      query: ({ schoolId, materialId }) => `/materials/${schoolId}/${materialId}/history`,
+      query: ({ schoolId, materialId }) => `/school/${schoolId}/resources/materials/${materialId}/history`,
       transformResponse: (res) => res.data || [],
     }),
 
-    // getMaterialsDashboard is now integrated into getMaterials
     getMaterialsDashboard: builder.query({
-      query: (schoolId) => `/materials/${schoolId}?dashboard=true`,
+      query: (schoolId) => `/school/${schoolId}/resources/materials?dashboard=true`,
       transformResponse: (res) => res.dashboard || {},
     }),
 
     getSpaces: builder.query({
-      query: (schoolId) => `/spaces/${schoolId}/spaces`,
+      query: (schoolId) => `/school/${schoolId}/resources/spaces`,
       providesTags: [{ type: 'Spaces', id: 'LIST' }],
     }),
 
     createSpace: builder.mutation({
-      query: ({ schoolId, body }) => ({
-        url: `/spaces/${schoolId}/spaces`,
+      query: ({ schoolId, category, body }) => ({
+        url: `/school/${schoolId}/resources/spaces/${category}`,
         method: 'POST',
         body,
       }),
@@ -148,7 +147,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     updateSpace: builder.mutation({
       query: ({ schoolId, spaceId, body }) => ({
-        url: `/spaces/${schoolId}/${spaceId}`,
+        url: `/school/${schoolId}/resources/spaces/detail/${spaceId}`,
         method: 'PUT',
         body,
       }),
@@ -160,7 +159,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     deleteSpace: builder.mutation({
       query: ({ schoolId, spaceId }) => ({
-        url: `/spaces/${schoolId}/${spaceId}`,
+        url: `/school/${schoolId}/resources/spaces/detail/${spaceId}`,
         method: 'DELETE',
       }),
       invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
@@ -168,7 +167,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     bulkImportSpaces: builder.mutation({
       query: ({ schoolId, body }) => ({
-        url: `/spaces/${schoolId}/bulk`,
+        url: `/school/${schoolId}/resources/spaces`,
         method: 'POST',
         body,
       }),
@@ -176,32 +175,31 @@ export const infrastructureApi = baseApi.injectEndpoints({
     }),
 
     getSpacesUsingMaterial: builder.query({
-      query: ({ schoolId, materialName }) => `/materials/${schoolId}/${materialName}/spaces`,
+      query: ({ schoolId, materialName }) => `/school/${schoolId}/resources/materials/${materialName}`,
     }),
 
     cloneSpace: builder.mutation({
-      query: ({ schoolId, spaceName, ...body }) => ({ url: `/spaces/${schoolId}/${spaceName}/clone`, method: 'POST', body }),
+      query: ({ schoolId, spaceName, ...body }) => ({ url: `/school/${schoolId}/resources/spaces/${spaceName}/clone`, method: 'POST', body }),
       invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
     }),
 
     transferMaterial: builder.mutation({
-      query: ({ schoolId, fromSpace, materialName, ...body }) => ({ url: `/spaces/${schoolId}/${fromSpace}/materials/${materialName}/transfer`, method: 'POST', body }),
+      query: ({ schoolId, fromSpace, materialName, ...body }) => ({ url: `/school/${schoolId}/resources/spaces/${fromSpace}/materials/${materialName}/transfer`, method: 'POST', body }),
       invalidatesTags: [{ type: 'Spaces', id: 'LIST' }],
     }),
 
     getSpaceMaterials: builder.query({
-      query: ({ schoolId, spaceName }) => `/spaces/${schoolId}/${spaceName}/materials`,
+      query: ({ schoolId, spaceName }) => `/school/${schoolId}/resources/spaces/${spaceName}/materials`,
     }),
 
     getAllSpacesMaterials: builder.query({
-      query: (schoolId) => `/spaces/${schoolId}/materials/all`,
+      query: (schoolId) => `/school/${schoolId}/resources/spaces/materials/all`,
     }),
 
     getSpaceCategories: builder.query({
-      query: (schoolId) => `/spaces/${schoolId}/categories`,
+      query: (schoolId) => `/school/${schoolId}/resources/spaces/categories`,
       providesTags: [{ type: 'Categories', id: 'LIST' }],
       transformResponse: (response) => {
-        // Standardize response to ensure it's an array of category objects
         if (response.success && response.data) {
           return Array.isArray(response.data) ? response.data : [response.data];
         }
@@ -211,29 +209,29 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     createSpaceCategory: builder.mutation({
       query: ({ schoolId, body }) => ({
-        url: `/spaces/${schoolId}/categories`,
+        url: `/school/${schoolId}/resources/spaces/categories`,
         method: 'POST',
-        body, // Expecting { name: "Category Name" }
+        body,
       }),
       invalidatesTags: [{ type: 'Categories', id: 'LIST' }],
     }),
 
     deleteSpaceCategory: builder.mutation({
       query: ({ schoolId, categoryId }) => ({
-        url: `/spaces/${schoolId}/categories/${categoryId}`,
+        url: `/school/${schoolId}/resources/spaces/categories/${categoryId}`,
         method: 'DELETE',
       }),
       invalidatesTags: [{ type: 'Categories', id: 'LIST' }],
     }),
 
     getSpaceDetails: builder.query({
-      query: ({ schoolId, spaceId }) => `/spaces/${schoolId}/${spaceId}`,
+      query: ({ schoolId, spaceId }) => `/school/${schoolId}/resources/spaces/detail/${spaceId}`,
       providesTags: (result, error, { spaceId }) => [{ type: 'Spaces', id: spaceId }],
     }),
 
     assignSpaceMaterials: builder.mutation({
       query: ({ schoolId, spaceId, body }) => ({
-        url: `/spaces/${schoolId}/${spaceId}/materials`,
+        url: `/school/${schoolId}/resources/spaces/${spaceId}/materials`,
         method: 'POST',
         body,
       }),
@@ -242,7 +240,7 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     assignSpaceEmployees: builder.mutation({
       query: ({ schoolId, spaceId, body }) => ({
-        url: `/spaces/${schoolId}/${spaceId}/employees`,
+        url: `/school/${schoolId}/resources/spaces/${spaceId}/employees`,
         method: 'POST',
         body,
       }),
@@ -251,10 +249,30 @@ export const infrastructureApi = baseApi.injectEndpoints({
 
     removeSpaceEmployee: builder.mutation({
       query: ({ schoolId, spaceId, employeeId }) => ({
-        url: `/spaces/${schoolId}/${spaceId}/employees/${employeeId}`,
+        url: `/school/${schoolId}/resources/spaces/${spaceId}/employees/${employeeId}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, { spaceId }) => [{ type: 'Spaces', id: spaceId }],
+    }),
+
+    // --- Space Budget ---
+    getSpaceBudget: builder.query({
+      query: ({ schoolId, spaceName }) => `/school/${schoolId}/resources/spaces/detail/${spaceName}/budget`,
+      providesTags: ['SpaceBudget'],
+    }),
+
+    updateSpaceBudget: builder.mutation({
+      query: ({ schoolId, spaceName, ...body }) => ({ url: `/school/${schoolId}/resources/spaces/detail/${spaceName}/budget`, method: 'PUT', body }),
+      invalidatesTags: ['SpaceBudget', { type: 'Spaces', id: 'LIST' }],
+    }),
+
+    // --- Shortage ---
+    getShortageSummary: builder.query({
+      query: ({ schoolId }) => `/school/${schoolId}/resources/materials/shortage-summary`,
+    }),
+
+    runShortageCheck: builder.mutation({
+      query: ({ schoolId }) => ({ url: `/school/${schoolId}/resources/materials/run-shortage-check`, method: 'POST' }),
     }),
 
     // --- School Profile ---
@@ -583,6 +601,10 @@ export const {
   useGetSpaceResponsibilitiesQuery,
   useGetSpaceFinancialOverviewQuery,
   useGetMissingResponsibilityAlertsQuery,
+  useGetSpaceBudgetQuery,
+  useUpdateSpaceBudgetMutation,
+  useGetShortageSummaryQuery,
+  useRunShortageCheckMutation,
   useBulkRemoveResponsibilitiesMutation,
   useBulkUpdateResponsibilitiesMutation,
   useGetUtilizationReportPdfQuery,

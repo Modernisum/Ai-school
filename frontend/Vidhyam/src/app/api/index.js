@@ -9,6 +9,7 @@ import '../../features/ai/api/chatApi';
 import '../../features/ai/api/taskApi';
 import '../../features/dashboard/api/schoolApi';
 import '../../features/dashboard/api/notificationApi';
+import '../../features/dashboard/api/dashboardApi';
 import '../../features/infrastructure/api/storageApi';
 import '../../features/infrastructure/api/transportApi';
 import '../../features/infrastructure/infrastructureApi';

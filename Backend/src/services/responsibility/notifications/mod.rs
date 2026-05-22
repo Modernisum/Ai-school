@@ -2,9 +2,9 @@ pub mod assignment;
 pub mod removal;
 pub mod update;
 
-pub use assignment::{AssignmentNotifier, ResponsibilityNotificationType as AssignmentNotificationType};
-pub use removal::{RemovalNotifier, ResponsibilityNotificationType as RemovalNotificationType};
-pub use update::{UpdateNotifier, ResponsibilityNotificationType as UpdateNotificationType};
+pub use assignment::AssignmentNotifier;
+pub use removal::RemovalNotifier;
+pub use update::UpdateNotifier;
 
 use crate::error::{AppError, AppResult};
 use crate::repository::Repositories;
@@ -46,8 +46,8 @@ pub struct ResponsibilityNotificationService {
 impl ResponsibilityNotificationService {
     pub fn new(repos: Arc<Repositories>, email_service: Arc<EmailService>) -> Self {
         let assignment = AssignmentNotifier::new(repos.clone(), email_service.clone());
-        let removal = RemovalNotifier::new(repos.clone());
-        let update = UpdateNotifier::new(repos.clone());
+        let removal = RemovalNotifier::new(repos.clone(), email_service.clone());
+        let update = UpdateNotifier::new(repos.clone(), email_service.clone());
         Self {
             repos,
             email_service,

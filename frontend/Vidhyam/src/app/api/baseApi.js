@@ -85,7 +85,7 @@ export const baseApi = createApi({
     'Transport', 'AI', 'Chat', 'Responsibility', 'Announcements', 'Events', 'SpaceMaterials',
     'Notifications', 'Storage', 'Documents', 'Timetable', 'Task',
     'Payment', 'Coupons', 'Awards', 'Setup', 'Webhooks', 'ApiKeys',
-    'DeveloperAccess', 'Recovery', 'Audit', 'Reminders',
+    'DeveloperAccess', 'Recovery', 'Audit', 'Reminders', 'DashboardOverview', 'DashboardStats',
   ],
   endpoints: () => ({}),
 });

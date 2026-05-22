@@ -13,6 +13,7 @@ pub trait ResourceRepository: Send + Sync {
     
     // Space Categories management
     async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError>;
+    async fn delete_space_category(&self, school_id: &str, name: &str) -> Result<(), AppError>;
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError>;
     async fn update_space(
         &self,
@@ -92,7 +93,7 @@ pub trait ResourceRepository: Send + Sync {
     async fn remove_space_material(
         &self,
         school_id: &str,
-        space_id: &str,
+        space_name: &str,
         material_name: &str,
         quantity: i32,
     ) -> Result<(), AppError>;

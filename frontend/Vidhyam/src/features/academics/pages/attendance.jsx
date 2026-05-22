@@ -129,7 +129,7 @@ export default function AttendancePage() {
       }).unwrap();
       refetchAttendance();
     } catch (e) {
-      toast.error('Sync Failure: Protocol rejected');
+      toast.error('Sync Failure: Attendance not updated');
     }
   };
 
@@ -145,7 +145,7 @@ export default function AttendancePage() {
         }))
       };
       await bulkMarkAttendance({ schoolId, body: payload }).unwrap();
-      toast.info(`Protocol: All nodes synced as ${status.toUpperCase()}`);
+      toast.info(`All students marked as ${status.toUpperCase()}`);
       refetchAttendance();
     } catch (e) {
       toast.error('Bulk Sync Failure');
@@ -155,8 +155,8 @@ export default function AttendancePage() {
   const handleDeleteHoliday = async (id) => {
     try {
       await deleteHoliday({ schoolId, holidayId: id }).unwrap();
-      toast.success('Holiday protocol terminated');
-    } catch(e) { toast.error('De-registration failure'); }
+      toast.success('Holiday deleted successfully');
+    } catch(e) { toast.error('Failed to delete holiday'); }
   };
 
   // Filter change helper
@@ -213,17 +213,17 @@ export default function AttendancePage() {
   // Columns for mark attendance mode
   const markColumns = [
     {
-      header: 'Identity',
+      header: 'Student',
       key: 'name',
       render: (val, row) => (
         <div className="flex flex-col">
-          <span className="text-xs font-bold text-white group-hover:text-primary transition-colors italic uppercase tracking-tighter">{val}</span>
-          <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mt-0.5">NODE_{row.rollNumber || row.id}</span>
+          <span className="text-xs font-semibold text-[var(--text-main)] group-hover:text-primary transition-colors tracking-tight">{val}</span>
+          <span className="text-[9px] font-medium text-[var(--text-muted)] mt-0.5">Roll No: {row.rollNumber || row.id}</span>
         </div>
       )
     },
     {
-      header: 'Status Protocol',
+      header: 'Status',
       key: 'status',
       render: (val, row) => (
         <div className="flex gap-1">
@@ -231,7 +231,7 @@ export default function AttendancePage() {
             <button
               key={s}
               onClick={() => handleStatusChange(row.id, s)}
-              className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase border transition-all ${val === s ? `bg-${STATUS_CONFIG[s].color}-500/20 text-${STATUS_CONFIG[s].color}-400 border-${STATUS_CONFIG[s].color}-500/40 shadow-lg shadow-${STATUS_CONFIG[s].color}-500/10` : 'bg-white/5 border-white/5 text-slate-700 hover:text-slate-500'}`}
+              className={`px-2 py-1 rounded-lg text-[9px] font-semibold border transition-all ${val === s ? `bg-${STATUS_CONFIG[s].color}-500/20 text-${STATUS_CONFIG[s].color}-400 border-${STATUS_CONFIG[s].color}-500/40 shadow-lg shadow-${STATUS_CONFIG[s].color}-500/10` : 'bg-white/5 border-white/5 text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
             >
               {s}
             </button>
@@ -240,7 +240,7 @@ export default function AttendancePage() {
       )
     },
     {
-      header: 'Scan Window',
+      header: 'Time Window',
       key: 'inTime',
       render: (_, row) => (
         <div className="flex gap-1">
@@ -253,8 +253,8 @@ export default function AttendancePage() {
 
   // Columns for analytics records
   const analyticsColumns = [
-    { header: 'User ID', key: 'user_id', render: (v) => <span className="text-[10px] font-mono text-slate-400">{v}</span> },
-    { header: 'Name', key: 'name', render: (v) => <span className="text-xs font-bold text-white uppercase">{v || '---'}</span> },
+    { header: 'User ID', key: 'user_id', render: (v) => <span className="text-[10px] font-mono text-[var(--text-muted)]">{v}</span> },
+    { header: 'Name', key: 'name', render: (v) => <span className="text-xs font-semibold text-[var(--text-main)]">{v || '---'}</span> },
     { header: 'Date', key: 'date' },
     { 
       header: 'Status', 
@@ -262,8 +262,8 @@ export default function AttendancePage() {
       render: (v) => {
         const cfg = STATUS_CONFIG[v?.toLowerCase()];
         return cfg ? (
-          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase bg-${cfg.color}-500/20 text-${cfg.color}-400 border border-${cfg.color}-500/30`}>{v}</span>
-        ) : <span className="text-xs text-slate-500">{v}</span>;
+          <span className={`px-2 py-0.5 rounded text-[9px] font-semibold bg-${cfg.color}-500/20 text-${cfg.color}-400 border border-${cfg.color}-500/30`}>{v}</span>
+        ) : <span className="text-xs text-[var(--text-muted)]">{v}</span>;
       }
     },
     { header: 'Class', key: 'class_name' },
@@ -344,12 +344,12 @@ export default function AttendancePage() {
   return (
     <div className="max-w-full p-2 space-y-4 pb-20">
       <PageHeader
-        title="ATTENDANCE"
-        accentTitle="MANAGEMENT"
+        title="Attendance"
+        accentTitle="Management"
         subtitle="Verification, Analytics & Exceptions"
         icon={Users}
         actions={[
-          { label: "DECLARE HOLIDAY", onClick: () => setShowHolidayForm(true), variant: "ghost", size: "sm", icon: Plus, className: "text-rose-400" }
+          { label: "Declare Holiday", onClick: () => setShowHolidayForm(true), variant: "ghost", size: "sm", icon: Plus, className: "text-rose-400" }
         ]}
       />
 
@@ -359,15 +359,15 @@ export default function AttendancePage() {
           <GlassCard className="p-4 border-primary/20 bg-primary/5">
              <div className="flex items-center gap-2 mb-4">
                 <Shield size={16} className="text-primary" />
-                <h4 className="text-xs font-black text-white uppercase tracking-widest">Active Exceptions</h4>
+                <h4 className="text-xs font-semibold text-[var(--text-main)] uppercase tracking-wider">Active Holidays & Leaves</h4>
              </div>
              {isHolidaysLoading ? <Loader className="animate-spin mx-auto" /> : (
-               <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                   {holidays.map(h => (
                     <div key={h.id} className="p-2 bg-white/5 rounded-lg border border-white/5 flex justify-between items-center group">
                       <div>
-                        <p className="text-[10px] font-black text-white uppercase">{h.title}</p>
-                        <p className="text-[8px] text-slate-500 font-bold">{h.fromDate} → {h.toDate || h.fromDate}</p>
+                        <p className="text-[10px] font-semibold text-[var(--text-main)]">{h.title}</p>
+                        <p className="text-[9px] text-[var(--text-muted)] font-medium">{h.fromDate} → {h.toDate || h.fromDate}</p>
                       </div>
                       <StandardButton variant="ghost" size="xs" onClick={() => handleDeleteHoliday(h.id)} icon={Trash2} className="text-rose-400 opacity-0 group-hover:opacity-100" />
                     </div>
@@ -377,9 +377,9 @@ export default function AttendancePage() {
           </GlassCard>
 
           <KPIWidget columns={1}>
-            <KPITile label="Total Nodes" value={kpiStats.total} icon={Users} color="primary" />
-            <KPITile label="Verified" value={kpiStats.present} icon={CheckCircle} color="success" />
-            <KPITile label="Missing" value={kpiStats.absent} icon={XCircle} color="danger" />
+            <KPITile label="Total Students" value={kpiStats.total} icon={Users} color="primary" />
+            <KPITile label="Present" value={kpiStats.present} icon={CheckCircle} color="success" />
+            <KPITile label="Absent" value={kpiStats.absent} icon={XCircle} color="danger" />
             <KPITile label="Attendance %" value={`${kpiStats.percentage}%`} icon={Activity} color="warning" />
           </KPIWidget>
         </div>
@@ -391,18 +391,18 @@ export default function AttendancePage() {
             columns={gridColumns}
             rows={gridRows}
             isLoading={gridLoading}
-            emptyMessage={showMarkView ? "NO_NODES_IN_CLUSTER" : "NO_ATTENDANCE_RECORDS"}
+            emptyMessage={showMarkView ? "No students in class" : "No attendance records"}
             showSearch={true}
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
-            searchPlaceholder={showMarkView ? "Scan student nodes..." : "Search records..."}
+            searchPlaceholder={showMarkView ? "Search student..." : "Search records..."}
             onRefresh={showMarkView ? () => { if (selectedClass) refetchAttendance(); } : refetchAdvanced}
             // Mark mode: class & date filters as legacy JSX
             filters={showMarkView ? [
               <DropdownWidget
                 key="class-select"
                 dense
-                options={[{ label: 'SELECT CLASS', value: '' }, ...classes.map(cls => ({ label: `CLASS ${cls.name || cls.className}`, value: cls.name || cls.className }))]}
+                options={[{ label: 'Select Class', value: '' }, ...classes.map(cls => ({ label: `Class ${cls.name || cls.className}`, value: cls.name || cls.className }))]}
                 value={selectedClass}
                 onChange={setSelectedClass}
               />,
@@ -431,18 +431,18 @@ export default function AttendancePage() {
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHolidayForm(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md">
                 <FormWidget
-                  title="LOG_EXCEPTION"
-                  description="Register custom holiday protocols"
+                  title="Declare Holiday"
+                  description="Register custom holiday details"
                   sections={[{ fields: [
-                    { name: 'title', label: 'Reference ID', type: 'text', required: true },
-                    { name: 'fromDate', label: 'Node Start', type: 'date', required: true },
-                    { name: 'toDate', label: 'Node End', type: 'date' },
-                    { name: 'allClasses', label: 'Global Application', type: 'checkbox' }
+                    { name: 'title', label: 'Title', type: 'text', required: true },
+                    { name: 'fromDate', label: 'Start Date', type: 'date', required: true },
+                    { name: 'toDate', label: 'End Date', type: 'date' },
+                    { name: 'allClasses', label: 'All Classes', type: 'checkbox' }
                   ]}]}
                   control={control}
-                  onSubmit={handleSubmit((v) => { createHoliday({ schoolId, body: { ...v, classes: v.allClasses ? ['All'] : [] } }).unwrap().then(() => { setShowHolidayForm(false); reset(); toast.success('Exception registered'); }); })}
+                  onSubmit={handleSubmit((v) => { createHoliday({ schoolId, body: { ...v, classes: v.allClasses ? ['All'] : [] } }).unwrap().then(() => { setShowHolidayForm(false); reset(); toast.success('Holiday registered'); }); })}
                   onCancel={() => { setShowHolidayForm(false); reset(); }}
-                  submitLabel="COMMIT_EXCEPTION"
+                  submitLabel="Declare Holiday"
                 />
              </motion.div>
           </div>

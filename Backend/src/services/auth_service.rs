@@ -73,7 +73,7 @@ impl AuthService for PostgresAuthService {
                     }
                 }
 
-                let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "dev_secret".to_string());
+                let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set in production");
                 let claims = AdminClaims {
                     sub: school_id.to_string(),
                     school_id: school_id.to_string(),

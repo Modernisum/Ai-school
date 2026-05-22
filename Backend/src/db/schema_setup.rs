@@ -391,14 +391,12 @@ impl SchemaSetup {
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS spaces (
                 id SERIAL PRIMARY KEY,
-                space_id TEXT NOT NULL,
                 school_id TEXT NOT NULL,
-                space_name TEXT NOT NULL,
+                name TEXT NOT NULL,
                 space_category TEXT,
-                space_number TEXT,
                 data JSONB DEFAULT '{}',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id)
+                UNIQUE(school_id, name)
             )"
         ).execute(&self.pool).await?;
 
@@ -419,32 +417,20 @@ impl SchemaSetup {
                 END LOOP;
 
                 -- Add the definitive composite constraint
-                ALTER TABLE public.spaces ADD CONSTRAINT spaces_school_space_composite_unique UNIQUE (school_id, space_id);
+                ALTER TABLE public.spaces ADD CONSTRAINT unique_school_space_name UNIQUE (school_id, name);
              END $$;"
         ).execute(&self.pool).await?;
 
         sqlx::query(
             "ALTER TABLE spaces 
-             ADD COLUMN IF NOT EXISTS space_id TEXT,
              ADD COLUMN IF NOT EXISTS name TEXT,
-             ADD COLUMN IF NOT EXISTS space_name TEXT,
              ADD COLUMN IF NOT EXISTS space_category TEXT,
-             ADD COLUMN IF NOT EXISTS space_number TEXT,
              ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'"
-        ).execute(&self.pool).await?;
-
-        // Ensure category + number is unique per school
-        sqlx::query(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_spaces_category_number_unique ON spaces (school_id, space_category, space_number)"
         ).execute(&self.pool).await?;
         
         // Ensure id has a default if it was created as null-violating VARCHAR
         sqlx::query("CREATE SEQUENCE IF NOT EXISTS spaces_id_seq").execute(&self.pool).await?;
         sqlx::query("ALTER TABLE spaces ALTER COLUMN id SET DEFAULT nextval('spaces_id_seq')").execute(&self.pool).await?;
-
-        // Ensure space_id is unique if added late
-        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_spaces_space_id_unique ON spaces (space_id)")
-            .execute(&self.pool).await?;
 
         // 2. Items Table
         sqlx::query(
@@ -452,12 +438,12 @@ impl SchemaSetup {
                 id SERIAL PRIMARY KEY,
                 item_id TEXT NOT NULL,
                 school_id TEXT NOT NULL,
-                space_id TEXT NOT NULL,
+                space_name TEXT NOT NULL,
                 item_name TEXT NOT NULL,
                 room_number TEXT,
                 class_id TEXT,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id, item_id)
+                UNIQUE(school_id, space_name, item_id)
             )"
         ).execute(&self.pool).await?;
 
@@ -478,7 +464,7 @@ impl SchemaSetup {
                 END LOOP;
 
                 -- Add the definitive composite constraint required by the repository
-                ALTER TABLE public.items ADD CONSTRAINT items_school_space_item_composite_unique UNIQUE (school_id, space_id, item_id);
+                ALTER TABLE public.items ADD CONSTRAINT items_school_space_item_composite_unique UNIQUE (school_id, space_name, item_id);
              END $$;"
         ).execute(&self.pool).await?;
 
@@ -486,7 +472,7 @@ impl SchemaSetup {
             "ALTER TABLE items 
              ADD COLUMN IF NOT EXISTS item_id TEXT,
              ADD COLUMN IF NOT EXISTS school_id TEXT,
-             ADD COLUMN IF NOT EXISTS space_id TEXT,
+             ADD COLUMN IF NOT EXISTS space_name TEXT,
              ADD COLUMN IF NOT EXISTS item_name TEXT,
              ADD COLUMN IF NOT EXISTS room_number TEXT,
              ADD COLUMN IF NOT EXISTS class_id TEXT"
@@ -498,7 +484,7 @@ impl SchemaSetup {
         // Ensure index matches repository conflict target exactly
         sqlx::query("DROP INDEX IF EXISTS idx_items_school_space_item_unique").execute(&self.pool).await?;
         sqlx::query("DROP INDEX IF EXISTS idx_items_space_item_unique").execute(&self.pool).await?;
-        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_items_school_space_item_final ON items (school_id, space_id, item_id)")
+        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_items_school_space_item_final ON items (school_id, space_name, item_id)")
              .execute(&self.pool).await?;
 
         // 3. Materials Table
@@ -554,16 +540,26 @@ impl SchemaSetup {
             "CREATE TABLE IF NOT EXISTS space_materials (
                 id SERIAL PRIMARY KEY,
                 school_id TEXT NOT NULL,
-                space_id TEXT NOT NULL,
+                space_name TEXT NOT NULL,
                 material_id TEXT,
                 material_name TEXT NOT NULL,
                 quantity INTEGER DEFAULT 0,
                 unit TEXT,
                 unit_price NUMERIC(15, 2) DEFAULT 0.00,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id, material_name)
+                UNIQUE(school_id, space_name, material_name)
             )"
         ).execute(&self.pool).await?;
+
+        // Self-heal: rename column from space_id to space_name if it exists
+        let _ = sqlx::query(
+            "DO $$ 
+            BEGIN 
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'space_materials' AND column_name = 'space_id') THEN
+                    ALTER TABLE space_materials RENAME COLUMN space_id TO space_name;
+                END IF;
+            END $$;"
+        ).execute(&self.pool).await;
 
         sqlx::query(
             "ALTER TABLE space_materials
@@ -572,7 +568,7 @@ impl SchemaSetup {
         ).execute(&self.pool).await?;
 
         sqlx::query(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_space_materials_composite_unique ON space_materials (school_id, space_id, material_name)"
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_space_materials_composite_unique ON space_materials (school_id, space_name, material_name)"
         ).execute(&self.pool).await?;
 
         // 5. Space Employees (Assignments)
@@ -580,12 +576,22 @@ impl SchemaSetup {
             "CREATE TABLE IF NOT EXISTS space_employees (
                 id SERIAL PRIMARY KEY,
                 school_id TEXT NOT NULL,
-                space_id TEXT NOT NULL,
+                space_name TEXT NOT NULL,
                 employee_id TEXT NOT NULL,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id, employee_id)
+                UNIQUE(school_id, space_name, employee_id)
             )"
         ).execute(&self.pool).await?;
+
+        // Self-heal: rename column from space_id to space_name if it exists
+        let _ = sqlx::query(
+            "DO $$ 
+            BEGIN 
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'space_employees' AND column_name = 'space_id') THEN
+                    ALTER TABLE space_employees RENAME COLUMN space_id TO space_name;
+                END IF;
+            END $$;"
+        ).execute(&self.pool).await;
 
         // 6. Material Locations (Fine-grained tracking)
         sqlx::query(
@@ -650,30 +656,50 @@ impl SchemaSetup {
             "CREATE TABLE IF NOT EXISTS space_requirements (
                 id SERIAL PRIMARY KEY,
                 school_id VARCHAR(255) NOT NULL,
-                space_id VARCHAR(255) NOT NULL,
+                space_name VARCHAR(255) NOT NULL,
                 responsibility_id VARCHAR(255) NOT NULL,
                 required_count INT NOT NULL DEFAULT 1,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id, responsibility_id)
+                UNIQUE(school_id, space_name, responsibility_id)
             )"
         ).execute(&self.pool).await?;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_req_lookup ON space_requirements (school_id, space_id)")
+        // Self-heal: rename column from space_id to space_name if it exists
+        let _ = sqlx::query(
+            "DO $$ 
+            BEGIN 
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'space_requirements' AND column_name = 'space_id') THEN
+                    ALTER TABLE space_requirements RENAME COLUMN space_id TO space_name;
+                END IF;
+            END $$;"
+        ).execute(&self.pool).await;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_req_lookup ON space_requirements (school_id, space_name)")
             .execute(&self.pool).await?;
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS space_material_requirements (
                 id SERIAL PRIMARY KEY,
                 school_id VARCHAR(255) NOT NULL,
-                space_id VARCHAR(255) NOT NULL,
+                space_name VARCHAR(255) NOT NULL,
                 material_name VARCHAR(255) NOT NULL,
                 required_count INTEGER DEFAULT 0,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_id, material_name)
+                UNIQUE(school_id, space_name, material_name)
             )"
         ).execute(&self.pool).await?;
 
-        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_mat_req_lookup ON space_material_requirements(school_id, space_id)")
+        // Self-heal: rename column from space_id to space_name if it exists
+        let _ = sqlx::query(
+            "DO $$ 
+            BEGIN 
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'space_material_requirements' AND column_name = 'space_id') THEN
+                    ALTER TABLE space_material_requirements RENAME COLUMN space_id TO space_name;
+                END IF;
+            END $$;"
+        ).execute(&self.pool).await;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_space_mat_req_lookup ON space_material_requirements(school_id, space_name)")
             .execute(&self.pool).await?;
 
         Ok(())

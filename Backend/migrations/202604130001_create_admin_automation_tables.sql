@@ -1,5 +1,7 @@
--- Administrative Automation Tables
--- For form processing, report generation, email parsing, and timetable conflict detection
+-- Insert system school record if not exists to satisfy foreign key constraints
+INSERT INTO schools (school_id, school_name, status) 
+VALUES ('system', 'System School', 'active') 
+ON CONFLICT (school_id) DO NOTHING;
 
 -- Form Processing Templates
 CREATE TABLE form_templates (
@@ -22,7 +24,7 @@ CREATE TABLE form_templates (
     updated_by VARCHAR(255),
     
     -- RLS policies
-    CONSTRAINT fk_form_templates_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_form_templates_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_form_templates_school_type ON form_templates(school_id, form_type);
@@ -48,7 +50,7 @@ CREATE TABLE form_submissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_form_submissions_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_form_submissions_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE,
     CONSTRAINT fk_form_submissions_template FOREIGN KEY (template_id) REFERENCES form_templates(id) ON DELETE CASCADE
 );
 
@@ -76,7 +78,7 @@ CREATE TABLE automated_reports (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(255),
     
-    CONSTRAINT fk_automated_reports_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_automated_reports_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_automated_reports_school_type ON automated_reports(school_id, report_type);
@@ -96,7 +98,7 @@ CREATE TABLE report_generation_logs (
     error_message TEXT,
     metadata JSONB DEFAULT '{}',
     
-    CONSTRAINT fk_report_logs_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_report_logs_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE,
     CONSTRAINT fk_report_logs_report FOREIGN KEY (report_id) REFERENCES automated_reports(id) ON DELETE CASCADE
 );
 
@@ -123,7 +125,7 @@ CREATE TABLE email_processing_queue (
     processing_result JSONB DEFAULT '{}',
     metadata JSONB DEFAULT '{}',
     
-    CONSTRAINT fk_email_queue_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_email_queue_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_email_queue_school_status ON email_processing_queue(school_id, processing_status);
@@ -146,13 +148,13 @@ CREATE TABLE email_processing_rules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_email_rules_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_email_rules_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_email_rules_school_active ON email_processing_rules(school_id, is_active);
 
 -- Timetable Conflict Detection
-CREATE TABLE timetable_conflicts (
+CREATE TABLE admin_timetable_conflicts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     school_id VARCHAR(255) NOT NULL,
     conflict_type VARCHAR(100) NOT NULL, -- 'teacher_double_booking', 'room_overlap', 'student_clash', 'resource_unavailable'
@@ -172,12 +174,12 @@ CREATE TABLE timetable_conflicts (
     resolution_notes TEXT,
     metadata JSONB DEFAULT '{}',
     
-    CONSTRAINT fk_timetable_conflicts_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_admin_timetable_conflicts_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_timetable_conflicts_school_status ON timetable_conflicts(school_id, resolved_at);
-CREATE INDEX idx_timetable_conflicts_type ON timetable_conflicts(school_id, conflict_type, severity);
-CREATE INDEX idx_timetable_conflicts_entity ON timetable_conflicts(school_id, entity_type, entity_id);
+CREATE INDEX idx_admin_timetable_conflicts_school_status ON admin_timetable_conflicts(school_id, resolved_at);
+CREATE INDEX idx_admin_timetable_conflicts_type ON admin_timetable_conflicts(school_id, conflict_type, severity);
+CREATE INDEX idx_admin_timetable_conflicts_entity ON admin_timetable_conflicts(school_id, entity_type, entity_id);
 
 -- Timetable Conflict Rules
 CREATE TABLE timetable_conflict_rules (
@@ -194,7 +196,7 @@ CREATE TABLE timetable_conflict_rules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_conflict_rules_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_conflict_rules_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_conflict_rules_school_active ON timetable_conflict_rules(school_id, is_active);
@@ -219,7 +221,7 @@ CREATE TABLE admin_task_queue (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_admin_task_queue_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+    CONSTRAINT fk_admin_task_queue_school FOREIGN KEY (school_id) REFERENCES schools(school_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_admin_task_queue_school_status ON admin_task_queue(school_id, status);
@@ -233,7 +235,7 @@ ALTER TABLE automated_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE report_generation_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_processing_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_processing_rules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE timetable_conflicts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_timetable_conflicts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE timetable_conflict_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_task_queue ENABLE ROW LEVEL SECURITY;
 
@@ -256,7 +258,7 @@ CREATE POLICY email_processing_queue_isolation_policy ON email_processing_queue
 CREATE POLICY email_processing_rules_isolation_policy ON email_processing_rules
     USING (school_id = current_setting('app.current_school_id'));
 
-CREATE POLICY timetable_conflicts_isolation_policy ON timetable_conflicts
+CREATE POLICY admin_timetable_conflicts_isolation_policy ON admin_timetable_conflicts
     USING (school_id = current_setting('app.current_school_id'));
 
 CREATE POLICY timetable_conflict_rules_isolation_policy ON timetable_conflict_rules
@@ -311,4 +313,5 @@ VALUES
     ('system', 'Fee Payment Form', 'Student fee payment form', 'fee_payment',
      '{"fields": [{"name": "student_id", "type": "text", "label": "Student ID", "required": true}, {"name": "payment_method", "type": "select", "label": "Payment Method", "options": ["Cash", "Cheque", "Bank Transfer", "Credit Card", "Debit Card", "UPI"], "required": true}, {"name": "amount", "type": "number", "label": "Amount", "required": true}, {"name": "transaction_id", "type": "text", "label": "Transaction ID", "required": false}, {"name": "payment_date", "type": "date", "label": "Payment Date", "required": true}, {"name": "receipt_upload", "type": "file", "label": "Payment Receipt", "required": false}]}',
      '{"amount": {"min": 1}, "payment_date": {"not_future": true}}',
-     '[{"name": "Payment", "role": "parent"}, {"name": "Verification", "role": "
+     '[{"name": "Payment", "role": "parent"}, {"name": "Verification", "role": "admin"}]',
+     true, '["admin"]', true);

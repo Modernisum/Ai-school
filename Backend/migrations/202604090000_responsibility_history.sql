@@ -54,10 +54,6 @@ CREATE TABLE IF NOT EXISTS responsibility_version (
         FOREIGN KEY (responsibility_id) 
         REFERENCES responsibilities(responsibility_id) 
         ON DELETE CASCADE,
-    CONSTRAINT fk_responsibility_version_created_by 
-        FOREIGN KEY (created_by) 
-        REFERENCES admins(admin_id) 
-        ON DELETE SET NULL,
     UNIQUE(responsibility_id, version)
 );
 

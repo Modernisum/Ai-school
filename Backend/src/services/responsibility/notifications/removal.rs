@@ -1,39 +1,20 @@
 use crate::error::{AppError, AppResult};
+use crate::logic::EmailService;
 use crate::repository::Repositories;
 use serde_json::{json, Value};
-use chrono::Utc;
+use chrono::{Utc, Datelike};
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub enum ResponsibilityNotificationType {
-    Assigned,
-    Removed,
-    Updated,
-    SpaceAssigned,
-    SpaceRemoved,
-    BulkUpdate,
-}
-
-impl ResponsibilityNotificationType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ResponsibilityNotificationType::Assigned => "responsibility_assigned",
-            ResponsibilityNotificationType::Removed => "responsibility_removed",
-            ResponsibilityNotificationType::Updated => "responsibility_updated",
-            ResponsibilityNotificationType::SpaceAssigned => "space_assigned",
-            ResponsibilityNotificationType::SpaceRemoved => "space_removed",
-            ResponsibilityNotificationType::BulkUpdate => "bulk_update",
-        }
-    }
-}
+use super::ResponsibilityNotificationType;
 
 pub struct RemovalNotifier {
     repos: Arc<Repositories>,
+    email_service: Arc<EmailService>,
 }
 
 impl RemovalNotifier {
-    pub fn new(repos: Arc<Repositories>) -> Self {
-        Self { repos }
+    pub fn new(repos: Arc<Repositories>, email_service: Arc<EmailService>) -> Self {
+        Self { repos, email_service }
     }
 
     pub async fn send_removal_notification(
@@ -73,8 +54,17 @@ impl RemovalNotifier {
             )
             .await;
 
-        // TODO: Send email notification if enabled
-        // self.send_email_notification(employee_id, &notification).await;
+        // Send email notification if enabled
+        if self.email_service.is_enabled() {
+            let _ = self
+                .email_service
+                .send_email(
+                    &format!("employee_{}@school.com", employee_id),
+                    "Responsibility Removed",
+                    &format!("You have been removed from: {}", responsibility_name),
+                )
+                .await;
+        }
 
         Ok(())
     }

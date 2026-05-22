@@ -1,14 +1,46 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
-use bigdecimal::ToPrimitive;
+use bigdecimal::{ToPrimitive, FromPrimitive};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use sqlx::Row;
+use sqlx::{Row, Acquire};
 use crate::logic::pdf_generator::PdfGenerator;
 
 pub struct PostgresResponsibilityService {
     pub repos: Arc<Repositories>,
+}
+
+fn get_days_in_month(month: i32, year: i32) -> i64 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
+                29
+            } else {
+                28
+            }
+        }
+        _ => 30,
+    }
+}
+
+fn value_to_bigdecimal(v: &serde_json::Value) -> bigdecimal::BigDecimal {
+    if let Some(f) = v.as_f64() {
+        if let Some(b) = bigdecimal::BigDecimal::from_f64(f) {
+            return b;
+        }
+    }
+    if let Some(s) = v.as_str() {
+        if let Ok(b) = s.parse::<bigdecimal::BigDecimal>() {
+            return b;
+        }
+    }
+    if let Some(i) = v.as_i64() {
+        return bigdecimal::BigDecimal::from(i);
+    }
+    bigdecimal::BigDecimal::from(0)
 }
 
 #[async_trait]
@@ -1252,6 +1284,7 @@ impl ResponsibilityService for PostgresResponsibilityService {
             return Ok(0);
         }
 
+        let mut tx = conn.begin().await?;
         let mut affected = 0usize;
 
         for space_id in &space_ids {
@@ -1262,71 +1295,68 @@ impl ResponsibilityService for PostgresResponsibilityService {
             )
             .bind(school_id)
             .bind(space_id)
-            .fetch_optional(&mut *conn)
+            .fetch_optional(&mut *tx)
             .await?;
 
-            let new_fee = fee_sum.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
+            let new_fee = fee_sum.unwrap_or_else(|| bigdecimal::BigDecimal::from(0));
 
-            let result = sqlx::query(
-                "UPDATE students SET total_fees = $1, updated_at = NOW()
-                 WHERE school_id = $2 AND CONCAT(COALESCE(class_name, ''), '-', COALESCE(section, '')) = $3"
+            let result: sqlx::postgres::PgQueryResult = sqlx::query(
+                "UPDATE students s
+                 SET total_fees = $1, updated_at = NOW()
+                 WHERE school_id = $2
+                   AND EXISTS (
+                       SELECT 1
+                       FROM spaces sp
+                       WHERE sp.school_id = s.school_id
+                         AND (sp.name = $3 OR sp.space_id = $3)
+                         AND (
+                             LOWER(sp.name) = LOWER(CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END)
+                             OR LOWER(sp.name) = LOWER(CONCAT('Class ', CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END))
+                         )
+                   )"
             )
-            .bind(new_fee)
+            .bind(&new_fee)
             .bind(school_id)
             .bind(space_id)
-            .execute(&mut *conn)
+            .execute(&mut *tx)
             .await?;
 
             affected += result.rows_affected() as usize;
         }
 
+        tx.commit().await?;
         Ok(affected)
     }
 
     async fn recalculate_all_student_fees(&self, school_id: &str) -> AppResult<usize> {
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
 
-        let students: Vec<(String, String, String)> = sqlx::query_as(
-            "SELECT student_id, COALESCE(class_name, '') as class_name, COALESCE(section, '') as section FROM students WHERE school_id = $1"
+        let result = sqlx::query(
+            "UPDATE students s
+             SET total_fees = COALESCE((
+                 SELECT SUM(r.student_fee)
+                 FROM employee_responsibilities er
+                 JOIN responsibilities r ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+                 WHERE er.school_id = s.school_id
+                   AND EXISTS (
+                       SELECT 1
+                       FROM jsonb_array_elements_text(er.space_ids) AS assigned_space_id
+                       LEFT JOIN spaces sp ON sp.school_id = s.school_id AND (sp.name = assigned_space_id OR sp.space_id = assigned_space_id)
+                       WHERE 
+                           LOWER(COALESCE(sp.name, assigned_space_id)) = LOWER(CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END)
+                           OR LOWER(COALESCE(sp.name, assigned_space_id)) = LOWER(CONCAT('Class ', CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END))
+                           OR LOWER(COALESCE(sp.name, assigned_space_id)) = LOWER(CONCAT('class-', CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END))
+                           OR LOWER(COALESCE(sp.name, assigned_space_id)) = LOWER(REPLACE(CASE WHEN s.section IS NULL OR s.section = '' THEN s.class_name ELSE CONCAT(s.class_name, '-', s.section) END, '-', ''))
+                   )
+             ), 0.00),
+             updated_at = NOW()
+             WHERE s.school_id = $1"
         )
         .bind(school_id)
-        .fetch_all(&mut *conn)
+        .execute(&mut *conn)
         .await?;
 
-        let mut affected = 0usize;
-
-        for (student_id, class_name, section) in &students {
-            let space_id = if section.is_empty() {
-                class_name.clone()
-            } else {
-                format!("{}-{}", class_name, section)
-            };
-
-            let fee_sum: Option<bigdecimal::BigDecimal> = sqlx::query_scalar(
-                "SELECT SUM(r.student_fee) FROM responsibilities r
-                 JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
-                 WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
-            )
-            .bind(school_id)
-            .bind(space_id)
-            .fetch_optional(&mut *conn)
-            .await?;
-
-            let new_fee = fee_sum.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0);
-
-            sqlx::query(
-                "UPDATE students SET total_fees = $1, updated_at = NOW() WHERE school_id = $2 AND student_id = $3"
-            )
-            .bind(new_fee)
-            .bind(school_id)
-            .bind(student_id)
-            .execute(&mut *conn)
-            .await?;
-
-            affected += 1;
-        }
-
-        Ok(affected)
+        Ok(result.rows_affected() as usize)
     }
 
     async fn generate_salaries_from_responsibilities(
@@ -1341,13 +1371,16 @@ impl ResponsibilityService for PostgresResponsibilityService {
         let mut errors = Vec::new();
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
 
+        let days_in_month = get_days_in_month(month, year);
+        let days_in_month_bd = bigdecimal::BigDecimal::from(days_in_month);
+
         for emp in &employees {
             let emp_id = match emp["employeeId"].as_str() {
                 Some(id) => id,
                 None => continue,
             };
 
-            let mut spaces_component = 0.0f64;
+            let mut spaces_component = bigdecimal::BigDecimal::from(0);
             let responsibilities = self
                 .repos
                 .responsibility
@@ -1356,25 +1389,25 @@ impl ResponsibilityService for PostgresResponsibilityService {
                 .unwrap_or_default();
 
             for r in &responsibilities {
-                let monthly_price = r["monthlyPrice"].as_f64().unwrap_or(0.0);
+                let monthly_price = value_to_bigdecimal(&r["monthlyPrice"]);
                 let spaces_count = r["assignedSpaceIds"]
                     .as_array()
-                    .map(|arr| arr.len() as f64)
-                    .unwrap_or(1.0);
-                spaces_component += monthly_price * spaces_count;
+                    .map(|arr| bigdecimal::BigDecimal::from(arr.len() as i64))
+                    .unwrap_or_else(|| bigdecimal::BigDecimal::from(1));
+                spaces_component += &monthly_price * &spaces_count;
             }
 
-            let base_salary = emp["baseSalary"].as_f64().unwrap_or(0.0);
-            let bonus = emp["bonus"].as_f64().unwrap_or(0.0);
-            let aid = emp["aid"].as_f64().unwrap_or(0.0);
-            let exp_years = emp["experienceYears"].as_f64().unwrap_or(0.0);
-            let exp_rate = emp["experienceRate"].as_f64().unwrap_or(0.0);
-            let tenure_months = emp["tenureMonths"].as_f64().unwrap_or(0.0);
-            let tenure_rate = emp["tenureRate"].as_f64().unwrap_or(0.0);
+            let base_salary = value_to_bigdecimal(&emp["baseSalary"]);
+            let bonus = value_to_bigdecimal(&emp["bonus"]);
+            let aid = value_to_bigdecimal(&emp["aid"]);
+            let exp_years = value_to_bigdecimal(&emp["experienceYears"]);
+            let exp_rate = value_to_bigdecimal(&emp["experienceRate"]);
+            let tenure_months = value_to_bigdecimal(&emp["tenureMonths"]);
+            let tenure_rate = value_to_bigdecimal(&emp["tenureRate"]);
 
-            let exp_component = exp_years * exp_rate;
-            let tenure_component = tenure_months * tenure_rate;
-            let gross_salary = spaces_component + exp_component + tenure_component + bonus + aid;
+            let exp_component = &exp_years * &exp_rate;
+            let tenure_component = &tenure_months * &tenure_rate;
+            let gross_salary = &spaces_component + &exp_component + &tenure_component + &bonus + &aid;
 
             let attendance = self
                 .repos
@@ -1387,11 +1420,16 @@ impl ResponsibilityService for PostgresResponsibilityService {
                 a["status"] == "absent"
                     && a["month"].as_i64() == Some(month as i64)
                     && a["year"].as_i64() == Some(year as i64)
-            }).count() as f64;
+            }).count() as i64;
+            let absent_days_bd = bigdecimal::BigDecimal::from(absent_days);
 
-            let daily_rate = gross_salary / 30.0;
-            let deductions = absent_days * daily_rate;
-            let net_salary = (gross_salary - deductions).max(0.0);
+            let daily_rate = &gross_salary / &days_in_month_bd;
+            let deductions = &absent_days_bd * &daily_rate;
+            let mut net_salary = &gross_salary - &deductions;
+            let zero = bigdecimal::BigDecimal::from(0);
+            if net_salary < zero {
+                net_salary = zero;
+            }
 
             let salary_id = format!("sal_{}_{}", emp_id, uuid::Uuid::new_v4().to_string()[..8].to_string());
 
@@ -1410,10 +1448,10 @@ impl ResponsibilityService for PostgresResponsibilityService {
             .bind(emp_id)
             .bind(month)
             .bind(year)
-            .bind(base_salary)
-            .bind(bonus)
-            .bind(net_salary)
-            .bind(net_salary)
+            .bind(&base_salary)
+            .bind(&bonus)
+            .bind(&net_salary)
+            .bind(&net_salary)
             .bind("DUE")
             .execute(&mut *conn)
             .await;

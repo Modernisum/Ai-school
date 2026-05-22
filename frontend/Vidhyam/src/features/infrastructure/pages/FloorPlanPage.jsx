@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LayoutDashboard } from 'lucide-react';
-import { useGetSpacesQuery, useGetAllSpacesMaterialsQuery } from '../api/infrastructureApi';
+import { useGetSpacesQuery, useGetAllSpacesMaterialsQuery } from '../infrastructureApi';
 import FloorPlanView from '../components/floorplan/FloorPlanView';
 import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 

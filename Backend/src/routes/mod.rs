@@ -28,7 +28,7 @@ pub mod geo;
 pub mod health;
 pub mod leave;
 pub mod materials;
-
+pub mod dashboard;
 pub mod payment;
 pub mod public_api;
 pub mod recovery;

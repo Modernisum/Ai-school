@@ -106,8 +106,25 @@ pub async fn sell_material(
     Ok(Json(json!({"success": true, "message": "Material distribution recorded"})))
 }
 
-// Handlers for dashboard and history have been removed as their functionality
-// is now integrated into list_materials and get_material respectively.
+pub async fn get_material_history(
+    State(state): State<AppState>,
+    Path((school_id, material_name)): Path<(String, String)>,
+) -> AppResult<Json<Value>> {
+    // Fetch the material's internal ID to query history
+    use sqlx::Row;
+    let mut conn = state.repos.db_client.acquire_tenant_connection(&school_id).await?;
+    let material_id: Option<String> = sqlx::query_scalar(
+        "SELECT id FROM materials WHERE school_id = $1 AND name = $2"
+    )
+    .bind(&school_id)
+    .bind(&material_name)
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    let material_id = material_id.ok_or_else(|| crate::error::AppError::NotFound("Material not found".to_string()))?;
+    let history = state.services.resource.get_material_history(&school_id, &material_id).await?;
+    Ok(Json(json!({"success": true, "data": history})))
+}
 
 pub async fn get_shortage_summary(
     State(state): State<AppState>,

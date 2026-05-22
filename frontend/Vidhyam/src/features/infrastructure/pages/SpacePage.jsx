@@ -119,7 +119,7 @@ function SpacePage({ schoolId, pollingInterval }) {
 
   const handleUpdateSpace = async (id, data) => {
     try {
-      await updateSpace({ schoolId, spaceName: id, body: data }).unwrap();
+      await updateSpace({ schoolId, spaceId: id, body: data }).unwrap();
       toast.success("Sector Protocol Updated");
       setEditingSpace(null); reset();
     } catch (e) { toast.error(e?.data?.message || "Update failure"); }
@@ -129,7 +129,7 @@ function SpacePage({ schoolId, pollingInterval }) {
     const name = space.spaceName || space.name;
     if (!window.confirm(`Decommission '${name}' permanently?`)) return;
     try {
-      await deleteSpace({ schoolId, spaceName: name }).unwrap();
+      await deleteSpace({ schoolId, spaceId: name }).unwrap();
       toast.success("Sector Purged");
     } catch (e) { toast.error(e?.data?.message || "Decommission failure"); }
   };
@@ -277,9 +277,16 @@ function SpacePage({ schoolId, pollingInterval }) {
             spaces={spaces}
             material={transferTarget.material}
             fromSpace={transferTarget.space}
+            materials={transferTarget.materials}
             onClose={() => setTransferTarget(null)}
-            onTransfer={(args) => {
-              // handle transfer via mutation hook
+            onTransfer={async (args) => {
+              try {
+                await transferMaterial(args).unwrap();
+                toast.success('Material transferred');
+                refetchSpaces();
+              } catch (e) {
+                toast.error(e?.data?.message || 'Transfer failed');
+              }
             }}
           />
         )}

@@ -23,8 +23,8 @@ const SkeletonRow = ({ columns, actions }) => (
 const FilterField = ({ field }) => {
   const { type, label, value = '', onChange, options = [], placeholder } = field;
 
-  const inputClass = "w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/40 transition-all";
-  const labelClass = "text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 block";
+  const inputClass = "w-full bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-xs text-[var(--text-main)] focus:outline-none focus:border-primary/40 transition-all";
+  const labelClass = "text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 block";
 
   switch (type) {
     case 'select':
@@ -131,19 +131,19 @@ export default function DataGrid({
   };
 
   return (
-    <GlassCard className="overflow-hidden border-none shadow-2xl bg-white/[0.01]" glowColor="primary">
+    <GlassCard className="overflow-hidden border border-[var(--glass-border)] shadow-2xl bg-[var(--card-bg)]">
       {/* Header Section */}
-      <div className="px-3 py-1.5 border-b border-white/5 bg-white/[0.02]">
+      <div className="px-3 py-1.5 border-b border-[var(--glass-border)] bg-[var(--bg-secondary)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* Left: Title & Total Count */}
           <div className="flex items-center gap-3 shrink-0">
             {title && (
-              <h3 className="text-sm font-black text-white uppercase tracking-widest leading-none">
+              <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-widest leading-none">
                 {title}
               </h3>
             )}
-            <span className="px-2 py-0.5 rounded bg-white/10 border border-white/10 text-[9px] font-black text-white uppercase tracking-widest whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded bg-[var(--bg-main)] border border-[var(--glass-border)] text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
               {rows?.length || 0} Total
             </span>
           </div>
@@ -153,14 +153,14 @@ export default function DataGrid({
             {showSearch && (
               <div className="relative flex-1 lg:w-64 group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={14} className="text-slate-500 group-focus-within:text-primary transition-colors" />
+                  <Search size={14} className="text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
                 </div>
                 <input
                   type="text"
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full pl-9 pr-4 py-2 bg-white/[0.03] hover:bg-white/[0.05] focus:bg-white/[0.08] border border-white/10 focus:border-primary/50 text-white text-xs rounded-xl focus:outline-none transition-all placeholder:text-slate-600 font-medium"
+                  className="w-full pl-9 pr-4 py-2 bg-[var(--bg-main)] hover:bg-[var(--bg-secondary)] border border-[var(--glass-border)] focus:border-primary/50 text-[var(--text-main)] text-xs rounded-xl focus:outline-none transition-all placeholder:text-[var(--text-muted)] font-medium"
                 />
               </div>
             )}
@@ -170,7 +170,7 @@ export default function DataGrid({
               <div className="relative">
                 <button 
                   onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  className={`w-9 h-9 rounded-xl transition-all flex items-center justify-center border shrink-0 ${showFilterDropdown ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white border-white/10'}`}
+                  className={`w-9 h-9 rounded-xl transition-all flex items-center justify-center border shrink-0 ${showFilterDropdown ? 'bg-primary/20 text-primary border-primary/30' : 'bg-[var(--bg-main)] hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--glass-border)]'}`}
                 >
                   <Filter size={14} />
                 </button>
@@ -181,17 +181,17 @@ export default function DataGrid({
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 lg:right-0 top-full mt-2 w-80 p-4 rounded-2xl bg-[#0f111a] border border-white/10 shadow-2xl shadow-black/50 z-50 backdrop-blur-xl"
+                      className="absolute right-0 lg:right-0 top-full mt-2 w-80 p-4 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--glass-border)] shadow-2xl shadow-black/50 z-50 backdrop-blur-xl"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Filters</h4>
+                        <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Filters</h4>
                         <div className="flex items-center gap-2">
                           {onClearFilters && (
-                            <button onClick={handleClear} className="text-[9px] text-slate-500 hover:text-white font-bold uppercase transition-colors flex items-center gap-1">
+                            <button onClick={handleClear} className="text-[9px] text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold uppercase transition-colors flex items-center gap-1">
                               <X size={10} /> Clear
                             </button>
                           )}
-                          <button onClick={handleApply} className="text-[9px] text-primary hover:text-white font-bold uppercase transition-colors">
+                          <button onClick={handleApply} className="text-[9px] text-primary hover:text-[var(--text-main)] font-bold uppercase transition-colors">
                             Apply
                           </button>
                         </div>
@@ -228,7 +228,7 @@ export default function DataGrid({
             {onRefresh && (
               <button 
                 onClick={onRefresh}
-                className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-2 shrink-0"
+                className="p-2.5 bg-[var(--bg-main)] hover:bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center gap-2 shrink-0"
               >
                 <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
               </button>
@@ -236,7 +236,7 @@ export default function DataGrid({
 
             {/* Additional Header Actions */}
             {headerActions && (
-              <div className="flex items-center gap-2 shrink-0 border-l border-white/10 pl-2 ml-1">
+              <div className="flex items-center gap-2 shrink-0 border-l border-[var(--glass-border)] pl-2 ml-1">
                 {headerActions}
               </div>
             )}
@@ -249,28 +249,28 @@ export default function DataGrid({
       <div className="overflow-x-auto custom-scrollbar p-2">
         <table className="w-full border-separate border-spacing-0">
           <thead>
-            <tr className="bg-white/[0.03]">
+            <tr className="bg-[var(--bg-secondary)]">
               {columns.map((col, idx) => (
                 <th 
                   key={idx} 
-                  className={`p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-left border-b border-white/5 ${col.className || ''}`}
+                  className={`p-4 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest text-left border-b border-[var(--glass-border)] ${col.className || ''}`}
                   style={{ width: col.width }}
                 >
                   {col.header}
                 </th>
               ))}
-              {actions && <th className="p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right border-b border-white/5">Protocol</th>}
+              {actions && <th className="p-4 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest text-right border-b border-[var(--glass-border)]">Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-[var(--glass-border)]">
             {isLoading ? (
                // Loading Skeletons
                [...Array(5)].map((_, i) => <SkeletonRow key={i} columns={columns} actions={!!actions} />)
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="py-32 opacity-20 text-center">
-                  <div className="w-16 h-16 bg-white/5 rounded-2xl mx-auto mb-4 flex items-center justify-center border border-white/5">
-                    <MoreHorizontal size={32} className="text-white" />
+                <td colSpan={columns.length + (actions ? 1 : 0)} className="py-32 opacity-30 text-center">
+                  <div className="w-16 h-16 bg-[var(--bg-main)] rounded-2xl mx-auto mb-4 flex items-center justify-center border border-[var(--glass-border)]">
+                    <MoreHorizontal size={32} className="text-[var(--text-main)]" />
                   </div>
                   <p className="text-xs font-black uppercase tracking-widest italic">{emptyMessage}</p>
                 </td>
@@ -284,12 +284,12 @@ export default function DataGrid({
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: rowIdx * 0.03 }}
-                    className="hover:bg-white/[0.02] transition-colors group"
+                    className="hover:bg-[var(--bg-secondary)] transition-colors group"
                   >
                     {columns.map((col, colIdx) => (
                       <td key={colIdx} className={`p-4 ${col.className || ''}`}>
                         {col.render ? col.render(row[col.key], row) : (
-                          <span className="text-xs font-medium text-slate-300">
+                          <span className="text-xs font-medium text-[var(--text-main)]">
                             {row[col.key] || '---'}
                           </span>
                         )}
@@ -312,8 +312,8 @@ export default function DataGrid({
 
       {/* Pagination Footer */}
       {rows.length > 0 && (
-        <div className={`p-4 border-t border-white/5 bg-white/[0.01] flex flex-col sm:flex-row items-center justify-between gap-4 transition-opacity ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+        <div className={`p-4 border-t border-[var(--glass-border)] bg-[var(--bg-secondary)] flex flex-col sm:flex-row items-center justify-between gap-4 transition-opacity ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
             Page {currentPage} of {totalPages}
           </span>
 
@@ -327,8 +327,8 @@ export default function DataGrid({
                   currentPage === page 
                     ? 'bg-primary/20 text-primary border border-primary/30' 
                     : typeof page === 'number' 
-                      ? 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
-                      : 'text-slate-600 cursor-default'
+                      ? 'text-[var(--text-muted)] hover:bg-[var(--bg-main)] hover:text-[var(--text-main)] border border-transparent'
+                      : 'text-[var(--text-muted)] cursor-default'
                 }`}
               >
                 {page}
@@ -340,14 +340,14 @@ export default function DataGrid({
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1 || isLoading}
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               ← Previous
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || isLoading}
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               Next →
             </button>

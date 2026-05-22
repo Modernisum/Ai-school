@@ -21,8 +21,6 @@ import {
   useDeleteMaterialMutation,
   useBuyMaterialMutation,
   useSellMaterialMutation,
-  useGetMaterialsDashboardQuery,
-  useGetSpacesUsingMaterialQuery,
 } from "../infrastructureApi";
 
 const formatCurrency = (amount) => {
@@ -46,12 +44,6 @@ function MaterialPage({ schoolId, pollingInterval }) {
   const { data: materialsData, isFetching, refetch: refetchMaterials, error: materialsError } = useGetMaterialsQuery({ 
     schoolId, search: debouncedSearch, filter: filter === "All Inventory" ? null : filter, page, limit,
   }, { pollingInterval });
-
-  // Fetch material-space mappings for bridging
-  const { data: spacesData } = useGetSpacesUsingMaterialQuery(
-    { schoolId, materialName: "*" },
-    { skip: true } // Fetched on demand — for now as placeholder
-  );
 
   const isOffline = materialsError?.status === "FETCH_ERROR" || materialsError?.status === 404;
   const materials = materialsData?.data || [];

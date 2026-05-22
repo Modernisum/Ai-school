@@ -64,7 +64,7 @@ const FilterWidget = ({
             <div className="relative">
               <FilterIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 z-10" />
               <select
-                className={`bg-slate-900/50 border border-white/10 rounded-2xl py-3.5 pl-10 pr-4 text-xs text-slate-300 font-black uppercase tracking-widest focus:outline-none focus:border-blue-500/40 transition-all cursor-pointer appearance-none ${filterClassName}`}
+                className={`bg-slate-900/50 border border-white/10 rounded-2xl py-3.5 pl-10 pr-4 text-xs text-[var(--text-muted)] font-semibold tracking-wide focus:outline-none focus:border-blue-500/40 transition-all cursor-pointer appearance-none ${filterClassName}`}
                 value={selectedFilter}
                 onChange={(e) => onFilterChange(e.target.value)}
               >
@@ -80,7 +80,7 @@ const FilterWidget = ({
             {additionalFilters.map((filter, index) => (
               <select
                 key={index}
-                className="bg-slate-900/50 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-slate-300 font-black uppercase tracking-widest focus:outline-none focus:border-blue-500/40 transition-all cursor-pointer"
+                className="bg-slate-900/50 border border-white/10 rounded-2xl py-3.5 px-4 text-xs text-[var(--text-muted)] font-semibold tracking-wide focus:outline-none focus:border-blue-500/40 transition-all cursor-pointer"
                 value={filter.value}
                 onChange={(e) => filter.onChange(e.target.value)}
               >
@@ -103,7 +103,7 @@ const FilterWidget = ({
               title="Refresh data"
             >
               <RefreshIcon size={16} />
-              <span className="text-xs font-black uppercase tracking-widest hidden md:inline">Refresh</span>
+              <span className="text-xs font-semibold tracking-wide hidden md:inline">Refresh</span>
             </button>
           )}
           
@@ -114,7 +114,7 @@ const FilterWidget = ({
               title="Export data"
             >
               <ExportIcon size={16} />
-              <span className="text-xs font-black uppercase tracking-widest hidden md:inline">Export</span>
+              <span className="text-xs font-semibold tracking-wide hidden md:inline">Export</span>
             </button>
           )}
           
@@ -125,7 +125,7 @@ const FilterWidget = ({
               title="Import data"
             >
               <ImportIcon size={16} />
-              <span className="text-xs font-black uppercase tracking-widest hidden md:inline">Import</span>
+              <span className="text-xs font-semibold tracking-wide hidden md:inline">Import</span>
             </button>
           )}
           
@@ -138,7 +138,7 @@ const FilterWidget = ({
               title={action.title}
             >
               {action.icon && <action.icon size={16} />}
-              <span className="text-xs font-black uppercase tracking-widest hidden md:inline">{action.label}</span>
+              <span className="text-xs font-semibold tracking-wide hidden md:inline">{action.label}</span>
             </button>
           ))}
         </div>
@@ -152,7 +152,7 @@ const FilterWidget = ({
               <div key={index} className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${filter.color || 'bg-blue-500'}`} />
                 <span className="text-xs text-slate-400">{filter.label}:</span>
-                <span className="text-xs font-black text-white">{filter.count}</span>
+                <span className="text-xs font-semibold text-[var(--text-main)]">{filter.count}</span>
               </div>
             )
           ))}

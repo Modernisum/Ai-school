@@ -153,15 +153,15 @@ export default function DocumentUploadStep({
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/20 mb-3">
           <Upload size={20} className="text-primary" />
         </div>
-        <h3 className="text-sm font-bold text-white">Upload Document for Auto-Fill</h3>
-        <p className="text-xs text-slate-400 mt-1">
+        <h3 className="text-sm font-bold text-[var(--text-main)]">Upload Document for Auto-Fill</h3>
+        <p className="text-xs text-[var(--text-muted)] mt-1">
           Upload an Aadhaar, PAN, TC, or Marksheet to auto-fill the form
         </p>
       </div>
 
       {/* Document Type Selector */}
       <div>
-        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+        <label className="block text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">
           Document Type
         </label>
         <div className="flex flex-wrap gap-2">
@@ -173,7 +173,7 @@ export default function DocumentUploadStep({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 docType === dt.value
                   ? 'bg-primary/20 border-primary/40 text-primary'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/20'
+                  : 'bg-[var(--bg-main)] border-[var(--glass-border)] text-[var(--text-muted)] hover:border-primary/25'
               }`}
             >
               {dt.icon} {dt.label}
@@ -185,7 +185,7 @@ export default function DocumentUploadStep({
       {/* Upload Area */}
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-white/[0.02] transition-all"
+        className="border-2 border-dashed border-[var(--glass-border)] rounded-xl p-6 text-center cursor-pointer hover:border-primary/40 hover:bg-[var(--bg-main)] transition-all"
       >
         <input
           ref={fileInputRef}
@@ -195,11 +195,11 @@ export default function DocumentUploadStep({
           onChange={handleFileSelect}
           className="hidden"
         />
-        <Upload size={24} className="mx-auto text-slate-500 mb-2" />
-        <p className="text-xs text-slate-400">
+        <Upload size={24} className="mx-auto text-[var(--text-muted)] mb-2" />
+        <p className="text-xs text-[var(--text-muted)]">
           Drop files here or click to upload
         </p>
-        <p className="text-[10px] text-slate-600 mt-1">
+        <p className="text-[10px] text-[var(--text-muted)] opacity-60 mt-1">
           Supports JPG, PNG, PDF
         </p>
       </div>
@@ -207,7 +207,7 @@ export default function DocumentUploadStep({
       {/* Uploaded Documents */}
       {docs.length > 0 && (
         <div className="space-y-1.5">
-          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+          <label className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
             Uploaded Documents ({docs.length})
           </label>
           {docs.map((doc) => (
@@ -216,11 +216,11 @@ export default function DocumentUploadStep({
               className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs ${
                 doc.status === 'error'
                   ? 'border-red-500/20 bg-red-500/5'
-                  : 'border-white/5 bg-white/[0.02]'
+                  : 'border-[var(--glass-border)] bg-[var(--bg-main)]'
               }`}
             >
-              <FileText size={14} className="text-slate-400 shrink-0" />
-              <span className="flex-1 text-slate-300 truncate">{doc.name}</span>
+              <FileText size={14} className="text-[var(--text-muted)] shrink-0" />
+              <span className="flex-1 text-[var(--text-main)] truncate">{doc.name}</span>
               {doc.status === 'error' ? (
                 <span className="text-red-400 text-[10px]">{doc.error}</span>
               ) : (
@@ -229,7 +229,7 @@ export default function DocumentUploadStep({
               <button
                 type="button"
                 onClick={() => removeDoc(doc.id)}
-                className="text-slate-600 hover:text-red-400 transition-colors"
+                className="text-[var(--text-muted)] hover:text-red-450 transition-colors"
               >
                 <X size={14} />
               </button>
@@ -254,7 +254,7 @@ export default function DocumentUploadStep({
       {processing && (
         <div className="text-center py-4">
           <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-xs text-slate-400">AI is analyzing document...</p>
+          <p className="text-xs text-[var(--text-muted)]">AI is analyzing document...</p>
         </div>
       )}
 
@@ -279,8 +279,8 @@ export default function DocumentUploadStep({
             {Object.entries(extractedData).map(([key, value]) => (
               value !== null && value !== '' && (
                 <div key={key} className="flex gap-1 text-xs">
-                  <span className="text-slate-500 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                  <span className="text-white truncate">{String(value)}</span>
+                  <span className="text-[var(--text-muted)] capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span className="text-[var(--text-main)] truncate">{String(value)}</span>
                 </div>
               )
             ))}
@@ -303,7 +303,7 @@ export default function DocumentUploadStep({
         <button
           type="button"
           onClick={onSkip}
-          className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-all"
+          className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[var(--bg-main)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--text-muted)] transition-all"
         >
           <SkipForward size={14} className="inline mr-1" />
           Skip & Fill Manually

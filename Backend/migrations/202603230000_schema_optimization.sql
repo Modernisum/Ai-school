@@ -11,8 +11,6 @@ CREATE INDEX IF NOT EXISTS idx_attendance_school_date ON attendance (school_id, 
 CREATE INDEX IF NOT EXISTS idx_employees_school_id ON employees (school_id);
 CREATE INDEX IF NOT EXISTS idx_classes_school_id ON classes (school_id);
 CREATE INDEX IF NOT EXISTS idx_subjects_school_id ON subjects (school_id);
-CREATE INDEX IF NOT EXISTS idx_batches_school_id ON batches (school_id);
-CREATE INDEX IF NOT EXISTS idx_sections_school_id ON sections (school_id);
 CREATE INDEX IF NOT EXISTS idx_announcements_school_id ON announcements (school_id);
 CREATE INDEX IF NOT EXISTS idx_materials_school_id ON materials (school_id);
 CREATE INDEX IF NOT EXISTS idx_leave_apps_school_id ON leave_applications (school_id);
@@ -41,7 +39,6 @@ ALTER TABLE attendance ALTER COLUMN school_id SET NOT NULL;
 -- 6. AI-Friendly Schema Documentation (Comments)
 COMMENT ON TABLE students IS 'Core tenant-isolated table for student records.';
 COMMENT ON COLUMN students.school_id IS 'Primary isolation key for multi-tenancy (RLS).';
-COMMENT ON COLUMN students.data IS 'JSONB blob for extensible profile data.';
 
 COMMENT ON TABLE global_users IS 'Unified identity table for cross-tenant login discovery.';
 COMMENT ON TABLE attendance IS 'Temporal records of student and employee presence presence.';

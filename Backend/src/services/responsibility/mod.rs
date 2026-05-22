@@ -11,6 +11,7 @@ pub use metrics::ResponsibilityMetrics;
 pub use notifications::ResponsibilityNotificationService;
 pub use notifications::ResponsibilityNotificationType;
 
+use crate::logic::pdf_generator::PdfGenerator;
 use crate::repository::Repositories;
 use crate::services::traits::*;
 use async_trait::async_trait;
@@ -275,8 +276,10 @@ impl ResponsibilityService for PostgresResponsibilityService {
         start_date: &str,
         end_date: &str,
     ) -> AppResult<Vec<u8>> {
-        // TODO: Implement PDF generation
-        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+        let report_data = self.metrics.generate_utilization_report(school_id, start_date, end_date).await?;
+        let title = format!("Utilization Report - {} to {}", start_date, end_date);
+        PdfGenerator::generate_report(&title, &report_data)
+            .map_err(|e| crate::error::AppError::Internal(format!("PDF generation failed: {}", e)))
     }
 
     async fn generate_workload_report_pdf(
@@ -285,8 +288,10 @@ impl ResponsibilityService for PostgresResponsibilityService {
         start_date: &str,
         end_date: &str,
     ) -> AppResult<Vec<u8>> {
-        // TODO: Implement PDF generation
-        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+        let report_data = self.metrics.generate_workload_report(school_id, start_date, end_date).await?;
+        let title = format!("Workload Report - {} to {}", start_date, end_date);
+        PdfGenerator::generate_report(&title, &report_data)
+            .map_err(|e| crate::error::AppError::Internal(format!("PDF generation failed: {}", e)))
     }
 
     async fn generate_space_distribution_report_pdf(
@@ -295,8 +300,10 @@ impl ResponsibilityService for PostgresResponsibilityService {
         start_date: &str,
         end_date: &str,
     ) -> AppResult<Vec<u8>> {
-        // TODO: Implement PDF generation
-        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+        let report_data = self.metrics.generate_space_distribution_report(school_id, start_date, end_date).await?;
+        let title = format!("Space Distribution Report - {} to {}", start_date, end_date);
+        PdfGenerator::generate_report(&title, &report_data)
+            .map_err(|e| crate::error::AppError::Internal(format!("PDF generation failed: {}", e)))
     }
 
     async fn generate_revenue_report_pdf(
@@ -305,7 +312,9 @@ impl ResponsibilityService for PostgresResponsibilityService {
         start_date: &str,
         end_date: &str,
     ) -> AppResult<Vec<u8>> {
-        // TODO: Implement PDF generation
-        Err(crate::error::AppError::Internal("PDF generation not implemented".to_string()))
+        let report_data = self.metrics.generate_revenue_report(school_id, start_date, end_date).await?;
+        let title = format!("Revenue Report - {} to {}", start_date, end_date);
+        PdfGenerator::generate_report(&title, &report_data)
+            .map_err(|e| crate::error::AppError::Internal(format!("PDF generation failed: {}", e)))
     }
 }

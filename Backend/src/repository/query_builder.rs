@@ -81,7 +81,11 @@ impl ResponsibilityQueryBuilder {
     }
 
     pub fn order_by(mut self, field: &str, direction: &str) -> Self {
-        self.query.push(format!(" ORDER BY {} {}", field, direction));
+        // CRITICAL: Prevent SQL injection - whitelist allowed sort fields
+        let allowed_fields = ["created_at", "updated_at", "name", "priority", "status", "employee_type", "space_id"];
+        let safe_field = if allowed_fields.contains(&field) { field } else { "created_at" };
+        let safe_dir = if direction.eq_ignore_ascii_case("asc") { "ASC" } else { "DESC" };
+        self.query.push(format!(" ORDER BY {} {}", safe_field, safe_dir));
         self
     }
 

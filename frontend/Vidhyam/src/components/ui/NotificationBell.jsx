@@ -50,7 +50,7 @@ function NotificationBell() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/school/${schoolId}/notifications?user_id=${encodeURIComponent(
+        `/api/school/${schoolId}/system/notifications?user_id=${encodeURIComponent(
           "self"
         )}&unread_only=true&limit=20`
       );
@@ -89,7 +89,7 @@ function NotificationBell() {
   const handleMarkRead = async (notificationId) => {
     try {
       await fetch(
-        `/api/school/${schoolId}/notifications/${notificationId}/read`,
+        `/api/school/${schoolId}/system/notifications/${notificationId}/read`,
         { method: "POST" }
       );
       setNotifications((prev) =>

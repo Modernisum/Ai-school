@@ -9,21 +9,21 @@ CREATE INDEX IF NOT EXISTS idx_attendance_class_date
 ON attendance(school_id, class_name, date);
 
 -- Update existing records where class_name can be inferred
--- For students: get class from students table
+-- For students: get class_name from students table
 UPDATE attendance a
-SET class_name = s.class
+SET class_name = s.class_name
 FROM students s
 WHERE a.school_id = s.school_id 
-  AND a.user_id = s.user_id 
+  AND a.user_id = s.student_id 
   AND a.role = 'student'
   AND a.class_name IS NULL;
 
--- For employees: get department as class_name
+-- For employees: get department from employee data
 UPDATE attendance a
-SET class_name = e.department
+SET class_name = COALESCE(e.data->>'department', e.employee_type)
 FROM employees e
 WHERE a.school_id = e.school_id 
-  AND a.user_id = e.user_id 
+  AND a.user_id = e.employee_id 
   AND a.role = 'employee'
   AND a.class_name IS NULL;
 

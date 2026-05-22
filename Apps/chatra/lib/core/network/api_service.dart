@@ -406,4 +406,19 @@ class ApiService {
       return ApiError(e.toString());
     }
   }
+
+  Future<ApiResponse<List<dynamic>>> getClassrooms(String studentId) async {
+    try {
+      final sid = await getSchoolId();
+      final response = await _get('$apiBase/school/$sid/resources/spaces?category=classroom&studentId=$studentId');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final spaces = data['data'] ?? data['spaces'] ?? [];
+        return ApiSuccess(List<dynamic>.from(spaces));
+      }
+      return ApiError("Classrooms error: ${response.statusCode}", statusCode: response.statusCode);
+    } catch (e) {
+      return ApiError(e.toString());
+    }
+  }
 }

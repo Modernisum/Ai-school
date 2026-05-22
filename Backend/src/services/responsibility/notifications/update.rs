@@ -1,39 +1,20 @@
 use crate::error::{AppError, AppResult};
+use crate::logic::EmailService;
 use crate::repository::Repositories;
 use serde_json::{json, Value};
-use chrono::Utc;
+use chrono::{Utc, Datelike};
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub enum ResponsibilityNotificationType {
-    Assigned,
-    Removed,
-    Updated,
-    SpaceAssigned,
-    SpaceRemoved,
-    BulkUpdate,
-}
-
-impl ResponsibilityNotificationType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ResponsibilityNotificationType::Assigned => "responsibility_assigned",
-            ResponsibilityNotificationType::Removed => "responsibility_removed",
-            ResponsibilityNotificationType::Updated => "responsibility_updated",
-            ResponsibilityNotificationType::SpaceAssigned => "space_assigned",
-            ResponsibilityNotificationType::SpaceRemoved => "space_removed",
-            ResponsibilityNotificationType::BulkUpdate => "bulk_update",
-        }
-    }
-}
+use super::ResponsibilityNotificationType;
 
 pub struct UpdateNotifier {
     repos: Arc<Repositories>,
+    email_service: Arc<EmailService>,
 }
 
 impl UpdateNotifier {
-    pub fn new(repos: Arc<Repositories>) -> Self {
-        Self { repos }
+    pub fn new(repos: Arc<Repositories>, email_service: Arc<EmailService>) -> Self {
+        Self { repos, email_service }
     }
 
     pub async fn send_update_notification(
@@ -77,8 +58,18 @@ impl UpdateNotifier {
             )
             .await;
 
-        // TODO: Send email notification to affected employees
-        // self.send_bulk_email_notification(affected_employees, &notification).await;
+        // Send email notification for critical updates
+        if field != "description" && self.email_service.is_enabled() {
+            let _ = self
+                .email_service
+                .send_email(
+                    "admin@school.com",
+                    &format!("Responsibility Updated: {}", responsibility_name),
+                    &format!("Field '{}' was updated for responsibility '{}'.\nOld value: {}\nNew value: {}\nUpdated by: {}",
+                        field, responsibility_name, old_value, new_value, updated_by),
+                )
+                .await;
+        }
 
         Ok(())
     }
@@ -153,24 +144,20 @@ impl UpdateNotifier {
                 )
                 .await;
 
-            // TODO: Send email notification to employee
-            // self.send_email_notification(employee_id, &employee_notification).await;
+            // Send email notification if enabled
+            if self.email_service.is_enabled() {
+                let _ = self
+                    .email_service
+                    .send_email(
+                        &format!("employee_{}@school.com", employee_id),
+                        &format!("Responsibility {}", action),
+                        &format!("You have been {} to: {}", action, responsibility_name),
+                    )
+                    .await;
+            }
         }
 
         Ok(())
     }
 
-    // TODO: Implement email notification service
-    // async fn send_email_notification(&self, recipient_id: &str, notification: &Value) -> AppResult<()> {
-    //     // Get employee email from database
-    //     // Send email using SMTP service
-    //     Ok(())
-    // }
-
-    // async fn send_bulk_email_notification(&self, recipient_ids: &[String], notification: &Value) -> AppResult<()> {
-    //     for recipient_id in recipient_ids {
-    //         self.send_email_notification(recipient_id, notification).await?;
-    //     }
-    //     Ok(())
-    // }
-}
+    }

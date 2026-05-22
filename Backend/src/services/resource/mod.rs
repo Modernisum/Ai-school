@@ -179,6 +179,10 @@ impl ResourceService for PostgresResourceService {
         self.inventory.create_space_category(school_id, admin_id, name).await
     }
 
+    async fn delete_space_category(&self, school_id: &str, admin_id: &str, name: &str) -> AppResult<()> {
+        self.inventory.delete_space_category(school_id, admin_id, name).await
+    }
+
     async fn update_space(
         &self,
         school_id: &str,
@@ -226,6 +230,17 @@ impl ResourceService for PostgresResourceService {
 
     async fn get_material_history(&self, school_id: &str, material_id: &str) -> AppResult<Vec<Value>> {
         self.material.get_material_history(school_id, material_id).await
+    }
+
+    async fn remove_space_material(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        material_name: &str,
+        quantity: i32,
+    ) -> AppResult<()> {
+        self.inventory.remove_space_material(school_id, admin_id, space_name, material_name, quantity).await
     }
 
     async fn get_space_materials(

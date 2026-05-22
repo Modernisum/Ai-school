@@ -70,7 +70,7 @@ impl AuthRepository for PostgresAuthRepository {
             .bind(data["userType"].as_str().unwrap_or("school-admin"))
             .bind(data["status"].as_str().unwrap_or("valid"))
             .bind(
-                chrono::DateTime::parse_from_rfc3339(data["expiresAt"].as_str().unwrap())?
+                chrono::DateTime::parse_from_rfc3339(data["expiresAt"].as_str().unwrap_or("1970-01-01T00:00:00Z"))?
                     .with_timezone(&chrono::Utc),
             )
             .execute(&self.client.pool)

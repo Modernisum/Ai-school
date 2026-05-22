@@ -50,7 +50,7 @@ function AttendancePulse({ userId, schoolId }) {
         fields: 'date,present'
     }, { skip: !userId || !schoolId });
 
-    if (isLoading) return <div className="h-32 bg-white/5 rounded-xl animate-pulse" />;
+    if (isLoading) return <div className="h-32 bg-[var(--bg-main)] rounded-xl animate-pulse" />;
 
     const trend = (attData?.records || []).map(r => ({
         label: r.date.split('-').slice(2).join('/'),
@@ -60,9 +60,9 @@ function AttendancePulse({ userId, schoolId }) {
     const attendancePct = attData?.summary?.attendance_percentage || 0;
 
     return (
-        <div className="space-y-3 mt-4 pt-4 border-t border-white/5">
+        <div className="space-y-3 mt-4 pt-4 border-t border-[var(--glass-border)]">
             <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-widest flex items-center gap-2">
                     <Activity size={12} className="text-primary" /> Attendance History
                 </h4>
                 <span className={`text-[10px] font-black uppercase ${attendancePct >= 90 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -139,12 +139,12 @@ export default function EmployeeManagement() {
         <div className="max-w-full p-1 space-y-1 pb-10">
             <header className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--bg-secondary)] border border-[var(--glass-border)] flex items-center justify-center shadow-lg">
                         <Users size={14} className="text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-white tracking-widest uppercase italic leading-none">PERSONNEL_CORE</h1>
-                        <p className="text-micro font-black text-slate-700 uppercase tracking-widest mt-0.5">{employees.length}_DATA_NODES</p>
+                        <h1 className="text-xl font-black text-[var(--text-main)] tracking-widest uppercase italic leading-none">Employees</h1>
+                        <p className="text-micro font-black text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{employees.length} Total Employees</p>
                     </div>
                 </div>
                 <div className="flex gap-1">
@@ -159,7 +159,7 @@ export default function EmployeeManagement() {
                         size="xs"
                         onClick={() => setBulkModalOpen(true)}
                         icon={UploadCloud}
-                        label="IMPORT"
+                        label="Import CSV"
                         className="hidden sm:flex"
                     />
                     <StandardButton
@@ -167,7 +167,7 @@ export default function EmployeeManagement() {
                         size="xs"
                         onClick={() => navigate('/dashboard/employee/add')}
                         icon={Plus}
-                        label="ADD_MEMBER"
+                        label="Add Employee"
                     />
                 </div>
             </header>
@@ -177,9 +177,9 @@ export default function EmployeeManagement() {
                     columns={4} 
                     gap="gap-1" 
                     kpis={types.filter(t => t !== 'All').map(t => ({
-                        label: t.toUpperCase().replace(' ', '_'),
+                        label: t.toUpperCase(),
                         value: employees.filter(e => (e.employeeType || e.type) === t).length,
-                        sub: "STAFF_UNITS",
+                        sub: "Staff Members",
                         icon: t === 'Teacher' ? GraduationCap : Briefcase,
                         color: t === 'Teacher' ? "primary" : "accent"
                     }))}
@@ -188,15 +188,15 @@ export default function EmployeeManagement() {
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-1 items-center">
                     <div className="relative flex-1 group w-full">
-                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-primary transition-colors" />
-                        <input className="w-full bg-white/[0.03] border border-white/10 rounded-lg h-8 pl-9 pr-3 text-micro text-white focus:outline-none focus:border-primary/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-800 font-black uppercase tracking-widest" 
-                            placeholder="SCAN_STAFF_DATABASE..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
+                        <input className="w-full bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-lg h-8 pl-9 pr-3 text-micro text-[var(--text-main)] focus:outline-none focus:border-primary/40 focus:bg-[var(--bg-secondary)] transition-all placeholder:text-[var(--text-muted)] font-black uppercase tracking-widest" 
+                            placeholder="Search employees..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <div className="w-full sm:w-40">
                         <DropdownWidget
                             dense
                             options={types.map(t => ({
-                                label: t === 'All' ? 'ALL_TYPES' : t.toUpperCase().replace(' ', '_'),
+                                label: t === 'All' ? 'All Types' : t.toUpperCase(),
                                 value: t
                             }))}
                             value={filterType}
@@ -211,8 +211,8 @@ export default function EmployeeManagement() {
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16">
-                        <Users size={36} className="text-slate-600 mx-auto mb-2" />
-                        <p className="text-slate-500">No employees found</p>
+                        <Users size={36} className="text-[var(--text-muted)] mx-auto mb-2" />
+                        <p className="text-[var(--text-muted)]">No employees found</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1">
@@ -223,26 +223,26 @@ export default function EmployeeManagement() {
                             return (
                                 <GlassCard
                                     key={id || i}
-                                    className="p-2 bg-white/[0.02] border-white/5 hover:border-primary/30 group"
+                                    className="p-2 bg-[var(--bg-secondary)] border-[var(--glass-border)] hover:border-primary/30 group"
                                     hover
                                     delay={i * 0.02}
                                     dense
                                 >
                                     <div className="flex items-start justify-between mb-2">
                                         <div className="flex items-center gap-1.5 min-w-0">
-                                            <div className="w-6 h-6 rounded bg-slate-900 flex items-center justify-center border border-white/5 flex-shrink-0">
-                                                <span className="text-white font-black text-[10px] uppercase italic">{name[0]}</span>
+                                            <div className="w-6 h-6 rounded bg-[var(--bg-main)] flex items-center justify-center border border-[var(--glass-border)] flex-shrink-0">
+                                                <span className="text-[var(--text-main)] font-black text-[10px] uppercase italic">{name[0]}</span>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-black text-white text-[10px] uppercase italic truncate leading-none group-hover:text-primary transition-colors">{name}</p>
-                                                <p className="text-[8px] font-black text-slate-700 font-mono tracking-tighter leading-none mt-1">{id}</p>
+                                                <p className="font-black text-[var(--text-main)] text-[10px] uppercase italic truncate leading-none group-hover:text-primary transition-colors">{name}</p>
+                                                <p className="text-[8px] font-black text-[var(--text-muted)] font-mono tracking-tighter leading-none mt-1">{id}</p>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="px-1 py-0.5 rounded bg-white/5 border border-white/5 text-[8px] font-black uppercase tracking-widest text-slate-700">{type}</span>
+                                        <span className="px-1 py-0.5 rounded bg-[var(--bg-main)] border border-[var(--glass-border)] text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">{type}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-1 pt-2 border-t border-[var(--glass-border)]">
                                         <StandardButton 
                                             variant="ghost" 
                                             size="xs" 
@@ -281,8 +281,8 @@ export default function EmployeeManagement() {
                             className="drawer-panel p-6 space-y-4"
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="font-bold text-white">Employee Profile</h2>
-                                <button onClick={() => setViewEmp(null)} className="text-slate-500 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-all">
+                                <h2 className="font-bold text-[var(--text-main)]">Employee Profile</h2>
+                                <button onClick={() => setViewEmp(null)} className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-1.5 hover:bg-[var(--bg-main)] rounded-lg transition-all">
                                     <X size={18} />
                                 </button>
                             </div>
@@ -291,9 +291,9 @@ export default function EmployeeManagement() {
                                     {(viewEmp.name || viewEmp.employeeName || 'E')[0]}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white">{viewEmp.name || viewEmp.employeeName}</h3>
+                                    <h3 className="font-bold text-[var(--text-main)]">{viewEmp.name || viewEmp.employeeName}</h3>
                                     <p className="text-xs text-secondary">{viewEmp.employeeType || viewEmp.type}</p>
-                                    <p className="font-mono text-xs text-slate-500">{viewEmp.employeeId || viewEmp.employee_id}</p>
+                                    <p className="font-mono text-xs text-[var(--text-muted)]">{viewEmp.employeeId || viewEmp.employee_id}</p>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -305,9 +305,9 @@ export default function EmployeeManagement() {
                                     ['Salary', viewEmp.baseSalary ? `₹${Number(viewEmp.baseSalary).toLocaleString()}` : null],
                                     ['Address', viewEmp.address],
                                 ].map(([k, v]) => v ? (
-                                    <div key={k} className="flex justify-between items-start gap-3 py-2 border-b border-white/5">
-                                        <span className="text-slate-500 text-xs flex-shrink-0">{k}</span>
-                                        <span className="text-white text-xs text-right">{v}</span>
+                                    <div key={k} className="flex justify-between items-start gap-3 py-2 border-b border-[var(--glass-border)]">
+                                        <span className="text-[var(--text-muted)] text-xs flex-shrink-0">{k}</span>
+                                        <span className="text-[var(--text-main)] text-xs text-right">{v}</span>
                                     </div>
                                 ) : null)}
                             </div>

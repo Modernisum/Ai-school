@@ -54,6 +54,19 @@ pub async fn create_space_category(
     Ok(Json(json!({"success": true, "category": data})))
 }
 
+pub async fn delete_space_category(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, category_name)): Path<(String, String)>,
+) -> AppResult<impl IntoResponse> {
+    state
+        .services
+        .resource
+        .delete_space_category(&school_id, &tenant_ctx.admin_id, &category_name)
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Category deleted successfully"})))
+}
+
 pub async fn create_space_by_category(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
@@ -166,6 +179,25 @@ pub async fn get_space_materials(
             "budget": budget,
         }
     })))
+}
+
+#[derive(serde::Deserialize)]
+pub struct RemoveSpaceMaterialReq {
+    pub quantity: i32,
+}
+
+pub async fn remove_space_material(
+    State(state): State<AppState>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Path((school_id, space_name, material_name)): Path<(String, String, String)>,
+    Json(payload): Json<RemoveSpaceMaterialReq>,
+) -> AppResult<impl IntoResponse> {
+    state
+        .services
+        .resource
+        .remove_space_material(&school_id, &tenant_ctx.admin_id, &space_name, &material_name, payload.quantity)
+        .await?;
+    Ok(Json(json!({"success": true, "message": "Material removed from space"})))
 }
 
 pub async fn clone_space(

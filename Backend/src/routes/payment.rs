@@ -137,6 +137,11 @@ pub async fn razorpay_webhook(
                 let payment_id = payload["payload"]["payment"]["entity"]["id"]
                     .as_str()
                     .unwrap_or("");
+                // IDEMPOTENCY: Check if this payment has already been processed
+                let already_processed = state.repos.transaction.is_payment_processed(payment_id).await.unwrap_or(false);
+                if already_processed {
+                    return (StatusCode::OK, "Duplicate webhook - already processed").into_response();
+                }
                 if let Ok(Some((school_id, student_id, amount))) = state
                     .repos
                     .transaction

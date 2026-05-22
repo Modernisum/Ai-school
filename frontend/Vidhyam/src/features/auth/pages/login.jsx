@@ -14,6 +14,7 @@ import { setCredentials } from "../authSlice";
 import GlassCard from "../../../components/ui/GlassCard";
 import StandardButton from "../../../components/ui/StandardButton";
 import { inp } from "../../../components/ui/FormWidget";
+import { applyThemeEnhanced } from "../../../utils/themeEnhanced";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 const LOGIN_SCHEMA = [
@@ -44,17 +45,17 @@ function FloatingOrbs() {
       <motion.div
         animate={{ x: [0, 40, -30, 0], y: [0, -50, 30, 0] }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-600/20 via-blue-500/10 to-transparent blur-[150px]"
+        className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-400/10 via-indigo-400/5 to-transparent blur-[120px]"
       />
       <motion.div
         animate={{ x: [0, -30, 20, 0], y: [0, 40, -35, 0] }}
         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 -right-32 w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-cyan-500/20 via-blue-500/10 to-transparent blur-[120px]"
+        className="absolute top-1/4 -right-32 w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-cyan-400/10 via-blue-400/5 to-transparent blur-[100px]"
       />
       <motion.div
         animate={{ x: [0, 25, -40, 0], y: [0, -30, 40, 0] }}
         transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-        className="absolute -bottom-32 left-1/3 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-primary/25 via-blue-500/10 to-transparent blur-[140px]"
+        className="absolute -bottom-32 left-1/3 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-blue-300/15 via-indigo-300/10 to-transparent blur-[120px]"
       />
     </div>
   );
@@ -63,9 +64,9 @@ function FloatingOrbs() {
 // ─── Grid Pattern ─────────────────────────────────────────────────────────────
 function GridPattern() {
   return (
-    <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+    <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
       style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)`,
         backgroundSize: '80px 80px'
       }}
     />
@@ -82,8 +83,8 @@ function StatusAlert({ message, status }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold mb-5 ${
-        ok ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-           : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+        ok ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+           : "bg-rose-50 border-rose-100 text-rose-700"
       }`}
     >
       {ok ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
@@ -98,38 +99,14 @@ function MetricBadge({ icon: Icon, value, label }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm"
+      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-slate-100 shadow-sm shadow-slate-100/50 backdrop-blur-sm"
     >
-      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 flex items-center justify-center">
-        <Icon size={16} className="text-primary" />
+      <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+        <Icon size={16} className="text-blue-600" />
       </div>
       <div>
-        <p className="text-lg font-black text-white tracking-tight">{value}</p>
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Testimonial Card ─────────────────────────────────────────────────────────
-function TestimonialCard({ quote, author, role, delay }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-sm"
-    >
-      <div className="absolute -top-2 -left-2 text-4xl text-primary/20 leading-none font-serif">"</div>
-      <p className="text-xs text-slate-400 leading-relaxed italic mt-2">{quote}</p>
-      <div className="mt-3 flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-[10px] font-black text-white">
-          {author.charAt(0)}
-        </div>
-        <div>
-          <p className="text-[11px] font-bold text-white">{author}</p>
-          <p className="text-[9px] text-slate-500 font-medium">{role}</p>
-        </div>
+        <p className="text-base font-black text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
       </div>
     </motion.div>
   );
@@ -145,6 +122,29 @@ export default function AuthPage() {
   const [supportMsg, setSupportMsg]  = useState("");
   const [supportStatus, setSupportStatus] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Force light theme mode on login page mount
+    applyThemeEnhanced({
+      mode: "light",
+      primary: "#2563eb",
+      secondary: "#3b82f6",
+      accent: "#06b6d4",
+      success: "#059669",
+      warning: "#d97706",
+      backgroundVia: "#f4f5f7",
+    });
+
+    // Disable browser-level scrolling for a perfect single-page fit
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      // Re-enable browser-level scrolling on unmount
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   const [login, { isLoading }]                        = useLoginMutation();
   const [submitSupport, { isLoading: isSupportLoading }] = useSubmitSupportMutation();
@@ -182,78 +182,74 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#07080b] relative overflow-hidden">
+    <div className="h-screen w-screen max-h-screen overflow-hidden flex bg-gradient-to-tr from-slate-50 via-slate-100 to-indigo-50/20 text-slate-800 relative">
       <FloatingOrbs />
       <GridPattern />
 
       {/* ═══ LEFT PANEL — Branding ═══ */}
-      <div className="hidden lg:flex lg:w-[55%] relative flex-col justify-between p-10 xl:p-14 2xl:p-18">
+      <div className="hidden lg:flex lg:w-[55%] relative flex-col justify-between p-6 xl:p-8 h-full overflow-hidden">
         {/* Top Logo Bar */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="flex items-center gap-3"
         >
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-500 flex items-center justify-center shadow-xl shadow-blue-500/25">
-            <School size={22} className="text-white" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <School size={18} className="text-white" />
           </div>
           <div>
-            <span className="text-lg font-black text-white tracking-tight uppercase italic leading-none">Vidhyam</span>
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-0.5">School Management Cloud</p>
+            <span className="text-base font-black text-slate-900 tracking-tight uppercase italic leading-none">Vidhyam</span>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-0.5">School Management Cloud</p>
           </div>
         </motion.div>
 
         {/* Center Hero Content */}
-        <div className="flex-1 flex flex-col justify-center max-w-xl">
+        <div className="flex-1 flex flex-col justify-center max-w-xl my-auto">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
             {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 via-blue-600/10 to-cyan-500/10 border border-blue-500/20 mb-7">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Platform Status • Operational</span>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-100 mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] font-bold text-blue-600 uppercase tracking-widest">Platform Status • Operational</span>
             </div>
 
-            <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-black text-white leading-[1.05] tracking-tight">
+            <h1 className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-slate-900 leading-[1.15] tracking-tight">
               The Modern Way to
               <br />
-              <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">Manage Your School</span>
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">Manage Your School</span>
             </h1>
 
-            <p className="text-sm text-slate-400 mt-4 leading-relaxed max-w-lg">
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed max-w-lg">
               All-in-one cloud platform for admissions, attendance, fees, academics,
-              and analytics — trusted by <span className="text-white font-semibold">500+ schools</span> nationwide.
+              and analytics — trusted by <span className="text-slate-800 font-semibold">500+ schools</span> nationwide.
             </p>
           </motion.div>
 
           {/* Metrics Row */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="grid grid-cols-3 gap-3 mt-10"
+            className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-5 text-xs text-slate-500 font-medium"
           >
-            <MetricBadge icon={Users} value="500+" label="Schools Onboarded" />
-            <MetricBadge icon={TrendingUp} value="50K+" label="Active Users" />
-            <MetricBadge icon={Globe} value="99.9%" label="Uptime SLA" />
-          </motion.div>
-
-          {/* Testimonial */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.6 }}
-            className="mt-8 max-w-md"
-          >
-            <TestimonialCard
-              quote="Vidhyam transformed how we handle admissions and fee tracking. Our admin workload dropped by 60%."
-              author="Priya Sharma"
-              role="Principal, Delhi Public School"
-              delay={0.5}
-            />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-black text-slate-900">500+</span>
+              <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Schools</span>
+            </div>
+            <div className="w-px h-3 bg-slate-200 self-center" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-black text-slate-900">50K+</span>
+              <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Active Users</span>
+            </div>
+            <div className="w-px h-3 bg-slate-200 self-center" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-black text-slate-900">99.9%</span>
+              <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Uptime</span>
+            </div>
           </motion.div>
         </div>
 
@@ -261,53 +257,49 @@ export default function AuthPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-          className="flex items-center gap-8 text-[10px] text-slate-600 font-bold uppercase tracking-widest"
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="flex items-center gap-4 text-[8px] text-slate-400 font-bold uppercase tracking-widest pt-3 border-t border-slate-100"
         >
-          <span className="flex items-center gap-1.5"><Shield size={12} className="text-emerald-500/60" /> SOC 2 Compliant</span>
-          <span className="flex items-center gap-1.5"><CheckCircle size={12} className="text-emerald-500/60" /> GDPR Ready</span>
-          <span className="flex items-center gap-1.5"><BarChart3 size={12} className="text-emerald-500/60" /> Real-time Sync</span>
-          <span className="flex items-center gap-1.5 ml-auto text-slate-700"><Clock size={10} /> v3.2.1</span>
+          <span className="flex items-center gap-1.5"><Shield size={10} className="text-emerald-600" /> SOC 2 Compliant</span>
+          <span className="flex items-center gap-1.5"><CheckCircle size={10} className="text-emerald-600" /> GDPR Ready</span>
+          <span className="flex items-center gap-1.5 ml-auto text-slate-400"><Clock size={9} /> v3.2.1</span>
         </motion.div>
       </div>
 
       {/* ═══ RIGHT PANEL — Login Form ═══ */}
-      <div className="w-full lg:w-[45%] flex items-center justify-center px-6 py-12 relative">
+      <div className="w-full lg:w-[45%] h-full flex flex-col justify-between items-center px-6 py-4 lg:py-6 xl:py-8 relative">
         {/* Divider line */}
-        <div className="hidden lg:block absolute left-0 top-[8%] bottom-[8%] w-px bg-gradient-to-b from-transparent via-white/[0.06] to-transparent" />
+        <div className="hidden lg:block absolute left-0 top-[10%] bottom-[10%] w-px bg-gradient-to-b from-transparent via-slate-200 to-transparent" />
 
         {/* Decorative corner accent */}
         <div className="hidden lg:block absolute top-12 right-12 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full blur-3xl" />
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[440px]"
-        >
+        <div className="flex-1 flex flex-col justify-center w-full max-w-[400px]">
           {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
+          <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-500 shadow-xl mb-4"
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-600/10"
             >
-              <School size={24} className="text-white" />
+              <School size={16} className="text-white" />
             </motion.div>
-            <h1 className="text-2xl font-black text-white tracking-tight uppercase italic">Vidhyam</h1>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.35em] mt-1">School Management Cloud</p>
+            <div className="text-left">
+              <h1 className="text-lg font-black text-slate-900 tracking-tight uppercase italic leading-none">Vidhyam</h1>
+              <p className="text-[7px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">School Management Cloud</p>
+            </div>
           </div>
 
           {/* Welcome Text */}
-          <div className="mb-8">
+          <div className="mb-4 text-center lg:text-left">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-3xl font-black text-white tracking-tight">Sign in</h2>
-              <p className="text-sm text-slate-400 mt-1.5">Enter your credentials to access the dashboard</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Sign in</h2>
+              <p className="text-xs text-slate-500 mt-1">Enter your credentials to access the dashboard</p>
             </motion.div>
           </div>
 
@@ -318,54 +310,52 @@ export default function AuthPage() {
             transition={{ delay: 0.2 }}
             className="relative"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-cyan-500/20 rounded-2xl blur-xl opacity-60" />
-            <div className="relative p-8 rounded-2xl bg-[#0c0e14] border border-white/[0.08] shadow-2xl backdrop-blur-xl">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/5 via-blue-600/5 to-cyan-500/5 rounded-2xl blur-xl opacity-60" />
+            <div className="relative p-5 sm:p-6 lg:p-7 rounded-2xl bg-white border border-slate-100 shadow-xl backdrop-blur-xl">
               <AnimatePresence>{errorMsg && <StatusAlert message={errorMsg} status="error" />}</AnimatePresence>
 
-              <form onSubmit={hsl(onLogin)} className="space-y-5">
+              <form onSubmit={hsl(onLogin)} className="space-y-3.5">
                 {/* School ID Field */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">
-                    <School size={10} className="text-blue-400" />
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">
+                    <School size={10} className="text-blue-500" />
                     School ID
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
                     <input
                       {...lr("schoolId", { required: "School ID is required" })}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20 transition-all duration-300"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all duration-300"
                       placeholder="Enter your school ID"
                     />
                   </div>
                   {lErrors.schoolId && (
-                    <p className="text-[10px] font-semibold text-rose-400 ml-1">{lErrors.schoolId.message}</p>
+                    <p className="text-[10px] font-semibold text-rose-500 ml-1">{lErrors.schoolId.message}</p>
                   )}
                 </div>
 
                 {/* Password Field */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">
-                    <Shield size={10} className="text-blue-400" />
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">
+                    <Shield size={10} className="text-blue-500" />
                     Password
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
                     <input
                       {...lr("password", { required: "Password is required" })}
                       type={showPassword ? "text" : "password"}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20 transition-all duration-300"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-2 pr-11 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all duration-300"
                       placeholder="Enter your password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-300 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                   {lErrors.password && (
-                    <p className="text-[10px] font-semibold text-rose-400 ml-1">{lErrors.password.message}</p>
+                    <p className="text-[10px] font-semibold text-rose-500 ml-1">{lErrors.password.message}</p>
                   )}
                 </div>
 
@@ -376,51 +366,51 @@ export default function AuthPage() {
                   size="md"
                   isLoading={isLoading}
                   rightIcon={ArrowRight}
-                  className="w-full !py-3 !text-sm !font-bold"
+                  className="w-full !py-2.2 !text-xs !font-bold mt-2"
                 >
                   {isLoading ? "Authenticating..." : "Sign In"}
                 </StandardButton>
               </form>
 
               {/* Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/[0.06]" />
+                  <div className="w-full border-t border-slate-100" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-3 text-[9px] font-bold text-slate-600 uppercase tracking-widest bg-[#0c0e14]">Secure Access</span>
+                  <span className="px-3 text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-white">Secure Access</span>
                 </div>
               </div>
 
               {/* Help Links */}
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center">
                 <button
                   type="button"
                   onClick={() => setShowSupport(true)}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-blue-400 transition-colors group"
+                  className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 hover:text-blue-600 transition-colors group"
                 >
-                  <MessageSquare size={13} className="group-hover:text-blue-400 transition-colors" />
+                  <MessageSquare size={12} className="group-hover:text-blue-600 transition-colors" />
                   Forgot credentials?
                 </button>
               </div>
             </div>
           </motion.div>
+        </div>
 
-          {/* Bottom Links */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 flex items-center justify-between"
-          >
-            <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest">
-              Powered by Modernisum
-            </p>
-            <div className="flex items-center gap-1 text-[10px] text-slate-700">
-              <Shield size={10} className="text-emerald-500/50" />
-              <span className="font-bold uppercase tracking-widest">256-bit SSL Encrypted</span>
-            </div>
-          </motion.div>
+        {/* Bottom Links */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="w-full max-w-[400px] flex items-center justify-between mt-4 pt-3 border-t border-slate-100"
+        >
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+            Powered by Modernisum
+          </p>
+          <div className="flex items-center gap-1 text-[9px] text-slate-400">
+            <Shield size={10} className="text-emerald-600" />
+            <span className="font-bold uppercase tracking-widest">256-bit SSL</span>
+          </div>
         </motion.div>
       </div>
 
@@ -429,7 +419,7 @@ export default function AuthPage() {
         {showSupport && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-black/70"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-900/30"
             onClick={() => setShowSupport(false)}
           >
             <motion.div
@@ -440,47 +430,47 @@ export default function AuthPage() {
               className="w-full max-w-[400px]"
             >
               <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-cyan-500/20 rounded-2xl blur-xl" />
-                <div className="relative p-7 rounded-2xl bg-[#0c0e14] border border-white/[0.08] shadow-2xl">
-                  <div className="flex items-center justify-between mb-5">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/5 via-blue-600/5 to-cyan-500/5 rounded-2xl blur-xl" />
+                <div className="relative p-6 sm:p-7 rounded-2xl bg-white border border-slate-100 shadow-2xl">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-widest">Need Help?</h3>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Admin will recover your access.</p>
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Need Help?</h3>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Admin will recover your access.</p>
                     </div>
-                    <StandardButton variant="ghost" size="sm" icon={X} onClick={() => setShowSupport(false)} className="!p-2" />
+                    <StandardButton variant="ghost" size="sm" icon={X} onClick={() => setShowSupport(false)} className="!p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50" />
                   </div>
 
                   <AnimatePresence>{supportMsg && <StatusAlert message={supportMsg} status={supportStatus} />}</AnimatePresence>
 
                   {supportStatus !== "success" && (
-                    <form onSubmit={hss(onSupport)} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">School Name / ID</label>
+                    <form onSubmit={hss(onSupport)} className="space-y-3.5">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">School Name / ID</label>
                         <input
                           {...sc.register("schoolName", { required: true })}
-                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                           placeholder="e.g. Springfield High"
                         />
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Contact Info</label>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Contact Info</label>
                         <input
                           {...sc.register("contactInfo", { required: true })}
-                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
                           placeholder="Phone or Email"
                         />
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Message</label>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-0.5">Message</label>
                         <textarea
                           {...sc.register("message", { required: true })}
-                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 transition-all resize-none"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all resize-none"
                           rows={3}
                           placeholder="I forgot my login details..."
                         />
                       </div>
                       <div className="flex gap-2 pt-2">
-                        <StandardButton variant="ghost" size="sm" onClick={() => setShowSupport(false)} className="flex-1">
+                        <StandardButton variant="ghost" size="sm" onClick={() => setShowSupport(false)} className="flex-1 text-slate-500 hover:text-slate-700 hover:bg-slate-50">
                           Cancel
                         </StandardButton>
                         <StandardButton type="submit" variant="primary" size="sm" isLoading={isSupportLoading} className="flex-1">

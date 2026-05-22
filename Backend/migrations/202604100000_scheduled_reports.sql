@@ -4,7 +4,7 @@ CREATE TYPE report_status AS ENUM ('pending', 'completed', 'failed');
 
 CREATE TABLE scheduled_reports (
     scheduled_report_id SERIAL PRIMARY KEY,
-    school_id INTEGER NOT NULL REFERENCES schools(school_id) ON DELETE CASCADE,
+    school_id VARCHAR(255) NOT NULL REFERENCES schools(school_id) ON DELETE CASCADE,
     report_type report_type NOT NULL,
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
@@ -31,12 +31,7 @@ CREATE POLICY super_admin_all_scheduled_reports ON scheduled_reports
 
 -- Policy for school admins: can see only their school's scheduled reports
 CREATE POLICY school_admin_own_scheduled_reports ON scheduled_reports
-    FOR ALL USING (
-        school_id IN (
-            SELECT school_id FROM schools 
-            WHERE admin_user_id = auth.uid()
-        )
-    );
+    FOR ALL USING (school_id = current_setting('app.current_school_id')::VARCHAR);
 
 -- Add trigger for updated_at
 CREATE OR REPLACE FUNCTION update_scheduled_reports_updated_at()

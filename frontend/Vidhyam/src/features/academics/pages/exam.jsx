@@ -110,7 +110,7 @@ const ExamManager = () => {
 
   const generatePaper = async (values) => {
     if (selectedChapters.length === 0) {
-      toast.warning('Sequence interrupted: Select targeting chapters');
+      toast.warning('Please select chapters first');
       return;
     }
 
@@ -140,11 +140,11 @@ const ExamManager = () => {
           long: paper.questions.long.map((_, index) => index),
           mcq: paper.questions.mcq.map((_, index) => index)
         });
-        toast.success('AI Core: Assessment paper synthesized');
+        toast.success('Exam paper generated successfully');
       }
     } catch (error) {
       setGeneratedPaper(generateFallbackPaper(values));
-      toast.info('AI offline: Fallback template deployed');
+      toast.info('AI generator offline: Fallback paper loaded');
     }
   };
 
@@ -211,9 +211,9 @@ const ExamManager = () => {
       };
 
       await approveExamMut(examData).unwrap();
-      toast.success('Exam ledger finalized');
+      toast.success('Exam scheduled successfully');
       exportToPDF();
-    } catch (error) { toast.error('Finalization failure'); }
+    } catch (error) { toast.error('Failed to schedule exam'); }
   };
 
   const exportToPDF = () => {
@@ -249,13 +249,13 @@ const ExamManager = () => {
   return (
     <div className="max-w-full p-1 space-y-2">
        <PageHeader
-        title="EXAM AI"
-        accentTitle="LABORATORY"
-        subtitle="Assessment Synthesis & Node Validation"
+        title="Exam"
+        accentTitle="Creator"
+        subtitle="Create, configure, and generate AI-assisted exam papers"
         icon={Zap}
         actions={[
           {
-            label: "FINAL_ARCHIVE",
+            label: "Schedule Exam",
             onClick: approveExam,
             variant: "primary",
             size: "xs",
@@ -266,50 +266,50 @@ const ExamManager = () => {
       />
 
       <KPIWidget columns={4}>
-         <KPITile label="Assessment Load" value="Normal" sub="AI Throughput Active" icon={Zap} color="primary" />
-         <KPITile label="Target Unit" value={formValues.className || 'NONE'} sub="Active Sector" icon={Layout} color="accent" />
-         <KPITile label="Total Marks" value={calculateTotalMarks()} sub="Protocol Weight" icon={Award} color="success" />
-         <KPITile label="Temporal Limit" value={`${formValues.examDuration}M`} sub="Duration Lock" icon={Clock} color="warning" />
+         <KPITile label="System Status" value="Normal" sub="AI engine active" icon={Zap} color="primary" />
+         <KPITile label="Class" value={formValues.className || 'NONE'} sub="Selected class" icon={Layout} color="accent" />
+         <KPITile label="Total Marks" value={calculateTotalMarks()} sub="Exam weight" icon={Award} color="success" />
+         <KPITile label="Duration" value={`${formValues.examDuration}m`} sub="Time limit" icon={Clock} color="warning" />
       </KPIWidget>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-2 items-start text-xxs">
         <GlassCard className="p-2" glowColor="primary" dense>
           <FormWidget
-            title="EXAM_ARCH"
-            description="Configure assessment parameters"
+            title="Configure Exam"
+            description="Configure exam structure and parameters"
             sections={[
               {
-                id: 'basic', label: 'Unit Identification', icon: BookOpen,
+                id: 'basic', label: 'Class & Subject', icon: BookOpen,
                 fields: [
-                  { name: 'className', label: 'Sector Unit', type: 'select', options: classes.map(c => ({ value: c, label: c.toUpperCase() })), required: true, labelIcon: Layout },
-                  { name: 'subject', label: 'Knowledge Base', type: 'select', options: subjects.map(s => ({ value: s, label: s })), required: true, labelIcon: Book },
-                  { name: 'chapters', label: 'Temporal Chapters', type: 'select', multiple: true, options: chapters.map(c => ({ value: c, label: c })), value: selectedChapters, onChange: setSelectedChapters, labelIcon: Activity }
+                  { name: 'className', label: 'Select Class', type: 'select', options: classes.map(c => ({ value: c, label: c.toUpperCase() })), required: true, labelIcon: Layout },
+                  { name: 'subject', label: 'Select Subject', type: 'select', options: subjects.map(s => ({ value: s, label: s })), required: true, labelIcon: Book },
+                  { name: 'chapters', label: 'Select Chapters', type: 'select', multiple: true, options: chapters.map(c => ({ value: c, label: c })), value: selectedChapters, onChange: setSelectedChapters, labelIcon: Activity }
                 ]
               },
               {
-                id: 'config', label: 'Protocol Settings', icon: Settings,
+                id: 'config', label: 'Exam Schedule', icon: Settings,
                 fields: [
-                  { name: 'examType', label: 'Assessment Class', type: 'select', options: ['Mid-Term', 'Final', 'Unit Test', 'Mock'], required: true, labelIcon: Zap },
-                  { name: 'examDuration', label: 'Temporal Limit (M)', type: 'number', required: true, labelIcon: Clock },
-                  { name: 'examDate', label: 'Launch Vector', type: 'date', required: true, labelIcon: Calendar },
-                  { name: 'examTime', label: 'Zero Hour', type: 'time', required: true, labelIcon: Clock }
+                  { name: 'examType', label: 'Exam Type', type: 'select', options: ['Mid-Term', 'Final', 'Unit Test', 'Mock'], required: true, labelIcon: Zap },
+                  { name: 'examDuration', label: 'Duration (mins)', type: 'number', required: true, labelIcon: Clock },
+                  { name: 'examDate', label: 'Exam Date', type: 'date', required: true, labelIcon: Calendar },
+                  { name: 'examTime', label: 'Start Time', type: 'time', required: true, labelIcon: Clock }
                 ]
               },
               {
-                id: 'structure', label: 'Neural Weighting', icon: Award,
+                id: 'structure', label: 'Question Distribution', icon: Award,
                 fields: [
-                  { name: 'shortCount', label: 'Short Quants', type: 'number', labelIcon: Activity },
-                  { name: 'shortMarks', label: 'Short Weight', type: 'number', labelIcon: Award },
-                  { name: 'longCount', label: 'Long Quants', type: 'number', labelIcon: Activity },
-                  { name: 'longMarks', label: 'Long Weight', type: 'number', labelIcon: Award },
-                  { name: 'mcqCount', label: 'MCQ Quants', type: 'number', labelIcon: Activity },
-                  { name: 'mcqMarks', label: 'MCQ Weight', type: 'number', labelIcon: Award }
+                  { name: 'shortCount', label: 'Short Questions Count', type: 'number', labelIcon: Activity },
+                  { name: 'shortMarks', label: 'Marks per Short Question', type: 'number', labelIcon: Award },
+                  { name: 'longCount', label: 'Long Questions Count', type: 'number', labelIcon: Activity },
+                  { name: 'longMarks', label: 'Marks per Long Question', type: 'number', labelIcon: Award },
+                  { name: 'mcqCount', label: 'MCQs Count', type: 'number', labelIcon: Activity },
+                  { name: 'mcqMarks', label: 'Marks per MCQ', type: 'number', labelIcon: Award }
                 ]
               }
             ]}
             control={control}
             onSubmit={handleSubmit(generatePaper)}
-            submitLabel="SYNTHESIZE_PAPER"
+            submitLabel="Generate Exam Paper"
             isLoading={generateLoading}
             dense
           />
@@ -317,15 +317,15 @@ const ExamManager = () => {
 
         <GlassCard className="p-2 h-fit min-h-[500px] flex flex-col" glowColor="accent" dense>
           {!generatedPaper ? (
-             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 opacity-20 space-y-2">
+             <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-muted)] opacity-30 space-y-2">
                 <Printer size={32} />
-                <p className="text-micro font-black uppercase tracking-[0.4em]">AWAITING_DATA</p>
+                <p className="text-micro font-semibold tracking-wider">No Exam Paper Generated</p>
              </div>
           ) : (
             <div className="space-y-4 h-full">
-               <div className="pb-2 border-b border-white/5">
-                  <h3 className="text-micro font-black text-white uppercase tracking-widest italic mb-0.5">SYNTHESIS_PREVIEW</h3>
-                  <p className="text-micro text-slate-700 font-bold uppercase">Manual overrides active</p>
+               <div className="pb-2 border-b border-[var(--glass-border)]">
+                  <h3 className="text-xs font-bold text-[var(--text-main)] mb-0.5">Exam Paper Preview</h3>
+                  <p className="text-micro text-[var(--text-muted)]">Select or deselect questions to customize the exam paper structure.</p>
                </div>
 
                <div className="space-y-4 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
@@ -333,27 +333,27 @@ const ExamManager = () => {
                     generatedPaper.questions[type]?.length > 0 && (
                       <div key={type} className="space-y-2">
                         <div className="flex items-center justify-between">
-                           <h4 className="text-micro font-black text-primary uppercase tracking-widest leading-none">{type}_PROTOCOL</h4>
-                           <span className="text-micro font-black text-slate-700">{selectedQuestions[type].length} UNIT</span>
+                           <h4 className="text-micro font-bold text-primary uppercase tracking-wider leading-none">{type.toUpperCase()} QUESTIONS</h4>
+                           <span className="text-micro font-medium text-[var(--text-muted)]">{selectedQuestions[type].length} Selected</span>
                         </div>
                         <div className="space-y-1">
                            {generatedPaper.questions[type].map((q, idx) => (
                              <div key={idx} onClick={() => handleQuestionToggle(type, idx)} className={`p-2 rounded-lg border transition-all cursor-pointer group ${selectedQuestions[type].includes(idx) ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/5 hover:border-white/10'}`}>
-                                <div className="flex gap-2">
-                                   <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${selectedQuestions[type].includes(idx) ? 'bg-primary border-primary' : 'border-slate-800'}`}>
-                                      {selectedQuestions[type].includes(idx) && <CheckCircle size={8} className="text-white" />}
-                                   </div>
-                                   <div className="flex-1">
-                                      <p className="text-micro font-bold text-slate-400 group-hover:text-white leading-tight">{q.text}</p>
-                                      {type === 'mcq' && q.options && (
-                                        <div className="grid grid-cols-2 gap-1 mt-2">
-                                           {q.options.map((o, i) => <div key={i} className="text-micro font-black text-slate-700 truncate leading-none">( {String.fromCharCode(65+i)} ) {o}</div>)}
-                                        </div>
-                                      )}
-                                   </div>
-                                   <span className="text-micro font-black text-primary/40">{formValues[`${type}Marks`] || 1}M</span>
-                                </div>
-                             </div>
+                                 <div className="flex gap-2">
+                                    <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${selectedQuestions[type].includes(idx) ? 'bg-primary border-primary' : 'border-slate-800'}`}>
+                                       {selectedQuestions[type].includes(idx) && <CheckCircle size={8} className="text-white" />}
+                                    </div>
+                                    <div className="flex-1">
+                                       <p className="text-[11px] font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] leading-relaxed">{q.text}</p>
+                                       {type === 'mcq' && q.options && (
+                                         <div className="grid grid-cols-2 gap-1 mt-2">
+                                            {q.options.map((o, i) => <div key={i} className="text-micro font-semibold text-[var(--text-muted)] opacity-85 truncate leading-none">( {String.fromCharCode(65+i)} ) {o}</div>)}
+                                         </div>
+                                       )}
+                                    </div>
+                                    <span className="text-micro font-bold text-primary/60">{formValues[`${type}Marks`] || 1}M</span>
+                                  </div>
+                              </div>
                            ))}
                         </div>
                       </div>
@@ -361,9 +361,9 @@ const ExamManager = () => {
                   ))}
                </div>
 
-               <div className="mt-auto pt-4 border-t border-white/5 grid grid-cols-2 gap-2">
-                  <StandardButton variant="ghost" size="xs" onClick={() => setGeneratedPaper(null)} icon={Trash2}>TERMINATE</StandardButton>
-                  <StandardButton variant="primary" size="xs" onClick={exportToPDF} icon={Printer}>PRINT_LEDGER</StandardButton>
+               <div className="mt-auto pt-4 border-t border-[var(--glass-border)] grid grid-cols-2 gap-2">
+                  <StandardButton variant="ghost" size="xs" onClick={() => setGeneratedPaper(null)} icon={Trash2}>Reset</StandardButton>
+                  <StandardButton variant="primary" size="xs" onClick={exportToPDF} icon={Printer}>Print / Save PDF</StandardButton>
                </div>
             </div>
           )}

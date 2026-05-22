@@ -16,6 +16,7 @@ pub struct FormTemplateCreate {
     pub notification_settings: Option<serde_json::Value>,
     pub is_active: bool,
     pub category: Option<String>,
+    pub created_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -32,6 +33,7 @@ pub struct FormTemplate {
     pub notification_settings: Option<serde_json::Value>,
     pub is_active: bool,
     pub category: Option<String>,
+    pub created_by: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -75,6 +77,7 @@ pub struct AutomatedReportCreate {
     pub report_config: Option<serde_json::Value>,
     pub template_path: Option<String>,
     pub is_active: bool,
+    pub created_by: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -94,6 +97,7 @@ pub struct AutomatedReport {
     pub is_active: bool,
     pub last_generated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub next_scheduled_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_by: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }

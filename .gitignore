@@ -15,6 +15,10 @@ frontend/*/dist/
 *.env.local
 *.env.production
 !*.env.example
+.env
+.env.local
+.env.production
+.env.development
 
 # Misc
 *.log
