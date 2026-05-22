@@ -313,7 +313,11 @@ export const infrastructureApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+      invalidatesTags: [
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'Responsibilities', id: 'OVERVIEW' },
+        { type: 'Responsibilities', id: 'ALERTS' }
+      ],
     }),
 
     updateResponsibility: builder.mutation({
@@ -324,6 +328,8 @@ export const infrastructureApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { responsibilityId }) => [
         { type: 'Responsibilities', id: 'LIST' },
+        { type: 'Responsibilities', id: 'OVERVIEW' },
+        { type: 'Responsibilities', id: 'ALERTS' },
         { type: 'ResponsibilityDetails', id: responsibilityId }
       ],
     }),
@@ -333,7 +339,11 @@ export const infrastructureApi = baseApi.injectEndpoints({
         url: `/responsibility/${schoolId}/${responsibilityId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [{ type: 'Responsibilities', id: 'LIST' }],
+      invalidatesTags: [
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'Responsibilities', id: 'OVERVIEW' },
+        { type: 'Responsibilities', id: 'ALERTS' }
+      ],
     }),
 
     getEmployeeResponsibilities: builder.query({
@@ -347,7 +357,12 @@ export const infrastructureApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (result, error, { employeeId }) => [{ type: 'EmployeeResponsibilities', id: employeeId }],
+      invalidatesTags: (result, error, { employeeId }) => [
+        { type: 'EmployeeResponsibilities', id: employeeId },
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'Responsibilities', id: 'OVERVIEW' },
+        { type: 'Responsibilities', id: 'ALERTS' }
+      ],
     }),
 
     removeResponsibility: builder.mutation({
@@ -355,7 +370,12 @@ export const infrastructureApi = baseApi.injectEndpoints({
         url: `/responsibility/${schoolId}/employees/${employeeId}/responsibilities/${responsibilityId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { employeeId }) => [{ type: 'EmployeeResponsibilities', id: employeeId }],
+      invalidatesTags: (result, error, { employeeId }) => [
+        { type: 'EmployeeResponsibilities', id: employeeId },
+        { type: 'Responsibilities', id: 'LIST' },
+        { type: 'Responsibilities', id: 'OVERVIEW' },
+        { type: 'Responsibilities', id: 'ALERTS' }
+      ],
     }),
 
     // --- Responsibility History & Versioning ---

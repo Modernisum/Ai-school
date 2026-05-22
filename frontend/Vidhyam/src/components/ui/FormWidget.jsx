@@ -410,6 +410,7 @@ const FormWidget = ({
   singleColumn = false,  // true → render all fields in a single column
   hideCancel = false,    // true → hide Cancel button
   dense = false,         // true → high density IDE style
+  backdropPosition = 'fixed', // 'fixed' | 'absolute'
   // Children allowed for backward compatibility
   children,
 }) => {
@@ -478,13 +479,112 @@ const FormWidget = ({
     </div>
   );
 
+  // ─── DIALOG / MODAL LAYOUT ───────────────────────────────────────────────────
+  if (layout === 'dialog' || layout === 'modal') {
+     return (
+       <div className={`${backdropPosition} inset-0 z-[120] flex items-center justify-center p-4 pointer-events-none`}>
+         <motion.div
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="absolute inset-0 bg-slate-950/20 backdrop-blur-md pointer-events-auto"
+           onClick={onCancel}
+         />
+         <motion.div
+           initial={{ scale: 0.95, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           exit={{ scale: 0.95, opacity: 0 }}
+           transition={{ type: "spring", stiffness: 350, damping: 30 }}
+           className={`relative w-full max-w-xl z-10 pointer-events-auto ${className}`}
+         >
+           <GlassCard className={dense ? "p-4" : "p-8 md:p-10"} dense={dense}>
+             {/* Container Header */}
+             {(title || description) && (
+               <div className={`${dense ? 'mb-4' : 'mb-8'} flex flex-col md:flex-row md:items-end justify-between gap-2`}>
+                 <div>
+                   <h2 className={`${dense ? 'text-sm font-black italic uppercase' : 'text-xl font-black'} text-[var(--text-main)] tracking-tight mb-0.5`}>{title}</h2>
+                   {description && <p className={`text-slate-500 ${dense ? 'text-micro' : 'text-xs'} max-w-2xl`}>{description}</p>}
+                 </div>
+               </div>
+             )}
+
+             {/* Navigation */}
+             {showNavigation && sections.length > 1 && (
+               <div className="mb-6">
+                 <SwitchButton
+                   tabs={sections}
+                   activeTab={activeSection}
+                   onChange={onSectionChange}
+                 />
+               </div>
+             )}
+
+             {/* Dynamic Content Area */}
+             <div className="min-h-[200px]">
+               {formContent}
+             </div>
+           </GlassCard>
+         </motion.div>
+       </div>
+     );
+  }
+
+  // ─── DRAWER LAYOUT ────────────────────────────────────────────────────────────
+  if (layout === 'drawer') {
+     return (
+       <div className={`${backdropPosition} inset-0 z-[120] flex items-center justify-end p-8 pointer-events-none`}>
+         <motion.div
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="absolute inset-0 bg-slate-950/20 backdrop-blur-md pointer-events-auto"
+           onClick={onCancel}
+         />
+         <motion.div
+           initial={{ x: 100, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+           exit={{ x: 100, opacity: 0 }}
+           className={`relative w-full max-w-xl z-10 pointer-events-auto ${className}`}
+         >
+           <GlassCard className={dense ? "p-3" : "p-8 md:p-10"} dense={dense}>
+             {/* Container Header */}
+             {(title || description) && (
+               <div className={`${dense ? 'mb-4' : 'mb-10'} flex flex-col md:flex-row md:items-end justify-between gap-2`}>
+                 <div>
+                   <h2 className={`${dense ? 'text-sm font-black italic uppercase' : 'text-xl font-black'} text-[var(--text-main)] tracking-tight mb-0.5`}>{title}</h2>
+                   {description && <p className={`text-slate-500 ${dense ? 'text-micro' : 'text-xs'} max-w-2xl`}>{description}</p>}
+                 </div>
+               </div>
+             )}
+
+             {/* Navigation */}
+             {showNavigation && sections.length > 1 && (
+               <div className="mb-10">
+                 <SwitchButton
+                   tabs={sections}
+                   activeTab={activeSection}
+                   onChange={onSectionChange}
+                 />
+               </div>
+             )}
+
+             {/* Dynamic Content Area */}
+             <div className="min-h-[300px]">
+               {formContent}
+             </div>
+           </GlassCard>
+         </motion.div>
+       </div>
+     );
+  }
+
   // ─── COMPACT / SMALL FORM RENDER ─────────────────────────────────────────────
   if (size === 'small') {
      return (
        <div className={`w-full max-w-2xl mx-auto py-10 px-4 ${className}`}>
          <div className="glass-card overflow-hidden border border-white/10 shadow-2xl animate-fade-in">
             <div className="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
-               <h2 className="text-xl font-black text-white italic uppercase tracking-tight">{title}</h2>
+               <h2 className="text-xl font-black text-[var(--text-main)] italic uppercase tracking-tight">{title}</h2>
                {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
             </div>
 
@@ -651,7 +751,7 @@ const FormWidget = ({
         {(title || description) && (
           <div className={`${dense ? 'mb-4' : 'mb-10'} flex flex-col md:flex-row md:items-end justify-between gap-2`}>
             <div>
-              <h2 className={`${dense ? 'text-sm font-black italic uppercase' : 'text-xl font-black'} text-white tracking-tight mb-0.5`}>{title}</h2>
+              <h2 className={`${dense ? 'text-sm font-black italic uppercase' : 'text-xl font-black'} text-[var(--text-main)] tracking-tight mb-0.5`}>{title}</h2>
               {description && <p className={`text-slate-500 ${dense ? 'text-micro' : 'text-xs'} max-w-2xl`}>{description}</p>}
             </div>
           </div>

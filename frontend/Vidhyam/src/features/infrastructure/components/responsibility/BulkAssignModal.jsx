@@ -75,7 +75,7 @@ const BulkAssignModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-end p-8 pointer-events-none">
+    <div className="absolute inset-0 z-[120] flex items-center justify-end p-8 pointer-events-none">
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 

@@ -4,13 +4,16 @@ import {
   Users, UserCheck, CreditCard, School, Box, Layers,
   AlertCircle, FileText, CalendarCheck, CalendarDays,
   UserPlus, ClipboardList, DollarSign, IndianRupee,
-  Megaphone, History, Bot, Palette, CheckCircle, BookOpen, BarChart3, GitMerge, FileCheck
+  Megaphone, History, Bot, Palette, CheckCircle, BookOpen, BarChart3, GitMerge, FileCheck,
+  User, LogOut, Briefcase
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobile } from "../../hooks/useMobile";
 import { useSelector } from "react-redux";
 import { selectTheme } from "../../features/settings/settingsSlice";
+import { SimpleThemeToggle } from "./ThemeToggle";
+import NotificationBell from "./NotificationBell";
 
 const NAV_CONFIG = [
   {
@@ -78,24 +81,9 @@ const NAV_CONFIG = [
         icon: Box,
         path: "/dashboard/infra",
         subLinks: [
-          { label: "Manifest", path: "/dashboard/infra/manifest", icon: Box },
+          { label: "Spaces", path: "/dashboard/infra/spaces", icon: Box },
           { label: "Materials", path: "/dashboard/infra/materials", icon: Layers },
-          { label: "Protocols", path: "/dashboard/infra/protocols", icon: ClipboardList },
-        ],
-      },
-    ],
-  },
-  {
-    section: "COMMUNICATION",
-    items: [
-      {
-        name: "Notifications",
-        icon: Megaphone,
-        path: "/dashboard/notifications",
-        subLinks: [
-          { label: "Announcements", path: "/dashboard/notifications/announcements", icon: Megaphone },
-          { label: "Attendance", path: "/dashboard/notifications/attendance", icon: UserCheck },
-          { label: "Complaints", path: "/dashboard/notifications/complains", icon: AlertCircle },
+          { label: "Responsibilities", path: "/dashboard/infra/responsibilities", icon: Briefcase },
         ],
       },
     ],
@@ -108,6 +96,11 @@ const NAV_CONFIG = [
         icon: Bot,
         path: "/dashboard/ai-studio",
         badge: "NEW",
+      },
+      {
+        name: "School Profile",
+        icon: User,
+        path: "/dashboard/school-profile",
       },
       {
         name: "Settings",
@@ -235,6 +228,12 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             )}
           </AnimatePresence>
 
+          {sidebarOpen && (
+            <div className="flex-shrink-0 mr-1.5">
+              <NotificationBell sidebarOpen={true} compact={true} />
+            </div>
+          )}
+
           {isMobile && sidebarOpen && (
             <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/5 ml-1">
               <X size={18} />
@@ -252,6 +251,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
         {/* ── Navigation ── */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-4 no-scrollbar">
+          {/* Notification Bell when collapsed */}
+          {!sidebarOpen && (
+            <div className="relative group/sidebar mb-2">
+              <NotificationBell sidebarOpen={false} compact={true} />
+            </div>
+          )}
+
           {NAV_CONFIG.map((group) => (
             <div key={group.section}>
               {sidebarOpen && (
@@ -357,19 +363,21 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         </nav>
 
         {/* ── Footer ── */}
-        <div className="border-t border-[var(--glass-border)] p-2 flex-shrink-0">
+        <div className="border-t border-[var(--glass-border)] p-2 flex-shrink-0 flex flex-col gap-2">
           {sidebarOpen ? (
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center flex-shrink-0">
-                <School size={14} className="text-[var(--text-main)]" style={{ opacity: 0.8 }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-[var(--text-main)] truncate">{localStorage.getItem('schoolName') || "School"}</p>
-                <p className="text-[9px] text-[var(--text-muted)]">Administrator</p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center flex-shrink-0">
+                  <School size={14} className="text-[var(--text-main)]" style={{ opacity: 0.8 }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-[var(--text-main)] truncate">{localStorage.getItem('schoolName') || "School"}</p>
+                  <p className="text-[9px] text-[var(--text-muted)]">Administrator</p>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center">
                 <School size={14} className="text-[var(--text-main)]" style={{ opacity: 0.8 }} />
               </div>

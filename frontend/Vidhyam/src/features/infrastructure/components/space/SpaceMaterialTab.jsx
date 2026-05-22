@@ -21,8 +21,8 @@ export default function SpaceMaterialTab({
     return (
       <div className="py-8 text-center flex flex-col items-center gap-2 opacity-40">
         <Package size={20} />
-        <p className="text-[9px] font-black uppercase tracking-[0.3em]">NO_MATERIALS_ASSIGNED</p>
-        <StandardButton label="ADD_MATERIAL" icon={Plus} size="xs" onClick={onAddMaterial} />
+        <p className="text-[9px] font-black uppercase tracking-[0.3em]">No materials assigned</p>
+        <StandardButton label="Add Material" icon={Plus} size="xs" onClick={onAddMaterial} />
       </div>
     );
   }
@@ -38,19 +38,19 @@ export default function SpaceMaterialTab({
         <div className="p-1.5 flex items-center justify-between flex-wrap gap-1">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <IndianRupee size={10} className="text-green-400" />
-              <span className="text-[9px] font-black text-green-400">
+              <IndianRupee size={10} className="text-green-600 dark:text-green-400" />
+              <span className="text-[9px] font-black text-green-600 dark:text-green-400">
                 ₹{totalValue.toLocaleString()}
               </span>
-              <span className="text-[7px] font-black text-slate-700 uppercase tracking-wider">TOTAL VALUE</span>
+              <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Value</span>
             </div>
             {deficitCount > 0 && (
               <div className="flex items-center gap-1">
-                <AlertTriangle size={10} className="text-red-400" />
-                <span className="text-[9px] font-black text-red-400">
+                <AlertTriangle size={10} className="text-rose-600 dark:text-red-400" />
+                <span className="text-[9px] font-black text-rose-600 dark:text-red-400">
                   ₹{deficitValue.toLocaleString()}
                 </span>
-                <span className="text-[7px] font-black text-slate-700 uppercase tracking-wider">SHORTFALL</span>
+                <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Shortfall</span>
               </div>
             )}
           </div>
@@ -65,19 +65,19 @@ export default function SpaceMaterialTab({
         const available = mat.quantity || 0;
         const pct = required > 0 ? Math.round((available / required) * 100) : 100;
         const isDeficit = mat.status === 'deficit';
-        const barColor = pct >= 100 ? 'bg-green-400' : pct >= 50 ? 'bg-amber-400' : 'bg-red-400';
+        const barColor = pct >= 100 ? 'bg-green-500 dark:bg-green-400' : pct >= 50 ? 'bg-amber-500 dark:bg-amber-400' : 'bg-rose-500 dark:bg-red-400';
         const Icon = pct >= 100 ? CheckCircle : pct >= 50 ? AlertTriangle : AlertTriangle;
-        const iconColor = pct >= 100 ? 'text-green-400' : pct >= 50 ? 'text-amber-400' : 'text-red-400';
+        const iconColor = pct >= 100 ? 'text-green-500 dark:text-green-400' : pct >= 50 ? 'text-amber-500 dark:text-amber-400' : 'text-rose-500 dark:text-red-400';
         return (
           <GlassCard key={mat.materialName || i} dense className="bg-white/[0.02]" hover>
             <div className="p-1.5">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
                   <Icon size={10} className={iconColor} />
-                  <span className="text-[9px] font-black text-white uppercase tracking-tight">{mat.materialName}</span>
+                  <span className="text-[9px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{mat.materialName}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className={`text-[8px] font-black ${isDeficit ? 'text-red-400' : 'text-green-400'}`}>
+                  <span className={`text-[8px] font-black ${isDeficit ? 'text-rose-650 dark:text-red-400' : 'text-green-600 dark:text-green-450'}`}>
                     {available}/{required}
                   </span>
                   {isDeficit && (
@@ -86,7 +86,7 @@ export default function SpaceMaterialTab({
                   )}
                 </div>
               </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(pct, 100)}%` }}
@@ -95,11 +95,11 @@ export default function SpaceMaterialTab({
                 />
               </div>
               <div className="flex justify-between mt-0.5">
-                <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{mat.unit || 'pcs'}</span>
-                <span className="text-[7px] font-black text-slate-700">{pct}%</span>
+                <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{mat.unit || 'pcs'}</span>
+                <span className="text-[7px] font-black text-slate-500 dark:text-slate-400">{pct}%</span>
               </div>
               {mat.unitPrice && (
-                <p className="text-[7px] font-black text-slate-700 mt-0.5 tracking-wider">
+                <p className="text-[7px] font-black text-slate-500 dark:text-slate-400 mt-0.5 tracking-wider">
                   ₹{mat.unitPrice}/unit · ₹{(mat.unitPrice * available).toLocaleString()} total
                 </p>
               )}
@@ -108,7 +108,7 @@ export default function SpaceMaterialTab({
         );
       })}
       <div className="pt-1">
-        <StandardButton label="ADD_MATERIAL" icon={Plus} size="xs" onClick={onAddMaterial} />
+        <StandardButton label="Add Material" icon={Plus} size="xs" onClick={onAddMaterial} />
       </div>
     </div>
   );

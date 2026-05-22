@@ -13,17 +13,17 @@ export default function SpaceAlertBanner({ alerts, onDismiss }) {
     <AnimatePresence>
       {critical.length > 0 && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-          <GlassCard className="border-red-500/30 bg-red-500/5 p-2" dense>
+          <GlassCard className="border-rose-200 dark:border-red-500/30 bg-rose-50 dark:bg-red-500/5 p-2" dense>
             <div className="flex items-start gap-2">
-              <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+              <AlertCircle size={14} className="text-rose-500 dark:text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">CRITICAL ALERTS</p>
+                <p className="text-[9px] font-black text-rose-700 dark:text-red-400 uppercase tracking-widest">Critical Alerts</p>
                 {critical.map((a, i) => (
-                  <p key={i} className="text-[8px] text-red-300/80 font-bold mt-0.5">{a.message}</p>
+                  <p key={i} className="text-[10px] text-rose-600 dark:text-red-300/80 font-bold mt-0.5">{a.message}</p>
                 ))}
               </div>
               {onDismiss && (
-                <button onClick={onDismiss} className="text-red-400/50 hover:text-red-400"><X size={12} /></button>
+                <button onClick={onDismiss} className="text-rose-500/50 hover:text-rose-500 dark:text-red-400/50 dark:hover:text-red-400"><X size={12} /></button>
               )}
             </div>
           </GlassCard>
@@ -31,13 +31,13 @@ export default function SpaceAlertBanner({ alerts, onDismiss }) {
       )}
       {warnings.length > 0 && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-          <GlassCard className="border-amber-500/30 bg-amber-500/5 p-2" dense>
+          <GlassCard className="border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/5 p-2" dense>
             <div className="flex items-start gap-2">
-              <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+              <AlertTriangle size={14} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">WARNINGS</p>
+                <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">Warnings</p>
                 {warnings.map((a, i) => (
-                  <p key={i} className="text-[8px] text-amber-300/80 font-bold mt-0.5">{a.message}</p>
+                  <p key={i} className="text-[10px] text-amber-600 dark:text-amber-300/80 font-bold mt-0.5">{a.message}</p>
                 ))}
               </div>
             </div>

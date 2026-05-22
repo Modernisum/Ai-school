@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
-  Settings, Clock, Save, RefreshCw, Palette, 
+  Settings, Clock, RefreshCw, Palette, 
   History, Maximize2, Minimize2, Globe, Shield, 
-  Loader, Zap, Cpu, Activity
+  Loader, Zap, LogOut
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   selectPollingInterval, setPollingInterval, 
   selectTheme, setTheme, 
@@ -38,9 +38,16 @@ export default function GeneralSettings() {
     }
   }, [schoolId]);
 
+  // Auto-dismiss session error after 4 seconds
+  useEffect(() => {
+    if (sessionError) {
+      const timer = setTimeout(() => setSessionError(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [sessionError]);
+
   const fetchSessionSettings = async () => {
     setLoadingSession(true);
-    setSessionError(null);
     try {
       const response = await callApiWithBackoff(`${API_BASE_URL}/school/${schoolId}?filter=session`);
       if (response.success && response.data?.sessionDurationHours) {
@@ -48,7 +55,7 @@ export default function GeneralSettings() {
       }
     } catch (err) {
       console.error('Error fetching session settings:', err);
-      setSessionError('Failed to load session settings');
+      // Fail silently on initial load, fallback to default 24h
     } finally {
       setLoadingSession(false);
     }
@@ -58,6 +65,7 @@ export default function GeneralSettings() {
     const duration = parseInt(newDuration);
     setSessionDuration(duration);
     setUpdatingSession(true);
+    setSessionError(null);
     try {
        await callApiWithBackoff(`${API_BASE_URL}/school/${schoolId}`, {
         method: 'PUT',
@@ -86,8 +94,8 @@ export default function GeneralSettings() {
           <Icon size={18} />
         </div>
         <div>
-          <h3 className="text-[10px] font-black text-[var(--text-main)] uppercase italic tracking-widest leading-none">{title}</h3>
-          <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1 opacity-60">{subtitle}</p>
+          <h3 className="text-xs font-bold text-[var(--text-main)] tracking-wide leading-none">{title}</h3>
+          <p className="text-[10px] text-slate-400 mt-1 opacity-80">{subtitle}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -102,11 +110,11 @@ export default function GeneralSettings() {
         value={value} 
         onChange={onChange}
         disabled={disabled}
-        className="appearance-none bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-[10px] text-[var(--text-main)] outline-none cursor-pointer w-44 disabled:opacity-50 font-black uppercase italic tracking-widest hover:border-primary/50 transition-all text-center"
+        className="appearance-none bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-xs font-semibold text-[var(--text-main)] outline-none cursor-pointer w-44 disabled:opacity-50 hover:border-primary/50 transition-all text-center"
       >
         {options.map(opt => (
-          <option key={opt.value} value={opt.value} className="bg-slate-900 text-white">
-            {opt.label.toUpperCase().replace(' ', '_')}
+          <option key={opt.value} value={opt.value} className="bg-slate-900 text-white text-left px-2">
+            {opt.label}
           </option>
         ))}
       </select>
@@ -124,28 +132,29 @@ export default function GeneralSettings() {
             <Settings size={24} className="text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-[var(--text-main)] tracking-[0.2em] uppercase italic leading-none">SYSTEM_REGISTRY</h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1.5 opacity-80 flex items-center gap-2">
-              <Cpu size={10} className="text-primary" />
-              PROTOCOL_SETTINGS // CONFIGURATION_CORE // NODE_854
+            <h1 className="text-2xl font-black text-[var(--text-main)] tracking-wider leading-none">Settings</h1>
+            <p className="text-xs text-slate-400 mt-1.5 opacity-80 flex items-center gap-2">
+              <Settings size={12} className="text-primary" />
+              Manage system preferences, performance settings, and appearance.
             </p>
           </div>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Core System Settings */}
+        {/* Left Column: General Preferences */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
-             <Zap size={14} className="text-primary/60" />
-             <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">STABILITY_ENGINE</h2>
+             <Palette size={14} className="text-primary/60" />
+             <h2 className="text-xs font-black text-slate-400 tracking-wider">General Preferences</h2>
           </div>
           
           <GlassCard className="divide-y divide-white/5">
+            {/* Session Duration */}
             <SettingRow 
               icon={Globe} 
-              title="SESSION_PERSISTENCE" 
-              subtitle="AUTH_TOKEN_EXPIRATION_DELAY"
+              title="Session Duration" 
+              subtitle="Configure how long you stay logged in on this device"
             >
               {updatingSession ? (
                 <Loader size={14} className="text-primary animate-spin" />
@@ -157,21 +166,22 @@ export default function GeneralSettings() {
                 onChange={(e) => handleSessionChange(e.target.value)}
                 disabled={loadingSession || updatingSession}
                 options={[
-                  { value: 1, label: "1_HOUR" },
-                  { value: 4, label: "4_HOURS" },
-                  { value: 8, label: "8_HOURS" },
-                  { value: 12, label: "12_HOURS" },
-                  { value: 24, label: "24_HOURS" },
-                  { value: 48, label: "48_HOURS" },
-                  { value: 168, label: "1_WEEK" },
+                  { value: 1, label: "1 Hour" },
+                  { value: 4, label: "4 Hours" },
+                  { value: 8, label: "8 Hours" },
+                  { value: 12, label: "12 Hours" },
+                  { value: 24, label: "24 Hours" },
+                  { value: 48, label: "48 Hours" },
+                  { value: 168, label: "1 Week" },
                 ]}
               />
             </SettingRow>
 
+            {/* Sync Frequency */}
             <SettingRow 
               icon={RefreshCw} 
-              title="AUTO_SYNC_PROTOCOL" 
-              subtitle="POLLING_INTERVAL_TUNING"
+              title="Background Sync Frequency" 
+              subtitle="Set how frequently the dashboard auto-refreshes data"
               iconColor="text-indigo-400"
             >
               <Clock size={14} className="text-slate-600 opacity-60" />
@@ -179,29 +189,20 @@ export default function GeneralSettings() {
                 value={pollingInterval}
                 onChange={handleIntervalChange}
                 options={[
-                  { value: 5000, label: "5S_FAST" },
-                  { value: 10000, label: "10S_IDEAL" },
-                  { value: 20000, label: "20S_BALANCED" },
-                  { value: 30000, label: "30S_THROTTLE" },
-                  { value: 60000, label: "1M_SAVER" },
+                  { value: 5000, label: "5 Seconds (Fast)" },
+                  { value: 10000, label: "10 Seconds (Ideal)" },
+                  { value: 20000, label: "20 Seconds (Balanced)" },
+                  { value: 30000, label: "30 Seconds (Throttle)" },
+                  { value: 60000, label: "1 Minute (Saver)" },
                 ]}
               />
             </SettingRow>
-          </GlassCard>
-        </div>
 
-        {/* Visual & Workspace Settings */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
-             <Palette size={14} className="text-primary/60" />
-             <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">WORKSPACE_DYNAMICS</h2>
-          </div>
-
-          <GlassCard className="divide-y divide-white/5">
+            {/* Color Theme */}
             <SettingRow 
               icon={Palette} 
-              title="VISUAL_ENGINE_PRESETS" 
-              subtitle="THEME_CORE_INITIALIZATION"
+              title="Color Theme" 
+              subtitle="Choose a visual color scheme for the workspace"
               iconColor="text-emerald-400"
             >
               <StyledSelect 
@@ -214,10 +215,11 @@ export default function GeneralSettings() {
               />
             </SettingRow>
 
+            {/* Interface Scale */}
             <SettingRow 
               icon={Maximize2} 
-              title="RESOLUTION_SCALING" 
-              subtitle="GLOBAL_UI_MATRIX_SCALE"
+              title="Interface Scale" 
+              subtitle="Adjust the layout size of fonts and elements"
               iconColor="text-amber-500"
             >
               <StyledSelect 
@@ -230,46 +232,63 @@ export default function GeneralSettings() {
                   }
                 }}
                 options={[
-                  { value: 0.75, label: "75%_SMALL" },
-                  { value: 0.85, label: "85%_COMPACT" },
-                  { value: 1.0, label: "100%_NORMAL" },
-                  { value: 1.15, label: "115%_LARGE" },
-                  { value: 1.25, label: "125%_ULTRA" },
-                  { value: 1.5, label: "150%_ACCESSIBLE" },
+                  { value: 0.75, label: "75% (Small)" },
+                  { value: 0.85, label: "85% (Compact)" },
+                  { value: 1.0, label: "100% (Normal)" },
+                  { value: 1.15, label: "115% (Large)" },
+                  { value: 1.25, label: "125% (Ultra)" },
+                  { value: 1.5, label: "150% (Accessible)" },
                 ]}
               />
             </SettingRow>
           </GlassCard>
         </div>
 
-        {/* Data & Safety Section */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Right Column: Account & Security */}
+        <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
-             <Activity size={14} className="text-primary/60" />
-             <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">DATA_INTEGRITY</h2>
+             <Shield size={14} className="text-primary/60" />
+             <h2 className="text-xs font-black text-slate-400 tracking-wider">Account & Safety</h2>
           </div>
 
-          <GlassCard className="p-2">
-            <div className="flex items-center justify-between gap-6 p-4 bg-white/[0.02] rounded-2xl border border-white/5">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20 shadow-lg shadow-rose-500/5">
-                  <History size={24} />
+          <GlassCard className="divide-y divide-white/5">
+            {/* Sign Out */}
+            <SettingRow 
+              icon={LogOut} 
+              title="Sign Out" 
+              subtitle="Securely end your active session on this device"
+              iconColor="text-rose-400"
+            >
+              <button
+                onClick={() => { localStorage.clear(); navigate("/"); }}
+                className="px-4 py-2 text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </SettingRow>
+
+            {/* System Data Recovery */}
+            <div className="p-3 hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20 shadow-lg shadow-rose-500/5 mt-0.5 flex-shrink-0">
+                  <History size={18} />
                 </div>
-                <div>
-                  <h3 className="text-xs font-black text-white uppercase italic tracking-[0.2em] leading-none">DATA_RECOVERY_PROTOCOL</h3>
-                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-2 max-w-md line-clamp-2 opacity-70">
-                    Access the neural recovery node to restore deleted administrative entities and structural configurations. History logs are persisted for 90 days.
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-4">
+                    <h3 className="text-xs font-bold text-white tracking-wide">System Data Recovery</h3>
+                    <StandardButton 
+                      variant="glow" 
+                      size="sm" 
+                      onClick={() => navigate('/dashboard/recovery')}
+                      icon={Shield}
+                      label="Start Scan"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed opacity-80">
+                    Access the recovery tool to restore deleted files, student/staff records, and configurations. Session history logs are kept for up to 90 days.
                   </p>
                 </div>
               </div>
-              
-              <StandardButton 
-                variant="glow" 
-                size="md" 
-                onClick={() => navigate('/dashboard/recovery')}
-                icon={Shield}
-                label="INITIATE_RECOVERY_SCAN"
-              />
             </div>
           </GlassCard>
         </div>
@@ -282,10 +301,9 @@ export default function GeneralSettings() {
           className="fixed bottom-8 right-8 bg-rose-500 text-white px-6 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 border border-white/20"
         >
           <Zap size={18} className="animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">{sessionError}</span>
+          <span className="text-xs font-semibold">{sessionError}</span>
         </motion.div>
       )}
     </div>
   );
 }
-

@@ -69,9 +69,9 @@ const MOBILE_NAV_CONFIG = [
     icon: Box,
     path: "/dashboard/infra",
     subLinks: [
-      { label: "Manifest", path: "/dashboard/infra/manifest" },
+      { label: "Spaces", path: "/dashboard/infra/spaces" },
       { label: "Materials", path: "/dashboard/infra/materials" },
-      { label: "Protocols", path: "/dashboard/infra/protocols" },
+      { label: "Responsibilities", path: "/dashboard/infra/responsibilities" },
     ]
   },
   {

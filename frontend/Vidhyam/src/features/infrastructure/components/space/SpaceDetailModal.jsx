@@ -21,9 +21,9 @@ import {
 import { useGetStudentsQuery } from '../../../students/api/studentApi';
 
 const TABS = [
-  { id: 'materials', label: 'MATERIALS', icon: Package },
-  { id: 'responsibilities', label: 'RESPONSIBILITIES', icon: Briefcase },
-  { id: 'consumers', label: 'CONSUMERS', icon: Users },
+  { id: 'materials', label: 'Materials', icon: Package },
+  { id: 'responsibilities', label: 'Responsibilities', icon: Briefcase },
+  { id: 'consumers', label: 'Consumers', icon: Users },
 ];
 
 function getSectionFromSpaceName(spaceName) {
@@ -84,7 +84,7 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
   }, [studentsData, sectionInfo]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/60">
+    <div className="absolute inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/60">
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -96,8 +96,8 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
             <div className="flex items-center gap-2">
               <Box size={14} className="text-primary" />
               <div>
-                <h2 className="text-[11px] font-black text-white uppercase tracking-tight">{name}</h2>
-                <p className="text-[8px] font-bold text-primary/60 uppercase tracking-widest">{space?.spaceCategory || 'SPACE'}</p>
+                <h2 className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{name}</h2>
+                <p className="text-[8px] font-bold text-primary/60 uppercase tracking-widest">{space?.spaceCategory || 'Space'}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -112,21 +112,21 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
           {(summary?.totalValue > 0 || summary?.budget) && (
             <div className="px-3 py-1.5 bg-primary/5 border-b border-primary/10 flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-[8px] font-black text-primary uppercase tracking-widest">VALUE:</span>
-                <span className="text-[9px] font-black text-white flex items-center gap-1">
+                <span className="text-[8px] font-black text-primary uppercase tracking-widest">Value:</span>
+                <span className="text-[9px] font-black text-slate-800 dark:text-white flex items-center gap-1">
                   <IndianRupee size={9} />{summary.totalValue.toLocaleString()}
                 </span>
               </div>
               {summary.deficitCount > 0 && (
                 <div className="flex items-center gap-1">
-                  <span className="text-[7px] font-black text-red-400 uppercase tracking-widest">SHORT:</span>
-                  <span className="text-[8px] font-black text-red-400">₹{summary.deficitValue.toLocaleString()}</span>
+                  <span className="text-[7px] font-black text-rose-500 dark:text-red-400 uppercase tracking-widest">Short:</span>
+                  <span className="text-[8px] font-black text-rose-500 dark:text-red-400">₹{summary.deficitValue.toLocaleString()}</span>
                 </div>
               )}
               <div className="flex items-center gap-1">
                 <BudgetIndicator totalValue={summary.totalValue} budget={summary.budget} />
                 <button onClick={() => { setBudgetInput(summary.budget || ''); setEditingBudget(true); }}
-                  className="p-0.5 hover:bg-white/5 rounded text-slate-600 hover:text-slate-400 transition-colors">
+                  className="p-0.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
                   <Pencil size={8} />
                 </button>
               </div>
@@ -134,7 +134,7 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
                 <div className="flex items-center gap-1">
                   <input type="number" value={budgetInput}
                     onChange={e => setBudgetInput(e.target.value)}
-                    className="w-20 px-1 py-0.5 text-[8px] font-black bg-slate-800 border border-white/10 rounded text-white uppercase"
+                    className="w-20 px-1 py-0.5 text-[8px] font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded text-slate-800 dark:text-white"
                     placeholder="Budget" />
                   <button onClick={async () => {
                     const val = parseFloat(budgetInput);
@@ -143,9 +143,9 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
                       toast.success('Budget updated');
                     }
                     setEditingBudget(false);
-                  }} className="text-[8px] font-black text-green-400 hover:text-green-300 px-1">SAVE</button>
+                  }} className="text-[8px] font-black text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 px-1">SAVE</button>
                   <button onClick={() => setEditingBudget(false)}
-                    className="text-[8px] font-black text-slate-600 hover:text-slate-400 px-1">X</button>
+                    className="text-[8px] font-black text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200 px-1">X</button>
                 </div>
               )}
             </div>
@@ -163,7 +163,7 @@ export default function SpaceDetailModal({ schoolId, space, spaces, allSpaces, o
                 className={`flex items-center gap-1 px-3 py-2 text-[8px] font-black uppercase tracking-widest transition-all border-b-2 ${
                   activeTab === tab.id
                     ? 'text-primary border-primary bg-primary/5'
-                    : 'text-slate-700 border-transparent hover:text-slate-500'
+                    : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 <tab.icon size={10} />

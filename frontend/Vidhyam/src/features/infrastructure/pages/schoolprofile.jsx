@@ -324,7 +324,7 @@ export default function AccountPage() {
 
             <AnimatePresence>
                 {showKeyModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/60" onClick={() => setShowKeyModal(false)}>
+                    <div className="absolute inset-0 z-[200] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/60" onClick={() => setShowKeyModal(false)}>
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md" onClick={e => e.stopPropagation()}>
                             <GlassCard title="KEY GENERATED" onClose={() => setShowKeyModal(false)} glowColor="primary" className="p-8">
                                 <div className="flex flex-col items-center gap-6">

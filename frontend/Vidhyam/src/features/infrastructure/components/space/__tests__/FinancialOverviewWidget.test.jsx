@@ -19,7 +19,7 @@ describe('FinancialOverviewWidget', () => {
 
   it('shows empty state when no data', () => {
     render(<FinancialOverviewWidget data={null} isLoading={false} />);
-    expect(screen.getByText('NO_FINANCIAL_DATA')).toBeInTheDocument();
+    expect(screen.getByText('No financial data available')).toBeInTheDocument();
   });
 
   it('renders salary cost', () => {

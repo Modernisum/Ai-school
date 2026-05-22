@@ -1,5 +1,6 @@
 use crate::models::resource::{CreateSpaceRequest, CreateSpaceCategoryRequest};
 use crate::AppState;
+use crate::routes::responsibility_ws::{publish_responsibility_event, ResponsibilityEvent};
 
 use axum::{
     extract::{Path, State},
@@ -46,11 +47,19 @@ pub async fn create_space_category(
     Path(school_id): Path<String>,
     Json(payload): Json<CreateSpaceCategoryRequest>,
 ) -> AppResult<impl IntoResponse> {
+    let category_name = payload.name.clone();
     let data = state
         .services
         .resource
-        .create_space_category(&school_id, &tenant_ctx.admin_id, &payload.name)
+        .create_space_category(&school_id, &tenant_ctx.admin_id, &category_name)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::CategoryCreated {
+            category_name,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "category": data})))
 }
 
@@ -64,6 +73,13 @@ pub async fn delete_space_category(
         .resource
         .delete_space_category(&school_id, &tenant_ctx.admin_id, &category_name)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::CategoryDeleted {
+            category_name: category_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Category deleted successfully"})))
 }
 
@@ -73,11 +89,19 @@ pub async fn create_space_by_category(
     Path((school_id, category)): Path<(String, String)>,
     Json(payload): Json<CreateSpaceRequest>,
 ) -> AppResult<impl IntoResponse> {
+    let space_name = payload.space_name.clone();
     let data = state
         .services
         .resource
-        .create_space_by_category(&school_id, &tenant_ctx.admin_id, &category, payload.space_name)
+        .create_space_by_category(&school_id, &tenant_ctx.admin_id, &category, space_name.clone())
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceCreated {
+            space_name,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "space": data})))
 }
 
@@ -92,6 +116,13 @@ pub async fn update_space(
         .resource
         .update_space(&school_id, &tenant_ctx.admin_id, &space_name, payload)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Space updated successfully"})))
 }
 
@@ -105,6 +136,13 @@ pub async fn delete_space(
         .resource
         .delete_space(&school_id, &tenant_ctx.admin_id, &space_name)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceDeleted {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Space deleted successfully"})))
 }
 
@@ -135,6 +173,20 @@ pub async fn assign_space_materials(
         .resource
         .assign_space_materials(&school_id, &tenant_ctx.admin_id, &space_name, payload)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: "".to_string(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Materials assigned successfully"})))
 }
 
@@ -197,6 +249,20 @@ pub async fn remove_space_material(
         .resource
         .remove_space_material(&school_id, &tenant_ctx.admin_id, &space_name, &material_name, payload.quantity)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Material removed from space"})))
 }
 
@@ -209,12 +275,20 @@ pub async fn clone_space(
     let new_name = payload["newSpaceName"].as_str()
         .ok_or_else(|| crate::error::AppError::Validation("newSpaceName is required".to_string()))?
         .to_string();
+    let new_name_clone = new_name.clone();
 
     let data = state
         .services
         .resource
         .clone_space(&school_id, &tenant_ctx.admin_id, &space_name, new_name)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceCreated {
+            space_name: new_name_clone,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "space": data})))
 }
 
@@ -257,6 +331,13 @@ pub async fn update_space_budget(
             .await
             .map_err(|e: sqlx::Error| crate::error::AppError::Internal(e.to_string()))?;
     }
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Budget updated successfully"})))
 }
 
@@ -277,6 +358,27 @@ pub async fn transfer_space_material(
         .resource
         .transfer_space_material(&school_id, &tenant_ctx.admin_id, &space_name, &payload.to_space, &material_name, payload.quantity)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: space_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::SpaceUpdated {
+            space_name: payload.to_space.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(data))
 }
 

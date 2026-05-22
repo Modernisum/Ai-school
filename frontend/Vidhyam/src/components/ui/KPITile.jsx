@@ -19,7 +19,7 @@ const KPITile = ({ label, value, sub, icon: Icon, color = "primary", trend = nul
           <Icon size={16} />
         </div>
         {trend && (
-          <div className={`flex items-center gap-0.5 text-micro font-semibold px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 ${trend > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <div className={`flex items-center gap-0.5 text-micro font-semibold px-1.5 py-0.5 rounded-md bg-slate-500/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 ${trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
             {trend > 0 ? <TrendingUp size={8} /> : <Activity size={8} />}
             {Math.abs(trend)}%
           </div>

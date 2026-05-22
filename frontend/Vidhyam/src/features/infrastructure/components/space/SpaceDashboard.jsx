@@ -69,10 +69,10 @@ export default function SpaceDashboard({
       <SpaceAlertBanner alerts={alerts} />
       <KPIWidget columns={4} gap="gap-2"
         kpis={[
-          { label: 'TOTAL_SPACES', value: totalSpaces, sub: 'INFRA_NODES', icon: Box, color: 'primary' },
-          { label: 'CATEGORIES', value: totalCategories, sub: 'INFRA_CLASSES', icon: Layers, color: 'accent' },
-          { label: 'ASSIGNED', value: assignedEmployees, sub: 'PERSONNEL_DEPLOYED', icon: Briefcase, color: 'success' },
-          { label: 'VACANT', value: vacantSpaces, sub: 'UNSTAFFED', icon: vacantSpaces > 0 ? AlertTriangle : CheckCircle, color: vacantSpaces > 0 ? 'warning' : 'success' },
+          { label: 'Total Spaces', value: totalSpaces, sub: 'Total Space Count', icon: Box, color: 'primary' },
+          { label: 'Categories', value: totalCategories, sub: 'Active Categories', icon: Layers, color: 'accent' },
+          { label: 'Assigned', value: assignedEmployees, sub: 'Assigned Staff', icon: Briefcase, color: 'success' },
+          { label: 'Vacant', value: vacantSpaces, sub: 'Vacant Spaces', icon: vacantSpaces > 0 ? AlertTriangle : CheckCircle, color: vacantSpaces > 0 ? 'warning' : 'success' },
         ]}
       />
     </div>

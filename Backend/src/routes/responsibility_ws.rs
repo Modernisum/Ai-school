@@ -72,6 +72,46 @@ pub enum ResponsibilityEvent {
         performed_by: String,
         timestamp: String,
     },
+    #[serde(rename = "space_created")]
+    SpaceCreated {
+        space_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "space_updated")]
+    SpaceUpdated {
+        space_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "space_deleted")]
+    SpaceDeleted {
+        space_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "material_created")]
+    MaterialCreated {
+        material_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "material_updated")]
+    MaterialUpdated {
+        material_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "material_deleted")]
+    MaterialDeleted {
+        material_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "category_created")]
+    CategoryCreated {
+        category_name: String,
+        timestamp: String,
+    },
+    #[serde(rename = "category_deleted")]
+    CategoryDeleted {
+        category_name: String,
+        timestamp: String,
+    },
 }
 
 pub async fn responsibility_ws_handler(

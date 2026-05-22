@@ -52,7 +52,7 @@ const DropdownWidget = ({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">
+        <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">
           {label}
         </label>
       )}
@@ -62,13 +62,13 @@ const DropdownWidget = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`
           flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border transition-all duration-300 cursor-pointer
-          ${isOpen ? 'border-primary/50 bg-white/[0.08] shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'}
+          ${isOpen ? 'border-primary/50 bg-slate-500/10 dark:bg-white/[0.08] shadow-[0_0_20px_rgba(59,130,246,0.1)]' : 'border-slate-200 dark:border-white/10 bg-slate-500/5 dark:bg-white/5 hover:bg-slate-500/10 dark:hover:bg-white/[0.07]'}
           ${error ? 'border-accent/50' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
         {Icon && <Icon size={16} className={`${isOpen ? 'text-primary' : 'text-slate-500'} transition-colors`} />}
-        <span className={`flex-1 text-xs font-medium ${!value ? 'text-slate-500' : 'text-white'}`}>
+        <span className={`flex-1 text-xs font-medium ${!value ? 'text-slate-500' : 'text-slate-800 dark:text-white'}`}>
           {displayLabel}
         </span>
         <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
@@ -82,10 +82,10 @@ const DropdownWidget = ({
             animate={{ opacity: 1, y: 5, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="absolute z-[100] w-full mt-2 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+            className="absolute z-[100] w-full mt-2 bg-white dark:bg-slate-950/90 backdrop-blur-3xl border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden"
           >
             {searchable && options.length > 5 && (
-              <div className="p-2 border-b border-white/5">
+              <div className="p-2 border-b border-slate-100 dark:border-white/5">
                 <div className="relative">
                   <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input 
@@ -94,7 +94,7 @@ const DropdownWidget = ({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full bg-white/5 border border-white/5 rounded-lg py-1.5 pl-8 pr-4 text-[10px] text-white focus:outline-none focus:border-primary/30 transition-all font-medium"
+                    className="w-full bg-slate-500/5 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg py-1.5 pl-8 pr-4 text-[10px] text-slate-800 dark:text-white focus:outline-none focus:border-primary/30 transition-all font-medium"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
@@ -113,7 +113,7 @@ const DropdownWidget = ({
                       onClick={(e) => { e.stopPropagation(); handleSelect(opt); }}
                       className={`
                         flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer mb-0.5
-                        ${isSelected ? 'bg-primary/20 text-primary' : 'text-slate-400 hover:bg-white/5 hover:text-white'}
+                        ${isSelected ? 'bg-primary/20 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-500/5 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white'}
                       `}
                     >
                       <span>{val}</span>
@@ -122,7 +122,7 @@ const DropdownWidget = ({
                   );
                 })
               ) : (
-                <div className="py-6 text-center text-[9px] font-black uppercase tracking-widest text-slate-600">
+                <div className="py-6 text-center text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-600">
                   No matches found
                 </div>
               )}

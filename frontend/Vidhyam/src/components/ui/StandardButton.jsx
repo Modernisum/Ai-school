@@ -46,11 +46,11 @@ const StandardButton = ({
   // Modern Glassmorphism Variants
   const variants = {
     primary: "bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:brightness-110",
-    secondary: "bg-white/5 backdrop-blur-md border border-white/10 text-slate-200 hover:bg-white/10 hover:border-white/20",
-    danger: "bg-rose-500/10 backdrop-blur-md border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/30",
-    success: "bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/30",
-    outline: "bg-transparent border-2 border-white/10 text-white hover:bg-white/5 hover:border-white/20",
-    ghost: "bg-transparent text-slate-400 hover:text-white hover:bg-white/5",
+    secondary: "bg-slate-500/5 dark:bg-white/5 backdrop-blur-md border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-500/10 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20",
+    danger: "bg-rose-500/5 dark:bg-rose-500/10 backdrop-blur-md border border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 hover:border-rose-500/30",
+    success: "bg-emerald-500/5 dark:bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 hover:border-emerald-500/30",
+    outline: "bg-transparent border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:bg-slate-500/5 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20",
+    ghost: "bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-500/5 dark:hover:bg-white/5",
   };
 
   return (
@@ -76,7 +76,7 @@ const StandardButton = ({
       {/* Loading Overlay */}
       {isLoading ? (
         <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-white/80" />
+          <Loader2 className="w-4 h-4 animate-spin text-current" />
           <span className="opacity-80">Processing...</span>
         </div>
       ) : (

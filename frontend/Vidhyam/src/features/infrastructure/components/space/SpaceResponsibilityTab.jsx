@@ -22,8 +22,8 @@ export default function SpaceResponsibilityTab({
     return (
       <div className="py-8 text-center flex flex-col items-center gap-2 opacity-40">
         <Briefcase size={20} />
-        <p className="text-[9px] font-black uppercase tracking-[0.3em]">NO_RESPONSIBILITIES</p>
-        <StandardButton label="ASSIGN_RESPONSIBILITY" icon={Plus} size="xs" onClick={onAssign} />
+        <p className="text-[9px] font-black uppercase tracking-[0.3em]">No responsibilities assigned</p>
+        <StandardButton label="Assign Responsibility" icon={Plus} size="xs" onClick={onAssign} />
       </div>
     );
   }
@@ -40,19 +40,19 @@ export default function SpaceResponsibilityTab({
                   {hasEmployee ? (
                     <User size={10} className="text-primary shrink-0" />
                   ) : (
-                    <AlertTriangle size={10} className="text-amber-400 shrink-0" />
+                    <AlertTriangle size={10} className="text-amber-500 dark:text-amber-400 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <p className="text-[9px] font-black text-white uppercase tracking-tight truncate">{r.name || r.responsibilityName}</p>
-                    <p className={`text-[8px] font-bold ${hasEmployee ? 'text-green-400/60' : 'text-amber-400/60'}`}>
-                      {hasEmployee ? r.employeeName : 'UNASSIGNED'}
+                    <p className="text-[9px] font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{r.name || r.responsibilityName}</p>
+                    <p className={`text-[8px] font-bold ${hasEmployee ? 'text-green-600 dark:text-green-400/60' : 'text-amber-600 dark:text-amber-400/60'}`}>
+                      {hasEmployee ? r.employeeName : 'Unassigned'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="text-right">
-                    <p className="text-[8px] font-black text-white">₹{r.monthlyPrice || 0}/mo</p>
-                    {r.studentFee > 0 && <p className="text-[7px] text-slate-600 font-bold">₹{r.studentFee}/student</p>}
+                    <p className="text-[8px] font-black text-slate-800 dark:text-white">₹{r.monthlyPrice || 0}/mo</p>
+                    {r.studentFee > 0 && <p className="text-[7px] text-slate-500 dark:text-slate-400 font-bold">₹{r.studentFee}/student</p>}
                   </div>
                   {hasEmployee && onRemove && (
                     <StandardButton variant="ghost" size="xs" icon={X}
@@ -66,12 +66,12 @@ export default function SpaceResponsibilityTab({
       })}
       <GlassCard dense className="bg-primary/5 border-primary/10">
         <div className="p-1.5 flex items-center justify-between">
-          <span className="text-[9px] font-black text-primary uppercase tracking-widest">TOTAL_MONTHLY_COST</span>
-          <span className="text-[10px] font-black text-white">₹{totalMonthlyCost.toLocaleString()}/mo</span>
+          <span className="text-[9px] font-black text-primary uppercase tracking-widest">Total Monthly Cost</span>
+          <span className="text-[10px] font-black text-slate-800 dark:text-white">₹{totalMonthlyCost.toLocaleString()}/mo</span>
         </div>
       </GlassCard>
       <div className="pt-0.5">
-        <StandardButton label="ASSIGN_RESPONSIBILITY" icon={Plus} size="xs" onClick={onAssign} />
+        <StandardButton label="Assign Responsibility" icon={Plus} size="xs" onClick={onAssign} />
       </div>
     </div>
   );

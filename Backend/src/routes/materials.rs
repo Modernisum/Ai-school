@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 use crate::error::AppResult;
 use crate::models::resource::CreateMaterialRequest;
 use serde::Deserialize;
+use crate::routes::responsibility_ws::{publish_responsibility_event, ResponsibilityEvent};
 
 #[derive(Debug, Deserialize)]
 pub struct MaterialListQuery {
@@ -55,7 +56,15 @@ pub async fn create_material(
     Path(school_id): Path<String>,
     Json(payload): Json<CreateMaterialRequest>,
 ) -> AppResult<Json<Value>> {
+    let material_name = payload.material_name.clone();
     let res = state.services.resource.create_material(&school_id, &tenant_ctx.admin_id, serde_json::to_value(payload)?).await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialCreated {
+            material_name,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "data": res})))
 }
 
@@ -66,6 +75,13 @@ pub async fn update_material(
     Json(payload): Json<Value>,
 ) -> AppResult<Json<Value>> {
     state.services.resource.update_material(&school_id, &tenant_ctx.admin_id, &material_name, payload).await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Material updated successfully"})))
 }
 
@@ -75,6 +91,13 @@ pub async fn delete_material(
     Path((school_id, material_name)): Path<(String, String)>,
 ) -> AppResult<Json<Value>> {
     state.services.resource.delete_material(&school_id, &tenant_ctx.admin_id, &material_name).await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialDeleted {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Material deleted successfully"})))
 }
 
@@ -89,6 +112,13 @@ pub async fn buy_material(
         .resource
         .update_material(&school_id, &tenant_ctx.admin_id, &material_name, payload)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Material purchase recorded"})))
 }
 
@@ -103,6 +133,13 @@ pub async fn sell_material(
         .resource
         .sell_material(&school_id, &tenant_ctx.admin_id, &material_name, payload)
         .await?;
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: material_name.clone(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
     Ok(Json(json!({"success": true, "message": "Material distribution recorded"})))
 }
 
@@ -186,6 +223,14 @@ pub async fn bulk_import_materials(
             }
         }
     }
+
+    let _ = publish_responsibility_event(
+        &school_id,
+        ResponsibilityEvent::MaterialUpdated {
+            material_name: "bulk_imported".to_string(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        },
+    ).await;
 
     Ok(Json(json!({
         "success": true,

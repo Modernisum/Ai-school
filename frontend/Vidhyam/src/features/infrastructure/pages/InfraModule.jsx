@@ -7,11 +7,8 @@ const InfraModule = () => {
   return (
     <div className="h-full bg-slate-900/10 p-1 overflow-y-auto">
       <Routes>
-        <Route path="manifest" element={<InfraPage tab="manifest" />} />
-        <Route path="materials" element={<InfraPage tab="materials" />} />
-        <Route path="protocols" element={<InfraPage tab="protocols" />} />
-        <Route path="floorplan" element={<InfraPage tab="floorplan" />} />
-        <Route path="*" element={<Navigate to="/dashboard/infra/manifest" replace />} />
+        <Route path=":tab" element={<InfraPage />} />
+        <Route path="*" element={<Navigate to="/dashboard/infra/spaces" replace />} />
       </Routes>
     </div>
   );

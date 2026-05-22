@@ -16,7 +16,7 @@ export default function SpaceConsumersTab({ students, isLoading }) {
     return (
       <div className="py-8 text-center flex flex-col items-center gap-2 opacity-40">
         <Users size={20} />
-        <p className="text-[9px] font-black uppercase tracking-[0.3em]">NO_CONSUMERS</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.3em]">No consumers assigned</p>
       </div>
     );
   }
@@ -31,12 +31,12 @@ export default function SpaceConsumersTab({ students, isLoading }) {
                 <span className="text-[7px] font-black text-primary">{s.name?.[0] || '?'}</span>
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-black text-white uppercase tracking-tight truncate">{s.name}</p>
-                <p className="text-[7px] font-bold text-slate-600">Class {s.class}-{s.section}</p>
+                <p className="text-[9px] font-black text-slate-800 dark:text-white uppercase tracking-tight truncate">{s.name}</p>
+                <p className="text-[7px] font-bold text-slate-500 dark:text-slate-400">Class {s.class}-{s.section}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[9px] font-black text-green-400">₹{(s.totalFees || 0).toLocaleString()}</span>
+              <span className="text-[9px] font-black text-green-600 dark:text-green-400">₹{(s.totalFees || 0).toLocaleString()}</span>
             </div>
           </div>
         </GlassCard>
@@ -44,12 +44,12 @@ export default function SpaceConsumersTab({ students, isLoading }) {
       <GlassCard dense className="bg-primary/5 border-primary/10">
         <div className="p-1.5 flex items-center justify-between">
           <div>
-            <span className="text-[9px] font-black text-primary uppercase tracking-widest">TOTAL_STUDENTS</span>
-            <span className="text-[10px] font-black text-white ml-2">{students.length}</span>
+            <span className="text-[9px] font-black text-primary uppercase tracking-widest">Total Students</span>
+            <span className="text-[10px] font-black text-slate-800 dark:text-white ml-2">{students.length}</span>
           </div>
           <div className="text-right">
-            <span className="text-[9px] font-black text-primary uppercase tracking-widest">FEE_REVENUE</span>
-            <span className="text-[10px] font-black text-white ml-2">₹{totalFeeRevenue.toLocaleString()}</span>
+            <span className="text-[9px] font-black text-primary uppercase tracking-widest">Fee Revenue</span>
+            <span className="text-[10px] font-black text-slate-800 dark:text-white ml-2">₹{totalFeeRevenue.toLocaleString()}</span>
           </div>
         </div>
       </GlassCard>

@@ -16,19 +16,19 @@ describe('SpaceConsumersTab', () => {
 
   it('shows total students count', () => {
     render(<SpaceConsumersTab students={mockStudents} isLoading={false} />);
-    expect(screen.getByText('TOTAL_STUDENTS')).toBeInTheDocument();
+    expect(screen.getByText('Total Students')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('shows total fee revenue', () => {
     render(<SpaceConsumersTab students={mockStudents} isLoading={false} />);
-    expect(screen.getByText(/FEE_REVENUE/)).toBeInTheDocument();
+    expect(screen.getByText(/Fee Revenue/)).toBeInTheDocument();
     expect(screen.getByText(/5,000/)).toBeInTheDocument(); // 2500 * 2
   });
 
   it('shows empty state when no students', () => {
     render(<SpaceConsumersTab students={[]} isLoading={false} />);
-    expect(screen.getByText('NO_CONSUMERS')).toBeInTheDocument();
+    expect(screen.getByText('No consumers assigned')).toBeInTheDocument();
   });
 
   it('shows student fee per student', () => {
