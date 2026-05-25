@@ -40,7 +40,7 @@ export default function StudentAttendance() {
   
   // Attendance state
   const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attClass, setAttClass] = useState('All');
+  const [attSpace, setAttSpace] = useState('All');
   const [attSearch, setAttSearch] = useState('');
   const [presentIds, setPresentIds] = useState(new Set());
   const [marking, setMarking] = useState({});
@@ -60,23 +60,23 @@ export default function StudentAttendance() {
   const [deleteAttendance] = useDeleteAttendanceMutation();
   const [markHolidayApi] = useMarkHolidayMutation();
   
-  // Extract unique classes
-  const classes = useMemo(() => {
-    const classSet = new Set();
+  // Extract unique spaces
+  const spaces = useMemo(() => {
+    const spaceSet = new Set();
     students.forEach(s => {
-      const cls = s.className || s.classId;
-      if (cls) classSet.add(cls);
+      const sid = s.spaceId || s.space_id;
+      if (sid) spaceSet.add(sid);
     });
-    return Array.from(classSet).sort();
+    return Array.from(spaceSet).sort();
   }, [students]);
   
   // Filter students for attendance
   const attStudents = useMemo(() => students.filter(s => {
     const name = (s.name || s.studentName || '').toLowerCase();
-    const cls = s.className || s.classId || '';
-    return (attClass === 'All' || cls === attClass)
+    const sid = s.spaceId || s.space_id || '';
+    return (attSpace === 'All' || sid === attSpace)
       && (!attSearch || name.includes(attSearch.toLowerCase()));
-  }), [students, attClass, attSearch]);
+  }), [students, attSpace, attSearch]);
   
   const presentCount = attStudents.filter(s => presentIds.has(s.studentId || s.student_id)).length;
   const attPct = attStudents.length > 0 ? Math.round((presentCount / attStudents.length) * 100) : 0;
@@ -157,7 +157,7 @@ export default function StudentAttendance() {
                 <KPITile label="Total Students" value={students.length} sub={`${regularStudents.length} Regular`} icon={GraduationCap} color="primary" dense />
                 <KPITile label="Private Students" value={privateStudents.length} sub="INDEPENDENT" icon={ShieldCheck} color="accent" dense />
                 <KPITile label="Attendance Rate" value={`${attPct}%`} sub={`${presentCount} Present`} icon={Activity} color="success" dense />
-                <KPITile label="Classes" value={classes.length} sub="Active Classes" icon={Database} color="warning" dense />
+                <KPITile label="Spaces" value={spaces.length} sub="Active Spaces" icon={Database} color="warning" dense />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
@@ -169,17 +169,17 @@ export default function StudentAttendance() {
                             sections={[{
                                 fields: [
                                     { name: 'date', label: 'Date', type: 'date', required: true },
-                                    { name: 'class', label: 'Class', type: 'select', options: [
-                                        { label: 'All Classes', value: 'All' },
-                                        ...classes.map(c => ({ label: c.toUpperCase(), value: c }))
+                                    { name: 'space', label: 'Space (Class)', type: 'select', options: [
+                                        { label: 'All Spaces', value: 'All' },
+                                        ...spaces.map(s => ({ label: s.toUpperCase(), value: s }))
                                     ], required: true }
                                 ]
                             }]}
                             control={control}
-                            initialData={{ date: attDate, class: attClass }}
+                            initialData={{ date: attDate, space: attSpace }}
                             onChange={(field, value) => {
                                 if (field === 'date') setAttDate(value);
-                                if (field === 'class') setAttClass(value);
+                                if (field === 'space') setAttSpace(value);
                             }}
                             showActions={false}
                             dense

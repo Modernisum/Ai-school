@@ -16,7 +16,12 @@ pub mod fee_repo;
 pub mod coupon_repo;
 pub mod payroll_repo;
 pub mod transaction_repo;
-pub mod misc_repo;
+pub mod award_repo;
+pub mod complain_repo;
+pub mod reminder_repo;
+pub mod document_box_repo;
+pub mod school_repo;
+pub mod responsibility_repo;
 pub mod notification_repo;
 pub mod storage_repo;
 pub mod query_builder;
@@ -50,6 +55,7 @@ pub struct Repositories {
     pub storage: Arc<dyn StorageRepository + Send + Sync>,
     pub notification: Arc<dyn NotificationRepository + Send + Sync>,
     pub grading: Arc<dyn GradingRepository + Send + Sync>,
+    pub base: Arc<base::PostgresBaseRepository>,
     pub db_client: Arc<crate::db::DbClient>,
 }
 
@@ -88,24 +94,24 @@ pub async fn initialize_repositories(
         client: db_client.clone(),
     });
 
-    let award_repo: Arc<dyn traits::AwardRepository + Send + Sync> = Arc::new(misc_repo::PostgresAwardRepository {
+    let award_repo: Arc<dyn traits::AwardRepository + Send + Sync> = Arc::new(award_repo::PostgresAwardRepository {
         client: db_client.clone(),
     });
-    let complain_repo: Arc<dyn traits::ComplainRepository + Send + Sync> = Arc::new(misc_repo::PostgresComplainRepository {
+    let complain_repo: Arc<dyn traits::ComplainRepository + Send + Sync> = Arc::new(complain_repo::PostgresComplainRepository {
         client: db_client.clone(),
     });
-    let reminder_repo: Arc<dyn traits::ReminderRepository + Send + Sync> = Arc::new(misc_repo::PostgresReminderRepository {
+    let reminder_repo: Arc<dyn traits::ReminderRepository + Send + Sync> = Arc::new(reminder_repo::PostgresReminderRepository {
         client: db_client.clone(),
     });
-    let document_box_repo: Arc<dyn traits::DocumentBoxRepository + Send + Sync> = Arc::new(misc_repo::PostgresDocumentBoxRepository {
-        client: db_client.clone(),
-    });
-
-    let school_repo: Arc<dyn traits::SchoolRepository + Send + Sync> = Arc::new(misc_repo::PostgresSchoolRepository {
+    let document_box_repo: Arc<dyn traits::DocumentBoxRepository + Send + Sync> = Arc::new(document_box_repo::PostgresDocumentBoxRepository {
         client: db_client.clone(),
     });
 
-    let base_responsibility_repo = misc_repo::PostgresResponsibilityRepository {
+    let school_repo: Arc<dyn traits::SchoolRepository + Send + Sync> = Arc::new(school_repo::PostgresSchoolRepository {
+        client: db_client.clone(),
+    });
+
+    let base_responsibility_repo = responsibility_repo::PostgresResponsibilityRepository {
         client: db_client.clone(),
     };
 
@@ -143,6 +149,8 @@ pub async fn initialize_repositories(
         client: db_client.clone(),
     });
 
+    let base_repo = Arc::new(base::PostgresBaseRepository::new(db_client.clone()));
+
     Repositories {
         auth: auth_repo,
         student: student_repo,
@@ -168,6 +176,7 @@ pub async fn initialize_repositories(
         audit: audit_repo,
         global_user: global_user_repo,
         grading: grading_repo,
+        base: base_repo,
         db_client,
     }
 }

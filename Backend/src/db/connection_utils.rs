@@ -31,4 +31,16 @@ impl ConnectionUtils {
     pub fn create_super_admin_query() -> String {
         "SET LOCAL app.is_super_admin = 'true'".to_string()
     }
+
+    /// Sets RLS context query for a given school_id on a connection using SET SESSION
+    pub async fn set_rls_session(
+        conn: &mut sqlx::PgConnection,
+        school_id: &str,
+    ) -> Result<(), sqlx::Error> {
+        let sanitized = Self::sanitize_school_id(school_id);
+        let q = format!("SET app.current_school_id = '{}'", sanitized);
+        sqlx::query(&q).execute(conn).await?;
+        Ok(())
+    }
 }
+

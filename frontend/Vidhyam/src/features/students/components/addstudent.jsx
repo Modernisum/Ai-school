@@ -39,7 +39,7 @@ export default function AddStudentPage() {
     defaultValues: {
       admissionNumber: '', admissionDate: new Date().toISOString().split('T')[0],
       name: '', dob: '', gender: '', bloodGroup: '', religion: '', category: 'General', aadhaarNumber: '',
-      class: '', section: '', rollNumber: '', studentType: 'Regular', prevSchool: '',
+      spaceId: '', rollNumber: '', studentType: 'Regular', prevSchool: '',
       fatherName: '', fatherOccupation: '', motherName: '', motherOccupation: '',
       phone: '', altPhone: '', email: '', address: '',
       transportMode: 'none', busRoute: '',
@@ -48,8 +48,7 @@ export default function AddStudentPage() {
     }
   });
 
-  const watchedClass = watch('class');
-  const watchedSection = watch('section');
+  const watchedSpaceId = watch('spaceId');
   const watchedDob = watch('dob');
   const { ageString } = useAgeCalculator(watchedDob);
 
@@ -64,17 +63,16 @@ export default function AddStudentPage() {
     }
   }, [mode, studentId, schoolId, reset]);
 
-  // ─── Space Responsibilities for Selected Class ──────────────────────────────
+  // ─── Space Responsibilities for Selected Space ──────────────────────────────
   const [selectedOptionalResps, setSelectedOptionalResps] = useState([]);
   const [spaceResponsibilities, setSpaceResponsibilities] = useState([]);
   const [fetchingResps, setFetchingResps] = useState(false);
 
   useEffect(() => {
-    if (!watchedClass || !watchedSection) { setSpaceResponsibilities([]); return; }
-    const spaceId = `${watchedClass}-${watchedSection}`;
+    if (!watchedSpaceId) { setSpaceResponsibilities([]); return; }
     let cancelled = false;
     setFetchingResps(true);
-    fetch(`${API_BASE}/responsibility/${schoolId}/spaces/${spaceId}/responsibilities`)
+    fetch(`${API_BASE}/responsibility/${schoolId}/spaces/${watchedSpaceId}/responsibilities`)
       .then(r => r.json())
       .then(json => {
         if (!cancelled) {
@@ -85,7 +83,7 @@ export default function AddStudentPage() {
       })
       .catch(() => { if (!cancelled) { setSpaceResponsibilities([]); setFetchingResps(false); } });
     return () => { cancelled = true; };
-  }, [watchedClass, watchedSection, schoolId]);
+  }, [watchedSpaceId, schoolId]);
 
   const mandatoryResps = useMemo(() =>
     spaceResponsibilities.filter(r => {
@@ -165,10 +163,9 @@ export default function AddStudentPage() {
     },
     {
       id: 'enrollment', label: 'Academic Enrollment & Fee Details', icon: GraduationCap,
-      description: 'Configure class, section, admission details and review fee structure.',
+      description: 'Configure classroom assignment, admission details and review fee structure.',
       fields: [
-        { name: 'class', label: 'Class / Grade', type: 'select', options: classOptions, required: true },
-        { name: 'section', label: 'Section', type: 'select', options: ['A', 'B', 'C', 'D', 'E'] },
+        { name: 'spaceId', label: 'Classroom (Space)', type: 'select', options: classOptions, required: true },
         { name: 'rollNumber', label: 'Roll Number', type: 'text' },
         { name: 'admissionNumber', label: 'Admission Number', type: 'text', required: true },
         { name: 'admissionDate', label: 'Date of Admission', type: 'date', required: true },
@@ -227,7 +224,7 @@ export default function AddStudentPage() {
       ]
     }
   ], [classOptions, mandatoryResps, optionalResps, selectedOptionalResps, totalMandatoryFees,
-      fetchingResps, spaceResponsibilities, watchedClass, watchedSection, ageString, handleToggleOptional]);
+      fetchingResps, spaceResponsibilities, watchedSpaceId, ageString, handleToggleOptional]);
 
   const STUDENT_LEAVE_SCHEMA = useMemo(() => [
     {
@@ -252,7 +249,7 @@ export default function AddStudentPage() {
       const method = mode === 'edit' ? 'PUT' : 'POST';
       const payload = mode === 'leave'
         ? { ...data, applicant_id: studentId, applicant_type: 'student' }
-        : { ...data, optionalResponsibilityIds: selectedOptionalResps, mandatoryFeeTotal: totalMandatoryFees };
+        : { ...data, space_id: data.spaceId, optionalResponsibilityIds: selectedOptionalResps, mandatoryFeeTotal: totalMandatoryFees };
 
       const res = await fetch(url, {
         method,

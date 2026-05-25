@@ -6426,5 +6426,14 @@
     "school_id": "test-school",
     "space_category": "Classroom",
     "space_name": null
+  },
+  {
+    "budget": null,
+    "data": {},
+    "id": "565",
+    "name": "10-A",
+    "school_id": "689225",
+    "space_category": "Classroom",
+    "space_name": null
   }
 ]

@@ -135,6 +135,7 @@ export default function SpaceManagement() {
   const [spaceStatusFilter, setSpaceStatusFilter] = useState("all");
   const [showCategoryView, setShowCategoryView] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [activeFormType, setActiveFormType] = useState(null); // 'space' | 'material' | 'responsibility'
   const [editingItem, setEditingItem] = useState(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
@@ -167,6 +168,7 @@ export default function SpaceManagement() {
   const handleFormClose = useCallback(() => {
     setActiveFormType(null);
     setEditingItem(null);
+    setShowNewCategoryInput(false);
     resetSpace();
     resetMaterial();
     resetResponsibility({
@@ -193,10 +195,9 @@ export default function SpaceManagement() {
   const SPACE_SCHEMA = useMemo(() => [
     {
       id: "general",
-      label: "Sector Definition",
+      label: "Space Details",
       icon: Box,
       fields: [
-        { name: "spaceName", label: "Space Identifier", type: "text", required: true, labelIcon: Box, placeholder: "e.g. Physics Lab A" },
         {
           name: "categoryName",
           label: "Infrastructure Class",
@@ -205,7 +206,7 @@ export default function SpaceManagement() {
           required: true,
           labelIcon: Layers
         },
-        { name: "roomSize", label: "Sector Dimensions", type: "text", labelIcon: Box, placeholder: "e.g. 40x60 sqft" },
+        { name: "spaceName", label: "Space Identifier", type: "text", required: true, labelIcon: Box, placeholder: "e.g. Physics Lab A" },
         { name: "description", label: "Operational Description", type: "textarea", placeholder: "Define intended use..." },
       ]
     }
@@ -249,8 +250,10 @@ export default function SpaceManagement() {
     if (!newCategoryName.trim()) return;
     try {
       await createSpaceCategory({ schoolId, body: { name: newCategoryName.trim() } }).unwrap();
-      toast.success("Category provisioned");
+      toast.success("Category created successfully");
       setNewCategoryName("");
+      setShowNewCategoryInput(false);
+      refetchCategories();
     } catch (e) { toast.error(e?.data?.message || "Creation failure"); }
   };
 
@@ -651,10 +654,55 @@ export default function SpaceManagement() {
     if (!activeFormType) return null;
 
     if (activeFormType === 'space') {
+      const SPACE_SECTIONS = SPACE_SCHEMA.map(s => ({
+        ...s,
+        customContent: (
+          <div className="space-y-2">
+            {!showNewCategoryInput ? (
+              <button
+                type="button"
+                onClick={() => setShowNewCategoryInput(true)}
+                className="text-[9px] font-bold text-primary hover:text-primary/80 uppercase tracking-wider transition-colors"
+              >
+                + Create New Category
+              </button>
+            ) : (
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 ml-1">
+                    New Category Name
+                  </label>
+                  <input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="e.g. Science Labs"
+                    className="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateCategory}
+                  className="px-3 py-1.5 bg-primary text-white rounded-lg text-[9px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors whitespace-nowrap"
+                >
+                  Create
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowNewCategoryInput(false); setNewCategoryName(""); }}
+                  className="px-3 py-1.5 text-[9px] font-bold text-slate-500 hover:text-slate-700 uppercase tracking-wider transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      }));
       return {
         title: editingItem ? "Modify Space" : "Add Space",
         description: editingItem ? "Update space details." : "Create a new school space.",
-        sections: SPACE_SCHEMA,
+        sections: SPACE_SECTIONS,
         control: spaceControl,
         onSubmit: handleSpaceSubmit(editingItem 
           ? (data) => handleUpdateSpace(editingItem.spaceId || editingItem.id, data) 

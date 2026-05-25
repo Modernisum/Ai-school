@@ -1,0 +1,6394 @@
+[
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T03:49:50.762930+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "726428",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T03:49:50.762930+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T03:49:50.829158+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "726428",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T03:49:50.829158+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T03:49:50.879244+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "726428",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T03:49:50.879244+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T03:49:50.924396+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "726428",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T03:49:50.924396+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T03:49:50.971880+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "726428",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T03:49:50.971880+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:00:56.621868+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "787174",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:00:56.621868+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:00:56.670099+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "787174",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:00:56.670099+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:00:56.714489+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "787174",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:00:56.714489+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:00:56.756310+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "787174",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:00:56.756310+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:00:56.798233+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "787174",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:00:56.798233+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:09:33.871021+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:33.871021+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:09:33.935947+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:33.935947+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:09:33.980466+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:33.980466+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T04:09:34.022804+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.022804+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.062555+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.062555+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.115249+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.115249+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.169633+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.169633+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.218508+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.218508+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.257715+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.257715+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.300097+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.300097+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.344046+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.344046+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.393344+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.393344+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.442974+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.442974+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T04:09:34.487022+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.487022+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.533793+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.533793+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.577191+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.577191+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.620119+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.620119+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.670066+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.670066+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.708476+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.708476+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.749152+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.749152+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.787785+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.787785+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T04:09:34.826344+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "682951",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T04:09:34.826344+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:11:23.094046+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.094046+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:11:23.193475+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.193475+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:11:23.242816+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.242816+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:11:23.319110+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.319110+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.366669+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.366669+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.422934+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.422934+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.807119+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.807119+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.475829+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.475829+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.558920+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.558920+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.714592+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.714592+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.616312+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.616312+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.762190+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.762190+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:11:23.667871+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "210660",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:11:23.667871+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:36:50.075846+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.075846+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:36:50.188377+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.188377+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:36:50.243224+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.243224+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:36:50.305018+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.305018+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.355531+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.355531+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.411857+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.411857+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.468480+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.468480+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.521361+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.521361+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.576143+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.576143+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.627133+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.627133+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.684070+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.684070+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.735648+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.735648+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.787843+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.787843+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:36:50.839262+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.839262+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:36:50.889048+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.889048+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:36:50.934386+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.934386+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:36:50.980690+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "520411",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:36:50.980690+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:01.067067+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.067067+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:01.113594+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.113594+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:01.158811+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.158811+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:01.208777+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.208777+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.258039+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.258039+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.311926+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.311926+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.363107+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.363107+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.417057+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.417057+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.470808+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.470808+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:01.521434+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "474061",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:01.521434+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:07.847946+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:07.847946+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:07.891416+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:07.891416+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:07.932113+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:07.932113+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T05:37:07.979748+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:07.979748+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.024798+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.024798+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.076175+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.076175+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.132492+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.132492+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.184323+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.184323+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.236862+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.236862+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.288653+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.288653+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.341281+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.341281+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.394981+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.394981+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.446821+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.446821+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.631368+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.631368+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.860020+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.860020+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T05:37:08.493538+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.493538+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.587533+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.587533+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.813928+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.813928+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.540654+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.540654+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.769858+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.769858+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.676716+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.676716+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T05:37:08.723132+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "433087",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T05:37:08.723132+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T06:59:54.899832+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "382128",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T06:59:54.899832+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T06:59:54.996096+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "382128",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T06:59:54.996096+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T06:59:56.368969+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "837027",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T06:59:56.368969+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T06:59:56.420058+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "837027",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T06:59:56.420058+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T06:59:56.469256+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "837027",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T06:59:56.469256+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T07:50:28.556297+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.556297+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T07:50:28.673224+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.673224+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T07:50:28.726038+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.726038+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T07:50:28.778594+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.778594+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:28.828370+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.828370+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:28.885968+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.885968+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:28.943131+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.943131+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:28.999574+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:28.999574+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.053583+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.053583+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.108670+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.108670+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.168160+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.168160+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.225554+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.225554+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.285668+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.285668+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T07:50:29.339796+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.339796+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.392911+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.392911+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.440385+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.440385+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.487343+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.487343+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.532815+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.532815+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.578415+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.578415+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.622990+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.622990+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.668778+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.668778+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T07:50:29.714411+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "944614",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T07:50:29.714411+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T11:44:07.882146+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:07.882146+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T11:44:08.013971+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.013971+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T11:44:08.090955+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.090955+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T11:44:08.160868+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.160868+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.240864+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.240864+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.327137+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.327137+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.419081+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.419081+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.507518+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.507518+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.587121+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.587121+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.653150+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.653150+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.873622+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.873622+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.149759+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.149759+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.385658+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.385658+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.725516+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.725516+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.015201+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.015201+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.225548+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.225548+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.456943+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.456943+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.799151+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.799151+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T11:44:08.942321+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:08.942321+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.081447+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.081447+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.300556+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.300556+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T11:44:09.518433+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "517208",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T11:44:09.518433+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:10:45.957043+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:45.957043+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:10:46.083859+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.083859+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:10:46.131903+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.131903+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:10:46.177741+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.177741+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.226739+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.226739+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.284961+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.284961+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.336952+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.336952+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.405241+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.405241+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.458411+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.458411+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.512885+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.512885+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.564566+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.564566+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.625835+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.625835+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.687182+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.687182+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:10:46.742493+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.742493+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:46.785346+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.785346+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:46.832359+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.832359+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:46.878385+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.878385+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:46.923502+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.923502+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:46.969100+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:46.969100+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:47.018404+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:47.018404+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:47.065767+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:47.065767+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:10:47.111166+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "488369",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:10:47.111166+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:26:20.445708+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.445708+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:26:20.497056+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.497056+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:26:20.545290+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.545290+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:26:20.596788+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.596788+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.645431+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.645431+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.698925+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.698925+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.748942+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.748942+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.802128+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.802128+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.852208+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.852208+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.905072+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.905072+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:20.958285+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:20.958285+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:21.014251+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.014251+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.171015+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.171015+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.221239+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.221239+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.269343+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.269343+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.318610+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.318610+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.368048+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.368048+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.414976+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.414976+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.469010+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.469010+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:26:21.519445+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.519445+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:21.066676+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.066676+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:26:21.119305+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "366121",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:26:21.119305+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:43:51.202034+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.202034+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:43:51.261253+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.261253+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:43:51.298334+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.298334+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T13:43:51.337592+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.337592+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.366631+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.366631+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.398603+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.398603+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.426931+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.426931+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.451939+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.451939+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.477137+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.477137+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.504283+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.504283+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.532676+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.532676+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.562733+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.562733+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.592720+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.592720+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T13:43:51.620731+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.620731+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.645307+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.645307+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.668555+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.668555+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.693729+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.693729+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.717637+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.717637+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.741869+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.741869+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.768787+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.768787+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.795877+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.795877+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T13:43:51.822901+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "578110",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T13:43:51.822901+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:26.175012+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.175012+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:26.259173+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.259173+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:26.307031+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.307031+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:26.355518+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.355518+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.384288+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.384288+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.417046+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.417046+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.445084+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.445084+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.474749+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.474749+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.503881+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.503881+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.536019+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.536019+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.567886+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.567886+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.603669+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.603669+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.639344+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.639344+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:26.672018+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.672018+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.701254+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.701254+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.847049+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.847049+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:41.087619+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.087619+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.558050+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.558050+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.707668+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.707668+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.730312+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.730312+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.875652+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.875652+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:41.057863+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.057863+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:41.120524+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.120524+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.432540+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.432540+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.500310+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.500310+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.588742+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.588742+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.739770+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.739770+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.759486+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.759486+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.904095+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.904095+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.396259+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.396259+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.533627+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.533627+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.680271+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.680271+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.789698+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.789698+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:20:41.029649+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.029649+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.148469+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.148469+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.194950+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.194950+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.235016+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.235016+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.271965+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.271965+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.316468+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.316468+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.353743+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.353743+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.617580+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.617580+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:26.819217+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "428885",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:26.819217+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:20:41.467304+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.467304+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:20:41.649322+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "952680",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:20:41.649322+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:24:07.016903+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.016903+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:24:07.064545+00:00",
+    "id": "nursery",
+    "name": "Nursery",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.064545+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:24:07.098277+00:00",
+    "id": "lkg",
+    "name": "LKG",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.098277+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-03-29T14:24:07.128469+00:00",
+    "id": "ukg",
+    "name": "UKG",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.128469+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.156548+00:00",
+    "id": "class-1",
+    "name": "Class 1",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.156548+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.190568+00:00",
+    "id": "class-2",
+    "name": "Class 2",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.190568+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.222403+00:00",
+    "id": "class-3",
+    "name": "Class 3",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.222403+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.254024+00:00",
+    "id": "class-4",
+    "name": "Class 4",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.254024+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.284241+00:00",
+    "id": "class-5",
+    "name": "Class 5",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.284241+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.311724+00:00",
+    "id": "class-6",
+    "name": "Class 6",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.311724+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.342619+00:00",
+    "id": "class-7",
+    "name": "Class 7",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.342619+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.373526+00:00",
+    "id": "class-8",
+    "name": "Class 8",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.373526+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.407290+00:00",
+    "id": "class-9",
+    "name": "Class 9",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.407290+00:00"
+  },
+  {
+    "class_fees": "1000",
+    "created_at": "2026-03-29T14:24:07.439002+00:00",
+    "id": "class-10",
+    "name": "Class 10",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.439002+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.468463+00:00",
+    "id": "class-11-arts-/-humanities",
+    "name": "Class 11 Arts / Humanities",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.468463+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.496704+00:00",
+    "id": "class-11-commerce",
+    "name": "Class 11 Commerce",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.496704+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.526168+00:00",
+    "id": "class-11-science-(pcb)",
+    "name": "Class 11 Science (PCB)",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.526168+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.557218+00:00",
+    "id": "class-11-science-(pcm)",
+    "name": "Class 11 Science (PCM)",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.557218+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.583904+00:00",
+    "id": "class-12-arts-/-humanities",
+    "name": "Class 12 Arts / Humanities",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Arts"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.583904+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.612708+00:00",
+    "id": "class-12-commerce",
+    "name": "Class 12 Commerce",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Commerce"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.612708+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.643286+00:00",
+    "id": "class-12-science-(pcb)",
+    "name": "Class 12 Science (PCB)",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.643286+00:00"
+  },
+  {
+    "class_fees": "2000",
+    "created_at": "2026-03-29T14:24:07.674220+00:00",
+    "id": "class-12-science-(pcm)",
+    "name": "Class 12 Science (PCM)",
+    "room_number": null,
+    "school_id": "689225",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [
+      "Science"
+    ],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-03-29T14:24:07.674220+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:20:00.640571+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "Pre-Nursery",
+    "school_id": "142736",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:20:00.640571+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:35:14.012557+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-2569",
+    "school_id": "256956",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:35:14.012557+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T01:42:05.974588+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-5859",
+    "school_id": "585963",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T01:42:05.974588+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-04-27T02:12:08.050661+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-5150",
+    "school_id": "515004",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-04-27T02:12:08.050661+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-05-14T02:26:24.171045+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-9865",
+    "school_id": "986511",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-05-14T02:26:24.171045+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-05-14T02:29:34.662575+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-8484",
+    "school_id": "848426",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-05-14T02:29:34.662575+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-05-14T02:39:30.372148+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-5557",
+    "school_id": "555731",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-05-14T02:39:30.372148+00:00"
+  },
+  {
+    "class_fees": "500",
+    "created_at": "2026-05-14T02:41:09.220044+00:00",
+    "id": "pre-nursery",
+    "name": "Pre-Nursery",
+    "room_number": "pre-nursery-1331",
+    "school_id": "133199",
+    "section_size": 30,
+    "sections": [
+      {
+        "capacity": 30,
+        "name": "A",
+        "roomNumber": "Room 100",
+        "totalStudents": 0
+      }
+    ],
+    "streams": [],
+    "total_periods": 0,
+    "total_students": 0,
+    "total_teachers": 0,
+    "updated_at": "2026-05-14T02:41:09.220044+00:00"
+  }
+]

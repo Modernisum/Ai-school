@@ -1,12 +1,25 @@
 # Operations API — Tasks Tests
 
+> **⚠️ BUG FIX**: All routes moved from `/api/operations/{schoolId}` to `/api/school/{schoolId}/operations/` (correct nesting)
+
+---
+
+## Actual Route Table
+
+| # | Endpoint | Method | Handler |
+|---|----------|--------|---------|
+| 1 | `/api/school/:schoolId/operations/tasks` | GET | `list_tasks` |
+| 2 | `/api/school/:schoolId/operations/tasks/:taskId/status` | PUT | `update_task_status` |
+
+---
+
 ## Test: List Tasks
 
-- **Endpoint**: `GET /api/operations/689225/tasks`
+- **Endpoint**: `GET /api/school/689225/operations/tasks`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/operations/689225/tasks" \
+curl -s "http://localhost:8080/api/school/689225/operations/tasks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" | jq .
 ```
@@ -15,13 +28,13 @@ curl -s "http://localhost:8080/api/operations/689225/tasks" \
 
 ## Test: List Tasks (filtered by assignee)
 
-- **Endpoint**: `GET /api/operations/689225/tasks`
+- **Endpoint**: `GET /api/school/689225/operations/tasks`
 - **Query**: `?filters=[{"field":"assigned_to","op":"eq","value":"EMP001"}]`
 - **Expected**: 200
 
 ```bash
 FILTERS='[{"field":"assigned_to","op":"eq","value":"EMP001"}]'
-curl -s -G "http://localhost:8080/api/operations/689225/tasks" \
+curl -s -G "http://localhost:8080/api/school/689225/operations/tasks" \
   --data-urlencode "filters=$FILTERS" \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" | jq .
@@ -29,47 +42,13 @@ curl -s -G "http://localhost:8080/api/operations/689225/tasks" \
 
 ---
 
-## Test: Create Task
+## Test: Update Task Status
 
-- **Endpoint**: `POST /api/operations/689225/tasks`
-- **Expected**: 201
-
-```bash
-curl -s -X POST http://localhost:8080/api/operations/689225/tasks \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Submit monthly report",
-    "assigned_to": "EMP001",
-    "deadline": "2026-05-05",
-    "priority": "high",
-    "status": "pending"
-  }' | jq .
-```
-
----
-
-## Test: Get Task Detail
-
-- **Endpoint**: `GET /api/operations/689225/tasks/1`
+- **Endpoint**: `PUT /api/school/689225/operations/tasks/{taskId}/status`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/operations/689225/tasks/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
-
----
-
-## Test: Update Task
-
-- **Endpoint**: `PUT /api/operations/689225/tasks/1`
-- **Expected**: 200
-
-```bash
-curl -s -X PUT http://localhost:8080/api/operations/689225/tasks/1 \
+curl -s -X PUT http://localhost:8080/api/school/689225/operations/tasks/1/status \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
@@ -78,39 +57,10 @@ curl -s -X PUT http://localhost:8080/api/operations/689225/tasks/1 \
 
 ---
 
-## Test: Complete Task
+## ⚠️ Issues Found
 
-- **Endpoint**: `PUT /api/operations/689225/tasks/1/complete`
-- **Expected**: 200
-
-```bash
-curl -s -X PUT http://localhost:8080/api/operations/689225/tasks/1/complete \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
-
----
-
-## Test: Delete Task
-
-- **Endpoint**: `DELETE /api/operations/689225/tasks/1`
-- **Expected**: 200
-
-```bash
-curl -s -X DELETE http://localhost:8080/api/operations/689225/tasks/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
-
----
-
-## Test: List Tasks (by date range)
-
-- **Endpoint**: `GET /api/operations/689225/tasks?from=2026-04-01&to=2026-05-31`
-- **Expected**: 200
-
-```bash
-curl -s "http://localhost:8080/api/operations/689225/tasks?from=2026-04-01&to=2026-05-31" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
+| # | Issue | Severity |
+|---|-------|----------|
+| 1 | **Wrong URL prefix** — was `/api/operations/...`, correct is `/api/school/{schoolId}/operations/` | **Fixed** |
+| 2 | **Tasks have only 2 routes in code**: GET list + PUT update status. `POST create`, `GET detail`, `PUT complete`, `DELETE` routes do NOT exist in domain/operations.rs | **Removed** |
+| 3 | AI task generation (`/ai/generate`, `/ai/reorganize`) are also in operations domain | Low |

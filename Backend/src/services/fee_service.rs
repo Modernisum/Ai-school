@@ -37,8 +37,20 @@ impl FeeService for PostgresFeeService {
     }
 
     async fn get_student_fee(&self, school_id: &str, student_id: &str) -> AppResult<Value> {
-        self.repos.fee.get_student_fee(school_id, student_id).await?
-            .ok_or_else(|| AppError::NotFound("Student fee record not found".to_string()))
+        if let Some(record) = self.repos.fee.get_student_fee(school_id, student_id).await? {
+            Ok(record)
+        } else {
+            let student_exists = self.repos.student.get_student(school_id, student_id).await?;
+            if student_exists.is_none() {
+                return Err(AppError::NotFound("Student fee record not found".to_string()));
+            }
+            Ok(json!({
+                "studentId": student_id,
+                "totalFees": 0.0,
+                "pendingAmount": 0.0,
+                "discount": 0.0
+            }))
+        }
     }
 
     async fn add_fee_to_student(

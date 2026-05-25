@@ -195,7 +195,9 @@ impl EmployeeService for PostgresEmployeeService {
         let old_emp = self.repos.employee.get_employee(school_id, employee_id).await?
             .ok_or_else(|| AppError::NotFound("Employee not found".to_string()))?;
 
-        self.validate_employee_data(school_id, data.clone()).await?;
+        let mut val_data = data.clone();
+        val_data["employeeId"] = json!(employee_id);
+        self.validate_employee_data(school_id, val_data).await?;
 
         self.repos
             .employee

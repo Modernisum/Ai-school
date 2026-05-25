@@ -22,16 +22,14 @@ pub trait StudentService: Send + Sync {
         school_id: &str,
         page: i32,
         limit: i32,
-        class_name: Option<&str>,
-        section: Option<&str>,
+        space_id: Option<&str>,
         status: Option<&str>,
         search: Option<&str>,
     ) -> AppResult<(Vec<Value>, i64)>;
-    async fn list_students_by_class(
+    async fn list_students_by_space(
         &self,
         school_id: &str,
-        class_name: &str,
-        section: Option<&str>,
+        space_id: &str,
     ) -> AppResult<Vec<Value>>;
     async fn get_student(&self, school_id: &str, student_id: &str) -> AppResult<Option<Value>>;
     async fn update_student(
@@ -47,7 +45,7 @@ pub trait StudentService: Send + Sync {
         student_id: &str,
         admin_id: &str,
     ) -> AppResult<()>;
-    async fn resequence_roll_numbers(&self, school_id: &str, class_name: &str) -> AppResult<()>;
+    async fn resequence_roll_numbers(&self, school_id: &str, space_id: &str) -> AppResult<()>;
     async fn list_student_ids(&self, school_id: &str) -> AppResult<Vec<String>>;
     async fn validate_student_data(&self, school_id: &str, data: Value) -> AppResult<()>;
 }

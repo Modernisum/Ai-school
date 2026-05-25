@@ -16,4 +16,18 @@ pub trait AuthRepository: Send + Sync {
     async fn add_auth_log(&self, id: &str, action: &str, details: Value) -> Result<(), AppError>;
     async fn change_school_id(&self, old_id: &str, new_id: &str) -> Result<(), AppError>;
     async fn generate_school_code(&self) -> Result<String, AppError>;
+    async fn add_user_activity_log(&self, phone: &str, user_type: &str, action: &str, metadata: Value) -> Result<(), AppError>;
+    async fn change_password_tx(&self, school_id: &str, hashed_new: &str) -> Result<(), AppError>;
+    async fn save_token_and_log(
+        &self,
+        token_id: &str,
+        token_data: Value,
+        school_id: &str,
+    ) -> Result<(), AppError>;
+    async fn logout_transaction(
+        &self,
+        token_id: &str,
+        activity_phone: &str,
+        activity_role: &str,
+    ) -> Result<(), AppError>;
 }

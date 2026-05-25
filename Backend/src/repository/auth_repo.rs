@@ -2,7 +2,7 @@ use crate::db::DbClient;
 use crate::repository::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use sqlx::Row;
+use sqlx::{Row, Acquire};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -152,5 +152,96 @@ impl AuthRepository for PostgresAuthRepository {
                 return Ok(code);
             }
         }
+    }
+
+    async fn add_user_activity_log(&self, phone: &str, user_type: &str, action: &str, metadata: Value) -> Result<(), Box<dyn Error + Send + Sync>> {
+        sqlx::query("INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, $3, $4)")
+            .bind(phone)
+            .bind(user_type)
+            .bind(action)
+            .bind(metadata)
+            .execute(&self.client.pool)
+            .await?;
+        Ok(())
+    }
+
+    async fn change_password_tx(&self, school_id: &str, hashed_new: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
+        
+        sqlx::query("INSERT INTO auth (school_id, password) VALUES ($1, $2) ON CONFLICT (school_id) DO UPDATE SET password = $2")
+            .bind(school_id)
+            .bind(hashed_new)
+            .execute(&mut *tx)
+            .await?;
+            
+        sqlx::query("INSERT INTO auth_logs (school_id, action, details) VALUES ($1, 'change-password', $2)")
+            .bind(school_id)
+            .bind(json!({}))
+            .execute(&mut *tx)
+            .await?;
+            
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn save_token_and_log(
+        &self,
+        token_id: &str,
+        token_data: Value,
+        school_id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Save Token (global table)
+        sqlx::query("INSERT INTO tokens (token_id, school_id, user_type, status, expires_at) VALUES ($1, $2, $3, $4, $5)")
+            .bind(token_id)
+            .bind(token_data["schoolId"].as_str())
+            .bind(token_data["userType"].as_str().unwrap_or("school-admin"))
+            .bind(token_data["status"].as_str().unwrap_or("valid"))
+            .bind(
+                chrono::DateTime::parse_from_rfc3339(token_data["expiresAt"].as_str().unwrap_or("1970-01-01T00:00:00Z"))?
+                    .with_timezone(&chrono::Utc),
+            )
+            .execute(&mut *tx)
+            .await?;
+
+        // 2. Add Auth Log (tenant table)
+        sqlx::query("INSERT INTO auth_logs (school_id, action, details) VALUES ($1, 'login', $2)")
+            .bind(school_id)
+            .bind(json!({}))
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
+
+    async fn logout_transaction(
+        &self,
+        token_id: &str,
+        activity_phone: &str,
+        activity_role: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut conn = self.client.pool.acquire().await?;
+        let mut tx = conn.begin().await?;
+
+        // 1. Add User Activity Log (global table)
+        sqlx::query("INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, 'logout', $3)")
+            .bind(activity_phone)
+            .bind(activity_role)
+            .bind(json!({ "timestamp": chrono::Utc::now() }))
+            .execute(&mut *tx)
+            .await?;
+
+        // 2. Revoke Token (global table)
+        sqlx::query("UPDATE tokens SET status = 'revoked', revoked_at = NOW() WHERE token_id = $1")
+            .bind(token_id)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(())
     }
 }

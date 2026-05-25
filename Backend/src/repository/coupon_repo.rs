@@ -14,21 +14,37 @@ impl crate::repository::traits::CouponRepository for PostgresCouponRepository {
     async fn create_coupon(&self, school_id: &str, data: Value) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let coupon_id = format!("CPN{}", chrono::Utc::now().timestamp_millis());
+        let coupon_name = data["couponName"]
+            .as_str()
+            .or_else(|| data["code"].as_str())
+            .unwrap_or("");
+        let discount_type = data["discountType"]
+            .as_str()
+            .or_else(|| data["discount_type"].as_str())
+            .unwrap_or("percentage");
+        let discount_value = data["discountValue"]
+            .as_f64()
+            .or_else(|| data["discount_value"].as_f64())
+            .unwrap_or(0.0);
+
         sqlx::query(
             "INSERT INTO coupons (coupon_id, school_id, coupon_name, discount_type, discount_value, data)
              VALUES ($1, $2, $3, $4, $5, $6)",
         )
         .bind(&coupon_id)
         .bind(school_id)
-        .bind(data["couponName"].as_str())
-        .bind(data["discountType"].as_str().unwrap_or("percentage"))
-        .bind(data["discountValue"].as_f64().unwrap_or(0.0))
+        .bind(coupon_name)
+        .bind(discount_type)
+        .bind(discount_value)
         .bind(&data)
         .execute(&mut *conn)
         .await?;
         
         let mut ret = data.clone();
         ret["couponId"] = json!(coupon_id);
+        ret["couponName"] = json!(coupon_name);
+        ret["discountType"] = json!(discount_type);
+        ret["discountValue"] = json!(discount_value);
         Ok(ret)
     }
 

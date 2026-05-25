@@ -1,0 +1,11 @@
+[
+  {
+    "contact_info": "Issue with login",
+    "created_at": "2026-05-23T17:40:03.780778+00:00",
+    "id": 1,
+    "message": "Cannot login after password reset",
+    "resolved_at": null,
+    "school_name": "689225",
+    "status": "open"
+  }
+]

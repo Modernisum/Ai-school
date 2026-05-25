@@ -18,6 +18,8 @@ pub struct LoginResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub school_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub school_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub password_temp: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
@@ -69,4 +71,13 @@ pub struct ChangeIdRequest {
     pub old_school_id: String,
     pub password: String,
     pub new_school_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SelectProfileRequest {
+    pub ident: String,
+    #[serde(alias = "userId", alias = "user_id")]
+    pub user_id: String,
+    #[serde(alias = "userType", alias = "user_type")]
+    pub user_type: String,
 }

@@ -104,6 +104,12 @@ pub trait ResourceService: Send + Sync {
         material_name: &str,
         data: Value,
     ) -> AppResult<()>;
+    async fn bulk_create_materials(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Vec<Value>,
+    ) -> AppResult<Value>;
 
     // Events
     async fn create_event(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value>;
@@ -118,6 +124,7 @@ pub trait ResourceService: Send + Sync {
         admin_id: &str,
         category: &str,
         name: String,
+        description: Option<String>,
     ) -> AppResult<Value>;
     async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>>;
     async fn list_space_categories(&self, school_id: &str) -> AppResult<Vec<String>>;
@@ -135,6 +142,13 @@ pub trait ResourceService: Send + Sync {
         school_id: &str,
         admin_id: &str,
         space_name: &str,
+    ) -> AppResult<()>;
+    async fn update_space_budget(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        budget: Option<f64>,
     ) -> AppResult<()>;
     async fn get_space_details(
         &self,
@@ -171,7 +185,7 @@ pub trait ResourceService: Send + Sync {
         &self,
         school_id: &str,
         space_name: &str,
-    ) -> AppResult<Vec<Value>>;
+    ) -> AppResult<Value>;
 
     async fn get_all_spaces_materials(
         &self,

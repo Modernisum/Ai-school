@@ -43,8 +43,8 @@ const {
 const ExamManager = () => {
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
-      className: '',
-      subject: '',
+      spaceId: '',
+      responsibilityId: '',
       examType: 'Mid-Term',
       examDuration: 180,
       totalQuestions: 20,
@@ -77,29 +77,29 @@ const ExamManager = () => {
 
   const schoolId = getSchoolId();
   const pollingInterval = useSelector(selectPollingInterval);
-  const { data: classes = [] } = useGetClassIdsQuery(schoolId, { pollingInterval });
-  const [fetchSubjects, { data: subjects = [] }] = useLazyGetSubjectIdsQuery();
+  const { data: spaces = [] } = useGetClassIdsQuery(schoolId, { pollingInterval });
+  const [fetchResponsibilities, { data: responsibilities = [] }] = useLazyGetSubjectIdsQuery();
   const [fetchChapterNames] = useLazyGetChapterNamesQuery();
   const [generatePaperMut, { isLoading: generateLoading }] = useGeneratePaperMutation();
   const [approveExamMut, { isLoading: loading }] = useApproveExamMutation();
 
-  const loadSubjects = async (className) => {
-    if (!className) return;
+  const loadResponsibilities = async (spaceId) => {
+    if (!spaceId) return;
     try {
-      await fetchSubjects({ schoolId, className }).unwrap();
+      await fetchResponsibilities({ schoolId, spaceId }).unwrap();
       setChapters([]);
       setSelectedChapters([]);
     } catch (error) { console.error(error); }
   };
 
-  const loadChapters = async (className, subject) => {
-    if (!className || !subject) {
+  const loadChapters = async (spaceId, responsibilityId) => {
+    if (!spaceId || !responsibilityId) {
       setChapters([]);
       setSelectedChapters([]);
       return;
     }
     try {
-      const data = await fetchChapterNames({ schoolId, className, subject }).unwrap();
+      const data = await fetchChapterNames({ schoolId, spaceId, responsibilityId }).unwrap();
       setChapters(data);
       setSelectedChapters([]);
     } catch (error) {
@@ -119,8 +119,8 @@ const ExamManager = () => {
         schoolId,
         board: getBoard(),
         language: getMedium(),
-        className: values.className,
-        subject: values.subject,
+        spaceId: values.spaceId,
+        responsibilityId: values.responsibilityId,
         chapters: selectedChapters,
         difficulty: 'Medium',
         counts: {
@@ -154,19 +154,19 @@ const ExamManager = () => {
       short: Array.from({ length: qStruct.short || 5 }, (_, i) => ({
         id: `S${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Short answer question ${i + 1} about ${values.subject}. Explain the key concepts and their applications.`,
+        text: `Short answer question ${i + 1} about ${values.responsibilityId}. Explain the key concepts and their applications.`,
         answer: `Sample answer for short question ${i + 1}.`
       })),
       long: Array.from({ length: qStruct.long || 3 }, (_, i) => ({
         id: `L${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Long answer question ${i + 1} about ${values.subject}. Discuss in detail the concepts, theories, and practical applications.`,
+        text: `Long answer question ${i + 1} about ${values.responsibilityId}. Discuss in detail the concepts, theories, and practical applications.`,
         answer: `Sample detailed answer for long question ${i + 1}.`
       })),
       mcq: Array.from({ length: qStruct.mcq || 12 }, (_, i) => ({
         id: `M${i + 1}`,
         chapter: selectedChapters[0] || 'General',
-        text: `Multiple choice question ${i + 1} about ${values.subject}?`,
+        text: `Multiple choice question ${i + 1} about ${values.responsibilityId}?`,
         options: ['Option A', 'Option B', 'Option C', 'Option D'],
         correctIndex: 0,
         explanation: `Explanation for MCQ ${i + 1}.`
@@ -174,7 +174,7 @@ const ExamManager = () => {
     };
 
     return {
-      meta: { board: getBoard(), language: getMedium(), className: values.className, subject: values.subject, chapters: selectedChapters, generatedAt: new Date().toISOString() },
+      meta: { board: getBoard(), language: getMedium(), spaceId: values.spaceId, responsibilityId: values.responsibilityId, chapters: selectedChapters, generatedAt: new Date().toISOString() },
       questions: sampleQuestions
     };
   };
@@ -196,10 +196,10 @@ const ExamManager = () => {
   const approveExam = async () => {
     try {
       const examData = {
-        schoolId, classroom: formValues.className,
-        examName: `${formValues.subject} ${formValues.examType} Exam`,
+        schoolId, spaceId: formValues.spaceId,
+        examName: `${formValues.responsibilityId} ${formValues.examType} Exam`,
         examType: formValues.examType,
-        subjectName: formValues.subject,
+        responsibilityId: formValues.responsibilityId,
         chapters: selectedChapters,
         examDate: new Date(formValues.examDate).toISOString(),
         examTime: formValues.examTime,
@@ -207,7 +207,6 @@ const ExamManager = () => {
         announcementDate: new Date().toISOString(),
         reason: formValues.reason || `${formValues.examType} evaluation`,
         conductTeacher: formValues.conductTeacher || 'Staff Teacher',
-        className: formValues.className
       };
 
       await approveExamMut(examData).unwrap();
@@ -227,7 +226,7 @@ const ExamManager = () => {
 
   const generatePDFContent = () => {
     const totalMarks = calculateTotalMarks();
-    let content = `<div class="header"><h1>${getSchoolName()}</h1><h2>${formValues.subject} - ${formValues.examType}</h2><p>Class: ${formValues.className} | Duration: ${formValues.examDuration}m | Marks: ${totalMarks}</p></div>`;
+    let content = `<div class="header"><h1>${getSchoolName()}</h1><h2>${formValues.responsibilityId} - ${formValues.examType}</h2><p>Space: ${formValues.spaceId} | Duration: ${formValues.examDuration}m | Marks: ${totalMarks}</p></div>`;
     if (generatedPaper) {
       ['short', 'long', 'mcq'].forEach(type => {
         if (selectedQuestions[type].length > 0) {
@@ -243,8 +242,8 @@ const ExamManager = () => {
     return content;
   };
 
-  useEffect(() => { if (formValues.className) loadSubjects(formValues.className); }, [formValues.className]);
-  useEffect(() => { if (formValues.className && formValues.subject) loadChapters(formValues.className, formValues.subject); }, [formValues.className, formValues.subject]);
+  useEffect(() => { if (formValues.spaceId) loadResponsibilities(formValues.spaceId); }, [formValues.spaceId]);
+  useEffect(() => { if (formValues.spaceId && formValues.responsibilityId) loadChapters(formValues.spaceId, formValues.responsibilityId); }, [formValues.spaceId, formValues.responsibilityId]);
 
   return (
     <div className="max-w-full p-1 space-y-2">
@@ -267,7 +266,7 @@ const ExamManager = () => {
 
       <KPIWidget columns={4}>
          <KPITile label="System Status" value="Normal" sub="AI engine active" icon={Zap} color="primary" />
-         <KPITile label="Class" value={formValues.className || 'NONE'} sub="Selected class" icon={Layout} color="accent" />
+         <KPITile label="Space" value={formValues.spaceId || 'NONE'} sub="Selected workspace" icon={Layout} color="accent" />
          <KPITile label="Total Marks" value={calculateTotalMarks()} sub="Exam weight" icon={Award} color="success" />
          <KPITile label="Duration" value={`${formValues.examDuration}m`} sub="Time limit" icon={Clock} color="warning" />
       </KPIWidget>
@@ -279,13 +278,14 @@ const ExamManager = () => {
             description="Configure exam structure and parameters"
             sections={[
               {
-                id: 'basic', label: 'Class & Subject', icon: BookOpen,
+                id: 'basic', label: 'Space & Responsibility', icon: BookOpen,
                 fields: [
-                  { name: 'className', label: 'Select Class', type: 'select', options: classes.map(c => ({ value: c, label: c.toUpperCase() })), required: true, labelIcon: Layout },
-                  { name: 'subject', label: 'Select Subject', type: 'select', options: subjects.map(s => ({ value: s, label: s })), required: true, labelIcon: Book },
+                  { name: 'spaceId', label: 'Select Space (Class)', type: 'select', options: spaces.map(s => ({ value: s, label: s.toUpperCase() })), required: true, labelIcon: Layout },
+                  { name: 'responsibilityId', label: 'Select Responsibility (Subject)', type: 'select', options: responsibilities.map(s => ({ value: s, label: s })), required: true, labelIcon: Book },
                   { name: 'chapters', label: 'Select Chapters', type: 'select', multiple: true, options: chapters.map(c => ({ value: c, label: c })), value: selectedChapters, onChange: setSelectedChapters, labelIcon: Activity }
                 ]
               },
+...
               {
                 id: 'config', label: 'Exam Schedule', icon: Settings,
                 fields: [

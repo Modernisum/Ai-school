@@ -108,8 +108,49 @@ impl MaterialOperations {
         material_name: &str,
         data: Value,
     ) -> AppResult<()> {
-        self.repos.resource.sell_material(school_id, admin_id, material_name, data).await?;
+        self.repos.resource.sell_material(school_id, admin_id, material_name, data.clone()).await?;
+        
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "MATERIAL",
+            material_name,
+            "SELL",
+            data
+        ).await;
         Ok(())
+    }
+
+    pub async fn bulk_create_materials(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Vec<Value>,
+    ) -> AppResult<Value> {
+        let mut success_count = 0;
+        let mut fail_count = 0;
+        let mut results = Vec::new();
+
+        for (i, row) in data.into_iter().enumerate() {
+            match self.create_material(school_id, admin_id, row.clone()).await {
+                Ok(_) => {
+                    success_count += 1;
+                    results.push(serde_json::json!({"row": i + 1, "status": "success"}));
+                }
+                Err(e) => {
+                    fail_count += 1;
+                    results.push(serde_json::json!({"row": i + 1, "status": "error", "message": e.to_string()}));
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "success": true,
+            "message": format!("{} materials imported, {} failed", success_count, fail_count),
+            "results": results,
+            "successCount": success_count,
+            "failCount": fail_count
+        }))
     }
 
     pub async fn get_materials_dashboard(&self, school_id: &str) -> AppResult<Value> {

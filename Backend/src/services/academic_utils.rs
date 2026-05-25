@@ -144,7 +144,7 @@ pub fn generate_sections(student_count: i32) -> Vec<Value> {
 }
 
 pub fn get_default_spaces() -> Vec<&'static str> {
-    vec!["classroom", "kitchen", "storeroom", "office", "ground", "parking", "canteen", "park"]
+    vec!["classroom", "kitchen", "storeroom", "office", "ground", "parking", "canteen", "park", "lab"]
 }
 
 
@@ -158,7 +158,7 @@ pub fn get_default_materials() -> HashMap<&'static str, Vec<Value>> {
         json!({"materialName": "Whiteboard Marker", "quantity": 3, "unitPrice": 50, "unit": "pcs", "description": "Non-toxic dry erase marker"}),
         json!({"materialName": "Wall Photograph", "quantity": 2, "unitPrice": 200, "unit": "pcs", "description": "Educational wall frames"}),
     ]);
-    m.insert("laboratory", vec![
+    m.insert("lab", vec![
         json!({"materialName": "Lab Table", "quantity": 10, "unitPrice": 8000, "unit": "pcs", "description": "Acid-resistant lab workstation"}),
         json!({"materialName": "Stool", "quantity": 20, "unitPrice": 1200, "unit": "pcs", "description": "High-seated lab stool"}),
         json!({"materialName": "Microscope", "quantity": 5, "unitPrice": 15000, "unit": "pcs", "description": "Compound light microscope"}),

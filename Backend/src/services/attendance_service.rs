@@ -20,14 +20,41 @@ impl AttendanceService for PostgresAttendanceService {
         admin_id: &str,
         data: Value,
     ) -> AppResult<Value> {
-        let date = data["date"]
+        let mut final_data = data.clone();
+
+        // Normalize snake_case fields to camelCase
+        if let Some(in_t) = final_data.get("in_time").and_then(|v| v.as_str()) {
+            final_data["inTime"] = json!(in_t);
+        }
+        if let Some(out_t) = final_data.get("out_time").and_then(|v| v.as_str()) {
+            final_data["outTime"] = json!(out_t);
+        }
+        if let Some(total_t) = final_data.get("total_time").and_then(|v| v.as_str()) {
+            final_data["totalTime"] = json!(total_t);
+        }
+
+        // Ensure status defaults to "present"
+        if final_data.get("status").and_then(|v| v.as_str()).unwrap_or("").is_empty() {
+            final_data["status"] = json!("present");
+        }
+
+        let date = final_data["date"]
             .as_str()
             .unwrap_or(&Local::now().format("%Y-%m-%d").to_string())
             .to_string();
 
-        let mut final_data = data.clone();
+        if let Some(in_t) = final_data.get("inTime").and_then(|v| v.as_str()) {
+            if let Some(normalized) = parse_to_rfc3339(in_t, &date) {
+                final_data["inTime"] = json!(normalized);
+            }
+        }
+        if let Some(out_t) = final_data.get("outTime").and_then(|v| v.as_str()) {
+            if let Some(normalized) = parse_to_rfc3339(out_t, &date) {
+                final_data["outTime"] = json!(normalized);
+            }
+        }
 
-        if let (Some(in_t), Some(out_t)) = (data["inTime"].as_str(), data["outTime"].as_str()) {
+        if let (Some(in_t), Some(out_t)) = (final_data["inTime"].as_str(), final_data["outTime"].as_str()) {
             let duration = self.calculate_duration(in_t, out_t);
             final_data["totalTime"] = json!(duration);
         }
@@ -145,10 +172,12 @@ impl AttendanceService for PostgresAttendanceService {
         admin_id: &str,
         data: Value,
     ) -> AppResult<Value> {
-        let out_time = data["outTime"]
+        let out_time_input = data["outTime"]
             .as_str()
+            .or_else(|| data["out_time"].as_str())
             .ok_or_else(|| AppError::Validation("outTime is required".to_string()))?
             .to_string();
+        let out_time = parse_to_rfc3339(&out_time_input, date).unwrap_or(out_time_input);
 
         let existing_list = self
             .repos
@@ -171,6 +200,13 @@ impl AttendanceService for PostgresAttendanceService {
         let mut updated = existing.clone();
         updated["outTime"] = json!(out_time);
         updated["totalTime"] = json!(total_time);
+
+        if let Some(status) = data["status"].as_str() {
+            updated["status"] = json!(status);
+        }
+        if let Some(reason) = data["reason"].as_str() {
+            updated["reason"] = json!(reason);
+        }
 
         self.repos
             .attendance
@@ -296,18 +332,16 @@ impl AttendanceService for PostgresAttendanceService {
             )
         };
 
-        let rows = sqlx::query("SELECT id, title, description, from_date, to_date, classes FROM school_holidays WHERE school_id = $1 AND (($2::date <= to_date AND $3::date >= from_date)) ORDER BY from_date ASC")
-            .bind(school_id).bind(&start_date).bind(&end_date)
-            .fetch_all(&self.repos.db_client.pool).await?;
+        let list = self.repos.attendance.list_holidays(school_id, &start_date, &end_date).await?;
 
         let mut data = Vec::new();
-        for r in rows {
-            let id: String = sqlx::Row::get(&r, "id");
-            let title: String = sqlx::Row::get(&r, "title");
-            let desc: String = sqlx::Row::get(&r, "description");
-            let from_str: String = sqlx::Row::get(&r, "from_date");
-            let to_str: String = sqlx::Row::get(&r, "to_date");
-            let classes: Value = sqlx::Row::get(&r, "classes");
+        for r in list {
+            let id = r["id"].as_str().unwrap_or("").to_string();
+            let title = r["title"].as_str().unwrap_or("").to_string();
+            let desc = r["description"].as_str().unwrap_or("").to_string();
+            let from_str = r["fromDate"].as_str().unwrap_or("").to_string();
+            let to_str = r["toDate"].as_str().unwrap_or("").to_string();
+            let classes = r["classes"].clone();
 
             if let (Ok(start), Ok(end)) = (
                 chrono::NaiveDate::parse_from_str(&from_str, "%Y-%m-%d"),
@@ -331,21 +365,9 @@ impl AttendanceService for PostgresAttendanceService {
     }
 
     async fn get_holiday_detail(&self, school_id: &str, holiday_id: &str) -> AppResult<Value> {
-        let r = sqlx::query("SELECT id, title, description, from_date, to_date, classes, exempt_employees, exempt_students, created_at FROM school_holidays WHERE id = $1 AND school_id = $2")
-            .bind(holiday_id).bind(school_id).fetch_optional(&self.repos.db_client.pool).await?
+        let holiday = self.repos.attendance.get_holiday(school_id, holiday_id).await?
             .ok_or_else(|| AppError::NotFound("Holiday not found".to_string()))?;
-
-        Ok(json!({
-            "id": sqlx::Row::get::<String, _>(&r, "id"),
-            "title": sqlx::Row::get::<String, _>(&r, "title"),
-            "description": sqlx::Row::get::<String, _>(&r, "description"),
-            "fromDate": sqlx::Row::get::<String, _>(&r, "from_date"),
-            "toDate": sqlx::Row::get::<String, _>(&r, "to_date"),
-            "classes": sqlx::Row::get::<Value, _>(&r, "classes"),
-            "exemptEmployees": sqlx::Row::get::<Value, _>(&r, "exempt_employees"),
-            "exemptStudents": sqlx::Row::get::<Value, _>(&r, "exempt_students"),
-            "createdAt": sqlx::Row::get::<String, _>(&r, "created_at"),
-        }))
+        Ok(holiday)
     }
 
     async fn create_school_holiday(&self, school_id: &str, data: Value) -> AppResult<Value> {
@@ -362,29 +384,22 @@ impl AttendanceService for PostgresAttendanceService {
         let ex_std = data["exemptStudents"].clone();
         let now = Local::now().format("%Y-%m-%d").to_string();
 
-        sqlx::query("INSERT INTO school_holidays (id, school_id, title, description, from_date, to_date, classes, exempt_employees, exempt_students, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)")
-            .bind(&id).bind(school_id).bind(&title).bind(&desc).bind(&from_date).bind(&to_date).bind(&classes).bind(&ex_emp).bind(&ex_std).bind(&now)
-            .execute(&self.repos.db_client.pool).await?;
+        self.repos.attendance.insert_holiday(&id, school_id, &title, &desc, &from_date, &to_date, classes, ex_emp, ex_std, &now).await?;
 
         Ok(json!({ "id": id, "title": title, "fromDate": from_date, "toDate": to_date }))
     }
 
     async fn delete_school_holiday(&self, school_id: &str, holiday_id: &str) -> AppResult<()> {
-        sqlx::query("DELETE FROM school_holidays WHERE id=$1 AND school_id=$2")
-            .bind(holiday_id)
-            .bind(school_id)
-            .execute(&self.repos.db_client.pool)
-            .await?;
+        self.repos.attendance.delete_holiday(school_id, holiday_id).await?;
         Ok(())
     }
 
     async fn check_school_holiday(&self, school_id: &str, date: &str) -> AppResult<Value> {
-        let r = sqlx::query("SELECT id, title FROM school_holidays WHERE school_id=$1 AND from_date<=$2::date AND to_date>=$2::date LIMIT 1")
-            .bind(school_id).bind(date).fetch_optional(&self.repos.db_client.pool).await?;
+        let r = self.repos.attendance.check_holiday(school_id, date).await?;
 
         match r {
             Some(row) => Ok(
-                json!({ "success": true, "isHoliday": true, "holidayId": sqlx::Row::get::<String, _>(&row, "id"), "reason": sqlx::Row::get::<String, _>(&row, "title") }),
+                json!({ "success": true, "isHoliday": true, "holidayId": row["id"], "reason": row["title"] }),
             ),
             None => Ok(json!({ "success": true, "isHoliday": false })),
         }
@@ -451,27 +466,23 @@ impl AttendanceService for PostgresAttendanceService {
         class_name: &str,
         date: &str,
     ) -> AppResult<Vec<Value>> {
-        let rows = sqlx::query(
-            "SELECT a.user_id, a.data, s.name as student_name \
-             FROM attendance a \
-             JOIN students s ON s.student_id = a.user_id AND s.school_id = a.school_id \
-             WHERE a.school_id = $1 AND a.role = 'student' AND a.date = $2::date \
-             AND s.class_id = $3"
-        )
-        .bind(school_id).bind(date).bind(class_name)
-        .fetch_all(&self.repos.db_client.pool)
-        .await?;
-
-        Ok(rows.into_iter().map(|r| {
-            let uid: String = sqlx::Row::get(&r, "user_id");
-            let name: String = sqlx::Row::get(&r, "student_name");
-            let data: Value = sqlx::Row::get(&r, "data");
+        let records = self.repos.attendance.get_class_attendance(school_id, class_name, date).await?;
+        
+        Ok(records.into_iter().map(|r| {
+            let uid = r.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let name = r.get("user_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+            let in_time = r.get("in_time").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let out_time = r.get("out_time").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let total_time = r.get("total_time").and_then(|v| v.as_str()).map(|s| s.to_string());
+            
             json!({
                 "userId": uid,
                 "studentName": name,
-                "status": data["status"].as_str().unwrap_or("unknown"),
-                "inTime": data["inTime"].as_str(),
-                "note": data["note"].as_str()
+                "status": status,
+                "inTime": in_time,
+                "outTime": out_time,
+                "totalTime": total_time
             })
         }).collect())
     }
@@ -598,4 +609,37 @@ impl PostgresAttendanceService {
         }
         delta
     }
+}
+
+// Helper to normalize input time string (like "09:00") into a timezone-aware RFC3339 timestamp combined with YYYY-MM-DD date.
+fn parse_to_rfc3339(time_str: &str, date_str: &str) -> Option<String> {
+    let t_trimmed = time_str.trim();
+    if t_trimmed.is_empty() {
+        return None;
+    }
+    // If it's already a full RFC3339 date-time
+    if chrono::DateTime::parse_from_rfc3339(t_trimmed).is_ok() {
+        return Some(t_trimmed.to_string());
+    }
+    // Otherwise, check if it is in HH:MM or HH:MM:SS format
+    let parts: Vec<&str> = t_trimmed.split(':').collect();
+    if parts.len() >= 2 {
+        let hr = parts[0].parse::<u32>().ok()?;
+        let min = parts[1].parse::<u32>().ok()?;
+        let sec = if parts.len() > 2 { parts[2].parse::<u32>().ok().unwrap_or(0) } else { 0 };
+        if hr < 24 && min < 60 && sec < 60 {
+            // date_str should be in YYYY-MM-DD format
+            let date_parts: Vec<&str> = date_str.split('-').collect();
+            if date_parts.len() == 3 {
+                let yr = date_parts[0].parse::<i32>().ok()?;
+                let mo = date_parts[1].parse::<u32>().ok()?;
+                let dy = date_parts[2].parse::<u32>().ok()?;
+                if mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31 {
+                    // Assemble into UTC RFC3339 string
+                    return Some(format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", yr, mo, dy, hr, min, sec));
+                }
+            }
+        }
+    }
+    None
 }

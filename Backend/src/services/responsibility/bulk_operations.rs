@@ -19,9 +19,10 @@ impl ResponsibilityBulkOperations {
         responsibility_id: &str,
         admin_id: &str,
         updates: Vec<(String, Vec<String>)>,
-    ) -> AppResult<usize> {
+    ) -> AppResult<(usize, Vec<String>)> {
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
         let mut count = 0;
+        let mut warnings = Vec::new();
         let updates_for_log = updates.clone();
 
         for (employee_id, space_ids) in updates.iter() {
@@ -45,16 +46,35 @@ impl ResponsibilityBulkOperations {
                 }
             }
 
-            // Update employee_responsibility
+            // Conflict warning check: check if this employee is already assigned to these spaces in any responsibility
+            let existing_assignments = self.repos.responsibility.get_employee_responsibilities(school_id, employee_id).await?;
+            for target_space in space_ids {
+                for existing in &existing_assignments {
+                    if let Some(assigned_spaces) = existing["assignedSpaceIds"].as_array() {
+                        if assigned_spaces.iter().any(|s| s.as_str() == Some(target_space)) {
+                            // Don't warn if it's the exact same responsibility we're updating
+                            if existing["responsibilityId"].as_str() != Some(responsibility_id) {
+                                warnings.push(format!(
+                                    "Employee '{}' is already assigned to space '{}' for responsibility '{}'",
+                                    employee_id, target_space, existing["name"].as_str().unwrap_or("unknown")
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // UPSERT employee_responsibility
             sqlx::query(
-                "UPDATE employee_responsibilities
-                 SET space_ids = $1, updated_at = NOW()
-                 WHERE school_id = $2 AND responsibility_id = $3 AND employee_id = $4"
+                "INSERT INTO employee_responsibilities (school_id, employee_id, responsibility_id, space_ids, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, NOW(), NOW())
+                 ON CONFLICT (school_id, employee_id, responsibility_id)
+                 DO UPDATE SET space_ids = EXCLUDED.space_ids, updated_at = NOW()"
             )
-            .bind(space_ids)
             .bind(school_id)
-            .bind(responsibility_id)
             .bind(employee_id)
+            .bind(responsibility_id)
+            .bind(space_ids)
             .execute(&mut *conn)
             .await?;
 
@@ -74,9 +94,8 @@ impl ResponsibilityBulkOperations {
             })
         ).await;
 
-        Ok(count)
+        Ok((count, warnings))
     }
-
     pub async fn bulk_assign_responsibilities(
         &self,
         school_id: &str,

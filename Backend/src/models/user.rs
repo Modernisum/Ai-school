@@ -5,40 +5,77 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct CreateStudentRequest {
     pub name: String,
+    #[serde(default)]
+    pub space_id: String,
+    #[serde(default)]
     pub class_name: String,
+    #[serde(default)]
     pub gender: String,
+    #[serde(default)]
     pub dob: String,
+    #[serde(default)]
     pub contact: String,
+    #[serde(default)]
     pub email: String,
+    #[serde(default)]
     pub aadhaar_number: String,
+    #[serde(default)]
     pub father_name: String,
+    #[serde(default)]
     pub mother_name: String,
+    #[serde(default)]
     pub parent_name: String,
+    #[serde(default)]
     pub parent_contact: String,
+    #[serde(default)]
     pub address_line1: String,
+    #[serde(default)]
     pub address_country_id: Option<i64>,
+    #[serde(default)]
     pub address_country_code: Option<String>,
+    #[serde(default)]
     pub address_phone_code: Option<String>,
+    #[serde(default)]
     pub address_state_id: Option<i64>,
+    #[serde(default)]
     pub address_state: String,
+    #[serde(default)]
     pub address_district: Option<String>,
+    #[serde(default)]
     pub address_city: String,
+    #[serde(default)]
     pub address_pincode: String,
+    #[serde(default)]
     pub alternative_contact: Option<String>,
+    #[serde(default)]
     pub tc_number: Option<String>,
+    #[serde(default)]
     pub admission_date: String,
+    #[serde(default)]
     pub room_number: Option<String>,
+    #[serde(default)]
     pub transport_enabled: bool,
+    #[serde(default)]
     pub transport_radius: Option<f64>,
+    #[serde(default)]
     pub student_type: String,
+    #[serde(default)]
     pub enrolled_subjects: Option<serde_json::Value>,
+    #[serde(default)]
     pub total_fee: f64,
+    #[serde(default)]
     pub selected_subjects: Option<Vec<String>>,
+    #[serde(default)]
     pub profile_image_url: String,
+    #[serde(default)]
     pub blood_group: Option<String>,
+    #[serde(default)]
     pub caste: Option<String>,
+    #[serde(default)]
     pub medical_history: Option<String>,
+    #[serde(default)]
     pub allergies: Option<String>,
+    #[serde(default)]
     pub emergency_contact: Option<String>,
 }
 
@@ -48,7 +85,7 @@ pub struct StudentResponse {
     pub student_id: String,
     pub school_id: String,
     pub name: Option<String>,
-    pub class_name: String,
+    pub space_id: String,
     pub roll_number: i32,
     pub section: String,
     pub gender: Option<String>,

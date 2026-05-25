@@ -54,35 +54,32 @@ impl StudentService for PostgresStudentService {
     ) -> AppResult<Vec<Value>> {
         self.crud.list_students(school_id).await
     }
+async fn list_students_paginated(
+    &self,
+    school_id: &str,
+    page: i32,
+    limit: i32,
+    space_id: Option<&str>,
+    status: Option<&str>,
+    search: Option<&str>,
+) -> AppResult<(Vec<Value>, i64)> {
+    self.repos.student.get_students_paginated(
+        school_id,
+        page,
+        limit,
+        space_id,
+        None, // section
+        status,
+        search,
+    ).await.map_err(AppError::from)
+}
 
-    async fn list_students_paginated(
+    async fn list_students_by_space(
         &self,
         school_id: &str,
-        page: i32,
-        limit: i32,
-        class_name: Option<&str>,
-        section: Option<&str>,
-        status: Option<&str>,
-        search: Option<&str>,
-    ) -> AppResult<(Vec<Value>, i64)> {
-        self.repos.student.get_students_paginated(
-            school_id,
-            page,
-            limit,
-            class_name,
-            section,
-            status,
-            search,
-        ).await.map_err(AppError::from)
-    }
-
-    async fn list_students_by_class(
-        &self,
-        school_id: &str,
-        class_name: &str,
-        section: Option<&str>,
+        space_id: &str,
     ) -> AppResult<Vec<Value>> {
-        self.crud.list_students_by_class(school_id, class_name, section).await
+        self.crud.list_students_by_space(school_id, space_id).await
     }
 
     async fn get_student(
@@ -115,9 +112,9 @@ impl StudentService for PostgresStudentService {
     async fn resequence_roll_numbers(
         &self,
         school_id: &str,
-        class_name: &str,
+        space_id: &str,
     ) -> AppResult<()> {
-        self.crud.resequence_roll_numbers(school_id, class_name).await
+        self.crud.resequence_roll_numbers(school_id, space_id).await
     }
 
     async fn list_student_ids(

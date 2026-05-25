@@ -278,12 +278,12 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
-        // 1. Get current profile_image_url for cleanup
-        let old_photo: Option<String> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
+        let old_photo: Option<Option<String>> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id)
             .bind(student_id)
             .fetch_optional(&mut *conn)
             .await?;
+        let old_photo = old_photo.flatten();
 
         // 2. Perform the update
         sqlx::query(
@@ -382,9 +382,9 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
     async fn delete_student(&self, school_id: &str, student_id: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
-        // 1. Get photo for cleanup
-        let photo: Option<String> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
+        let photo: Option<Option<String>> = sqlx::query_scalar("SELECT profile_image_url FROM students WHERE school_id = $1 AND student_id = $2")
             .bind(school_id).bind(student_id).fetch_optional(&mut *conn).await?;
+        let photo = photo.flatten();
 
         // 2. Delete student
         sqlx::query("DELETE FROM students WHERE school_id = $1 AND student_id = $2")
@@ -467,43 +467,43 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
 
     async fn add_history(&self, school_id: &str, student_id: &str, rev_no: i32, snapshot: Value, delta: Value) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO student_history (school_id, student_id, revision_no, snapshot, delta) VALUES ($1, $2, $3, $4, $5)")
+        sqlx::query("INSERT INTO student_history (school_id, student_id, rev_no, snapshot, delta) VALUES ($1, $2, $3, $4, $5)")
             .bind(school_id).bind(student_id).bind(rev_no).bind(snapshot).bind(delta).execute(&mut *conn).await?;
         Ok(())
     }
 
     async fn get_next_rev_no(&self, school_id: &str, student_id: &str) -> Result<i32, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let row = sqlx::query("SELECT COALESCE(MAX(revision_no), 0) + 1 FROM student_history WHERE school_id = $1 AND student_id = $2")
+        let row = sqlx::query("SELECT COALESCE(MAX(rev_no), 0) + 1 FROM student_history WHERE school_id = $1 AND student_id = $2")
             .bind(school_id).bind(student_id).fetch_one(&mut *conn).await?;
         Ok(row.get(0))
     }
 
     async fn get_history_by_id(&self, school_id: &str, id: i32) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let row = sqlx::query("SELECT id, student_id, revision_no, snapshot, delta, rev_date FROM student_history WHERE school_id = $1 AND id = $2")
+        let row = sqlx::query("SELECT id, student_id, rev_no, snapshot, delta, created_at FROM student_history WHERE school_id = $1 AND id = $2")
             .bind(school_id).bind(id).fetch_optional(&mut *conn).await?;
         Ok(row.map(|r| json!({
             "id": r.get::<i32, _>("id"), 
             "studentId": r.get::<String, _>("student_id"), 
-            "revisionNo": r.get::<i32, _>("revision_no"),
+            "revisionNo": r.get::<i32, _>("rev_no"),
             "snapshot": r.get::<Value, _>("snapshot"),
             "delta": r.get::<Value, _>("delta"),
-            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("rev_date").to_rfc3339()
+            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
         })))
     }
 
     async fn get_all_student_history(&self, school_id: &str) -> Result<JsonList, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let rows = sqlx::query("SELECT id, student_id, revision_no, snapshot, delta, rev_date FROM student_history WHERE school_id = $1 ORDER BY rev_date DESC")
+        let rows = sqlx::query("SELECT id, student_id, rev_no, snapshot, delta, created_at FROM student_history WHERE school_id = $1 ORDER BY created_at DESC")
             .bind(school_id).fetch_all(&mut *conn).await?;
         Ok(rows.into_iter().map(|r| json!({
             "id": r.get::<i32, _>("id"), 
             "studentId": r.get::<String, _>("student_id"), 
-            "revisionNo": r.get::<i32, _>("revision_no"),
+            "revisionNo": r.get::<i32, _>("rev_no"),
             "snapshot": r.get::<Value, _>("snapshot"),
             "delta": r.get::<Value, _>("delta"),
-            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("rev_date").to_rfc3339()
+            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
         })).collect())
     }
 
@@ -630,5 +630,14 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
             "totalPaid": total_paid,
             "totalPending": total_pending.max(0.0)
         })))
+    }
+
+    async fn get_active_students_count(&self, school_id: &str) -> Result<i64, AppError> {
+        let row = sqlx::query("SELECT COUNT(*) as count FROM students WHERE school_id = $1 AND status = 'active'")
+            .bind(school_id)
+            .fetch_one(&self.client.pool)
+            .await?;
+        let count: i64 = row.get("count");
+        Ok(count)
     }
 }

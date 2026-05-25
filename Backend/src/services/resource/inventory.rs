@@ -20,8 +20,9 @@ impl InventoryOperations {
         admin_id: &str,
         category: &str,
         name: String,
+        description: Option<String>,
     ) -> AppResult<Value> {
-        let res = self.repos.resource.create_space(school_id, category, name).await?;
+        let res = self.repos.resource.create_space(school_id, category, name, description).await?;
 
         let _ = self.repos.audit.log_action(
             school_id,
@@ -67,6 +68,15 @@ impl InventoryOperations {
         admin_id: &str,
         name: &str,
     ) -> AppResult<()> {
+        // Security: Prevent deletion of core system categories
+        let protected_categories = ["classroom", "office", "lab", "ground"];
+        if protected_categories.contains(&name.to_lowercase().as_str()) {
+            return Err(AppError::Validation(format!(
+                "The category '{}' is a core system standard and cannot be deleted to ensure system integrity.",
+                name
+            )));
+        }
+
         self.repos.resource.delete_space_category(school_id, name).await?;
 
         let _ = self.repos.audit.log_action(
@@ -134,7 +144,7 @@ impl InventoryOperations {
         &self,
         school_id: &str,
         space_name: &str,
-    ) -> AppResult<Vec<Value>> {
+    ) -> AppResult<Value> {
         Ok(self.repos.resource.get_space_materials(school_id, space_name).await?)
     }
 
@@ -180,60 +190,31 @@ impl InventoryOperations {
         Ok(res)
     }
 
+    pub async fn update_space_budget(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        budget: Option<f64>,
+    ) -> AppResult<()> {
+        self.repos.resource.update_space_budget(school_id, space_name, budget).await?;
+
+        let _ = self.repos.audit.log_action(
+            school_id,
+            admin_id,
+            "SPACE",
+            space_name,
+            "UPDATE_BUDGET",
+            serde_json::json!({"budget": budget})
+        ).await;
+        Ok(())
+    }
+
     pub async fn get_all_spaces_materials(
         &self,
         school_id: &str,
     ) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                sm.space_name,
-                sm.material_name,
-                sm.quantity,
-                sm.unit,
-                sm.unit_price,
-                COALESCE(req.required_count, 0) as required_count
-            FROM space_materials sm
-            LEFT JOIN space_material_requirements req
-                ON req.school_id = sm.school_id
-                AND req.space_name = sm.space_name
-                AND req.material_name = sm.material_name
-            WHERE sm.school_id = $1
-            ORDER BY sm.space_name, sm.material_name
-            "#,
-        )
-        .bind(school_id)
-        .fetch_all(&mut *conn)
-        .await?;
-
-        let mut space_map: std::collections::BTreeMap<String, Vec<Value>> = std::collections::BTreeMap::new();
-
-        for row in rows {
-            let space_name: String = row.get("space_name");
-            let material_name: String = row.get("material_name");
-            let quantity: i32 = row.get("quantity");
-            let unit: Option<String> = row.get("unit");
-            let unit_price: Option<f64> = row.get("unit_price");
-            let required: i32 = row.get("required_count");
-
-            let status = if required > 0 && quantity < required { "deficit" } else if required > 0 { "full" } else { "unset" };
-
-            space_map.entry(space_name).or_default().push(json!({
-                "materialName": material_name,
-                "quantity": quantity,
-                "unit": unit,
-                "unitPrice": unit_price,
-                "requiredCount": required,
-                "status": status,
-            }));
-        }
-
-        Ok(json!({
-            "success": true,
-            "data": space_map
-        }))
+        Ok(self.repos.resource.get_all_spaces_materials(school_id).await?)
     }
 
     pub async fn assign_space_materials(

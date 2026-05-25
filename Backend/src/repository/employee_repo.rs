@@ -266,11 +266,12 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
         // 1. Get current photo for cleanup (from the JSONB data column)
-        let old_photo: Option<String> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
+        let old_photo: Option<Option<String>> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
             .bind(school_id)
             .bind(employee_id)
             .fetch_optional(&mut *conn)
             .await?;
+        let old_photo = old_photo.flatten();
 
         // 2. Perform the update
         let employee_type = data["employeeType"].as_str().or(data["type"].as_str());
@@ -341,8 +342,9 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
         // 1. Get photo for cleanup
-        let photo: Option<String> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
+        let photo: Option<Option<String>> = sqlx::query_scalar("SELECT data->>'profileImageUrl' FROM employees WHERE school_id = $1 AND employee_id = $2")
             .bind(school_id).bind(employee_id).fetch_optional(&mut *conn).await?;
+        let photo = photo.flatten();
 
         // 2. Delete
         sqlx::query("DELETE FROM employees WHERE school_id = $1 AND employee_id = $2")

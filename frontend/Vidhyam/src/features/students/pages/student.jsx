@@ -19,7 +19,7 @@ import GlassCard from '../../../components/ui/GlassCard';
 import KPITile from '../../../components/ui/KPITile';
 import KPIWidget from '../../../components/ui/KPIWidget';
 import SkeletonLoader from '../../../components/ui/SkeletonLoader';
-import { useGetStudentsQuery, useDeleteStudentMutation, useUpdateStudentMutation } from '../api/studentApi';
+import { useGetStudentsQuery, useDeleteStudentMutation, useUpdateStudentMutation, useBulkImportStudentsMutation } from '../api/studentApi';
 import { academicApi } from '../../academics/api/academicApi';
 const { useGetClassesQuery, useGetAdvancedAttendanceQuery } = academicApi;
 import { selectPollingInterval } from '../../settings/settingsSlice';
@@ -176,6 +176,8 @@ export default function StudentManagement() {
     const [editStudentId, setEditStudentId] = useState(null);
     const [profileDrawer, setProfileDrawer] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null); 
+    const [bulkModalOpen, setBulkModalOpen] = useState(false);
+    const [bulkImportStudents] = useBulkImportStudentsMutation();
 
     const navigate = useNavigate();
 
@@ -191,14 +193,14 @@ export default function StudentManagement() {
     };
 
     // ── Grid Configurations ───────────────────────────────────────────────────
-    const classes = useMemo(() => classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')), [classData]);
+    const spaces = useMemo(() => classData.map(c => c.spaceId || c.name || c.className || (typeof c === 'string' ? c : '')), [classData]);
     
     const filtered = useMemo(() => students.filter(s => {
         const name = (s.name || s.studentName || '').toLowerCase();
         const id = (s.studentId || s.student_id || '').toLowerCase();
-        const cls = s.className || s.classId || '';
+        const sid = s.spaceId || s.space_id || '';
         return (name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm.toLowerCase()))
-            && (filterClass === 'All' || cls === filterClass);
+            && (filterClass === 'All' || sid === filterClass);
     }), [students, searchTerm, filterClass]);
 
     const privateStudents = students.filter(s => (s.type || s.studentType || '').toLowerCase() === 'private');
@@ -235,11 +237,11 @@ export default function StudentManagement() {
             )
         },
         { 
-            header: 'Class', 
-            key: 'className',
+            header: 'Space (Class)', 
+            key: 'spaceId',
             render: (val, row) => (
                 <span className="text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-main)] border border-[var(--glass-border)] px-2 py-1 rounded uppercase tracking-widest">
-                    {val || row.classId || 'NULL'}
+                    {val || row.space_id || 'NULL'}
                 </span>
             )
         }
@@ -273,6 +275,14 @@ export default function StudentManagement() {
                               size="xs"
                             />
                             <StandardButton
+                              variant="ghost"
+                              onClick={() => setBulkModalOpen(true)}
+                              icon={UploadCloud}
+                              size="xs"
+                              label="Import CSV"
+                              className="hidden sm:flex"
+                            />
+                            <StandardButton
                               variant="primary"
                               onClick={() => navigate('/dashboard/student/add')}
                               icon={Plus}
@@ -290,7 +300,7 @@ export default function StudentManagement() {
                         kpis={[
                             { label: "Total Active", value: students.length, icon: GraduationCap, color: "primary" },
                             { label: "Private", value: privateStudents.length, icon: ShieldCheck, color: "accent" },
-                            { label: "Classes", value: classes.length, icon: Layers, color: "warning" },
+                            { label: "Spaces", value: spaces.length, icon: Layers, color: "warning" },
                             { label: "Status", value: "Optimal", icon: ShieldCheck, color: "success" }
                         ]}
                     />
@@ -314,8 +324,8 @@ export default function StudentManagement() {
                                 dense
                                 key="class-filter"
                                 options={[
-                                    { label: 'ALL CLASSES', value: 'All' },
-                                    ...classes.map(c => ({ label: c.toUpperCase(), value: c }))
+                                    { label: 'ALL SPACES', value: 'All' },
+                                    ...spaces.map(s => ({ label: s.toUpperCase(), value: s }))
                                 ]}
                                 value={filterClass}
                                 onChange={setFilterClass}
@@ -443,6 +453,17 @@ export default function StudentManagement() {
                     )}
                 </AnimatePresence>
 
-            </div>
+            <BulkImportModal
+                isOpen={bulkModalOpen}
+                onClose={() => setBulkModalOpen(false)}
+                title="Bulk Import Students"
+                expectedHeaders={['name', 'className', 'email', 'contact', 'address', 'aadhaarNumber', 'gender', 'dob']}
+                onImport={async (payload) => {
+                    await bulkImportStudents({ schoolId, payload }).unwrap();
+                    showToast('success', `Bulk import successful!`);
+                    setBulkModalOpen(false);
+                }}
+            />
+        </div>
     );
 }

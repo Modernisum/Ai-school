@@ -7,7 +7,7 @@ use super::{AppError, JsonList};
 #[async_trait]
 pub trait ResourceRepository: Send + Sync {
     // Infrastructure
-    async fn create_space(&self, school_id: &str, category: &str, name: String) -> Result<Value, AppError>;
+    async fn create_space(&self, school_id: &str, category: &str, name: String, description: Option<String>) -> Result<Value, AppError>;
     async fn get_spaces(&self, school_id: &str, category: Option<&str>) -> Result<Vec<Value>, AppError>;
     async fn get_space_categories(&self, school_id: &str) -> Result<Vec<String>, AppError>;
     
@@ -22,6 +22,8 @@ pub trait ResourceRepository: Send + Sync {
         data: Value,
     ) -> Result<(), AppError>;
     async fn delete_space(&self, school_id: &str, space_name: &str) -> Result<(), AppError>;
+    async fn update_space_budget(&self, school_id: &str, space_name: &str, budget: Option<f64>) -> Result<(), AppError>;
+    async fn get_all_spaces_materials(&self, school_id: &str) -> Result<Value, AppError>;
     async fn add_item(&self, school_id: &str, space_name: &str, data: Value) -> Result<(), AppError>;
     async fn add_material(&self, school_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_material(
@@ -101,6 +103,7 @@ pub trait ResourceRepository: Send + Sync {
     async fn delete_announcement(&self, school_id: &str, announcement_id: i32) -> Result<(), AppError>;
 
     async fn delete_material(&self, school_id: &str, material_name: &str) -> Result<(), AppError>;
+    async fn get_material_id_by_name(&self, school_id: &str, name: &str) -> Result<Option<String>, AppError>;
     async fn sell_material(
         &self,
         school_id: &str,
@@ -123,7 +126,7 @@ pub trait ResourceRepository: Send + Sync {
         &self,
         school_id: &str,
         space_name: &str,
-    ) -> Result<Vec<Value>, AppError>;
+    ) -> Result<Value, AppError>;
 
     // Clone space with requirements
     async fn clone_space(

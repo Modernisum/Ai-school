@@ -159,7 +159,7 @@ export default function AddEmployeePage() {
       {/* Space Selection */}
       <div>
         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-          Select Spaces (classrooms / departments)
+          Select Assigned Spaces (e.g. Classrooms / Labs)
         </label>
         <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-white/5 rounded-xl bg-white/[0.02] p-3">
           {spaceOptions.map(opt => (
@@ -188,7 +188,7 @@ export default function AddEmployeePage() {
       {mergedResponsibilities.length > 0 && (
         <div>
           <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Available Responsibilities ({mergedResponsibilities.length})
+            Assign Responsibilities (Subjects/Tasks) ({mergedResponsibilities.length})
           </label>
           <div className="border border-white/5 rounded-xl bg-white/[0.02] max-h-48 overflow-y-auto">
             {mergedResponsibilities.map(resp => {
@@ -294,7 +294,7 @@ export default function AddEmployeePage() {
       ]
     },
     {
-      id: 'spaces', label: 'Allocate', icon: LayoutGrid,
+      id: 'spaces', label: 'Allocations', icon: LayoutGrid,
       description: 'MAP_SPACES_AND_RESPONSIBILITIES',
       fields: [
         { name: '_spacesPlaceholder', label: 'Space & Responsibility Assignment', type: 'custom', hidden: true },

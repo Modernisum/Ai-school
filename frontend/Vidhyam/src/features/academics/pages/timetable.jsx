@@ -23,7 +23,7 @@ const DAYS_MAP = {
 export default function TimetableGenerator() {
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
-      className: '',
+      spaceId: '',
       periodsPerDay: 8,
       season: 'SUMMER',
       startTime: '09:00',
@@ -44,7 +44,7 @@ export default function TimetableGenerator() {
 
   // Form State
   const [form, setForm] = useState({
-    className: '',
+    spaceId: '',
     periodsPerDay: 8,
     workingDays: [1, 2, 3, 4, 5],
     season: 'SUMMER',
@@ -53,24 +53,24 @@ export default function TimetableGenerator() {
     periodDuration: 40,
     breakDuration: 10,
     requirements: [
-      { subject: '', teacher_name: '', required_periods: 5, preferred_slots: [] }
+      { responsibility: '', teacher_name: '', required_periods: 5, preferred_slots: [] }
     ]
   });
 
-  const [classes, setClasses] = useState([]);
+  const [spaces, setSpaces] = useState([]);
 
   useEffect(() => {
     if (schoolId) fetchTimetables();
   }, [schoolId]);
 
-  // Load classes using RTK Query
-  const { data: classData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
+  // Load spaces using RTK Query
+  const { data: spacesData = [] } = useGetClassesQuery(schoolId, { skip: !schoolId });
 
   useEffect(() => {
-    if (classData.length > 0) {
-      setClasses(classData.map(c => c.name || c.className || (typeof c === 'string' ? c : '')));
+    if (spacesData.length > 0) {
+      setSpaces(spacesData.map(s => s.spaceId || s.id || s.name || s.className || (typeof s === 'string' ? s : '')));
     }
-  }, [classData]);
+  }, [spacesData]);
 
   const fetchTimetables = async () => {
     if (!schoolId) return;
@@ -112,7 +112,7 @@ export default function TimetableGenerator() {
   const addRequirement = () => {
     setForm(f => ({
       ...f,
-      requirements: [...f.requirements, { subject: '', teacher_name: '', required_periods: 5, preferred_slots: [] }]
+      requirements: [...f.requirements, { responsibility: '', teacher_name: '', required_periods: 5, preferred_slots: [] }]
     }));
   };
 
@@ -131,13 +131,13 @@ export default function TimetableGenerator() {
   };
 
   const handleGenerate = async () => {
-    if (!form.className) {
-      setError('Please select a class');
+    if (!form.spaceId) {
+      setError('Please select a space');
       return;
     }
-    const reqs = form.requirements.filter(r => r.subject && r.teacher_name);
+    const reqs = form.requirements.filter(r => r.responsibility && r.teacher_name);
     if (reqs.length === 0) {
-      setError('Add at least one complete subject requirement.');
+      setError('Add at least one complete responsibility requirement.');
       return;
     }
 
@@ -145,12 +145,11 @@ export default function TimetableGenerator() {
     setError(null);
 
     const payload = {
-      class_id: form.className,
-      class_name: form.className,
+      space_id: form.spaceId,
       periods_per_day: parseInt(form.periodsPerDay, 10),
       working_days: form.workingDays,
       requirements: reqs.map(r => ({
-        subject: r.subject,
+        responsibility: r.responsibility,
         teacher_id: r.teacher_name.toLowerCase().replace(/\s/g, '_'),
         teacher_name: r.teacher_name,
         required_periods: r.required_periods,
@@ -258,7 +257,7 @@ export default function TimetableGenerator() {
                     <td key={periodNum} className="px-2 py-1 border-r border-white/5 text-center min-w-[100px] align-middle">
                       {slot ? (
                         <div className="bg-primary/5 border border-primary/10 rounded-lg p-1.5 flex flex-col justify-center items-center">
-                          <span className="font-semibold text-primary text-micro uppercase tracking-wider truncate max-w-full leading-none">{slot.subject}</span>
+                          <span className="font-semibold text-primary text-micro uppercase tracking-wider truncate max-w-full leading-none">{slot.responsibility || slot.subject}</span>
                           <span className="text-micro font-medium text-[var(--text-muted)] mt-0.5 truncate max-w-full opacity-80 leading-none">{slot.teacher_name}</span>
                         </div>
                       ) : (
@@ -325,7 +324,7 @@ export default function TimetableGenerator() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-[var(--glass-border)]">
-                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Class</th>
+                  <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Space (Class)</th>
                   <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Status</th>
                   <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Season</th>
                   <th className="px-4 py-2 font-bold uppercase tracking-wider text-micro text-[var(--text-muted)]">Date Generated</th>
@@ -338,9 +337,9 @@ export default function TimetableGenerator() {
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary border border-primary/20 text-micro font-semibold">
-                          {t.class_name?.[0]?.toUpperCase() || 'C'}
+                          {t.space_id?.[0]?.toUpperCase() || t.class_name?.[0]?.toUpperCase() || 'S'}
                         </div>
-                        <span className="font-semibold text-[var(--text-main)] tracking-tight text-micro uppercase">{t.class_name}</span>
+                        <span className="font-semibold text-[var(--text-main)] tracking-tight text-micro uppercase">{t.space_id || t.class_name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-2">
@@ -414,15 +413,15 @@ export default function TimetableGenerator() {
                     sections={[{
                       fields: [
                         { 
-                          name: 'className', 
-                          label: 'Cluster', 
+                          name: 'spaceId', 
+                          label: 'Space Cluster', 
                           type: 'select', 
                           options: [
                             { label: 'Select...', value: '' },
-                            ...classes.map(c => ({ label: c, value: c }))
+                            ...spaces.map(s => ({ label: s, value: s }))
                           ], 
                           required: true,
-                          onChange: (val) => setForm(f => ({ ...f, className: val }))
+                          onChange: (val) => setForm(f => ({ ...f, spaceId: val }))
                         },
                         { 
                           name: 'periodsPerDay', 
@@ -500,11 +499,11 @@ export default function TimetableGenerator() {
                         </button>
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
                           <div className="md:col-span-12 lg:col-span-5">
-                            <label className="text-micro font-black text-slate-700 uppercase mb-0.5 block tracking-widest flex items-center gap-1">Subject</label>
+                            <label className="text-micro font-black text-slate-700 uppercase mb-0.5 block tracking-widest flex items-center gap-1">Responsibility</label>
                             <input 
                               placeholder="e.g. Mathematics" 
-                              value={req.subject} 
-                              onChange={e => updateRequirement(idx, 'subject', e.target.value)}
+                              value={req.responsibility} 
+                              onChange={e => updateRequirement(idx, 'responsibility', e.target.value)}
                               className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-2 py-1 text-micro text-white focus:outline-none focus:border-primary transition-all placeholder:text-slate-800 font-medium" 
                             />
                           </div>
@@ -571,7 +570,7 @@ export default function TimetableGenerator() {
               
               <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)]/50 backdrop-blur-xl">
                 <div>
-                  <h2 className="text-sm font-bold text-[var(--text-main)] tracking-tight">Timetable Draft: {viewingTimetable.class_name}</h2>
+                  <h2 className="text-sm font-bold text-[var(--text-main)] tracking-tight">Timetable Draft: {viewingTimetable.space_id || viewingTimetable.class_name}</h2>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-micro font-semibold text-primary px-1.5 py-0.5 bg-primary/10 border border-primary/20 rounded uppercase tracking-wider">ID: {viewingTimetable.config_id}</span>
                     <span className="text-micro font-medium text-[var(--text-muted)] tracking-wider flex items-center gap-1">

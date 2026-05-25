@@ -279,6 +279,10 @@ impl BackupService {
             let columns: Vec<&str> = obj.keys().map(|k| k.as_str()).collect();
             let placeholders: Vec<String> = (1..=columns.len()).map(|i| format!("${}", i)).collect();
 
+            // Auto-detect numeric columns and add casts if necessary
+            // For simplicity in this generic restorer, we'll try to let Postgres handle implicit casts
+            // but we MUST bind numbers as numbers where possible.
+
             let sql = format!(
                 "INSERT INTO {} ({}) VALUES ({}) ON CONFLICT DO NOTHING",
                 table_name,
@@ -293,9 +297,13 @@ impl BackupService {
                     Value::Null => query.bind(Option::<String>::None),
                     Value::String(s) => query.bind(s.clone()),
                     Value::Number(n) => {
-                        if let Some(i) = n.as_i64() { query.bind(i) }
-                        else if let Some(f) = n.as_f64() { query.bind(format!("{}", f)) }
-                        else { query.bind(n.to_string()) }
+                        if let Some(i) = n.as_i64() { 
+                            query.bind(i) 
+                        } else if let Some(f) = n.as_f64() {
+                            query.bind(f)
+                        } else {
+                            query.bind(n.to_string())
+                        }
                     }
                     Value::Bool(b) => query.bind(*b),
                     _ => query.bind(val.to_string()),
@@ -303,8 +311,11 @@ impl BackupService {
             }
 
             if let Err(e) = query.execute(&self.pool).await {
-                // Silently skip individual row conflicts
-                let _ = e;
+                // Check if it's a conflict or a real error
+                let err_msg = e.to_string();
+                if !err_msg.contains("duplicate key value violates unique constraint") {
+                    println!("[Restore Error] {}: {}", table_name, err_msg);
+                }
             } else {
                 count += 1;
             }

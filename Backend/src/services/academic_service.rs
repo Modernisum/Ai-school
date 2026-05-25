@@ -25,51 +25,6 @@ impl AcademicService for PostgresAcademicService {
         Ok(self.repos.academic.get_exams(school_id, student_opt).await?)
     }
 
-    async fn create_subject(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value> {
-        // 1. Create Subject
-        let res = self.repos.academic.add_subject(school_id, data.clone()).await?;
-        let subject_id = if let Some(id) = res["id"].as_i64() { id.to_string() } else { res["id"].as_str().unwrap_or("0").to_string() };
-        
-        // 2. Automated Responsibility Creation (Follow User's Strict Validator)
-        let subject_name = res["name"].as_str().or(res["subjectName"].as_str()).unwrap_or("Unknown Subject");
-        let class_name = res["className"].as_str().unwrap_or("General");
-        let class_id = res["classId"].as_str().unwrap_or("");
-        
-        // Get spaceIds (Room number from class)
-        let mut space_ids = Vec::new();
-        if !class_id.is_empty() {
-             if let Ok(Some(cls)) = self.repos.academic.get_class(school_id, class_id).await {
-                 if let Some(room) = cls["roomNumber"].as_str() {
-                     if !room.is_empty() {
-                         space_ids.push(room.to_string());
-                     }
-                 }
-             }
-        }
-
-        let resp_payload = json!({
-            "name": format!("{} - {}", subject_name, class_name),
-            "description": format!("Teaching {} for {} sections", subject_name, class_name),
-            "spaceCategory": "classroom",
-            "employeeType": "teaching",
-            "workLevel": "senior",
-            "workAmount": 0.0,
-            "workPeriod": "monthly",
-            "spaceIds": space_ids,
-            "studentFee": res["subjectFees"].as_f64().or(res["fees"].as_f64()).unwrap_or(0.0)
-        });
-
-        // Trigger the strict create_responsibility (it handles validation and audit internally)
-        let _ = self.responsibility.create_responsibility(school_id, admin_id, resp_payload).await?;
-
-        let _ = self.repos.audit.log_action(school_id, admin_id, "SUBJECT", &subject_id, "CREATE", data).await;
-        Ok(res)
-    }
-
-    async fn list_subjects(&self, school_id: &str) -> AppResult<Vec<Value>> {
-        Ok(self.repos.academic.get_subjects(school_id).await?)
-    }
-
     async fn create_topic(&self, data: Value) -> AppResult<Value> {
         Ok(self.repos.academic.add_topic(data).await?)
     }
@@ -91,15 +46,15 @@ impl AcademicService for PostgresAcademicService {
         Ok(())
     }
 
-    async fn create_chapter(&self, school_id: &str, admin_id: &str, subject_id: &str, data: Value) -> AppResult<Value> {
-        let res = self.repos.academic.add_chapter(school_id, subject_id, data.clone()).await?;
+    async fn create_chapter(&self, school_id: &str, admin_id: &str, responsibility_id: &str, data: Value) -> AppResult<Value> {
+        let res = self.repos.academic.add_chapter(school_id, responsibility_id, data.clone()).await?;
         let chapter_id = res["id"].as_i64().unwrap_or(0).to_string();
         let _ = self.repos.audit.log_action(school_id, admin_id, "CHAPTER", &chapter_id, "CREATE", data).await;
         Ok(res)
     }
 
-    async fn list_chapters(&self, school_id: &str, subject_id: &str) -> AppResult<Vec<Value>> {
-        Ok(self.repos.academic.get_chapters(school_id, subject_id).await?)
+    async fn list_chapters(&self, school_id: &str, responsibility_id: &str) -> AppResult<Vec<Value>> {
+        Ok(self.repos.academic.get_chapters(school_id, responsibility_id).await?)
     }
 
     async fn update_chapter(&self, school_id: &str, admin_id: &str, chapter_id: i32, data: Value) -> AppResult<()> {
@@ -108,8 +63,8 @@ impl AcademicService for PostgresAcademicService {
         Ok(())
     }
 
-    async fn get_auto_syllabus(&self, school_id: &str, subject_id: &str) -> AppResult<Value> {
-        let chapters = self.repos.academic.get_chapters(school_id, subject_id).await?;
+    async fn get_auto_syllabus(&self, school_id: &str, responsibility_id: &str) -> AppResult<Value> {
+        let chapters = self.repos.academic.get_chapters(school_id, responsibility_id).await?;
         let n = chapters.len();
         
         let mut q1 = Vec::new();
@@ -207,15 +162,15 @@ impl AcademicService for PostgresAcademicService {
         let name = data["name"].as_str()
             .ok_or_else(|| AppError::from("Test name is required"))?;
         
-        // 1. Fetch class details
-        let class = self.repos.academic.get_class(school_id, class_id).await?
-            .ok_or_else(|| AppError::from(format!("Class '{}' does not exist", class_id)))?;
-        let class_name = class["className"].as_str().unwrap_or("General");
+        // 1. Fetch space details
+        let space = self.repos.resource.get_space_details(school_id, class_id).await?
+            .ok_or_else(|| AppError::from(format!("Space '{}' does not exist", class_id)))?;
+        let class_name = space["spaceName"].as_str().or(space["name"].as_str()).unwrap_or("General");
 
-        // 2. Fetch subject details
-        let subject = self.repos.academic.get_subject(school_id, subject_id).await?
-            .ok_or_else(|| AppError::from(format!("Subject '{}' does not exist", subject_id)))?;
-        let subject_name = subject["name"].as_str().unwrap_or("Unknown");
+        // 2. Fetch responsibility details
+        let resp = self.responsibility.get_responsibility(school_id, subject_id).await?
+            .ok_or_else(|| AppError::from(format!("Responsibility '{}' does not exist", subject_id)))?;
+        let subject_name = resp["name"].as_str().unwrap_or("Unknown");
 
         // 3. Verify responsibility mapping (Teacher must be assigned to this class/subject)
         let responsibilities = self.responsibility.get_employee_responsibilities(school_id, teacher_id).await?;

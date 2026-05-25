@@ -45,7 +45,7 @@ export default function AttendancePage() {
   const schoolId = getSchoolId();
   
   // Core state
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSpace, setSelectedSpace] = useState('');
   const [selectedDate, setSelectedDate] = useState(today);
   const [searchTerm, setSearchTerm] = useState('');
   const [attendanceData, setAttendanceData] = useState([]);
@@ -59,7 +59,7 @@ export default function AttendancePage() {
     incoming_after: '',
     outgoing_before: '',
     user_type: '',
-    class_name: '',
+    space_id: '',
     space_name: '',
     user_ids: '',
     fields: ''
@@ -68,16 +68,15 @@ export default function AttendancePage() {
   const { control, handleSubmit, reset } = useForm();
 
   // API Hooks
-  const { data: classes = [], isLoading: classesLoading } = useGetClassesQuery(schoolId, { skip: !schoolId });
+  const { data: spacesList = [], isLoading: spacesLoading } = useGetClassesQuery(schoolId, { skip: !schoolId });
   const { data: holidays = [], isLoading: isHolidaysLoading } = useGetHolidaysQuery(schoolId, { skip: !schoolId });
-  const { data: spacesData = [] } = useGetSpacesQuery(schoolId, { skip: !schoolId });
   const { data: studentsData = [], isLoading: studentsLoading } = useGetStudentsByClassQuery(
-    { schoolId, className: selectedClass }, 
-    { skip: !schoolId || !selectedClass }
+    { schoolId, spaceId: selectedSpace }, 
+    { skip: !schoolId || !selectedSpace }
   );
   const { data: existingAttendance = [], isLoading: attendanceLoading, refetch: refetchAttendance } = useGetClassAttendanceQuery(
-    { schoolId, className: selectedClass, date: selectedDate }, 
-    { skip: !schoolId || !selectedClass || !selectedDate }
+    { schoolId, spaceId: selectedSpace, date: selectedDate }, 
+    { skip: !schoolId || !selectedSpace || !selectedDate }
   );
 
   // Advanced attendance analytics - always fetched with current filters
@@ -114,7 +113,7 @@ export default function AttendancePage() {
       });
       setAttendanceData(newAttendanceData);
     }
-  }, [studentsData, existingAttendance, selectedClass]);
+  }, [studentsData, existingAttendance, selectedSpace]);
 
   // Handlers
   const handleStatusChange = async (id, status) => {
@@ -122,7 +121,7 @@ export default function AttendancePage() {
       await bulkMarkAttendance({ 
         schoolId, 
         body: { 
-          class_name: selectedClass, 
+          space_id: selectedSpace, 
           date: selectedDate, 
           attendance: [{ user_id: id, role: 'student', status }] 
         } 
@@ -136,7 +135,7 @@ export default function AttendancePage() {
   const handleBulkStatusChange = async (status) => {
     try {
       const payload = {
-        class_name: selectedClass,
+        space_id: selectedSpace,
         date: selectedDate,
         attendance: attendanceData.map(item => ({
           user_id: item.id,
@@ -272,8 +271,8 @@ export default function AttendancePage() {
   ];
 
   // Determine which data to show in the grid
-  // When a class is selected for marking, show mark view; otherwise show analytics
-  const showMarkView = selectedClass && !hasActiveFilters;
+  // When a space is selected for marking, show mark view; otherwise show analytics
+  const showMarkView = selectedSpace && !hasActiveFilters;
   const gridColumns = showMarkView ? markColumns : analyticsColumns;
   const gridRows = showMarkView ? filteredAttendance : advancedRecords;
   const gridLoading = showMarkView ? (studentsLoading || attendanceLoading) : advancedLoading;
@@ -311,12 +310,12 @@ export default function AttendancePage() {
     },
     {
       type: 'select',
-      label: 'Class',
-      value: filters.class_name,
-      onChange: (v) => handleFilterChange('class_name', v),
+      label: 'Space (Class)',
+      value: filters.space_id,
+      onChange: (v) => handleFilterChange('space_id', v),
       options: [
         { label: 'All', value: '' },
-        ...classes.map(cls => ({ label: cls.name || cls.className, value: cls.name || cls.className }))
+        ...spacesList.map(s => ({ label: s.name || s.spaceName, value: s.spaceId || s.id }))
       ]
     },
     {
@@ -391,20 +390,20 @@ export default function AttendancePage() {
             columns={gridColumns}
             rows={gridRows}
             isLoading={gridLoading}
-            emptyMessage={showMarkView ? "No students in class" : "No attendance records"}
+            emptyMessage={showMarkView ? "No students in space" : "No attendance records"}
             showSearch={true}
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder={showMarkView ? "Search student..." : "Search records..."}
-            onRefresh={showMarkView ? () => { if (selectedClass) refetchAttendance(); } : refetchAdvanced}
-            // Mark mode: class & date filters as legacy JSX
+            onRefresh={showMarkView ? () => { if (selectedSpace) refetchAttendance(); } : refetchAdvanced}
+            // Mark mode: space & date filters as legacy JSX
             filters={showMarkView ? [
               <DropdownWidget
-                key="class-select"
+                key="space-select"
                 dense
-                options={[{ label: 'Select Class', value: '' }, ...classes.map(cls => ({ label: `Class ${cls.name || cls.className}`, value: cls.name || cls.className }))]}
-                value={selectedClass}
-                onChange={setSelectedClass}
+                options={[{ label: 'Select Space', value: '' }, ...spacesList.map(s => ({ label: `Space: ${s.name || s.spaceName}`, value: s.spaceId || s.id || s.name }))]}
+                value={selectedSpace}
+                onChange={setSelectedSpace}
               />,
               <StandardButton 
                 key="date-picker"
@@ -437,10 +436,10 @@ export default function AttendancePage() {
                     { name: 'title', label: 'Title', type: 'text', required: true },
                     { name: 'fromDate', label: 'Start Date', type: 'date', required: true },
                     { name: 'toDate', label: 'End Date', type: 'date' },
-                    { name: 'allClasses', label: 'All Classes', type: 'checkbox' }
+                    { name: 'allSpaces', label: 'All Spaces', type: 'checkbox' }
                   ]}]}
                   control={control}
-                  onSubmit={handleSubmit((v) => { createHoliday({ schoolId, body: { ...v, classes: v.allClasses ? ['All'] : [] } }).unwrap().then(() => { setShowHolidayForm(false); reset(); toast.success('Holiday registered'); }); })}
+                  onSubmit={handleSubmit((v) => { createHoliday({ schoolId, body: { ...v, spaces: v.allSpaces ? ['All'] : [] } }).unwrap().then(() => { setShowHolidayForm(false); reset(); toast.success('Holiday registered'); }); })}
                   onCancel={() => { setShowHolidayForm(false); reset(); }}
                   submitLabel="Declare Holiday"
                 />

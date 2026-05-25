@@ -39,7 +39,7 @@ pub use payroll::PayrollRepository;
 pub use transaction::TransactionRepository;
 pub use resource::ResourceRepository;
 
-pub use auxiliary::{AwardRepository, ComplainRepository, ReminderRepository, DocumentBoxRepository, SchoolRepository, NotificationPreferenceRepository};
+pub use auxiliary::{AwardRepository, ComplainRepository, ReminderRepository, DocumentBoxRepository, SchoolRepository, NotificationPreferenceRepository, SchoolSetupPayload};
 pub use responsibility::ResponsibilityRepository;
 pub use task::TaskRepository;
 pub use leave::LeaveRepository;

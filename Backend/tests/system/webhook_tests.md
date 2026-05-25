@@ -1,5 +1,25 @@
 # System API — Webhooks Tests
 
+> **⚠️ BUG FIX**: Notification API endpoints are under `/api/school/{schoolId}/system/notifications/`, not `/api/school/{schoolId}/notifications`
+
+---
+
+## Actual Route Table
+
+| # | Endpoint | Method | Handler |
+|---|----------|--------|---------|
+| 1 | `/api/school/:schoolId/system/webhooks` | POST | `register_webhook` |
+| 2 | `/api/school/:schoolId/system/webhooks` | GET | `list_webhooks` |
+| 3 | `/api/school/:schoolId/system/webhooks/:webhookId` | DELETE | `delete_webhook` |
+| 4 | `/api/school/:schoolId/system/webhooks/:webhookId/logs` | GET | `get_webhook_logs` |
+| 5 | `/api/school/:schoolId/system/notifications/` | GET | list notifications |
+| 6 | `/api/school/:schoolId/system/notifications/unread-count` | GET | unread count |
+| 7 | `/api/school/:schoolId/system/notifications/mark-all-read` | POST | mark all read |
+| 8 | `/api/school/:schoolId/system/notifications/:id/read` | POST | mark single read |
+| 9 | `/api/school/:schoolId/system/notifications/:id` | DELETE | delete notification |
+
+---
+
 ## Test: List Webhooks
 
 - **Endpoint**: `GET /api/school/689225/system/webhooks`
@@ -32,35 +52,9 @@ curl -s -X POST http://localhost:8080/api/school/689225/system/webhooks \
 
 ---
 
-## Test: Update Webhook
-
-- **Endpoint**: `PUT /api/school/689225/system/webhooks/WEBHOOK_ID`
-- **Expected**: 200
-
-```bash
-curl -s -X PUT http://localhost:8080/api/school/689225/system/webhooks/1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"is_active":false}' | jq .
-```
-
----
-
-## Test: Test Webhook (ping)
-
-- **Endpoint**: `POST /api/school/689225/system/webhooks/WEBHOOK_ID/test`
-- **Expected**: 200
-
-```bash
-curl -s -X POST http://localhost:8080/api/school/689225/system/webhooks/1/test \
-  -H "Authorization: Bearer $TOKEN" | jq .
-```
-
----
-
 ## Test: Delete Webhook
 
-- **Endpoint**: `DELETE /api/school/689225/system/webhooks/WEBHOOK_ID`
+- **Endpoint**: `DELETE /api/school/689225/system/webhooks/{webhookId}`
 - **Expected**: 200
 
 ```bash
@@ -70,82 +64,75 @@ curl -s -X DELETE http://localhost:8080/api/school/689225/system/webhooks/1 \
 
 ---
 
-## Test: Notification Webhook — Fire on Notification Create
+## Test: Get Webhook Logs
 
-- **Trigger**: `POST /api/school/689225/notifications`
-- **Endpoint receives**: HTTP POST to registered webhook URL
-- **Event**: `notification.general`
-
-### Setup
-
-1. Register a webhook subscribing to `notification.*` events:
+- **Endpoint**: `GET /api/school/689225/system/webhooks/{webhookId}/logs`
+- **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/school/689225/system/webhooks \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Notification Webhook",
-    "url": "https://example.com/webhooks/notification",
-    "events": ["notification.general","notification.complaint","notification.attendance"],
-    "secret": "whsec_notif123",
-    "is_active": true
-  }' | jq .
+curl -s http://localhost:8080/api/school/689225/system/webhooks/1/logs \
+  -H "Authorization: Bearer $TOKEN" | jq .
 ```
-
-### Fire Notification
-
-```bash
-curl -s -X POST http://localhost:8080/api/school/689225/notifications \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userId": "user-001",
-    "category": "complaint",
-    "severity": "warning",
-    "title": "New Complaint Filed",
-    "message": "Student X has filed a complaint about bus delay",
-    "data": { "complaintId": "123", "type": "transport" }
-  }' | jq .
-```
-
-Expected: Webhook endpoint receives HTTP POST with payload containing the notification data and `X-Vidhyam-Signature` header.
 
 ---
 
-## Test: Notification API Endpoints
+## Notification Endpoints (under system module)
 
 ### List Notifications
 
+- **Endpoint**: `GET /api/school/689225/system/notifications?limit=10&offset=0`
+- **Expected**: 200
+
 ```bash
-curl -s "http://localhost:8080/api/school/689225/notifications?limit=10&offset=0" \
+curl -s "http://localhost:8080/api/school/689225/system/notifications?limit=10&offset=0" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 ### Unread Count
 
+- **Endpoint**: `GET /api/school/689225/system/notifications/unread-count`
+- **Expected**: 200
+
 ```bash
-curl -s "http://localhost:8080/api/school/689225/notifications/unread-count" \
+curl -s "http://localhost:8080/api/school/689225/system/notifications/unread-count" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 ### Mark All Read
 
+- **Endpoint**: `POST /api/school/689225/system/notifications/mark-all-read`
+- **Expected**: 200
+
 ```bash
-curl -s -X POST "http://localhost:8080/api/school/689225/notifications/mark-all-read" \
+curl -s -X POST "http://localhost:8080/api/school/689225/system/notifications/mark-all-read" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 ### Mark Single Read
 
+- **Endpoint**: `POST /api/school/689225/system/notifications/{id}/read`
+- **Expected**: 200
+
 ```bash
-curl -s -X POST "http://localhost:8080/api/school/689225/notifications/1/read" \
+curl -s -X POST "http://localhost:8080/api/school/689225/system/notifications/1/read" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 ### Delete Notification
 
+- **Endpoint**: `DELETE /api/school/689225/system/notifications/{id}`
+- **Expected**: 200
+
 ```bash
-curl -s -X DELETE "http://localhost:8080/api/school/689225/notifications/1" \
+curl -s -X DELETE "http://localhost:8080/api/school/689225/system/notifications/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
+
+---
+
+## ⚠️ Issues Found
+
+| # | Issue | Severity |
+|---|-------|----------|
+| 1 | **Notification paths wrong** — were `/api/school/689225/notifications`, correct is `/api/school/689225/system/notifications/...` | **Fixed** |
+| 2 | Missing: webhook logs endpoint | **Added** |

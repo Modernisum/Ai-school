@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "name": "New Delhi",
+    "state_id": 1
+  },
+  {
+    "id": 2,
+    "name": "Central Delhi",
+    "state_id": 1
+  },
+  {
+    "id": 3,
+    "name": "South Delhi",
+    "state_id": 1
+  },
+  {
+    "id": 4,
+    "name": "Mumbai",
+    "state_id": 2
+  },
+  {
+    "id": 5,
+    "name": "Pune",
+    "state_id": 2
+  },
+  {
+    "id": 6,
+    "name": "Nagpur",
+    "state_id": 2
+  },
+  {
+    "id": 7,
+    "name": "Bengaluru",
+    "state_id": 3
+  },
+  {
+    "id": 8,
+    "name": "Mysuru",
+    "state_id": 3
+  },
+  {
+    "id": 9,
+    "name": "Mangaluru",
+    "state_id": 3
+  },
+  {
+    "id": 10,
+    "name": "Los Angeles",
+    "state_id": 4
+  },
+  {
+    "id": 11,
+    "name": "San Francisco",
+    "state_id": 4
+  },
+  {
+    "id": 12,
+    "name": "Manhattan",
+    "state_id": 5
+  },
+  {
+    "id": 13,
+    "name": "Brooklyn",
+    "state_id": 5
+  },
+  {
+    "id": 14,
+    "name": "Queens",
+    "state_id": 5
+  },
+  {
+    "id": 15,
+    "name": "London",
+    "state_id": 6
+  },
+  {
+    "id": 16,
+    "name": "Manchester",
+    "state_id": 6
+  },
+  {
+    "id": 17,
+    "name": "Birmingham",
+    "state_id": 6
+  }
+]

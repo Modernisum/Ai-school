@@ -124,16 +124,15 @@ impl RecoveryService for PostgresRecoveryService {
                             "SPACE" => {
                                 let category = changed_data["spaceCategory"].as_str().unwrap_or("General");
                                 let name = changed_data["spaceName"].as_str().unwrap_or("Restored Space");
-                                self.repos.resource.create_space(school_id, category, name.to_string()).await?;
+                                self.repos.resource.create_space(school_id, category, name.to_string(), None).await?;
                             },
                             "LEAVE" => { self.repos.leave.add_leave(school_id, changed_data.clone()).await?; },
                             "AWARD" => { self.repos.award.add_award(school_id, changed_data.clone()).await?; },
                             "COMPLAIN" => { self.repos.complain.add_complain(school_id, changed_data.clone()).await?; },
                             "REMINDER" => { self.repos.reminder.add_reminder(school_id, changed_data.clone()).await?; },
                             "DOCUMENT" => { self.repos.document_box.add_document(school_id, changed_data.clone()).await?; },
-                            "CLASS" => { self.repos.academic.add_class(school_id, changed_data.clone()).await?; },
-                            "SUBJECT" => { self.repos.academic.add_subject(school_id, changed_data.clone()).await?; },
                             "EXAM" => { self.repos.academic.add_exam(school_id, changed_data.clone()).await?; },
+
                             "ANNOUNCEMENT" => { self.repos.resource.add_announcement(school_id, "all", "admin", changed_data.clone()).await?; },
                             "MATERIAL" => { self.repos.resource.add_material(school_id, changed_data.clone()).await?; },
                             "EVENT" => { self.repos.resource.add_event_summary(school_id, changed_data.clone()).await?; },
@@ -162,8 +161,6 @@ impl RecoveryService for PostgresRecoveryService {
                                 },
                                 "STUDENT" => { self.repos.student.update_student(school_id, entity_id, rollback).await?; },
                                 "EMPLOYEE" => { self.repos.employee.update_employee(school_id, entity_id, rollback).await?; },
-                                "CLASS" => self.repos.academic.update_class(school_id, entity_id, rollback).await?,
-                                "SUBJECT" => self.repos.academic.update_subject(school_id, entity_id, rollback).await?,
                                 "EXAM" => self.repos.academic.update_exam(school_id, entity_id, rollback).await?,
                                 _ => return Err(AppError::Internal(format!("Undo UPDATE for {} is not yet implemented", entity_type))),
                             }

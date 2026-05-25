@@ -19,12 +19,7 @@ impl TenantConnection {
     ) -> Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error> {
         let mut conn = self.pool.acquire().await?;
 
-        // Use SET (session scope) instead of SET LOCAL to avoid transaction requirement
-        let rls_query = format!(
-            "SET app.current_school_id = '{}'",
-            school_id.replace('\'', "''")
-        );
-        sqlx::query(&rls_query).execute(&mut *conn).await?;
+        crate::db::connection_utils::ConnectionUtils::set_rls_session(&mut *conn, school_id).await?;
 
         Ok(conn)
     }

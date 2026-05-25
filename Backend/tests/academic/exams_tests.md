@@ -1,69 +1,83 @@
 # Academic API — Exams Tests
 
-## Test: Generate Exam Paper
+> Base URL: `/api/school/{schoolId}/academic`
+> Note: Legacy compat routes have been removed.
 
-- **Endpoint**: `POST /api/academic/689225/generate-paper`
-- **Body**: exam generation params
-- **Expected**: 200
+---
+
+## Actual Route Table
+
+| # | Endpoint | Method | Handler |
+|---|----------|--------|---------|
+| 1 | `/api/school/:schoolId/academic/exams` | POST | `create_exam` |
+| 2 | `/api/school/:schoolId/academic/exams` | GET | `list_exams` |
+| 3 | `/api/school/:schoolId/academic/exams/:examId/sections` | POST/GET | exam section CRUD (uses `spaceId` and `responsibilityId`) |
+| 4 | `/api/school/:schoolId/academic/exams/ai/generate` | POST | `ai_generate_exam` |
+| 5 | `/api/school/:schoolId/academic/exams/checker/*` | * | Checker workflow |
+
+---
+
+## Test: Create Exam
+
+- **Endpoint**: `POST /api/school/689225/academic/exams`
+- **Expected**: 201
 
 ```bash
-curl -s -X POST http://localhost:8080/api/academic/689225/generate-paper \
+curl -s -X POST http://localhost:8080/api/school/689225/academic/exams \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
-    "subject": "Mathematics",
-    "class_name": "10-A",
-    "chapters": ["Algebra","Geometry"],
-    "difficulty": "medium",
-    "total_marks": 100,
-    "duration_minutes": 180
+    "name": "Mid-Term Academic",
+    "quarter": "Q1",
+    "startDate": "2026-05-15",
+    "endDate": "2026-05-20",
+    "examType": "MAIN"
   }' | jq .
 ```
 
 ---
 
-## Test: Approve Exam
+## Test: Create Exam Section (using Space and Responsibility)
 
-- **Endpoint**: `POST /api/academic/689225/exams`
-- **Expected**: 200
+- **Endpoint**: `POST /api/school/689225/academic/exams/:examId/sections`
+- **Expected**: 201
 
 ```bash
-curl -s -X POST http://localhost:8080/api/academic/689225/exams \
+curl -s -X POST http://localhost:8080/api/school/689225/academic/exams/1/sections \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
-    "exam_name": "Mid-Term Math",
-    "class_name": "10-A",
-    "subject": "Mathematics",
-    "exam_date": "2026-05-15",
-    "total_marks": 100
+    "spaceId": "class-1-b-6892",
+    "responsibilityId": "math-teaching-001",
+    "totalMarks": 100,
+    "syllabus": ["Algebra", "Geometry"]
   }' | jq .
 ```
 
 ---
 
-## Test: List Upcoming Exams
+## Test: List All Exams
 
-- **Endpoint**: `GET /api/academic/689225/exams/upcoming`
+- **Endpoint**: `GET /api/school/689225/academic/exams`
 - **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/academic/689225/exams/upcoming \
+curl -s http://localhost:8080/api/school/689225/academic/exams \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" | jq .
 ```
 
 ---
 
-## Test: Get Chapter Names
+## Test: Get Exam Sections
 
-- **Endpoint**: `GET /api/academic/689225/subjects/Mathematics/chapters`
-- **Expected**: 200, chapter list
+- **Endpoint**: `GET /api/school/689225/academic/exams/1/sections`
+- **Expected**: 200
 
 ```bash
-curl -s http://localhost:8080/api/academic/689225/subjects/Mathematics/chapters \
+curl -s http://localhost:8080/api/school/689225/academic/exams/1/sections \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" | jq .
 ```

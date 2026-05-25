@@ -38,7 +38,7 @@ export default function ReferralCoupons() {
 
     const fetchEmployees = useCallback(async () => {
         try {
-            const res = await fetch(`${API}/employee/${schoolId}/employees`);
+            const res = await fetch(`${API}/employees/${schoolId}`);
             const data = await res.json();
             setEmployees(data.data || data.employees || []);
         } catch { }

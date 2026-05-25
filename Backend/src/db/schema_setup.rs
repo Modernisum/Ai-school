@@ -18,6 +18,8 @@ impl SchemaSetup {
         self.initialize_billing_tables().await?;
         self.initialize_promo_tables().await?;
         self.initialize_schools_table().await?;
+        self.initialize_student_employee_tables().await?;
+        self.initialize_missing_tables().await?;
         self.initialize_super_admin_tables().await?;
         self.initialize_geo_tables().await?;
         self.initialize_audit_tables().await?;
@@ -36,6 +38,218 @@ impl SchemaSetup {
         self.initialize_grading_tables().await?;
         self.initialize_exam_checker_workflow().await?;
         self.initialize_syllabus_calendar_tables().await?;
+        Ok(())
+    }
+
+    async fn initialize_missing_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Ensuring missing tables from backup exist...");
+        
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS fees (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
+                fees_name VARCHAR(255),
+                fees_amount NUMERIC(12, 2) NOT NULL,
+                status VARCHAR(50) DEFAULT 'pending',
+                due_date DATE,
+                paid_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS student_history (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
+                rev_no INTEGER NOT NULL,
+                author VARCHAR(255),
+                data JSONB NOT NULL,
+                delta JSONB NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS leaves (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                user_type VARCHAR(50) NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                reason TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS attendance (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                user_type VARCHAR(50) NOT NULL,
+                date DATE NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                marked_by VARCHAR(255),
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(school_id, user_id, user_type, date)
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS coupons (
+                coupon_id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                coupon_name VARCHAR(255) NOT NULL,
+                discount_type VARCHAR(50) NOT NULL,
+                discount_value DOUBLE PRECISION NOT NULL,
+                is_blocked BOOLEAN NOT NULL DEFAULT FALSE,
+                data JSONB,
+                PRIMARY KEY (school_id, coupon_id),
+                CONSTRAINT unique_school_coupon_name UNIQUE (school_id, coupon_name)
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS student_coupons (
+                school_id VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
+                coupon_id VARCHAR(255) NOT NULL,
+                discount_applied DOUBLE PRECISION NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                PRIMARY KEY (school_id, student_id, coupon_id)
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS awards (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                date DATE,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS complaints (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                complainant_id VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'open',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS reminders (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                user_id VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                remind_at TIMESTAMPTZ NOT NULL,
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS audit_logs (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                admin_id VARCHAR(255),
+                entity_type VARCHAR(50) NOT NULL,
+                entity_id VARCHAR(255),
+                action VARCHAR(100) NOT NULL,
+                details TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS webhook_delivery_logs (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                endpoint_id INTEGER NOT NULL,
+                event_type VARCHAR(100) NOT NULL,
+                status_code INTEGER,
+                request_payload JSONB,
+                response_body TEXT,
+                error_message TEXT,
+                delivered_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS webhook_endpoints (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                url TEXT NOT NULL,
+                secret VARCHAR(255),
+                events JSONB DEFAULT '[]',
+                status VARCHAR(50) DEFAULT 'active',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                priority VARCHAR(50) DEFAULT 'medium',
+                assigned_to VARCHAR(255),
+                due_date TIMESTAMP WITH TIME ZONE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )"
+        ).execute(&self.pool).await?;
+
+        Ok(())
+    }
+
+    async fn initialize_student_employee_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Ensuring students and employees tables exist...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS students (
+                id SERIAL PRIMARY KEY,
+                student_id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                class_name VARCHAR(100) NOT NULL,
+                name TEXT,
+                roll_number INT,
+                section VARCHAR(50),
+                status VARCHAR(50) NOT NULL DEFAULT 'active',
+                data JSONB NOT NULL DEFAULT '{}',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, student_id)
+            )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS employees (
+                id SERIAL PRIMARY KEY,
+                employee_id VARCHAR(255) NOT NULL,
+                school_id VARCHAR(255) NOT NULL,
+                employee_type VARCHAR(50) NOT NULL,
+                data JSONB NOT NULL DEFAULT '{}',
+                status VARCHAR(50) NOT NULL DEFAULT 'active',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, employee_id)
+            )"
+        ).execute(&self.pool).await?;
+
         Ok(())
     }
 
@@ -706,6 +920,16 @@ impl SchemaSetup {
     }
 
     async fn initialize_responsibilities_tables(&self) -> Result<(), Box<dyn Error>> {
+        println!("Ensuring responsibilities table exists...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS responsibilities (
+                id VARCHAR(255) PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                status VARCHAR(50) DEFAULT 'active'
+            )"
+        ).execute(&self.pool).await?;
+
         println!("Expanding responsibilities table with metadata support...");
         sqlx::query(
             "ALTER TABLE responsibilities
@@ -723,6 +947,17 @@ impl SchemaSetup {
              ADD COLUMN IF NOT EXISTS created_by VARCHAR(255),
              ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
              ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()"
+        ).execute(&self.pool).await?;
+
+        println!("Ensuring employee_responsibilities table exists...");
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS employee_responsibilities (
+                id SERIAL PRIMARY KEY,
+                school_id VARCHAR(255) NOT NULL,
+                employee_id VARCHAR(255) NOT NULL,
+                responsibility_id VARCHAR(255) NOT NULL,
+                UNIQUE(school_id, employee_id, responsibility_id)
+            )"
         ).execute(&self.pool).await?;
 
         println!("Expanding employee_responsibilities table with space_ids support...");
@@ -1118,6 +1353,9 @@ impl SchemaSetup {
     async fn initialize_profile_image_support(&self) -> Result<(), Box<dyn Error>> {
         println!("Updating students and employees tables with profile image support...");
         sqlx::query("ALTER TABLE students ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
+            .execute(&self.pool)
+            .await?;
+        sqlx::query("ALTER TABLE students ADD COLUMN IF NOT EXISTS data JSONB NOT NULL DEFAULT '{}'")
             .execute(&self.pool)
             .await?;
         sqlx::query("ALTER TABLE employees ADD COLUMN IF NOT EXISTS profile_image_url TEXT")

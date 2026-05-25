@@ -67,7 +67,7 @@ impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
     async fn get_advanced_attendance_stats(
         &self,
         school_id: &str,
-        query: crate::routes::attendance::AttendanceQuery,
+        query: crate::domain::attendance::attendance::AttendanceQuery,
     ) -> AppResult<Value> {
         let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
 
@@ -98,8 +98,8 @@ impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
         let mut sql = String::from(r#"
             SELECT
                 a.user_id, a.role, a.date, a.status, a.in_time, a.out_time, a.class_name, a.reason,
-                COALESCE(s.name, e.name) as name,
-                COALESCE(s.image_url, e.profile_image) as image_url
+                COALESCE(s.name, e.data->>'name') as name,
+                COALESCE(s.profile_image_url, e.profile_image_url) as image_url
             FROM attendance a
             LEFT JOIN students s ON a.user_id = s.student_id AND a.school_id = s.school_id
             LEFT JOIN employees e ON a.user_id = e.employee_id AND a.school_id = e.school_id
@@ -183,8 +183,8 @@ impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
                 "image_url": r.get::<Option<String>, _>("image_url"),
                 "date": r.get::<NaiveDate, _>("date").to_string(),
                 "status": r.get::<String, _>("status"),
-                "in_time": r.get::<Option<String>, _>("in_time"),
-                "out_time": r.get::<Option<String>, _>("out_time"),
+                "in_time": r.get::<Option<chrono::DateTime<chrono::Utc>>, _>("in_time").map(|dt| dt.to_rfc3339()),
+                "out_time": r.get::<Option<chrono::DateTime<chrono::Utc>>, _>("out_time").map(|dt| dt.to_rfc3339()),
                 "class_name": r.get::<Option<String>, _>("class_name"),
                 "reason": r.get::<Option<String>, _>("reason")
             });
@@ -280,8 +280,8 @@ impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
                 "date": date.to_string(),
                 "status": status,
                 "class_name": class_name,
-                "in_time": row.get::<Option<String>, _>("in_time"),
-                "out_time": row.get::<Option<String>, _>("out_time"),
+                "in_time": row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("in_time").map(|dt| dt.to_rfc3339()),
+                "out_time": row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("out_time").map(|dt| dt.to_rfc3339()),
                 "total_time": row.get::<Option<String>, _>("total_time")
             }));
         }
@@ -358,7 +358,7 @@ impl AttendanceAnalyticsService for PostgresAttendanceAnalyticsService {
             FROM attendance a
             LEFT JOIN students s ON a.school_id = s.school_id AND a.user_id = s.student_id
             WHERE a.school_id = $1 
-              AND a.class_name = $2
+              AND (a.class_name = $2 OR s.class_name = $2)
               AND a.date >= $3 
               AND a.date <= $4
               AND a.role = 'student'

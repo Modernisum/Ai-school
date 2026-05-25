@@ -8,7 +8,7 @@ pub trait AttendanceAnalyticsService: Send + Sync {
     async fn get_advanced_attendance_stats(
         &self,
         school_id: &str,
-        query: crate::routes::attendance::AttendanceQuery,
+        query: crate::domain::attendance::attendance::AttendanceQuery,
     ) -> AppResult<Value>;
 
     /// Get attendance report for a specific student

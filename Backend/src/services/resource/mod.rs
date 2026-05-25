@@ -125,6 +125,15 @@ impl ResourceService for PostgresResourceService {
         Ok(())
     }
 
+    async fn bulk_create_materials(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Vec<Value>,
+    ) -> AppResult<Value> {
+        self.material.bulk_create_materials(school_id, admin_id, data).await
+    }
+
     async fn create_event(
         &self,
         school_id: &str,
@@ -163,8 +172,9 @@ impl ResourceService for PostgresResourceService {
         admin_id: &str,
         category: &str,
         name: String,
+        description: Option<String>,
     ) -> AppResult<Value> {
-        self.inventory.create_space_by_category(school_id, admin_id, category, name).await
+        self.inventory.create_space_by_category(school_id, admin_id, category, name, description).await
     }
 
     async fn list_spaces(&self, school_id: &str, category: Option<&str>) -> AppResult<Vec<Value>> {
@@ -200,6 +210,16 @@ impl ResourceService for PostgresResourceService {
         space_name: &str,
     ) -> AppResult<()> {
         self.inventory.delete_space(school_id, admin_id, space_name).await
+    }
+
+    async fn update_space_budget(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        space_name: &str,
+        budget: Option<f64>,
+    ) -> AppResult<()> {
+        self.inventory.update_space_budget(school_id, admin_id, space_name, budget).await
     }
 
     async fn get_space_details(
@@ -247,7 +267,7 @@ impl ResourceService for PostgresResourceService {
         &self,
         school_id: &str,
         space_name: &str,
-    ) -> AppResult<Vec<Value>> {
+    ) -> AppResult<Value> {
         self.inventory.get_space_materials(school_id, space_name).await
     }
 

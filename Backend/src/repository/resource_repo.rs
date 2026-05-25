@@ -29,7 +29,7 @@ impl ResourceRepository for PostgresResourceRepository {
         );
         // Resolve space_name to space_id for the items table
         let space_id: Option<String> = sqlx::query_scalar(
-            "SELECT space_id FROM spaces WHERE school_id = $1 AND (name = $2 OR space_name = $2)"
+            "SELECT id FROM spaces WHERE school_id = $1 AND (name = $2 OR id = $2)"
         )
             .bind(school_id)
             .bind(space_name)
@@ -465,12 +465,37 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn delete_material(&self, school_id: &str, material_name: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // Check if material is assigned to any spaces
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM space_materials WHERE school_id = $1 AND material_name = $2")
+            .bind(school_id)
+            .bind(material_name)
+            .fetch_one(&mut *conn)
+            .await?;
+            
+        if count > 0 {
+            return Err(format!(
+                "Cannot delete material '{}' because it is assigned to {} spaces. Remove it from all spaces first.",
+                material_name, count
+            ).into());
+        }
+
         sqlx::query("DELETE FROM materials WHERE school_id = $1 AND name = $2")
             .bind(school_id)
             .bind(material_name)
             .execute(&mut *conn)
             .await?;
         Ok(())
+    }
+
+    async fn get_material_id_by_name(&self, school_id: &str, name: &str) -> Result<Option<String>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let id: Option<String> = sqlx::query_scalar("SELECT id FROM materials WHERE school_id = $1 AND name = $2")
+            .bind(school_id)
+            .bind(name)
+            .fetch_optional(&mut *conn)
+            .await?;
+        Ok(id)
     }
 
     async fn sell_material(
@@ -531,7 +556,7 @@ impl ResourceRepository for PostgresResourceRepository {
     }
 
 
-    async fn create_space(&self, school_id: &str, category: &str, name: String) -> Result<Value, AppError> {
+    async fn create_space(&self, school_id: &str, category: &str, name: String, description: Option<String>) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
         // Check if space with same name already exists
@@ -547,38 +572,54 @@ impl ResourceRepository for PostgresResourceRepository {
             return Err(crate::error::AppError::Validation(format!("Space with name '{}' already exists", name)).into());
         }
         
-        let space_id = format!("{}-{}", name.to_lowercase().replace(' ', "-"), &school_id[..4]);
+        // Use a more robust space_id generation
+        let space_id = format!("{}-{}", 
+            name.to_lowercase().replace(' ', "-"), 
+            uuid::Uuid::new_v4().to_string()[..8].to_string()
+        );
 
-        // Insert Space (space_id is school-scoped for global uniqueness)
+        let mut data = json!({"name": name, "category": category});
+        if let Some(ref desc) = description {
+            data["description"] = json!(desc);
+        }
+
+        // Insert Space
         sqlx::query(
             "INSERT INTO spaces (school_id, space_id, name, space_category, data)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (school_id, space_id) DO NOTHING"
+             VALUES ($1, $2, $3, $4, $5)"
         )
         .bind(school_id)
         .bind(&space_id)
         .bind(&name)
         .bind(category)
-        .bind(json!({"name": name, "category": category}))
+        .bind(&data)
         .execute(&mut *conn)
         .await?;
 
-        Ok(json!({
+        let mut response = json!({
+            "spaceId": space_id,
             "spaceName": name,
             "spaceCategory": category
-        }))
+        });
+        if let Some(ref desc) = description {
+            response["description"] = json!(desc);
+        }
+
+        Ok(response)
     }
 
     async fn get_spaces(&self, school_id: &str, category: Option<&str>) -> Result<Vec<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let query = if let Some(cat) = category {
-            sqlx::query("SELECT * FROM spaces WHERE school_id = $1 AND space_category = $2")
-                .bind(school_id)
-                .bind(cat)
+        let query_str = if category.is_some() {
+            "SELECT id, id as space_id, name, space_category, budget, data->>'description' as description FROM spaces WHERE school_id = $1 AND space_category = $2"
         } else {
-            sqlx::query("SELECT * FROM spaces WHERE school_id = $1")
-                .bind(school_id)
+            "SELECT id, id as space_id, name, space_category, budget, data->>'description' as description FROM spaces WHERE school_id = $1"
         };
+
+        let mut query = sqlx::query(query_str).bind(school_id);
+        if let Some(cat) = category {
+            query = query.bind(cat);
+        }
 
         let rows = query.fetch_all(&mut *conn).await?;
         Ok(rows.into_iter().map(|r| {
@@ -588,28 +629,35 @@ impl ResourceRepository for PostgresResourceRepository {
                 "spaceId": r.get::<String, _>("space_id"),
                 "spaceCategory": r.get::<String, _>("space_category"),
                 "budget": r.get::<Option<f64>, _>("budget"),
+                "description": r.get::<Option<String>, _>("description"),
             })
         }).collect())
     }
 
     async fn get_space_categories(&self, school_id: &str) -> Result<Vec<String>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let rows = sqlx::query("SELECT DISTINCT space_category FROM spaces WHERE school_id = $1 AND space_category IS NOT NULL")
-            .bind(school_id)
-            .fetch_all(&mut *conn)
-            .await?;
+        
+        // Fix: Read from space_categories table primarily, UNION with any custom ones in spaces table
+        let rows = sqlx::query(
+            "SELECT name FROM space_categories WHERE school_id = $1 
+             UNION 
+             SELECT DISTINCT space_category as name FROM spaces WHERE school_id = $1 AND space_category IS NOT NULL"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
 
         Ok(rows.into_iter()
-            .map(|r| r.get::<String, _>("space_category"))
+            .map(|r| r.get::<String, _>("name"))
             .collect())
     }
 
     async fn create_space_category(&self, school_id: &str, name: &str) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
-        // Check if category already exists for this school
+        // Check if category already exists for this school (case-insensitive)
         let existing: Option<String> = sqlx::query_scalar(
-            "SELECT name FROM space_categories WHERE school_id = $1 AND name = $2"
+            "SELECT name FROM space_categories WHERE school_id = $1 AND LOWER(name) = LOWER($2)"
         )
         .bind(school_id)
         .bind(name)
@@ -646,7 +694,7 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn get_space_details(&self, school_id: &str, space_name: &str) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        let row = sqlx::query("SELECT * FROM spaces WHERE school_id = $1 AND (name = $2 OR space_id = $2 OR space_name = $2)")
+        let row = sqlx::query("SELECT *, id as space_id FROM spaces WHERE school_id = $1 AND (name = $2 OR id = $2)")
             .bind(school_id)
             .bind(space_name)
             .fetch_optional(&mut *conn)
@@ -696,16 +744,68 @@ impl ResourceRepository for PostgresResourceRepository {
 
     async fn delete_space(&self, school_id: &str, space_name: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
         
         // 1. Delete associated data (using space_name as key)
         sqlx::query("DELETE FROM space_employees WHERE school_id = $1 AND space_name = $2")
-            .bind(school_id).bind(space_name).execute(&mut *conn).await?;
+            .bind(school_id).bind(space_name).execute(&mut *tx).await?;
         sqlx::query("DELETE FROM space_materials WHERE school_id = $1 AND space_name = $2")
-            .bind(school_id).bind(space_name).execute(&mut *conn).await?;
+            .bind(school_id).bind(space_name).execute(&mut *tx).await?;
         sqlx::query("DELETE FROM spaces WHERE school_id = $1 AND name = $2")
-            .bind(school_id).bind(space_name).execute(&mut *conn).await?;
+            .bind(school_id).bind(space_name).execute(&mut *tx).await?;
         
+        tx.commit().await?;
         Ok(())
+    }
+
+    async fn update_space_budget(&self, school_id: &str, space_name: &str, budget: Option<f64>) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query("UPDATE spaces SET budget = $1 WHERE school_id = $2 AND name = $3")
+            .bind(budget)
+            .bind(school_id)
+            .bind(space_name)
+            .execute(&mut *conn)
+            .await?;
+        Ok(())
+    }
+
+    async fn get_all_spaces_materials(&self, school_id: &str) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        let rows = sqlx::query(
+            "SELECT sm.space_name, sm.material_name, sm.quantity, sm.unit, sm.unit_price, 
+                    COALESCE(req.required_count, 0) as required_count, s.space_category
+             FROM space_materials sm
+             JOIN spaces s ON s.school_id = sm.school_id AND s.name = sm.space_name
+             LEFT JOIN space_material_requirements req 
+               ON req.school_id = sm.school_id 
+              AND req.space_name = sm.space_name 
+              AND req.material_name = sm.material_name
+             WHERE sm.school_id = $1
+             ORDER BY sm.space_name, sm.material_name"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let mut spaces_map: std::collections::HashMap<String, Vec<Value>> = std::collections::HashMap::new();
+        for r in rows {
+            let space_name: String = r.get("space_name");
+            let material = json!({
+                "materialName": r.get::<String, _>("material_name"),
+                "quantity": r.get::<i32, _>("quantity"),
+                "requiredCount": r.get::<i32, _>("required_count"),
+                "unit": r.get::<Option<String>, _>("unit"),
+                "unitPrice": r.get::<Option<f64>, _>("unit_price"),
+                "spaceCategory": r.get::<String, _>("space_category")
+            });
+            spaces_map.entry(space_name).or_default().push(material);
+        }
+
+        Ok(json!({
+            "success": true,
+            "data": spaces_map
+        }))
     }
 
 
@@ -860,9 +960,10 @@ impl ResourceRepository for PostgresResourceRepository {
         &self,
         school_id: &str,
         space_name: &str,
-    ) -> Result<Vec<Value>, AppError> {
+    ) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
 
+        // 1. Get materials with requirements
         let rows = sqlx::query(
             "SELECT m.*, COALESCE(req.required_count, 0) as required_count
              FROM space_materials m
@@ -878,7 +979,7 @@ impl ResourceRepository for PostgresResourceRepository {
         .fetch_all(&mut *conn)
         .await?;
 
-        Ok(rows.into_iter().map(|r| {
+        let materials: Vec<Value> = rows.into_iter().map(|r| {
             let quantity: i32 = r.get("quantity");
             let required: i32 = r.get("required_count");
             json!({
@@ -890,7 +991,19 @@ impl ResourceRepository for PostgresResourceRepository {
                 "unitPrice": r.get::<Option<f64>, _>("unit_price"),
                 "status": if required > 0 && quantity < required { "deficit" } else if required > 0 { "full" } else { "unset" }
             })
-        }).collect())
+        }).collect();
+
+        // 2. Get space budget
+        let budget: Option<f64> = sqlx::query_scalar("SELECT budget FROM spaces WHERE school_id = $1 AND name = $2")
+            .bind(school_id)
+            .bind(space_name)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+        Ok(json!({
+            "materials": materials,
+            "budget": budget
+        }))
     }
 
     async fn clone_space(
@@ -904,7 +1017,7 @@ impl ResourceRepository for PostgresResourceRepository {
 
         // 1. Get source space details
         let source: (String, String, Value) = sqlx::query_as(
-            "SELECT space_category, space_id, data FROM spaces WHERE school_id = $1 AND name = $2"
+            "SELECT space_category, id, data FROM spaces WHERE school_id = $1 AND name = $2"
         )
         .bind(school_id)
         .bind(source_space_name)
@@ -916,7 +1029,10 @@ impl ResourceRepository for PostgresResourceRepository {
         let source_space_id = source.1;
 
         // 2. Generate new space_id
-        let new_space_id = format!("{}-{}", new_space_name.to_lowercase().replace(' ', "-"), &school_id[..4]);
+        let new_space_id = format!("{}-{}", 
+            new_space_name.to_lowercase().replace(' ', "-"), 
+            uuid::Uuid::new_v4().to_string()[..8].to_string()
+        );
 
         // 3. Check if space with same name already exists
         let existing: Option<String> = sqlx::query_scalar(

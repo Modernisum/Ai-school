@@ -23,43 +23,43 @@ const statusColors = { pending: 'bg-amber-500/20 border-amber-500/30', in_progre
 
 export default function SyllabusPlannerPage() {
   const schoolId = getSchoolId();
-  const { data: classes = [] } = useGetClassIdsQuery(schoolId);
-  const [fetchSubjects, { data: subjects = [] }] = useLazyGetSubjectIdsQuery();
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
+  const { data: spaces = [] } = useGetClassIdsQuery(schoolId);
+  const [fetchResponsibilities, { data: responsibilities = [] }] = useLazyGetSubjectIdsQuery();
+  const [selectedSpace, setSelectedSpace] = useState('');
+  const [selectedResponsibility, setSelectedResponsibility] = useState('');
   const [activeQuarter, setActiveQuarter] = useState('Q1');
   const [plotYear, setPlotYear] = useState(new Date().getFullYear());
   const [plotting, setPlotting] = useState(false);
 
-  const { data: syllabus = [], isLoading: sylLoading, refetch } = useGetSyllabusQuery(
-    { schoolId, subjectId: selectedSubject },
-    { skip: !selectedSubject }
+  const { data: syllabus = [], isLoading: sylLoading, refetch: refetchSyllabus } = useGetSyllabusQuery(
+    { schoolId, responsibilityId: selectedResponsibility },
+    { skip: !selectedResponsibility }
   );
   const { data: quarterData = [] } = useGetQuarterReportQuery(
     { schoolId, quarter: activeQuarter },
-    { skip: !selectedSubject }
+    { skip: !selectedResponsibility }
   );
   const [plotSyllabus] = usePlotSyllabusMutation();
 
   const quarterSyllabus = syllabus.filter(s => s.quarter === activeQuarter);
   const quarterReportData = Array.isArray(quarterData) ? quarterData : [];
 
-  const handleClassChange = async (className) => {
-    setSelectedClass(className);
-    setSelectedSubject('');
-    if (className) {
-      const result = await fetchSubjects({ schoolId, className });
-      if (result.data) setSelectedSubject(result.data[0] || '');
+  const handleSpaceChange = async (spaceId) => {
+    setSelectedSpace(spaceId);
+    setSelectedResponsibility('');
+    if (spaceId) {
+      const result = await fetchResponsibilities({ schoolId, spaceId });
+      if (result.data) setSelectedResponsibility(result.data[0] || '');
     }
   };
 
   const handlePlot = async () => {
-    if (!selectedClass || !selectedSubject) return;
+    if (!selectedSpace || !selectedResponsibility) return;
     setPlotting(true);
     try {
-      await plotSyllabus({ schoolId, classId: selectedClass, subjectId: selectedSubject, academicYear: plotYear }).unwrap();
+      await plotSyllabus({ schoolId, spaceId: selectedSpace, responsibilityId: selectedResponsibility, academicYear: plotYear }).unwrap();
       toast.success('Syllabus plotted for academic year');
-      refetch();
+      refetchSyllabus();
     } catch (e) { toast.error(e?.data?.message || 'Plot failed'); }
     setPlotting(false);
   };
@@ -71,19 +71,19 @@ export default function SyllabusPlannerPage() {
       <GlassCard>
         <div className="p-4 flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Class</div>
-            <select value={selectedClass} onChange={e => handleClassChange(e.target.value)}
+            <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Space (Class)</div>
+            <select value={selectedSpace} onChange={e => handleSpaceChange(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-white">
-              <option value="">Select Class</option>
-              {classes.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="">Select Space</option>
+              {spaces.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="flex-1 min-w-[200px]">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Subject</div>
-            <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
+            <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Responsibility (Subject)</div>
+            <select value={selectedResponsibility} onChange={e => setSelectedResponsibility(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-white">
-              <option value="">Select Subject</option>
-              {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+              <option value="">Select Responsibility</option>
+              {responsibilities.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <StandardButton onClick={handlePlot} icon={Play} variant="primary" size="sm" isLoading={plotting}>
@@ -92,7 +92,7 @@ export default function SyllabusPlannerPage() {
         </div>
       </GlassCard>
 
-      {selectedSubject && (
+      {selectedResponsibility && (
         <div className="mt-4">
           <div className="flex gap-2 mb-4">
             {quarters.map(q => (

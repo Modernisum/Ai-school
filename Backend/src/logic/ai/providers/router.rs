@@ -426,8 +426,8 @@ mod tests {
         assert_eq!(router.get_strategy(), RoutingStrategy::CostOptimized);
     }
     
-    #[test]
-    fn test_routing_strategy_set_get() {
+    #[tokio::test]
+    async fn test_routing_strategy_set_get() {
         use crate::db::DbClient;
         
         let db_client = Arc::new(DbClient::new_test().unwrap());

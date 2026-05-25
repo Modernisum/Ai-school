@@ -42,20 +42,29 @@ impl StudentCrud {
             .await?;
 
         // 2. Assign section
-        let class_details = self.repos.academic.get_class_by_name(school_id, class_name).await?;
-        let section_size = class_details
-            .as_ref()
-            .and_then(|c| c["sectionSize"].as_i64())
-            .unwrap_or(60) as i32;
+        let section_size = 60; // Default section size
         
         let section = self.queries.get_section_for_roll(roll_number, section_size);
 
+        // Full section name (which acts as the Space name for validation)
         let full_section_name = format!("{}-{}", class_name, section);
+
+        // Security: Ensure the target space is actually a 'classroom' or 'lab'
+        if let Ok(Some(space)) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
+            let category = space["spaceCategory"].as_str().or(space["category"].as_str()).unwrap_or("");
+            let allowed_categories = ["classroom", "lab"];
+            if !allowed_categories.contains(&category.to_lowercase().as_str()) {
+                return Err(AppError::Validation(format!(
+                    "Student cannot be assigned to '{}'. Students can only be assigned to spaces with 'classroom' or 'lab' category.", 
+                    full_section_name
+                )));
+            }
+        }
 
         // Auto-Creation of Space if it doesn't exist
         if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
             // Create a new classroom space matching the generated section name
-            let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+            let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone(), None).await;
         }
 
         // 3. Generate Student ID
@@ -188,11 +197,7 @@ impl StudentCrud {
                 }
             };
 
-            let class_details = self.repos.academic.get_class_by_name(school_id, &class_name).await?;
-            let section_size = class_details
-                .as_ref()
-                .and_then(|c| c["sectionSize"].as_i64())
-                .unwrap_or(60) as i32;
+            let section_size = 60;
 
             let section = self.queries.get_section_for_roll(roll_number, section_size);
 
@@ -201,7 +206,7 @@ impl StudentCrud {
             // Auto-Creation of Space if it doesn't exist
             if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
                 // Ignore failure during bulk import, we just try to create it
-                let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+                let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone(), None).await;
             }
 
             let student_id = match self.repos.student.generate_student_id(school_id).await {
@@ -285,15 +290,14 @@ impl StudentCrud {
         self.repos.student.get_students(school_id).await.map_err(AppError::from)
     }
 
-    pub async fn list_students_by_class(
+    pub async fn list_students_by_space(
         &self,
         school_id: &str,
-        class_name: &str,
-        section: Option<&str>,
+        space_id: &str,
     ) -> AppResult<Vec<Value>> {
         self.repos
             .student
-            .get_students_by_class(school_id, class_name, section)
+            .get_students_by_class(school_id, space_id, None)
             .await
             .map_err(AppError::from)
     }
@@ -332,18 +336,26 @@ impl StudentCrud {
                     .get_next_roll_number(school_id, nc)
                     .await?;
                 
-                let class_details = self.repos.academic.get_class_by_name(school_id, nc).await?;
-                let section_size = class_details
-                    .as_ref()
-                    .and_then(|c| c["sectionSize"].as_i64())
-                    .unwrap_or(60) as i32;
+                let section_size = 60;
 
                 let section = self.queries.get_section_for_roll(next_roll, section_size);
                 let full_section_name = format!("{}-{}", nc, section);
 
+                // Security: Ensure the target space is actually a 'classroom' or 'lab'
+                if let Ok(Some(space)) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
+                    let category = space["spaceCategory"].as_str().or(space["category"].as_str()).unwrap_or("");
+                    let allowed_categories = ["classroom", "lab"];
+                    if !allowed_categories.contains(&category.to_lowercase().as_str()) {
+                        return Err(AppError::Validation(format!(
+                            "Student cannot be moved to '{}'. Students can only be assigned to spaces with 'classroom' or 'lab' category.", 
+                            full_section_name
+                        )));
+                    }
+                }
+
                 // Auto-Creation of Space if it doesn't exist
                 if let Ok(None) = self.repos.resource.get_space_details(school_id, &full_section_name).await {
-                    let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone()).await;
+                    let _ = self.repos.resource.create_space(school_id, "classroom", full_section_name.clone(), None).await;
                 }
 
                 let room_index = ((next_roll - 1) % section_size) + 1;
@@ -469,11 +481,7 @@ impl StudentCrud {
 
         for (i, student) in class_students.into_iter().enumerate() {
             let new_roll = (i + 1) as i32;
-            let class_details = self.repos.academic.get_class_by_name(school_id, class_name).await?;
-            let section_size = class_details
-                .as_ref()
-                .and_then(|c| c["sectionSize"].as_i64())
-                .unwrap_or(60) as i32;
+            let section_size = 60;
 
             let (new_section, room_index, full_section_name) = self.queries.calculate_room_and_section(new_roll, section_size, class_name);
             
@@ -501,5 +509,97 @@ impl StudentCrud {
             .into_iter()
             .filter_map(|s| s["studentId"].as_str().map(|id| id.to_string()))
             .collect())
+    }
+
+    pub async fn validate_student_data(&self, school_id: &str, data: Value) -> AppResult<()> {
+        self.validation.validate_student_data(school_id, data).await
+    }
+}
+
+#[async_trait]
+impl StudentService for StudentCrud {
+    async fn create_student(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<Value> {
+        self.create_student(school_id, admin_id, data).await
+    }
+
+    async fn bulk_create_students(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        data: Vec<Value>,
+    ) -> AppResult<Value> {
+        self.bulk_create_students(school_id, admin_id, data).await
+    }
+
+    async fn list_students(&self, school_id: &str) -> AppResult<Vec<Value>> {
+        self.list_students(school_id).await
+    }
+
+    async fn list_students_paginated(
+        &self,
+        school_id: &str,
+        page: i32,
+        limit: i32,
+        space_id: Option<&str>,
+        status: Option<&str>,
+        search: Option<&str>,
+    ) -> AppResult<(Vec<Value>, i64)> {
+        self.repos.student.get_students_paginated(
+            school_id, 
+            page, 
+            limit, 
+            space_id, 
+            None, // section
+            status, 
+            search
+        ).await.map_err(AppError::from)
+    }
+
+    async fn list_students_by_space(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> AppResult<Vec<Value>> {
+        self.list_students_by_space(school_id, space_id).await
+    }
+
+    async fn get_student(&self, school_id: &str, student_id: &str) -> AppResult<Option<Value>> {
+        self.get_student(school_id, student_id).await
+    }
+
+    async fn update_student(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        admin_id: &str,
+        data: Value,
+    ) -> AppResult<()> {
+        self.update_student(school_id, student_id, admin_id, data).await
+    }
+
+    async fn delete_student(
+        &self,
+        school_id: &str,
+        student_id: &str,
+        admin_id: &str,
+    ) -> AppResult<()> {
+        self.delete_student(school_id, student_id, admin_id).await
+    }
+
+    async fn resequence_roll_numbers(&self, school_id: &str, space_id: &str) -> AppResult<()> {
+        self.resequence_roll_numbers(school_id, space_id).await
+    }
+
+    async fn list_student_ids(&self, school_id: &str) -> AppResult<Vec<String>> {
+        self.list_student_ids(school_id).await
+    }
+
+    async fn validate_student_data(&self, school_id: &str, data: Value) -> AppResult<()> {
+        self.validate_student_data(school_id, data).await
     }
 }

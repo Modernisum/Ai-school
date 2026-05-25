@@ -52,4 +52,26 @@ pub trait AttendanceRepository: Send + Sync {
         class_name: &str,
         date: &str,
     ) -> Result<JsonList, AppError>;
+
+    async fn insert_holiday(
+        &self,
+        id: &str,
+        school_id: &str,
+        title: &str,
+        description: &str,
+        from_date: &str,
+        to_date: &str,
+        classes: Value,
+        exempt_employees: Value,
+        exempt_students: Value,
+        created_at: &str,
+    ) -> Result<(), AppError>;
+
+    async fn delete_holiday(&self, school_id: &str, holiday_id: &str) -> Result<(), AppError>;
+
+    async fn get_holiday(&self, school_id: &str, holiday_id: &str) -> Result<Option<Value>, AppError>;
+
+    async fn list_holidays(&self, school_id: &str, start_date: &str, end_date: &str) -> Result<JsonList, AppError>;
+
+    async fn check_holiday(&self, school_id: &str, date: &str) -> Result<Option<Value>, AppError>;
 }

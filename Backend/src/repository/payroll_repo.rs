@@ -31,8 +31,19 @@ impl crate::repository::traits::PayrollRepository for PostgresPayrollRepository 
     ) -> Result<Value, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let payment_id = format!("PAY{}", chrono::Utc::now().timestamp_millis());
-        sqlx::query("INSERT INTO employee_payments (payment_id, school_id, employee_id, amount, payment_date, data) VALUES ($1, $2, $3, $4, $5, $6)")
-            .bind(&payment_id).bind(school_id).bind(employee_id).bind(data["amount"].as_f64().unwrap_or(0.0)).bind(chrono::Utc::now().naive_utc()).bind(&data).execute(&mut *conn).await?;
+        let payment_type = data["type"].as_str().unwrap_or("salary");
+        let amount = data["amount"].as_f64().unwrap_or(0.0);
+        let salary_id = data["salaryId"].as_str();
+
+        sqlx::query("INSERT INTO employee_payments (payment_id, school_id, employee_id, payment_type, amount, salary_id) VALUES ($1, $2, $3, $4, $5, $6)")
+            .bind(&payment_id)
+            .bind(school_id)
+            .bind(employee_id)
+            .bind(payment_type)
+            .bind(amount)
+            .bind(salary_id)
+            .execute(&mut *conn)
+            .await?;
         
         let mut ret = data.clone();
         ret["paymentId"] = json!(payment_id);

@@ -8,11 +8,8 @@ pub mod attendance_health_monitor;
 pub mod attendance_service;
 pub mod auth_service;
 pub mod auxiliary_service;
-pub mod award_service;
-pub mod complain_service;
 pub mod content_generation_service;
 pub mod developer_access_service;
-pub mod documentbox_service;
 pub mod embedding_service;
 pub mod employee_service;
 pub mod encrypted_employee_service;
@@ -29,14 +26,11 @@ pub mod operations_service;
 pub mod payroll;
 pub mod payroll_service;
 pub mod plagiarism_service;
-pub mod reminder_service;
 pub mod resource;
 pub mod resource_service;
 pub mod responsibility;
 pub mod responsibility_permissions;
 pub mod responsibility_notifications;
-pub mod responsibility_service;
-pub mod school_service;
 pub mod setup_service;
 pub mod student;
 pub mod student_service;
@@ -53,11 +47,9 @@ use crate::services::attendance_analytics_service::PostgresAttendanceAnalyticsSe
 use crate::services::attendance_health_monitor::AttendanceHealthMonitor;
 use crate::services::attendance_service::PostgresAttendanceService;
 use crate::services::auth_service::PostgresAuthService;
-use crate::services::award_service::PostgresAwardService;
-use crate::services::complain_service::PostgresComplainService;
+use crate::services::auxiliary_service::PostgresAuxiliaryService;
 use crate::services::content_generation_service::ContentGenerationServiceImpl;
 use crate::services::developer_access_service::DeveloperAccessService;
-use crate::services::documentbox_service::PostgresDocumentBoxService;
 use crate::services::embedding_service::PostgresEmbeddingService;
 use crate::services::employee_service::PostgresEmployeeService;
 use crate::services::encrypted_employee_service::EncryptedEmployeeService;
@@ -71,10 +63,8 @@ use crate::services::ocr_service::OcrService;
 use crate::services::operations_service::PostgresOperationsService;
 use crate::services::payroll_service::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
-use crate::services::reminder_service::PostgresReminderService;
 use crate::services::resource_service::PostgresResourceService;
-use crate::services::responsibility_service::PostgresResponsibilityService;
-use crate::services::school_service::PostgresSchoolService;
+use crate::services::responsibility::PostgresResponsibilityService;
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student_service::PostgresStudentService;
 use crate::services::task_service::PostgresTaskService;
@@ -122,6 +112,7 @@ pub struct Services {
     pub ocr: Arc<OcrService>,
 }
 
+
 pub fn initialize_services(
     repos: Arc<Repositories>,
     responsibility_cache: Arc<crate::logic::cache_service::ResponsibilityCacheService>,
@@ -135,9 +126,7 @@ pub fn initialize_services(
         repos: repos.clone(),
     });
 
-    let responsibility_service = Arc::new(PostgresResponsibilityService {
-        repos: repos.clone(),
-    });
+    let responsibility_service = Arc::new(PostgresResponsibilityService::new(repos.clone()));
 
     let academic_service = Arc::new(PostgresAcademicService {
         repos: repos.clone(),
@@ -171,6 +160,8 @@ pub fn initialize_services(
     // Create attendance analytics service
     let attendance_analytics_service = Arc::new(PostgresAttendanceAnalyticsService::new(repos.clone(), responsibility_cache.clone()));
 
+    let aux_service = Arc::new(PostgresAuxiliaryService::new(repos.clone(), ai_service.clone()));
+
     Services {
         auth: Arc::new(PostgresAuthService {
             repos: repos.clone(),
@@ -196,22 +187,11 @@ pub fn initialize_services(
         payroll: Arc::new(PostgresPayrollService::new(repos.clone())),
         coupon: fee_service,
         resource: Arc::new(PostgresResourceService::new(repos.clone(), Some(material_monitor.clone()))),
-        award: Arc::new(PostgresAwardService {
-            repos: repos.clone(),
-        }),
-        complain: Arc::new(PostgresComplainService {
-            repos: repos.clone(),
-        }),
-        reminder: Arc::new(PostgresReminderService {
-            repos: repos.clone(),
-        }),
-        document_box: Arc::new(PostgresDocumentBoxService {
-            repos: repos.clone(),
-            ai: ai_service.clone(),
-        }),
-        school: Arc::new(PostgresSchoolService {
-            repos: repos.clone(),
-        }),
+        award: aux_service.clone(),
+        complain: aux_service.clone(),
+        reminder: aux_service.clone(),
+        document_box: aux_service.clone(),
+        school: aux_service,
         responsibility: responsibility_service,
         task: Arc::new(PostgresTaskService {
             repos: repos.clone(),

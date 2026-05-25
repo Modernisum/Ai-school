@@ -90,7 +90,7 @@ pub trait ResponsibilityService: Send + Sync {
         responsibility_id: &str,
         admin_id: &str,
         updates: Vec<(String, Vec<String>)>,
-    ) -> AppResult<usize>;
+    ) -> AppResult<(usize, Vec<String>)>;
     
     // History and Versioning methods
     async fn get_assignment_history(
@@ -236,4 +236,10 @@ pub trait ResponsibilityService: Send + Sync {
         start_date: &str,
         end_date: &str,
     ) -> AppResult<Vec<u8>>;
+
+    async fn get_space_financial_overview(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> AppResult<Value>;
 }

@@ -31,20 +31,20 @@ export default function StudentFees() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   
-  const classes = useMemo(() => {
-    const classSet = new Set();
+  const spaces = useMemo(() => {
+    const spaceSet = new Set();
     students.forEach(s => {
-      const cls = s.className || s.classId;
-      if (cls) classSet.add(cls);
+      const sid = s.spaceId || s.space_id;
+      if (sid) spaceSet.add(sid);
     });
-    return ['All', ...Array.from(classSet).sort()];
+    return ['All', ...Array.from(spaceSet).sort()];
   }, [students]);
   
   const feeData = useMemo(() => {
     return students.map(student => ({
       id: student.studentId || student.student_id,
       name: student.studentName || student.name,
-      class: student.className || student.classId,
+      space: student.spaceId || student.space_id,
       totalFee: 25000,
       paid: Math.floor(Math.random() * 25000),
       dueDate: '2024-12-31',
@@ -56,9 +56,9 @@ export default function StudentFees() {
   const filteredFees = useMemo(() => {
     return feeData.filter(fee => {
       const nameMatch = fee.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const classMatch = filterClass === 'All' || fee.class === filterClass;
+      const spaceMatch = filterClass === 'All' || fee.space === filterClass;
       const statusMatch = filterStatus === 'All' || fee.status === filterStatus;
-      return nameMatch && classMatch && statusMatch;
+      return nameMatch && spaceMatch && statusMatch;
     });
   }, [feeData, searchTerm, filterClass, filterStatus]);
   
@@ -102,7 +102,7 @@ export default function StudentFees() {
             </div>
             <div className="flex gap-1">
               <select className="bg-slate-900 border border-white/5 rounded-lg py-1.5 px-3 text-micro text-slate-500 font-black uppercase focus:outline-none" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
-                {classes.map((c, i) => <option key={i} value={c}>{c.toUpperCase()}</option>)}
+                {spaces.map((s, i) => <option key={i} value={s}>{s.toUpperCase()}</option>)}
               </select>
             </div>
           </div>

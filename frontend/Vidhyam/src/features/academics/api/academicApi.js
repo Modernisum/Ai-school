@@ -12,69 +12,68 @@ export const academicApi = createApi({
         },
     }),
     keepUnusedDataFor: 300, // Keep data cached for 5 minutes instead of default 60s
-    tagTypes: ['Class', 'Subject', 'Exam', 'Materials', 'Holidays', 'Attendance', 'ExamApproval', 'Syllabus', 'Changes'],
+    tagTypes: ['Spaces', 'Responsibilities', 'Exam', 'Materials', 'Holidays', 'Attendance', 'ExamApproval', 'Syllabus', 'Changes'],
     endpoints: (builder) => ({
-        // ---- Classes ----
+        // ---- Spaces (formerly Classes) ----
         getClasses: builder.query({
-            query: (schoolId) => `/class/${schoolId}/classes`,
-            providesTags: ['Class'],
-            // Transform response to handle both {success: true, data: [...]} and [...].
-            transformResponse: (response) => response.data || response.classes || response || [],
+            query: (schoolId) => `/spaces/${schoolId}/spaces?category=classroom`,
+            providesTags: ['Spaces'],
+            transformResponse: (response) => response.data || response.spaces || response || [],
         }),
         getClassIds: builder.query({
-            query: (schoolId) => `/class/${schoolId}/classes`,
-            providesTags: ['Class'],
+            query: (schoolId) => `/spaces/${schoolId}/spaces?category=classroom`,
+            providesTags: ['Spaces'],
             transformResponse: (response) => {
-                const list = response.data || response.classes || response || [];
-                return list.map(c => c.id || c.classId);
+                const list = response.data || response.spaces || response || [];
+                return list.map(s => s.spaceId || s.id || s.name);
             },
         }),
         addClass: builder.mutation({
-            query: ({ schoolId, className }) => ({
-                url: `/class/${schoolId}/classes`,
+            query: ({ schoolId, spaceName, category = 'classroom' }) => ({
+                url: `/spaces/${schoolId}/spaces/${category}`,
                 method: 'POST',
-                body: { className },
+                body: { spaceName },
             }),
-            invalidatesTags: ['Class'],
+            invalidatesTags: ['Spaces'],
         }),
         deleteClass: builder.mutation({
-            query: ({ schoolId, classId }) => ({
-                url: `/class/${schoolId}/classes/${classId}`,
+            query: ({ schoolId, spaceId }) => ({
+                url: `/spaces/${schoolId}/spaces/${spaceId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Class'],
+            invalidatesTags: ['Spaces'],
         }),
 
-        // ---- Subjects ----
+        // ---- Responsibilities (formerly Subjects) ----
         getSubjects: builder.query({
-            query: (schoolId) => `/subjects/${schoolId}`,
-            providesTags: ['Subject'],
-            transformResponse: (response) => response.data || response.subjects || [],
+            query: (schoolId) => `/responsibility/${schoolId}`,
+            providesTags: ['Responsibilities'],
+            transformResponse: (response) => response.data || response.responsibilities || [],
         }),
         addSubject: builder.mutation({
-            query: ({ schoolId, ...subjectData }) => ({
-                url: `/subjects/${schoolId}`,
+            query: ({ schoolId, ...respData }) => ({
+                url: `/responsibility/${schoolId}`,
                 method: 'POST',
-                body: subjectData,
+                body: respData,
             }),
-            invalidatesTags: ['Subject'],
+            invalidatesTags: ['Responsibilities'],
         }),
         deleteSubject: builder.mutation({
-            query: ({ schoolId, subjectId }) => ({
-                url: `/subjects/${schoolId}/${subjectId}`,
+            query: ({ schoolId, responsibilityId }) => ({
+                url: `/responsibility/${schoolId}/${responsibilityId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Subject'],
+            invalidatesTags: ['Responsibilities'],
         }),
 
         // ---- Exam / Paper Generation ----
         getSubjectIds: builder.query({
-            query: ({ schoolId, className }) => `/academic/${schoolId}/${className}/ids`,
-            providesTags: ['Subject'],
+            query: ({ schoolId, spaceId }) => `/academic/${schoolId}/spaces/${spaceId}/responsibilities`,
+            providesTags: ['Responsibilities'],
             transformResponse: (response) => response.data || [],
         }),
         getChapterNames: builder.query({
-            query: ({ schoolId, className, subject }) => `/academic/topic/${schoolId}/class/${className}/subject/${subject}/chapter/names`,
+            query: ({ schoolId, spaceId, responsibilityId }) => `/academic/topic/${schoolId}/space/${spaceId}/responsibility/${responsibilityId}/chapter/names`,
             transformResponse: (response) => Array.isArray(response) ? response : [],
         }),
         generatePaper: builder.mutation({
@@ -130,13 +129,13 @@ export const academicApi = createApi({
 
         // ---- Syllabus Calendar ----
         getSyllabus: builder.query({
-            query: ({ schoolId, subjectId }) => `/school/${schoolId}/academic/syllabus/${subjectId}`,
+            query: ({ schoolId, responsibilityId }) => `/school/${schoolId}/academic/syllabus/${responsibilityId}`,
             providesTags: ['Syllabus'],
             transformResponse: (response) => response.data || [],
         }),
         plotSyllabus: builder.mutation({
-            query: ({ schoolId, classId, subjectId, academicYear }) => ({
-                url: `/school/${schoolId}/academic/syllabus/${classId}/${subjectId}/plot`,
+            query: ({ schoolId, spaceId, responsibilityId, academicYear }) => ({
+                url: `/school/${schoolId}/academic/syllabus/${spaceId}/${responsibilityId}/plot`,
                 method: 'POST',
                 body: { academicYear },
             }),
@@ -241,10 +240,8 @@ export const academicApi = createApi({
             transformResponse: (res) => res.data || [],
         }),
         getStudentsByClass: builder.query({
-            query: ({ schoolId, className, section }) => {
-                let url = `/students/${schoolId}/class/${className}`;
-                if (section) url += `?section=${section}`;
-                return url;
+            query: ({ schoolId, spaceId }) => {
+                return `/students/${schoolId}/space/${spaceId}`;
             },
             providesTags: ['Attendance'],
             transformResponse: (res) => res.data || [],
@@ -326,9 +323,9 @@ export const academicApi = createApi({
         }),
         
         getClassAttendance: builder.query({
-            query: ({ schoolId, className, date }) => ({
+            query: ({ schoolId, spaceId, date }) => ({
                 url: `/operations/attendance/${schoolId}/class-attendance`,
-                params: { class_name: className, date },
+                params: { space_id: spaceId, date },
             }),
             providesTags: ['Attendance'],
             transformResponse: (res) => res.data || [],

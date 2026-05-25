@@ -1,95 +1,184 @@
 # Finance API — Fees Tests
 
+All routes are nested under `/api/school/{schoolId}/finance/`.
+
+---
+
+## Actual Route Table
+
+| # | Endpoint | Method | Description |
+|---|----------|--------|-------------|
+| 1 | `/api/school/:schoolId/finance/fees` | GET | List school fee templates |
+| 2 | `/api/school/:schoolId/finance/fees` | POST | Create a new school fee template |
+| 3 | `/api/school/:schoolId/finance/fees/pending` | GET | List pending fees (supports min_percentage & class filtering) |
+| 4 | `/api/school/:schoolId/finance/fees/student/:studentId/add` | POST | Add fee to a student's billing record |
+| 5 | `/api/school/:schoolId/finance/fees/student/:studentId` | GET | Get a student's current fee status |
+| 6 | `/api/school/:schoolId/finance/fees/student/:studentId/ai-reminder` | GET | Generate AI-powered payment reminder text |
+| 7 | `/api/school/:schoolId/finance/fees/student/:studentId/discount` | POST | Apply fee discount to a student's record |
+| 8 | `/api/school/:schoolId/finance/fees/student/:studentId/pay` | POST | Record a payment made by a student |
+
+---
+
 ## Test: List Fees
 
-- **Endpoint**: `GET /api/finance/689225/fees`
-- **Expected**: 200, paginated fee list
+- **Endpoint**: `GET /api/school/689225/finance/fees`
+- **Response Code**: `200 OK`
 
 ```bash
-curl -s "http://localhost:8080/api/finance/689225/fees" \
+curl -s "http://localhost:8080/api/school/689225/finance/fees" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
+  -H "X-School-ID: 689225"
+```
+
+### JSON Response
+```json
+{
+  "data": [],
+  "success": true
+}
 ```
 
 ---
 
-## Test: List Fees (filtered by status)
+## Test: Add Fee to Student
 
-- **Endpoint**: `GET /api/finance/689225/fees`
-- **Query**: `?filters=[{"field":"status","op":"eq","value":"pending"}]`
-- **Expected**: 200, only pending fees
-
-```bash
-FILTERS='[{"field":"status","op":"eq","value":"pending"}]'
-curl -s -G "http://localhost:8080/api/finance/689225/fees" \
-  --data-urlencode "filters=$FILTERS" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
-
----
-
-## Test: Create Fee
-
-- **Endpoint**: `POST /api/finance/689225/fees`
-- **Expected**: 201
+- **Endpoint**: `POST /api/school/689225/finance/fees/student/S000009/add`
+- **Response Code**: `200 OK`
 
 ```bash
-curl -s -X POST http://localhost:8080/api/finance/689225/fees \
+curl -s -X POST "http://localhost:8080/api/school/689225/finance/fees/student/S000009/add" \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
-    "student_id": "STU001",
-    "fee_type": "tuition",
-    "amount": 15000.00,
-    "due_date": "2026-05-01",
-    "status": "pending"
-  }' | jq .
+    "amount": 1000.00,
+    "feeId": "tuition"
+  }'
+```
+
+### JSON Response
+```json
+{
+  "data": {
+    "pendingAmount": 1000.0,
+    "studentId": "S000009",
+    "totalFees": 1000.0
+  },
+  "success": true
+}
 ```
 
 ---
 
-## Test: Get Student Fees
+## Test: Get Student Fee Details
 
-- **Endpoint**: `GET /api/finance/689225/fees/student/STU001`
-- **Expected**: 200
+- **Endpoint**: `GET /api/school/689225/finance/fees/student/S000009`
+- **Response Code**: `200 OK`
 
 ```bash
-curl -s http://localhost:8080/api/finance/689225/fees/student/STU001 \
+curl -s "http://localhost:8080/api/school/689225/finance/fees/student/S000009" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
+  -H "X-School-ID: 689225"
+```
+
+### JSON Response
+```json
+{
+  "data": {
+    "discount": 0.0,
+    "pendingAmount": 1000.0,
+    "studentId": "S000009",
+    "totalFees": 1000.0
+  },
+  "success": true
+}
 ```
 
 ---
 
-## Test: Record Payment
+## Test: Generate AI Fee Reminder
 
-- **Endpoint**: `POST /api/finance/689225/payments`
-- **Expected**: 200
+- **Endpoint**: `GET /api/school/689225/finance/fees/student/S000009/ai-reminder`
+- **Response Code**: `200 OK`
 
 ```bash
-curl -s -X POST http://localhost:8080/api/finance/689225/payments \
+curl -s "http://localhost:8080/api/school/689225/finance/fees/student/S000009/ai-reminder" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-School-ID: 689225"
+```
+
+### JSON Response
+```json
+{
+  "data": {
+    "message": "AI Reminder (polite): Dear Parent of Student, we noticed an outstanding balance of ₹1000.00. Please clear this at your earliest convenience. Thank you!",
+    "risk_score": 0.0,
+    "student_id": "S000009",
+    "success": true,
+    "tone": "polite"
+  },
+  "success": true
+}
+```
+
+---
+
+## Test: Apply Fee Discount
+
+- **Endpoint**: `POST /api/school/689225/finance/fees/student/S000009/discount`
+- **Response Code**: `200 OK`
+
+```bash
+curl -s -X POST "http://localhost:8080/api/school/689225/finance/fees/student/S000009/discount" \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
   -d '{
-    "student_id": "STU001",
-    "amount": 15000.00,
-    "payment_method": "razorpay",
-    "transaction_id": "txn_abc123"
-  }' | jq .
+    "discount_amount": 200.00,
+    "reason": "Scholarship discount"
+  }'
+```
+
+### JSON Response
+```json
+{
+  "data": {
+    "discount": 200.0,
+    "pendingAmount": 800.0,
+    "studentId": "S000009",
+    "totalFees": 1000.0
+  },
+  "success": true
+}
 ```
 
 ---
 
-## Test: Fee Analytics
+## Test: Pay Student Fee
 
-- **Endpoint**: `GET /api/finance/689225/fees/analytics`
-- **Expected**: 200, summary stats
+- **Endpoint**: `POST /api/school/689225/finance/fees/student/S000009/pay`
+- **Response Code**: `200 OK`
 
 ```bash
-curl -s http://localhost:8080/api/finance/689225/fees/analytics \
+curl -s -X POST "http://localhost:8080/api/school/689225/finance/fees/student/S000009/pay" \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
+  -H "X-School-ID: 689225" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 500.00,
+    "payment_method": "upi",
+    "transaction_id": "txn_fin_001"
+  }'
+```
+
+### JSON Response
+```json
+{
+  "data": {
+    "pendingAmount": 300.0,
+    "studentId": "S000009",
+    "totalFees": 1000.0
+  },
+  "success": true
+}
 ```

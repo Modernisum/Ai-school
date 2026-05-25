@@ -307,8 +307,8 @@ mod tests {
         assert!(true);
     }
     
-    #[test]
-    fn test_provider_registry_structure() {
+    #[tokio::test]
+    async fn test_provider_registry_structure() {
         // Test that the registry has the expected fields
         use std::any::Any;
         

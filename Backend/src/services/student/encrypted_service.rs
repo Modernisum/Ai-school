@@ -185,14 +185,13 @@ impl StudentService for EncryptedStudentService {
         self.decrypt_student_list(school_id, students).await
     }
 
-    async fn list_students_by_class(
+    async fn list_students_by_space(
         &self,
         school_id: &str,
-        class_name: &str,
-        section: Option<&str>,
+        space_id: &str,
     ) -> AppResult<Vec<Value>> {
         // Get students from inner service
-        let students = self.inner.list_students_by_class(school_id, class_name, section).await?;
+        let students = self.inner.list_students_by_space(school_id, space_id).await?;
         
         // Decrypt sensitive data in each student
         self.decrypt_student_list(school_id, students).await
@@ -263,8 +262,7 @@ impl StudentService for EncryptedStudentService {
         school_id: &str,
         _page: i32,
         _limit: i32,
-        _class_name: Option<&str>,
-        _section: Option<&str>,
+        _space_id: Option<&str>,
         _status: Option<&str>,
         _search: Option<&str>,
     ) -> AppResult<(Vec<Value>, i64)> {
@@ -287,10 +285,10 @@ impl StudentService for EncryptedStudentService {
     async fn resequence_roll_numbers(
         &self,
         school_id: &str,
-        class_name: &str,
+        space_id: &str,
     ) -> AppResult<()> {
         // Resequence roll numbers (no sensitive data involved)
-        self.inner.resequence_roll_numbers(school_id, class_name).await
+        self.inner.resequence_roll_numbers(school_id, space_id).await
     }
 
     async fn list_student_ids(

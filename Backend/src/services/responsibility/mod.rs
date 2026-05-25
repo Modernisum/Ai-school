@@ -154,7 +154,7 @@ impl ResponsibilityService for PostgresResponsibilityService {
         responsibility_id: &str,
         admin_id: &str,
         updates: Vec<(String, Vec<String>)>,
-    ) -> AppResult<usize> {
+    ) -> AppResult<(usize, Vec<String>)> {
         self.bulk.bulk_update_responsibility(school_id, responsibility_id, admin_id, updates).await
     }
 
@@ -316,5 +316,13 @@ impl ResponsibilityService for PostgresResponsibilityService {
         let title = format!("Revenue Report - {} to {}", start_date, end_date);
         PdfGenerator::generate_report(&title, &report_data)
             .map_err(|e| crate::error::AppError::Internal(format!("PDF generation failed: {}", e)))
+    }
+
+    async fn get_space_financial_overview(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> AppResult<Value> {
+        self.crud.get_space_financial_overview(school_id, space_id).await
     }
 }

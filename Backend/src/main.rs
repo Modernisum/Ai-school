@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
 
     // Record process start time for health uptime tracking
-    crate::routes::health::record_start_time();
+    crate::domain::system::health::record_start_time();
 
     println!("Initializing Database...");
     let db_client = Arc::new(db::init().await?);
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backup_svc = Arc::new(backup::BackupService::new(db_client.pool.clone(), "Backup", Some(storage.clone())));
 
     let state = AppState {
-        db: db_client,
+        db: db_client.clone(),
         repos,
         services,
         backup: backup_svc.clone(),
@@ -110,13 +110,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start combined background workers (Analytics, Webhooks, Cleanup)
     crate::background_jobs::start_background_workers(state.clone()).await;
 
-    let app = routes::router::create_router(state);
+    let app = routes::create_router(state);
 
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    // Seeding (Temporary)
+    let _ = sqlx::query("INSERT INTO schools (school_id, school_name, wallet_balance, status) VALUES ('689225', 'Test School', 1000, 'active') ON CONFLICT (school_id) DO NOTHING")
+        .execute(&db_client.pool).await;
+    let _ = sqlx::query("INSERT INTO auth (school_id, password) VALUES ('689225', '$2b$10$RzVqIytcb7w2Nyr31aUAauU.AVAk70tHMjHBgovoX4kYMmyMbnZDS') ON CONFLICT (school_id) DO NOTHING")
+        .execute(&db_client.pool).await;
+
     println!("listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

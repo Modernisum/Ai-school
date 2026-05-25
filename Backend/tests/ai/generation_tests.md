@@ -1,12 +1,29 @@
 # AI API — Exam & Task Generation Tests
 
+> **⚠️ BUG FIX**: All routes moved from `/api/ai/{schoolId}` to `/api/school/{schoolId}/ai/` (correct nesting)
+
+---
+
+## Actual Route Table
+
+| # | Endpoint | Method | Handler |
+|---|----------|--------|---------|
+| 1 | `/api/school/:schoolId/ai/content/generate/exam` | POST | `generate_exam_questions` |
+| 2 | `/api/school/:schoolId/ai/content/generate/lesson-plan` | POST | `generate_lesson_plan` |
+| 3 | `/api/school/:schoolId/ai/content/generate/study-materials` | POST | `generate_study_materials` |
+| 4 | `/api/school/:schoolId/ai/content/generate/practice-problems` | POST | `generate_practice_problems` |
+| 5 | `/api/school/:schoolId/ai/content/summarize` | POST | `summarize_content` |
+| 6 | `/api/school/:schoolId/ai/content/enhanced/generate-exam` | POST | `enhanced_generate_exam` |
+
+---
+
 ## Test: AI Generate Exam Paper
 
-- **Endpoint**: `POST /api/ai/689225/exam/generate`
+- **Endpoint**: `POST /api/school/689225/ai/content/generate/exam`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/689225/exam/generate \
+curl -s -X POST http://localhost:8080/api/school/689225/ai/content/generate/exam \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
@@ -23,60 +40,65 @@ curl -s -X POST http://localhost:8080/api/ai/689225/exam/generate \
 
 ---
 
-## Test: AI Generate Tasks
+## Test: AI Generate Lesson Plan
 
-- **Endpoint**: `POST /api/ai/689225/tasks/generate`
-- **Body**: `{ "employee_id": "EMP001" }`
+- **Endpoint**: `POST /api/school/689225/ai/content/generate/lesson-plan`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/689225/tasks/generate \
+curl -s -X POST http://localhost:8080/api/school/689225/ai/content/generate/lesson-plan \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
-  -d '{"employee_id":"EMP001"}' | jq .
+  -d '{
+    "subject": "Physics",
+    "class_name": "11-A",
+    "topic": "Newton Laws"
+  }' | jq .
 ```
 
 ---
 
-## Test: AI Reorganize Tasks
+## Test: AI Generate Study Materials
 
-- **Endpoint**: `POST /api/ai/689225/tasks/reorganize`
-- **Body**: `{ "employee_id": "EMP001" }`
+- **Endpoint**: `POST /api/school/689225/ai/content/generate/study-materials`
 - **Expected**: 200
 
 ```bash
-curl -s -X POST http://localhost:8080/api/ai/689225/tasks/reorganize \
+curl -s -X POST http://localhost:8080/api/school/689225/ai/content/generate/study-materials \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-School-ID: 689225" \
   -H "Content-Type: application/json" \
-  -d '{"employee_id":"EMP001"}' | jq .
+  -d '{
+    "subject": "Chemistry",
+    "class_name": "11-A",
+    "chapters": ["Thermodynamics"]
+  }' | jq .
 ```
 
 ---
 
-## Test: AI Usage Trends
+## Test: AI Summarize Content
 
-- **Endpoint**: `GET /api/ai/689225/trends`
-- **Query**: `?period=monthly&limit=12`
+- **Endpoint**: `POST /api/school/689225/ai/content/summarize`
 - **Expected**: 200
 
 ```bash
-curl -s "http://localhost:8080/api/ai/689225/trends?period=monthly&limit=12" \
+curl -s -X POST http://localhost:8080/api/school/689225/ai/content/summarize \
   -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
+  -H "X-School-ID: 689225" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Long text to summarize..."
+  }' | jq .
 ```
 
 ---
 
-## Test: Top AI Operations
+## ⚠️ Issues Found
 
-- **Endpoint**: `GET /api/ai/689225/operations/top`
-- **Query**: `?limit=5`
-- **Expected**: 200
-
-```bash
-curl -s "http://localhost:8080/api/ai/689225/operations/top?limit=5" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-School-ID: 689225" | jq .
-```
+| # | Issue | Severity |
+|---|-------|----------|
+| 1 | **Wrong URL prefix** — was `/api/ai/...`, correct is `/api/school/{schoolId}/ai/` | **Fixed** |
+| 2 | **`/tasks/generate`, `/tasks/reorganize`** — these are in `domain/operations.rs` (not AI). AI routes use `/content/generate/...` | **Fixed** |
+| 3 | **`/trends`, `/operations/top`** — these routes don't exist in domain/ai.rs | **Removed** |

@@ -843,4 +843,64 @@ impl ResponsibilityCrud {
             "errors": errors
         }))
     }
+
+    pub async fn get_space_financial_overview(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> AppResult<Value> {
+        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+
+        // Total monthly salary cost for this space
+        let total_salary_cost: f64 = sqlx::query_scalar(
+            "SELECT COALESCE(SUM(r.monthly_price), 0) FROM responsibilities r
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        // Total student fees generated from this space
+        let total_student_fees: f64 = sqlx::query_scalar(
+            "SELECT COALESCE(SUM(r.student_fee), 0) FROM responsibilities r
+             JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        // Count active employees assigned to this space
+        let employee_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(DISTINCT er.employee_id) FROM employee_responsibilities er
+             WHERE er.school_id = $1 AND er.space_ids @> to_jsonb($2::text)"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        // Count students in this space
+        let student_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM students WHERE school_id = $1 AND CONCAT(COALESCE(class_name, ''), '-', COALESCE(section, '')) = $2 AND status = 'active'"
+        )
+        .bind(school_id)
+        .bind(space_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        let net_revenue = total_student_fees - total_salary_cost;
+
+        Ok(json!({
+            "spaceId": space_id,
+            "totalMonthlySalaryCost": total_salary_cost,
+            "totalStudentFees": total_student_fees,
+            "netRevenue": net_revenue,
+            "employeeCount": employee_count,
+            "studentCount": student_count
+        }))
+    }
 }

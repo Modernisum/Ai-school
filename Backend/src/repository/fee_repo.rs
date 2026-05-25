@@ -132,16 +132,38 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query(
-            "UPDATE student_fees SET total_fees = COALESCE($1, total_fees), discount = COALESCE($2, discount), pending_amount = COALESCE($3, pending_amount) WHERE school_id = $4 AND student_id = $5",
-        )
-        .bind(data["totalFees"].as_f64())
-        .bind(data["discount"].as_f64())
-        .bind(data["pendingAmount"].as_f64())
-        .bind(school_id)
-        .bind(student_id)
-        .execute(&mut *conn)
-        .await?;
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM student_fees WHERE school_id = $1 AND student_id = $2)")
+            .bind(school_id)
+            .bind(student_id)
+            .fetch_one(&mut *conn)
+            .await?;
+
+        if exists {
+            sqlx::query(
+                "UPDATE student_fees SET total_fees = COALESCE($1, total_fees), discount = COALESCE($2, discount), pending_amount = COALESCE($3, pending_amount) WHERE school_id = $4 AND student_id = $5",
+            )
+            .bind(data["totalFees"].as_f64())
+            .bind(data["discount"].as_f64())
+            .bind(data["pendingAmount"].as_f64())
+            .bind(school_id)
+            .bind(student_id)
+            .execute(&mut *conn)
+            .await?;
+        } else {
+            sqlx::query(
+                "INSERT INTO student_fees (school_id, student_id, fee_id, total_fees, pending_amount, discount, status) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)"
+            )
+            .bind(school_id)
+            .bind(student_id)
+            .bind(data["feeId"].as_str().unwrap_or("tuition"))
+            .bind(data["totalFees"].as_f64().unwrap_or(0.0))
+            .bind(data["pendingAmount"].as_f64().unwrap_or(0.0))
+            .bind(data["discount"].as_f64().unwrap_or(0.0))
+            .bind(data["status"].as_str().unwrap_or("pending"))
+            .execute(&mut *conn)
+            .await?;
+        }
         Ok(())
     }
 

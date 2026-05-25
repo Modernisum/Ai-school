@@ -74,6 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final apiService = context.read<ApiService>();
     final studentId = profile['userId'].toString();
     
+    // Write school_id to storage first so that getStudentProfile can use it
+    await apiService.storage.write(key: 'school_id', value: profile['schoolId'].toString());
+    
     final resp = await apiService.getStudentProfile(studentId);
     
     if (!mounted) return;
@@ -83,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final token = await apiService.storage.read(key: 'jwt_token') ?? "dummy_token";
       final role = profile['userType'].toString();
       
-      await apiService.storage.write(key: 'school_id', value: profile['schoolId'].toString());
       await apiService.storage.write(key: 'user_id', value: studentId);
       await apiService.storage.write(key: 'student_id', value: studentId);
       await apiService.storage.write(key: 'user_role', value: role);
@@ -94,6 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       context.read<AuthBloc>().add(LoggedIn(token: token, role: role));
     } else {
+      // Clear school_id if profile loading failed
+      await apiService.storage.delete(key: 'school_id');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to link profile.")));
     }
   }

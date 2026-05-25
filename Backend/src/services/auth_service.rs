@@ -38,23 +38,10 @@ impl AuthService for PostgresAuthService {
             let hashed = a["password"].as_str().unwrap_or("");
             if bcrypt::verify(password, hashed).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))? {
                 // Check if school is blocked due to billing (SaaS)
-                let school_row = sqlx::query("SELECT billing_status, trial_ends_at, wallet_balance, per_student_rate FROM schools WHERE school_id = $1")
-                    .bind(school_id)
-                    .fetch_optional(&self.repos.db_client.pool)
-                    .await?;
+                let billing_info = self.repos.school.get_school_billing_info(school_id).await?;
 
-                if let Some(row) = school_row {
-                    let wallet_balance: sqlx::types::BigDecimal =
-                        sqlx::Row::get(&row, "wallet_balance");
-                    let per_student_rate: sqlx::types::BigDecimal =
-                        sqlx::Row::get(&row, "per_student_rate");
-                    let billing_status: String = sqlx::Row::get(&row, "billing_status");
-
-                    let count_row = sqlx::query("SELECT COUNT(*) as count FROM students WHERE school_id = $1 AND status = 'active'")
-                        .bind(school_id)
-                        .fetch_one(&self.repos.db_client.pool)
-                        .await?;
-                    let active_students: i64 = sqlx::Row::get(&count_row, "count");
+                if let Some((billing_status, _trial_ends_at, wallet_balance, per_student_rate)) = billing_info {
+                    let active_students = self.repos.student.get_active_students_count(school_id).await?;
 
                     use sqlx::types::BigDecimal;
                     use bigdecimal::FromPrimitive;
@@ -91,11 +78,7 @@ impl AuthService for PostgresAuthService {
                 });
                 self.repos
                     .auth
-                    .save_token(&token, token_data.clone())
-                    .await?;
-                self.repos
-                    .auth
-                    .add_auth_log(school_id, "login", json!({}))
+                    .save_token_and_log(&token, token_data.clone(), school_id)
                     .await?;
 
                 return Ok(json!({
@@ -162,17 +145,15 @@ impl AuthService for PostgresAuthService {
             &DecodingKey::from_secret(secret.as_ref()),
             &Validation::default(),
         ) {
-            sqlx::query(
-                "INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, 'logout', $3)",
+            self.repos.auth.logout_transaction(
+                token,
+                &token_data.claims.sub,
+                &token_data.claims.role,
             )
-            .bind(token_data.claims.sub)
-            .bind(token_data.claims.role)
-            .bind(json!({ "timestamp": chrono::Utc::now() }))
-            .execute(&self.repos.db_client.pool)
             .await?;
+        } else {
+            self.repos.auth.revoke_token(token).await?;
         }
-
-        self.repos.auth.revoke_token(token).await?;
         Ok(())
     }
 
@@ -236,14 +217,7 @@ impl AuthService for PostgresAuthService {
                 let hashed_new = bcrypt::hash(new_pass, 10).map_err(|e| AppError::Internal(format!("Bcrypt error: {}", e)))?;
                 self.repos
                     .auth
-                    .update_auth(
-                        school_id,
-                        json!({"password": hashed_new, "passwordTemp": false}),
-                    )
-                    .await?;
-                self.repos
-                    .auth
-                    .add_auth_log(school_id, "change-password", json!({}))
+                    .change_password_tx(school_id, &hashed_new)
                     .await?;
                 return Ok(());
             }
@@ -289,14 +263,8 @@ impl AuthService for PostgresAuthService {
             .filter_map(|p| p["schoolId"].as_str().map(|s| s.to_string()))
             .collect();
 
-        let durations = sqlx::query("SELECT session_duration_hours FROM schools WHERE school_id = ANY($1)")
-            .bind(&school_ids)
-            .fetch_all(&self.repos.db_client.pool)
-            .await?;
-
-        let max_hours = durations
-            .iter()
-            .map(|row| sqlx::Row::get::<i32, _>(row, "session_duration_hours") as i64)
+        let max_hours = self.repos.school.get_session_durations(&school_ids).await?
+            .into_iter()
             .max()
             .unwrap_or(24); // Default to 24 hours
 
@@ -321,13 +289,12 @@ impl AuthService for PostgresAuthService {
         .map_err(|e| AppError::Internal(format!("JWT Error: {}", e)))?;
 
         // Record Audit Log (Global User Activity)
-        sqlx::query(
-            "INSERT INTO user_activity_logs (phone, user_type, action, metadata) VALUES ($1, $2, 'login', $3)",
+        self.repos.auth.add_user_activity_log(
+            ident,
+            app_type,
+            "login",
+            json!({ "app": app_type, "timestamp": chrono::Utc::now() }),
         )
-        .bind(ident)
-        .bind(app_type)
-        .bind(json!({ "app": app_type, "timestamp": chrono::Utc::now() }))
-        .execute(&self.repos.db_client.pool)
         .await?;
 
         Ok(json!({

@@ -315,7 +315,7 @@ export default function StudentLeaveApproval() {
                                         Student
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Class
+                                        Space
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Leave Dates
@@ -356,8 +356,7 @@ export default function StudentLeaveApproval() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{leave.class || leave.className || 'N/A'}</div>
-                                            <div className="text-sm text-gray-500">{leave.section || ''}</div>
+                                            <div className="text-sm text-gray-900">{leave.space_id || leave.spaceName || leave.class || leave.className || 'N/A'}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm">

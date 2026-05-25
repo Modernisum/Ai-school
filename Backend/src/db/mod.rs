@@ -1,5 +1,5 @@
 mod connection_pool;
-mod connection_utils;
+pub mod connection_utils;
 mod schema_setup;
 mod super_admin_connection;
 mod tenant_connection;
