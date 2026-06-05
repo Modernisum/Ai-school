@@ -87,10 +87,20 @@ END $$;
 -- Add the correct unique constraint for space_material_requirements
 ALTER TABLE space_material_requirements ADD CONSTRAINT space_mat_req_school_space_mat_unique UNIQUE (school_id, space_name, material_name);
 
+-- Self-healing for space/material/responsibility/school columns and defaults before inserting data
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active';
+
+CREATE SEQUENCE IF NOT EXISTS spaces_id_seq;
+ALTER TABLE spaces ALTER COLUMN id SET DEFAULT nextval('spaces_id_seq');
+
+ALTER TABLE spaces ADD COLUMN IF NOT EXISTS space_category VARCHAR(255);
+ALTER TABLE spaces ADD COLUMN IF NOT EXISTS budget DECIMAL(12,2) DEFAULT NULL;
+ALTER TABLE materials ADD COLUMN IF NOT EXISTS unit VARCHAR(50);
+ALTER TABLE responsibilities ADD COLUMN IF NOT EXISTS space_category VARCHAR(255);
 
 -- 4. Insert School
 INSERT INTO schools (school_id, school_name, status)
-VALUES ('test-school', 'Test School for Audit', '{}'::jsonb)
+VALUES ('test-school', 'Test School for Audit', 'active')
 ON CONFLICT (school_id) DO NOTHING;
 
 -- Insert Auth Credentials for test-school (password: admin@123)
@@ -131,7 +141,7 @@ VALUES (
     'TEACHER',
     '{"name": "Alice Smith", "baseSalary": 3000.00, "bonus": 200.00, "aid": 100.00, "experienceYears": 5.0, "experienceRate": 50.0, "tenureMonths": 12.0, "tenureRate": 10.0}'::jsonb
 )
-ON CONFLICT (employee_id) DO NOTHING;
+ON CONFLICT (school_id, employee_id) DO NOTHING;
 
 -- 11. Insert Responsibility
 INSERT INTO responsibilities (school_id, responsibility_id, name, description, employee_type, monthly_price, per_day_price, student_fee, space_category)

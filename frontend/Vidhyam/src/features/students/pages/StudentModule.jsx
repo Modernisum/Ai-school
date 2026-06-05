@@ -7,7 +7,6 @@ import AddStudentPage from "../components/addstudent.jsx";
 import Studentinfo from "../components/studentprofile.jsx";
 import StudentAttendance from "./attendance.jsx";
 import StudentFees from "./fees.jsx";
-import FormFillDashboard from "./FormFillDashboard.jsx";
 
 const StudentModule = () => {
   return (
@@ -15,7 +14,6 @@ const StudentModule = () => {
       <Routes>
         <Route path="all" element={<StudentManager />} />
         <Route path="add" element={<AddStudentPage />} />
-        <Route path="form-fill" element={<FormFillDashboard />} />
         <Route path="leave" element={<AddStudentPage />} />
         <Route path="attendance" element={<StudentAttendance />} />
         <Route path="fees" element={<StudentFees />} />

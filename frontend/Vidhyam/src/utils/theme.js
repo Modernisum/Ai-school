@@ -107,7 +107,7 @@ export const THEME_PRESETS = [
       accent: '#06b6d4',
       success: '#059669',
       warning: '#d97706',
-      backgroundVia: '#f4f5f7',
+      backgroundVia: '#e2e8f0',
     },
   },
   {

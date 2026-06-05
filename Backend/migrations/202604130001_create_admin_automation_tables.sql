@@ -1,3 +1,6 @@
+-- Ensure status column exists in schools table
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active';
+
 -- Insert system school record if not exists to satisfy foreign key constraints
 INSERT INTO schools (school_id, school_name, status) 
 VALUES ('system', 'System School', 'active') 

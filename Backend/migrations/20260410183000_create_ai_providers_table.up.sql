@@ -1,6 +1,12 @@
 -- Create ai_providers table for multi-provider AI architecture
 -- This is a global configuration table (not per-school) stored in public schema
 
+CREATE TABLE IF NOT EXISTS system_config (
+    config_key TEXT PRIMARY KEY,
+    config_value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE ai_providers (
     provider_id SERIAL PRIMARY KEY,
     provider_type VARCHAR(50) NOT NULL,

@@ -4,7 +4,9 @@
 DO $$ 
 BEGIN 
     BEGIN
-        ALTER TABLE spaces DROP COLUMN IF EXISTS space_id;
+        -- Keep space_id for backward compatibility with repository code
+        -- ALTER TABLE spaces DROP COLUMN IF EXISTS space_id;
+        NULL;
     EXCEPTION WHEN OTHERS THEN 
         -- Ignore
     END;

@@ -39,11 +39,11 @@ export const applyThemeEnhanced = (theme) => {
   
   // Set premium ultra-dark backgrounds vs light theme settings
   if (mode === 'light') {
-    root.style.setProperty('--bg-main', '#f4f5f7');
-    root.style.setProperty('--bg-via', theme.backgroundVia || '#f4f5f7');
+    root.style.setProperty('--bg-main', '#e2e8f0');
+    root.style.setProperty('--bg-via', theme.backgroundVia || '#e2e8f0');
     root.style.setProperty('--bg-secondary', '#ffffff');
     root.style.setProperty('--bg-sidebar', '#ffffff');
-    root.style.setProperty('--bg-topbar', 'rgba(244, 245, 247, 0.85)');
+    root.style.setProperty('--bg-topbar', 'rgba(226, 232, 240, 0.85)');
     root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.65)');
     root.style.setProperty('--card-bg-hover', 'rgba(255, 255, 255, 0.85)');
     root.style.setProperty('--glass-border', 'rgba(0, 0, 0, 0.055)');

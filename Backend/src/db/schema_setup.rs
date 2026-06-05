@@ -46,15 +46,14 @@ impl SchemaSetup {
         
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS fees (
-                id SERIAL PRIMARY KEY,
-                school_id VARCHAR(255) NOT NULL,
-                student_id VARCHAR(255) NOT NULL,
-                fees_name VARCHAR(255),
-                fees_amount NUMERIC(12, 2) NOT NULL,
-                status VARCHAR(50) DEFAULT 'pending',
-                due_date DATE,
-                paid_at TIMESTAMPTZ,
-                created_at TIMESTAMPTZ DEFAULT NOW()
+                id VARCHAR(50) PRIMARY KEY,
+                school_id VARCHAR(50) NOT NULL,
+                fees_name VARCHAR(100) NOT NULL,
+                fees_reason VARCHAR(255),
+                fees_period VARCHAR(50),
+                fees_amount DECIMAL(10, 2) NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, id)
             )"
         ).execute(&self.pool).await?;
 
@@ -89,14 +88,49 @@ impl SchemaSetup {
             "CREATE TABLE IF NOT EXISTS attendance (
                 id SERIAL PRIMARY KEY,
                 school_id VARCHAR(255) NOT NULL,
+                role VARCHAR(50) NOT NULL,
                 user_id VARCHAR(255) NOT NULL,
-                user_type VARCHAR(50) NOT NULL,
                 date DATE NOT NULL,
                 status VARCHAR(50) NOT NULL,
-                marked_by VARCHAR(255),
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(school_id, user_id, user_type, date)
+                in_time TIMESTAMP WITH TIME ZONE,
+                out_time TIMESTAMP WITH TIME ZONE,
+                total_time TEXT,
+                class_name VARCHAR(100),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(school_id, role, user_id, date)
             )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE attendance 
+             ADD COLUMN IF NOT EXISTS role VARCHAR(50),
+             ADD COLUMN IF NOT EXISTS in_time TIMESTAMP WITH TIME ZONE,
+             ADD COLUMN IF NOT EXISTS out_time TIMESTAMP WITH TIME ZONE,
+             ADD COLUMN IF NOT EXISTS total_time TEXT,
+             ADD COLUMN IF NOT EXISTS class_name VARCHAR(100),
+             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "DO $$ 
+             DECLARE
+                cons_record RECORD;
+             BEGIN 
+                -- Drop UNIQUE constraint if it targets user_type
+                FOR cons_record IN (
+                    SELECT conname 
+                    FROM pg_constraint c 
+                    JOIN pg_class t ON c.conrelid = t.oid 
+                    JOIN pg_namespace n ON t.relnamespace = n.oid 
+                    WHERE t.relname = 'attendance' AND n.nspname = 'public' AND c.contype = 'u'
+                ) LOOP
+                    EXECUTE 'ALTER TABLE public.attendance DROP CONSTRAINT ' || quote_ident(cons_record.conname) || ' CASCADE';
+                END LOOP;
+
+                -- Add UNIQUE constraint required by repository
+                ALTER TABLE public.attendance ADD CONSTRAINT attendance_school_role_user_date_unique UNIQUE (school_id, role, user_id, date);
+             END $$;"
         ).execute(&self.pool).await?;
 
         sqlx::query(
@@ -179,12 +213,27 @@ impl SchemaSetup {
                 school_id VARCHAR(255) NOT NULL,
                 endpoint_id INTEGER NOT NULL,
                 event_type VARCHAR(100) NOT NULL,
+                payload JSONB NOT NULL,
                 status_code INTEGER,
-                request_payload JSONB,
                 response_body TEXT,
-                error_message TEXT,
-                delivered_at TIMESTAMPTZ DEFAULT NOW()
+                attempt_count INTEGER DEFAULT 1,
+                last_attempt_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                next_retry_at TIMESTAMP WITH TIME ZONE,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE webhook_delivery_logs 
+             ADD COLUMN IF NOT EXISTS payload JSONB,
+             ADD COLUMN IF NOT EXISTS status_code INTEGER,
+             ADD COLUMN IF NOT EXISTS response_body TEXT,
+             ADD COLUMN IF NOT EXISTS attempt_count INTEGER DEFAULT 1,
+             ADD COLUMN IF NOT EXISTS last_attempt_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+             ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMP WITH TIME ZONE,
+             ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending',
+             ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"
         ).execute(&self.pool).await?;
 
         sqlx::query(
@@ -229,6 +278,28 @@ impl SchemaSetup {
                 roll_number INT,
                 section VARCHAR(50),
                 status VARCHAR(50) NOT NULL DEFAULT 'active',
+                dob VARCHAR(100),
+                gender VARCHAR(50),
+                father_name TEXT,
+                mother_name TEXT,
+                aadhaar_number VARCHAR(50),
+                address_line1 TEXT,
+                address_city VARCHAR(255),
+                address_state VARCHAR(255),
+                address_pincode VARCHAR(20),
+                tc_number VARCHAR(100),
+                contact VARCHAR(50),
+                alternative_contact VARCHAR(50),
+                email VARCHAR(255),
+                transport_enabled BOOLEAN DEFAULT FALSE,
+                transport_radius VARCHAR(50),
+                additional_subjects TEXT,
+                admission_date VARCHAR(100),
+                room_number VARCHAR(50),
+                student_type VARCHAR(100),
+                profile_image_url TEXT,
+                enrolled_subjects JSONB DEFAULT '[]',
+                total_fees NUMERIC(15, 2) DEFAULT 0.00,
                 data JSONB NOT NULL DEFAULT '{}',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -242,6 +313,9 @@ impl SchemaSetup {
                 employee_id VARCHAR(255) NOT NULL,
                 school_id VARCHAR(255) NOT NULL,
                 employee_type VARCHAR(50) NOT NULL,
+                aadhaar_number VARCHAR(50),
+                contact VARCHAR(50),
+                email VARCHAR(255),
                 data JSONB NOT NULL DEFAULT '{}',
                 status VARCHAR(50) NOT NULL DEFAULT 'active',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -606,8 +680,10 @@ impl SchemaSetup {
             "CREATE TABLE IF NOT EXISTS spaces (
                 id SERIAL PRIMARY KEY,
                 school_id TEXT NOT NULL,
+                space_id VARCHAR(255),
                 name TEXT NOT NULL,
                 space_category TEXT,
+                budget DECIMAL(12,2) DEFAULT NULL,
                 data JSONB DEFAULT '{}',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(school_id, name)
@@ -638,7 +714,9 @@ impl SchemaSetup {
         sqlx::query(
             "ALTER TABLE spaces 
              ADD COLUMN IF NOT EXISTS name TEXT,
+             ADD COLUMN IF NOT EXISTS space_id VARCHAR(255),
              ADD COLUMN IF NOT EXISTS space_category TEXT,
+             ADD COLUMN IF NOT EXISTS budget DECIMAL(12,2) DEFAULT NULL,
              ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'"
         ).execute(&self.pool).await?;
         
@@ -652,13 +730,25 @@ impl SchemaSetup {
                 id SERIAL PRIMARY KEY,
                 item_id TEXT NOT NULL,
                 school_id TEXT NOT NULL,
+                space_id TEXT,
                 space_name TEXT NOT NULL,
                 item_name TEXT NOT NULL,
                 room_number TEXT,
                 class_id TEXT,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(school_id, space_name, item_id)
+                UNIQUE(school_id, space_id, item_id)
             )"
+        ).execute(&self.pool).await?;
+
+        sqlx::query(
+            "ALTER TABLE items 
+             ADD COLUMN IF NOT EXISTS item_id TEXT,
+             ADD COLUMN IF NOT EXISTS school_id TEXT,
+             ADD COLUMN IF NOT EXISTS space_id TEXT,
+             ADD COLUMN IF NOT EXISTS space_name TEXT,
+             ADD COLUMN IF NOT EXISTS item_name TEXT,
+             ADD COLUMN IF NOT EXISTS room_number TEXT,
+             ADD COLUMN IF NOT EXISTS class_id TEXT"
         ).execute(&self.pool).await?;
 
         sqlx::query(
@@ -678,18 +768,8 @@ impl SchemaSetup {
                 END LOOP;
 
                 -- Add the definitive composite constraint required by the repository
-                ALTER TABLE public.items ADD CONSTRAINT items_school_space_item_composite_unique UNIQUE (school_id, space_name, item_id);
+                ALTER TABLE public.items ADD CONSTRAINT items_school_space_item_composite_unique UNIQUE (school_id, space_id, item_id);
              END $$;"
-        ).execute(&self.pool).await?;
-
-        sqlx::query(
-            "ALTER TABLE items 
-             ADD COLUMN IF NOT EXISTS item_id TEXT,
-             ADD COLUMN IF NOT EXISTS school_id TEXT,
-             ADD COLUMN IF NOT EXISTS space_name TEXT,
-             ADD COLUMN IF NOT EXISTS item_name TEXT,
-             ADD COLUMN IF NOT EXISTS room_number TEXT,
-             ADD COLUMN IF NOT EXISTS class_id TEXT"
         ).execute(&self.pool).await?;
 
         sqlx::query("CREATE SEQUENCE IF NOT EXISTS items_id_seq").execute(&self.pool).await?;
@@ -698,7 +778,7 @@ impl SchemaSetup {
         // Ensure index matches repository conflict target exactly
         sqlx::query("DROP INDEX IF EXISTS idx_items_school_space_item_unique").execute(&self.pool).await?;
         sqlx::query("DROP INDEX IF EXISTS idx_items_space_item_unique").execute(&self.pool).await?;
-        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_items_school_space_item_final ON items (school_id, space_name, item_id)")
+        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_items_school_space_item_final ON items (school_id, space_id, item_id)")
              .execute(&self.pool).await?;
 
         // 3. Materials Table
@@ -923,9 +1003,11 @@ impl SchemaSetup {
         println!("Ensuring responsibilities table exists...");
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS responsibilities (
-                id VARCHAR(255) PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
+                responsibility_id VARCHAR(255) UNIQUE NOT NULL,
                 school_id VARCHAR(255) NOT NULL,
                 name VARCHAR(255) NOT NULL,
+                description TEXT,
                 status VARCHAR(50) DEFAULT 'active'
             )"
         ).execute(&self.pool).await?;
@@ -933,6 +1015,8 @@ impl SchemaSetup {
         println!("Expanding responsibilities table with metadata support...");
         sqlx::query(
             "ALTER TABLE responsibilities
+             ADD COLUMN IF NOT EXISTS responsibility_id VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS description TEXT,
              ADD COLUMN IF NOT EXISTS space_id VARCHAR(255),
              ADD COLUMN IF NOT EXISTS employee_type VARCHAR(50),
              ADD COLUMN IF NOT EXISTS monthly_price DECIMAL(12, 2) DEFAULT 0.00,
@@ -956,14 +1040,17 @@ impl SchemaSetup {
                 school_id VARCHAR(255) NOT NULL,
                 employee_id VARCHAR(255) NOT NULL,
                 responsibility_id VARCHAR(255) NOT NULL,
-                UNIQUE(school_id, employee_id, responsibility_id)
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
             )"
         ).execute(&self.pool).await?;
 
         println!("Expanding employee_responsibilities table with space_ids support...");
         sqlx::query(
             "ALTER TABLE employee_responsibilities
-             ADD COLUMN IF NOT EXISTS space_ids JSONB DEFAULT '[]'::jsonb"
+             ADD COLUMN IF NOT EXISTS space_ids JSONB DEFAULT '[]'::jsonb,
+             ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()"
         ).execute(&self.pool).await?;
 
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_responsibilities_space_id ON responsibilities(space_id)")
@@ -1021,6 +1108,7 @@ impl SchemaSetup {
                 streams JSONB DEFAULT '[]',
                 section_size INTEGER DEFAULT 40,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (school_id, id)
             )"
         ).execute(&self.pool).await?;
@@ -1057,7 +1145,9 @@ impl SchemaSetup {
              ADD COLUMN IF NOT EXISTS class_fees NUMERIC(15, 2) DEFAULT 0.00,
              ADD COLUMN IF NOT EXISTS sections JSONB DEFAULT '[]',
              ADD COLUMN IF NOT EXISTS streams JSONB DEFAULT '[]',
-             ADD COLUMN IF NOT EXISTS section_size INTEGER DEFAULT 40"
+             ADD COLUMN IF NOT EXISTS section_size INTEGER DEFAULT 40,
+             ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"
         ).execute(&self.pool).await?;
         
         sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_classes_school_id_unique ON classes (school_id, id)")
@@ -1079,6 +1169,7 @@ impl SchemaSetup {
                 schedule_type TEXT DEFAULT 'daily',
                 schedule_data JSONB DEFAULT '[]',
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (school_id, id)
             )"
         ).execute(&self.pool).await?;
@@ -1117,7 +1208,9 @@ impl SchemaSetup {
              ADD COLUMN IF NOT EXISTS fee_type TEXT DEFAULT 'monthly',
              ADD COLUMN IF NOT EXISTS fee_interval INTEGER DEFAULT 1,
              ADD COLUMN IF NOT EXISTS schedule_type TEXT DEFAULT 'daily',
-             ADD COLUMN IF NOT EXISTS schedule_data JSONB DEFAULT '[]'"
+             ADD COLUMN IF NOT EXISTS schedule_data JSONB DEFAULT '[]',
+             ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"
         ).execute(&self.pool).await?;
 
         sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_subjects_school_id_unique ON subjects (school_id, id)")

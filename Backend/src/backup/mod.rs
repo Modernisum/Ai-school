@@ -182,10 +182,10 @@ impl BackupService {
             .await
             .unwrap_or((0,));
 
-        if school_count.0 > 0 {
+        if school_count.0 > 2 {
             println!("[Restore] Database already has {} schools — skipping full restore (geo sync only)", school_count.0);
         } else {
-            println!("[Restore] Empty database detected — restoring all tables from backup files...");
+            println!("[Restore] Empty or system-only database detected — restoring all tables from backup files...");
             // Restore in dependency-safe order
             let restore_order = vec![
                 "super_admin",
@@ -266,22 +266,51 @@ impl BackupService {
             return Ok(0);
         }
 
+        // Fetch schema columns and their types for precise binding
+        let cols: Vec<(String, String)> = sqlx::query_as::<_, (String, String)>(
+            "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public'"
+        )
+        .bind(table_name)
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_default();
+
         let mut count = 0u64;
         for record in &records {
-            let obj = match record.as_object() {
-                Some(o) => o,
+            let mut obj = match record.as_object() {
+                Some(o) => o.clone(),
                 None => continue,
             };
             if obj.is_empty() {
                 continue;
             }
 
-            let columns: Vec<&str> = obj.keys().map(|k| k.as_str()).collect();
-            let placeholders: Vec<String> = (1..=columns.len()).map(|i| format!("${}", i)).collect();
+            // Custom mapping for student_history table: map snapshot to data
+            if table_name == "student_history" {
+                if let Some(snapshot_val) = obj.remove("snapshot") {
+                    obj.insert("data".to_string(), snapshot_val);
+                }
+            }
 
-            // Auto-detect numeric columns and add casts if necessary
-            // For simplicity in this generic restorer, we'll try to let Postgres handle implicit casts
-            // but we MUST bind numbers as numbers where possible.
+            // Custom mapping for spaces table to align space_name to name
+            if table_name == "spaces" {
+                if let Some(space_name_val) = obj.remove("space_name") {
+                    if !space_name_val.is_null() && obj.get("name").map_or(true, |v| v.is_null()) {
+                        obj.insert("name".to_string(), space_name_val);
+                    }
+                }
+            }
+
+            // Filter out Null values entirely to avoid type errors on parameter binding
+            obj.retain(|_, v| !v.is_null());
+
+            if obj.is_empty() {
+                continue;
+            }
+
+            let col_keys: Vec<String> = obj.keys().map(|k| k.clone()).collect();
+            let columns: Vec<&str> = col_keys.iter().map(|k| k.as_str()).collect();
+            let placeholders: Vec<String> = (1..=columns.len()).map(|i| format!("${}", i)).collect();
 
             let sql = format!(
                 "INSERT INTO {} ({}) VALUES ({}) ON CONFLICT DO NOTHING",
@@ -293,21 +322,151 @@ impl BackupService {
             let mut query = sqlx::query(&sql);
             for col in &columns {
                 let val = obj.get(*col).cloned().unwrap_or(Value::Null);
-                query = match &val {
-                    Value::Null => query.bind(Option::<String>::None),
-                    Value::String(s) => query.bind(s.clone()),
-                    Value::Number(n) => {
-                        if let Some(i) = n.as_i64() { 
-                            query.bind(i) 
-                        } else if let Some(f) = n.as_f64() {
-                            query.bind(f)
-                        } else {
-                            query.bind(n.to_string())
+
+                let pg_type = cols.iter()
+                    .find(|(name, _)| name.eq_ignore_ascii_case(*col))
+                    .map(|(_, ty)| ty.as_str())
+                    .unwrap_or("");
+
+                if pg_type.is_empty() {
+                    query = match &val {
+                        Value::Null => query.bind(Option::<String>::None),
+                        Value::String(s) => {
+                            if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                query.bind(dt.with_timezone(&Utc))
+                            } else if let Ok(d) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                                query.bind(d)
+                            } else if s.eq_ignore_ascii_case("true") {
+                                query.bind(true)
+                            } else if s.eq_ignore_ascii_case("false") {
+                                query.bind(false)
+                            } else {
+                                // Try parsing as number
+                                let is_numeric = s.chars().all(|c| c.is_ascii_digit() || c == '.' || c == '-');
+                                let has_leading_zero = s.starts_with('0') && s.len() > 1 && !s.starts_with("0.");
+                                if is_numeric && !has_leading_zero && !s.is_empty() {
+                                    if let Ok(i) = s.parse::<i64>() {
+                                        query.bind(i)
+                                    } else if let Ok(f) = s.parse::<f64>() {
+                                        query.bind(f)
+                                    } else {
+                                        query.bind(s.clone())
+                                    }
+                                } else {
+                                    query.bind(s.clone())
+                                }
+                            }
                         }
-                    }
-                    Value::Bool(b) => query.bind(*b),
-                    _ => query.bind(val.to_string()),
-                };
+                        Value::Number(n) => {
+                            if let Some(i) = n.as_i64() { 
+                                query.bind(i) 
+                            } else if let Some(f) = n.as_f64() {
+                                query.bind(f)
+                            } else {
+                                query.bind(n.to_string())
+                            }
+                        }
+                        Value::Bool(b) => query.bind(*b),
+                        Value::Object(_) | Value::Array(_) => query.bind(sqlx::types::Json(val.clone())),
+                        _ => query.bind(val.to_string()),
+                    };
+                } else {
+                    query = match pg_type {
+                        "integer" | "bigint" | "smallint" => {
+                            match &val {
+                                Value::Number(n) => {
+                                    if let Some(i) = n.as_i64() {
+                                        query.bind(i)
+                                    } else {
+                                        query.bind(Option::<i64>::None)
+                                    }
+                                }
+                                Value::String(s) => {
+                                    if let Ok(i) = s.parse::<i64>() {
+                                        query.bind(i)
+                                    } else {
+                                        query.bind(Option::<i64>::None)
+                                    }
+                                }
+                                _ => query.bind(Option::<i64>::None),
+                            }
+                        }
+                        "numeric" | "decimal" | "double precision" | "real" => {
+                            match &val {
+                                Value::Number(n) => {
+                                    if let Some(f) = n.as_f64() {
+                                        query.bind(f)
+                                    } else {
+                                        query.bind(Option::<f64>::None)
+                                    }
+                                }
+                                Value::String(s) => {
+                                    if let Ok(f) = s.parse::<f64>() {
+                                        query.bind(f)
+                                    } else {
+                                        query.bind(Option::<f64>::None)
+                                    }
+                                }
+                                _ => query.bind(Option::<f64>::None),
+                            }
+                        }
+                        "boolean" => {
+                            match &val {
+                                Value::Bool(b) => query.bind(*b),
+                                Value::String(s) => {
+                                    if s.eq_ignore_ascii_case("true") || s == "1" {
+                                        query.bind(true)
+                                    } else {
+                                        query.bind(false)
+                                    }
+                                }
+                                Value::Number(n) => {
+                                    query.bind(n.as_i64().unwrap_or(0) != 0)
+                                }
+                                _ => query.bind(false),
+                            }
+                        }
+                        "timestamp with time zone" | "timestamp without time zone" => {
+                            match &val {
+                                Value::String(s) => {
+                                    if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                        query.bind(dt.with_timezone(&Utc))
+                                    } else if let Ok(d) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                                        let dt = d.and_hms_opt(0, 0, 0).unwrap();
+                                        query.bind(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
+                                    } else {
+                                        query.bind(Option::<DateTime<Utc>>::None)
+                                    }
+                                }
+                                _ => query.bind(Option::<DateTime<Utc>>::None),
+                            }
+                        }
+                        "date" => {
+                            match &val {
+                                Value::String(s) => {
+                                    if let Ok(d) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                                        query.bind(d)
+                                    } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                        query.bind(dt.date_naive())
+                                    } else {
+                                        query.bind(Option::<NaiveDate>::None)
+                                    }
+                                }
+                                _ => query.bind(Option::<NaiveDate>::None),
+                            }
+                        }
+                        "jsonb" | "json" => {
+                            query.bind(sqlx::types::Json(val.clone()))
+                        }
+                        _ => {
+                            match &val {
+                                Value::String(s) => query.bind(s.clone()),
+                                Value::Null => query.bind(Option::<String>::None),
+                                _ => query.bind(val.to_string()),
+                            }
+                        }
+                    };
+                }
             }
 
             if let Err(e) = query.execute(&self.pool).await {
@@ -400,16 +559,49 @@ impl BackupService {
     }
 
     async fn update_sequences(&self) {
-        let ser_tables = vec![
-            "countries", "states", "districts", "super_admin",
-            "promo_codes", "support_requests",
-        ];
-        for t in ser_tables {
-            let sql = format!(
-                "SELECT setval('{}_id_seq', COALESCE((SELECT MAX(id)+1 FROM {}), 1), false)",
-                t, t
-            );
-            let _ = sqlx::query(&sql).execute(&self.pool).await;
+        println!("[Restore] Updating all database serial sequences...");
+        let seq_info_query = r#"
+            SELECT 
+                s.relname AS sequence_name,
+                t.relname AS table_name,
+                a.attname AS column_name
+            FROM pg_class s
+            JOIN pg_depend d ON d.objid = s.oid AND d.classid = 'pg_class'::regclass
+            JOIN pg_class t ON t.oid = d.refobjid AND d.refclassid = 'pg_class'::regclass AND t.relkind = 'r'
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+            JOIN pg_namespace n ON n.oid = s.relnamespace
+            WHERE s.relkind = 'S' AND n.nspname = 'public'
+        "#;
+
+        let seqs: Vec<(String, String, String)> = match sqlx::query_as::<_, (String, String, String)>(seq_info_query)
+            .fetch_all(&self.pool)
+            .await
+        {
+            Ok(rows) => rows,
+            Err(e) => {
+                eprintln!("[Restore Error] Failed to fetch sequences: {}", e);
+                return;
+            }
+        };
+
+        for (seq_name, table_name, col_name) in seqs {
+            let val_query = format!("SELECT COALESCE(MAX({})::bigint + 1, 1) FROM {}", col_name, table_name);
+            let max_val: i64 = match sqlx::query_scalar::<_, i64>(&val_query)
+                .fetch_one(&self.pool)
+                .await
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("[Restore Warning] Failed to fetch MAX for {}.{}: {}", table_name, col_name, e);
+                    1
+                }
+            };
+
+            let setval_query = format!("SELECT setval('{}', {}, false)", seq_name, max_val);
+            if let Err(e) = sqlx::query(&setval_query).execute(&self.pool).await {
+                eprintln!("[Restore Warning] Failed to set sequence {} to {}: {}", seq_name, max_val, e);
+            }
         }
+        println!("[Restore] Sequences update complete.");
     }
 }

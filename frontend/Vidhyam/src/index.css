@@ -47,13 +47,13 @@
   --accent-color: #06b6d4;
   --success-color: #059669;
   --warning-color: #d97706;
-  --bg-via: #f1f5f9;
+  --bg-via: #e2e8f0;
   --primary-glow: rgba(37, 99, 235, 0.08);
 
-  --bg-main: #f4f5f7;
+  --bg-main: #e2e8f0;
   --bg-secondary: #ffffff;
   --bg-sidebar: #ffffff;
-  --bg-topbar: rgba(244, 245, 247, 0.85);
+  --bg-topbar: rgba(226, 232, 240, 0.85);
   --card-bg: rgba(255, 255, 255, 0.65);
   --card-bg-hover: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.055);

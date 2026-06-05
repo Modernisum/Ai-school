@@ -36,7 +36,6 @@ const NAV_CONFIG = [
         subLinks: [
           { label: "All Students", path: "/dashboard/student/all", icon: Users },
           { label: "Admission", path: "/dashboard/student/add", icon: UserPlus },
-          { label: "Form Fill", path: "/dashboard/student/form-fill", icon: FileCheck },
         ],
       },
       {

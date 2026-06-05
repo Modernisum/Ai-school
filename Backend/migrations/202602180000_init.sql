@@ -30,7 +30,30 @@ CREATE TABLE IF NOT EXISTS students (
     name TEXT,
     roll_number INT,
     section VARCHAR(50),
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    dob VARCHAR(100),
+    gender VARCHAR(50),
+    father_name TEXT,
+    mother_name TEXT,
+    aadhaar_number VARCHAR(50),
+    address_line1 TEXT,
+    address_city VARCHAR(255),
+    address_state VARCHAR(255),
+    address_pincode VARCHAR(20),
+    tc_number VARCHAR(100),
+    contact VARCHAR(50),
+    alternative_contact VARCHAR(50),
+    email VARCHAR(255),
+    transport_enabled BOOLEAN DEFAULT FALSE,
+    transport_radius VARCHAR(50),
+    additional_subjects TEXT,
+    admission_date VARCHAR(100),
+    room_number VARCHAR(50),
+    student_type VARCHAR(100),
+    profile_image_url TEXT,
+    enrolled_subjects JSONB DEFAULT '[]',
+    total_fees NUMERIC(15, 2) DEFAULT 0.00,
+    data JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(school_id, student_id)
@@ -39,12 +62,17 @@ CREATE TABLE IF NOT EXISTS students (
 -- Employees
 CREATE TABLE IF NOT EXISTS employees (
     id SERIAL PRIMARY KEY,
-    employee_id VARCHAR(255) UNIQUE NOT NULL,
+    employee_id VARCHAR(255) NOT NULL,
     school_id VARCHAR(255) NOT NULL,
     employee_type VARCHAR(50) NOT NULL,
+    aadhaar_number VARCHAR(50),
+    contact VARCHAR(50),
+    email VARCHAR(255),
     data JSONB NOT NULL DEFAULT '{}',
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(school_id, employee_id)
 );
 
 -- Add indices

@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS spaces CASCADE;
 CREATE TABLE spaces (
     id VARCHAR(255),
     school_id VARCHAR(255) NOT NULL,
+    space_id VARCHAR(255),
     name VARCHAR(255),
     PRIMARY KEY(school_id, id)
 );
