@@ -389,8 +389,7 @@ impl SchemaSetup {
         println!("Ensuring core global tables exist...");
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS auth (
-                id SERIAL PRIMARY KEY,
-                school_id VARCHAR(255) UNIQUE NOT NULL,
+                school_id VARCHAR(255) PRIMARY KEY,
                 password TEXT NOT NULL,
                 password_temp BOOLEAN DEFAULT FALSE,
                 security_question TEXT,
