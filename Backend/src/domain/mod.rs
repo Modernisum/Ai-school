@@ -12,6 +12,8 @@ pub mod admin;
 pub mod ocr;
 pub mod system;
 pub mod cms;
+pub mod query;
+pub mod response;
 
 use axum::{
     extract::DefaultBodyLimit,

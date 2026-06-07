@@ -5,7 +5,6 @@ use dotenv::dotenv;
 use std::net::SocketAddr;
 // use tower_http::cors::{Any, CorsLayer};
 
-mod background_jobs;
 mod backup;
 mod db;
 mod domain;
@@ -16,8 +15,6 @@ mod models;
 mod repository;
 
 mod services;
-pub mod query;
-pub mod response;
 
 use middleware::rate_limiter::RateLimiter;
 use repository::{initialize_repositories, Repositories};
@@ -106,7 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Start combined background workers (Analytics, Webhooks, Cleanup)
-    crate::background_jobs::start_background_workers(state.clone()).await;
+    crate::services::system::background_jobs::start_background_workers(state.clone()).await;
 
     let app = domain::create_router(state);
 
