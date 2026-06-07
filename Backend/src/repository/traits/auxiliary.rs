@@ -63,7 +63,39 @@ pub trait SchoolRepository: Send + Sync {
         &self,
         payload: SchoolSetupPayload,
     ) -> Result<(), AppError>;
+    async fn list_all_schools(&self) -> Result<Vec<Value>, AppError>;
+    async fn get_school_full(&self, school_id: &str) -> Result<Option<Value>, AppError>;
+    async fn update_school_details(&self, school_id: &str, data: Value) -> Result<(), AppError>;
+    async fn delete_school(&self, school_id: &str) -> Result<(), AppError>;
+    async fn set_school_status(&self, school_id: &str, status: &str, is_blocked: bool) -> Result<(), AppError>;
+    async fn change_school_password(&self, school_id: &str, hashed_pass: &str) -> Result<(), AppError>;
+    async fn get_school_sessions(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn delete_school_sessions(&self, school_id: &str) -> Result<u64, AppError>;
+    async fn set_notification(&self, school_id: &str, notification: Option<Value>) -> Result<(), AppError>;
+    async fn create_support_request(
+        &self,
+        school_name: &str,
+        contact_info: &str,
+        message: &str,
+    ) -> Result<(), AppError>;
+    async fn list_support_requests(&self) -> Result<Vec<Value>, AppError>;
+    async fn resolve_support_request(&self, id: i32) -> Result<(), AppError>;
+    async fn run_daily_billing_metering(&self) -> Result<(), AppError>;
+    async fn get_school_admin_email(&self, school_id: &str) -> Result<Option<String>, AppError>;
+    async fn get_active_school_ids(&self) -> Result<Vec<String>, AppError>;
+    async fn insert_scheduled_report(
+        &self,
+        school_id: &str,
+        report_type: &str,
+        report_data: Option<&Value>,
+        period_start: &str,
+        period_end: &str,
+        generated_at: DateTime<Utc>,
+    ) -> Result<(), AppError>;
 }
+
+
+
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct SchoolSetupPayload {

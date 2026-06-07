@@ -322,6 +322,248 @@ impl crate::repository::traits::AttendanceRepository for PostgresAttendanceRepos
             Ok(None)
         }
     }
+
+    async fn get_attendance_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<JsonList, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT user_id, role, status, reason FROM attendance WHERE school_id = $1 AND date = $2::date",
+        )
+        .bind(school_id)
+        .bind(date.parse::<chrono::NaiveDate>()?)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let data = rows
+            .iter()
+            .map(|r| {
+                json!({
+                    "user_id": r.get::<String, _>("user_id"),
+                    "role": r.get::<String, _>("role"),
+                    "status": r.get::<String, _>("status"),
+                    "reason": r.get::<Option<String>, _>("reason")
+                })
+            })
+            .collect();
+        Ok(data)
+    }
+
+    async fn auto_assign_teachers_for_attendance(
+        &self,
+        school_id: &str,
+        date: &str,
+        day_of_week: i32,
+    ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        // Find classes that have NO attendance marked today
+        let classes = sqlx::query(
+            "SELECT DISTINCT c.id, c.name FROM classes c \
+             WHERE c.school_id = $1 \
+             AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.school_id = c.school_id \
+                AND a.date = $2::date AND a.role = 'student' \
+                AND a.user_id IN (SELECT student_id FROM students WHERE class_name = c.name AND school_id = c.school_id))"
+        )
+        .bind(school_id).bind(date.parse::<chrono::NaiveDate>()?)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let mut assignments = Vec::new();
+        for row in classes {
+            let class_id: String = row.get("id");
+            let class_name: String = row.get("name");
+
+            // Find first period teacher from timetable
+            let teacher = sqlx::query(
+                "SELECT ts.teacher_id FROM timetable_slots ts \
+                 JOIN timetable_configs tc ON tc.config_id = ts.config_id AND tc.school_id = ts.school_id \
+                 WHERE ts.school_id = $1 AND ts.class_id = $2 AND ts.day_of_week = $3 \
+                 AND ts.period_number = 1 AND tc.status = 'APPROVED' \
+                 AND ts.teacher_id IS NOT NULL AND ts.teacher_id != '' \
+                 LIMIT 1"
+            )
+            .bind(school_id).bind(&class_id).bind(day_of_week)
+            .fetch_optional(&mut *conn)
+            .await?;
+
+            if let Some(trow) = teacher {
+                let teacher_id: String = trow.get("teacher_id");
+                assignments.push(json!({
+                    "classId": class_id,
+                    "className": class_name,
+                    "teacherId": teacher_id,
+                    "status": "assigned"
+                }));
+            } else {
+                assignments.push(json!({
+                    "classId": class_id,
+                    "className": class_name,
+                    "teacherId": serde_json::Value::Null,
+                    "status": "no_teacher_found"
+                }));
+            }
+        }
+        Ok(assignments)
+    }
+
+    async fn get_attendance_health_metrics(
+        &self,
+        school_id: &str,
+    ) -> Result<Value, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT \
+                COUNT(*) as total_records, \
+                COUNT(CASE WHEN status = 'present' THEN 1 END) as present_count, \
+                COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent_count, \
+                COUNT(CASE WHEN auto_marked = true THEN 1 END) as auto_marked_count, \
+                COUNT(CASE WHEN date = CURRENT_DATE THEN 1 END) as today_count \
+             FROM attendance \
+             WHERE school_id = $1"
+        )
+        .bind(school_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        Ok(json!({
+            "total_records": row.get::<i64, _>("total_records"),
+            "present_count": row.get::<i64, _>("present_count"),
+            "absent_count": row.get::<i64, _>("absent_count"),
+            "auto_marked_count": row.get::<i64, _>("auto_marked_count"),
+            "today_count": row.get::<i64, _>("today_count"),
+        }))
+    }
+
+    async fn get_student_ids_with_attendance_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<Vec<String>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query("SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2::date")
+            .bind(school_id)
+            .bind(date.parse::<chrono::NaiveDate>()?)
+            .fetch_all(&mut *conn)
+            .await?;
+        
+        Ok(rows
+            .into_iter()
+            .filter_map(|r| r.try_get::<String, _>("user_id").ok())
+            .collect())
+    }
+
+    async fn get_unmarked_students_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<Vec<(String, String)>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT s.student_id, s.name FROM students s \
+             WHERE s.school_id = $1 \
+             AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = s.student_id AND a.date = $2::date AND a.school_id = s.school_id)"
+        )
+        .bind(school_id)
+        .bind(date.parse::<chrono::NaiveDate>()?)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| (r.get::<String, _>("student_id"), r.get::<String, _>("name")))
+            .collect())
+    }
+
+    async fn get_daily_attendance_report_stats(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<(i64, i64, i64), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) FILTER (WHERE data->>'status' = 'present') as present, \
+             COUNT(*) FILTER (WHERE data->>'status' = 'absent') as absent, \
+             COUNT(*) as total FROM attendance \
+             WHERE school_id = $1 AND date = $2::date AND role = 'student'"
+        )
+        .bind(school_id)
+        .bind(date.parse::<chrono::NaiveDate>()?)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        Ok((
+            row.get::<i64, _>("present"),
+            row.get::<i64, _>("absent"),
+            row.get::<i64, _>("total"),
+        ))
+    }
+
+    async fn get_unmarked_count_stats(
+        &self,
+        school_id: &str,
+        date: &str,
+        role: &str,
+    ) -> Result<(i64, i64), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let parsed_date = date.parse::<chrono::NaiveDate>()?;
+        if role == "student" {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students WHERE school_id = $1")
+                .bind(school_id).fetch_one(&mut *conn).await?;
+            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = 'student'")
+                .bind(school_id).bind(parsed_date).fetch_one(&mut *conn).await?;
+            Ok((total, marked))
+        } else {
+            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees WHERE school_id = $1 AND employee_type = $2")
+                .bind(school_id).bind(role).fetch_one(&mut *conn).await?;
+            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = $3")
+                .bind(school_id).bind(parsed_date).bind(role).fetch_one(&mut *conn).await?;
+            Ok((total, marked))
+        }
+    }
+
+    async fn create_qr_token(
+        &self,
+        school_id: &str,
+        class_id: Option<&str>,
+        token: &str,
+        expires_at: chrono::DateTime<chrono::Utc>,
+        created_by: &str,
+    ) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "INSERT INTO attendance_qr_tokens (school_id, class_id, token, expires_at, created_by) VALUES ($1, $2, $3, $4, $5)"
+        )
+        .bind(school_id).bind(class_id).bind(token).bind(expires_at).bind(created_by)
+        .execute(&mut *conn).await?;
+        Ok(())
+    }
+
+    async fn verify_and_use_qr_token(
+        &self,
+        school_id: &str,
+        token: &str,
+        used_by: &str,
+    ) -> Result<bool, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let token_valid = sqlx::query(
+            "SELECT id FROM attendance_qr_tokens WHERE token = $1 AND school_id = $2 AND is_used = FALSE AND expires_at > NOW()"
+        )
+        .bind(token).bind(school_id)
+        .fetch_optional(&mut *conn).await?;
+
+        if token_valid.is_none() {
+            return Ok(false);
+        }
+
+        sqlx::query("UPDATE attendance_qr_tokens SET is_used = TRUE, used_by = $1, used_at = NOW() WHERE token = $2")
+            .bind(used_by).bind(token)
+            .execute(&mut *conn).await?;
+
+        Ok(true)
+    }
 }
 
 fn map_attendance(row: &sqlx::postgres::PgRow) -> Value {

@@ -128,6 +128,24 @@ impl NotificationRepository for PostgresNotificationRepository {
         Ok(row.get::<i64, _>("count"))
     }
 
+    async fn get_pending_notifications_count(
+        &self,
+        school_id: &str,
+        since: chrono::DateTime<chrono::Utc>,
+    ) -> Result<i64, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count FROM notifications
+             WHERE school_id = $1 AND status = 'pending' AND created_at >= $2"
+        )
+        .bind(school_id)
+        .bind(since)
+        .fetch_one(&mut *conn)
+        .await?;
+
+        Ok(row.get::<i64, _>("count"))
+    }
+
     async fn mark_read(&self, school_id: &str, notification_id: i64, _user_id: &str) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         sqlx::query(

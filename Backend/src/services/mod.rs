@@ -37,13 +37,10 @@ pub use auth::auth_service;
 pub use leave::leave_service;
 pub use ocr::ocr_service;
 
-pub use operations::operations_service;
-pub use operations::task_service;
 pub use operations::developer_access_service;
 pub use operations::admin_automation_service;
 
 pub use people::employee_service;
-pub use people::encrypted_employee_service;
 
 pub use finance::fee_service;
 
@@ -69,7 +66,6 @@ use crate::services::content_generation_service::ContentGenerationServiceImpl;
 use crate::services::developer_access_service::DeveloperAccessService;
 use crate::services::embedding_service::PostgresEmbeddingService;
 use crate::services::employee_service::PostgresEmployeeService;
-use crate::services::encrypted_employee_service::EncryptedEmployeeService;
 use crate::services::feedback_service::FeedbackService;
 use crate::services::fee_service::PostgresFeeService;
 use crate::services::gradebook_service::GradebookService;
@@ -77,14 +73,12 @@ use crate::services::grading_service::GradingService;
 use crate::services::leave_service::PostgresLeaveService;
 use crate::services::notification_service::PostgresNotificationService;
 use crate::services::ocr_service::OcrService;
-use crate::services::operations::operations_service::PostgresOperationsService;
 use crate::services::payroll::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
 use crate::services::resource::PostgresResourceService;
 use crate::services::responsibility::PostgresResponsibilityService;
 use crate::services::setup_service::PostgresSetupService;
 use crate::services::student::PostgresStudentService;
-use crate::services::operations::task_service::PostgresTaskService;
 use crate::services::recovery_service::PostgresRecoveryService;
 use crate::services::material_monitor::MaterialMonitor;
 use crate::services::traits::*;
@@ -96,7 +90,6 @@ pub struct Services {
     pub setup: Arc<dyn SetupService>,
     pub employee: Arc<dyn EmployeeService>,
     pub academic: Arc<dyn AcademicService>,
-    pub operations: Arc<dyn OperationsService>,
     pub attendance: Arc<dyn AttendanceService>,
     pub attendance_analytics: Arc<dyn AttendanceAnalyticsService>,
     pub attendance_health_monitor: Arc<AttendanceHealthMonitor>,
@@ -110,7 +103,6 @@ pub struct Services {
     pub document_box: Arc<dyn DocumentBoxService>,
     pub school: Arc<dyn SchoolService>,
     pub responsibility: Arc<dyn ResponsibilityService>,
-    pub task: Arc<dyn TaskService>,
     pub leave: Arc<dyn LeaveService>,
     pub ai: Arc<dyn AiService>,
     pub ai_config: Arc<dyn AiConfigService>,
@@ -172,7 +164,8 @@ pub fn initialize_services(
     let fcm_service = Arc::new(crate::logic::FcmService::new());
     
     // Create AI config service
-    let ai_config_service = Arc::new(SchoolAiConfigService::new(repos.db_client.clone()));
+    let ai_config_service = Arc::new(SchoolAiConfigService::new(repos.clone()));
+
 
     // Create attendance analytics service
     let attendance_analytics_service = Arc::new(PostgresAttendanceAnalyticsService::new(repos.clone(), responsibility_cache.clone()));
@@ -192,9 +185,6 @@ pub fn initialize_services(
             repos: repos.clone(),
         }),
         academic: academic_service,
-        operations: Arc::new(PostgresOperationsService {
-            repos: repos.clone(),
-        }),
         attendance: Arc::new(PostgresAttendanceService {
             repos: repos.clone(),
         }),
@@ -210,9 +200,6 @@ pub fn initialize_services(
         document_box: aux_service.clone(),
         school: aux_service,
         responsibility: responsibility_service,
-        task: Arc::new(PostgresTaskService {
-            repos: repos.clone(),
-        }),
         leave: Arc::new(PostgresLeaveService {
             repos: repos.clone(),
             timetable: Arc::new(crate::logic::timetable_engine::TimetableEngine::new(repos.db_client.pool.clone())),
@@ -223,7 +210,7 @@ pub fn initialize_services(
         recovery: Arc::new(PostgresRecoveryService {
             repos: repos.clone(),
         }),
-        developer_access: Arc::new(DeveloperAccessService::new(repos.clone(), repos.db_client.pool.clone())),
+        developer_access: Arc::new(DeveloperAccessService::new(repos.clone())),
         grading: Arc::new(GradingService::new(repos.clone())),
         feedback: feedback_service,
         plagiarism: plagiarism_service,

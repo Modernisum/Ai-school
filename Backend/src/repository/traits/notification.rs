@@ -36,7 +36,13 @@ pub trait NotificationRepository: Send + Sync {
 
     async fn get_unread_count(&self, school_id: &str, user_id: &str) -> Result<i64, AppError>;
 
-    async fn mark_read(&self, school_id: &str, notification_id: i64, user_id: &str) -> Result<(), AppError>;
+    async fn get_pending_notifications_count(
+        &self,
+        school_id: &str,
+        since: chrono::DateTime<chrono::Utc>,
+    ) -> Result<i64, AppError>;
+
+    async fn mark_read(&self, school_id: &str, notification_id: i64, user_id: &str) -> Result<() , AppError>;
 
     async fn mark_all_read(&self, school_id: &str, user_id: &str) -> Result<(), AppError>;
 

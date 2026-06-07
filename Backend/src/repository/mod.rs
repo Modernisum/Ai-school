@@ -27,6 +27,15 @@ pub mod storage_repo;
 pub mod query_builder;
 pub mod grading_repo;
 pub mod config_repo;
+pub mod geo_repo;
+pub mod api_key_repo;
+pub mod cms_repo;
+pub mod communication_repo;
+pub mod system_log_repo;
+pub mod super_admin_repo;
+pub mod admin_automation_repo;
+pub mod developer_access_repo;
+pub mod ai_repo;
 
 use std::sync::Arc;
 pub use traits::*;
@@ -56,6 +65,16 @@ pub struct Repositories {
     pub storage: Arc<dyn StorageRepository + Send + Sync>,
     pub notification: Arc<dyn NotificationRepository + Send + Sync>,
     pub grading: Arc<dyn GradingRepository + Send + Sync>,
+    pub config: Arc<dyn ConfigRepository + Send + Sync>,
+    pub geo: Arc<dyn GeoRepository + Send + Sync>,
+    pub api_key: Arc<dyn ApiKeyRepository + Send + Sync>,
+    pub cms: Arc<dyn CmsRepository + Send + Sync>,
+    pub communication: Arc<dyn CommunicationRepository + Send + Sync>,
+    pub system_log: Arc<dyn SystemLogRepository + Send + Sync>,
+    pub super_admin: Arc<dyn SuperAdminRepository + Send + Sync>,
+    pub admin_automation: Arc<dyn AdminAutomationRepository + Send + Sync>,
+    pub developer_access: Arc<dyn DeveloperAccessRepository + Send + Sync>,
+    pub ai: Arc<dyn AiRepository + Send + Sync>,
     pub base: Arc<base::PostgresBaseRepository>,
     pub db_client: Arc<crate::db::DbClient>,
 }
@@ -150,6 +169,46 @@ pub async fn initialize_repositories(
         client: db_client.clone(),
     });
 
+    let config_repo: Arc<dyn traits::ConfigRepository + Send + Sync> = Arc::new(config_repo::PostgresConfigRepository::new(
+        db_client.clone(),
+    ));
+
+    let geo_repo: Arc<dyn traits::GeoRepository + Send + Sync> = Arc::new(geo_repo::PostgresGeoRepository::new(
+        db_client.clone(),
+    ));
+
+    let api_key_repo: Arc<dyn traits::ApiKeyRepository + Send + Sync> = Arc::new(api_key_repo::PostgresApiKeyRepository::new(
+        db_client.clone(),
+    ));
+
+    let cms_repo: Arc<dyn traits::CmsRepository + Send + Sync> = Arc::new(cms_repo::PostgresCmsRepository::new(
+        db_client.clone(),
+    ));
+
+    let communication_repo: Arc<dyn traits::CommunicationRepository + Send + Sync> = Arc::new(communication_repo::PostgresCommunicationRepository::new(
+        db_client.clone(),
+    ));
+
+    let system_log_repo: Arc<dyn traits::SystemLogRepository + Send + Sync> = Arc::new(system_log_repo::PostgresSystemLogRepository::new(
+        db_client.clone(),
+    ));
+
+    let super_admin_repo: Arc<dyn traits::SuperAdminRepository + Send + Sync> = Arc::new(super_admin_repo::PostgresSuperAdminRepository {
+        client: db_client.clone(),
+    });
+
+    let admin_automation_repo: Arc<dyn traits::AdminAutomationRepository + Send + Sync> = Arc::new(admin_automation_repo::PostgresAdminAutomationRepository {
+        client: db_client.clone(),
+    });
+
+    let developer_access_repo: Arc<dyn traits::DeveloperAccessRepository + Send + Sync> = Arc::new(developer_access_repo::PostgresDeveloperAccessRepository {
+        client: db_client.clone(),
+    });
+
+    let ai_repo: Arc<dyn traits::AiRepository + Send + Sync> = Arc::new(ai_repo::PostgresAiRepository {
+        client: db_client.clone(),
+    });
+
     let base_repo = Arc::new(base::PostgresBaseRepository::new(db_client.clone()));
 
     Repositories {
@@ -177,6 +236,16 @@ pub async fn initialize_repositories(
         audit: audit_repo,
         global_user: global_user_repo,
         grading: grading_repo,
+        config: config_repo,
+        geo: geo_repo,
+        api_key: api_key_repo,
+        cms: cms_repo,
+        communication: communication_repo,
+        system_log: system_log_repo,
+        super_admin: super_admin_repo,
+        admin_automation: admin_automation_repo,
+        developer_access: developer_access_repo,
+        ai: ai_repo,
         base: base_repo,
         db_client,
     }

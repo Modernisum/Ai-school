@@ -507,4 +507,136 @@ impl crate::repository::traits::ResponsibilityRepository for CachedResponsibilit
         let _ = self.cache.cache_employee_responsibilities(school_id, employee_id, &result, 30 * 60).await;
         Ok(result)
     }
+
+    async fn get_missing_responsibility_alerts(&self, school_id: &str) -> Result<crate::repository::traits::JsonList, crate::repository::traits::AppError> {
+        self.inner.get_missing_responsibility_alerts(school_id).await
+    }
+
+    async fn search_responsibilities(&self, school_id: &str, pattern: &str, limit: i32, offset: i32) -> Result<(crate::repository::traits::JsonList, i64), crate::repository::traits::AppError> {
+        self.inner.search_responsibilities(school_id, pattern, limit, offset).await
+    }
+
+    async fn get_space_responsibilities(&self, school_id: &str, space_id: &str) -> Result<Vec<Value>, crate::repository::traits::AppError> {
+        self.inner.get_space_responsibilities(school_id, space_id).await
+    }
+
+    async fn get_overview_analytics(&self, school_id: &str, days: i32) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_overview_analytics(school_id, days).await
+    }
+
+    async fn export_responsibilities_csv(&self, school_id: &str) -> Result<String, crate::repository::traits::AppError> {
+        self.inner.export_responsibilities_csv(school_id).await
+    }
+
+    async fn import_responsibilities_csv(&self, school_id: &str, admin_id: &str, csv_content: &str) -> Result<usize, crate::repository::traits::AppError> {
+        self.inner.import_responsibilities_csv(school_id, admin_id, csv_content).await
+    }
+
+    async fn sync_student_fees_for_responsibility(&self, school_id: &str, responsibility_id: &str) -> Result<usize, crate::repository::traits::AppError> {
+        self.inner.sync_student_fees_for_responsibility(school_id, responsibility_id).await
+    }
+
+    async fn recalculate_all_student_fees(&self, school_id: &str) -> Result<usize, crate::repository::traits::AppError> {
+        self.inner.recalculate_all_student_fees(school_id).await
+    }
+
+    async fn generate_salaries_from_responsibilities(&self, school_id: &str, month: i32, year: i32) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.generate_salaries_from_responsibilities(school_id, month, year).await
+    }
+
+    async fn get_space_financial_overview(&self, school_id: &str, space_id: &str) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_space_financial_overview(school_id, space_id).await
+    }
+
+    async fn bulk_create_employee_assignments(
+        &self,
+        school_id: &str,
+        assignments: Vec<(String, String, Vec<String>)>,
+    ) -> Result<(), crate::repository::traits::AppError> {
+        self.inner.bulk_create_employee_assignments(school_id, assignments).await
+    }
+
+    async fn bulk_remove_employee_responsibilities(
+        &self,
+        school_id: &str,
+        removals: Vec<(String, String)>,
+    ) -> Result<(), crate::repository::traits::AppError> {
+        self.inner.bulk_remove_employee_responsibilities(school_id, removals).await
+    }
+
+    async fn get_assignment_history(
+        &self,
+        school_id: &str,
+        responsibility_id: Option<&str>,
+        employee_id: Option<&str>,
+        limit: i64,
+    ) -> Result<crate::repository::traits::JsonList, crate::repository::traits::AppError> {
+        self.inner.get_assignment_history(school_id, responsibility_id, employee_id, limit).await
+    }
+
+    async fn get_responsibility_versions(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<crate::repository::traits::JsonList, crate::repository::traits::AppError> {
+        self.inner.get_responsibility_versions(school_id, responsibility_id).await
+    }
+
+    async fn rollback_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        version: i32,
+        admin_id: &str,
+    ) -> Result<(), crate::repository::traits::AppError> {
+        self.inner.rollback_responsibility(school_id, responsibility_id, version, admin_id).await
+    }
+
+    async fn create_responsibility_version(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        admin_id: &str,
+    ) -> Result<i32, crate::repository::traits::AppError> {
+        self.inner.create_responsibility_version(school_id, responsibility_id, admin_id).await
+    }
+
+    async fn get_responsibility_utilization_metrics(
+        &self,
+        school_id: &str,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_responsibility_utilization_metrics(school_id, start_date, end_date).await
+    }
+
+    async fn get_employee_workload_metrics(
+        &self,
+        school_id: &str,
+        employee_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_employee_workload_metrics(school_id, employee_id, start_date, end_date).await
+    }
+
+    async fn get_space_distribution_metrics(
+        &self,
+        school_id: &str,
+        space_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_space_distribution_metrics(school_id, space_id, start_date, end_date).await
+    }
+
+    async fn get_revenue_metrics(
+        &self,
+        school_id: &str,
+        responsibility_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, crate::repository::traits::AppError> {
+        self.inner.get_revenue_metrics(school_id, responsibility_id, start_date, end_date).await
+    }
 }

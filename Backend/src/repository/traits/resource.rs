@@ -145,4 +145,14 @@ pub trait ResourceRepository: Send + Sync {
         material_name: &str,
         quantity: i32,
     ) -> Result<Value, AppError>;
+
+    async fn check_space_shortages(&self, school_id: &str) -> Result<Vec<Value>, AppError>;
+    async fn get_distinct_school_ids_with_material_requirements(&self) -> Result<Vec<String>, AppError>;
+    async fn get_active_alerts_count(&self, school_id: &str) -> Result<i64, AppError>;
+    async fn check_existing_active_alert(&self, school_id: &str, space_name: &str, material_name: &str) -> Result<Option<i64>, AppError>;
+    async fn insert_material_alert(&self, school_id: &str, space_name: &str, material_name: &str, deficit: i32) -> Result<(), AppError>;
+    async fn get_active_alert_spaces(&self, school_id: &str) -> Result<Vec<String>, AppError>;
+    async fn get_active_alerts(&self, school_id: &str) -> Result<Vec<(String, String)>, AppError>;
+    async fn resolve_active_alert(&self, school_id: &str, space_name: &str, material_name: &str) -> Result<(), AppError>;
+    async fn get_material_unit_prices(&self, school_id: &str, material_names: &[String]) -> Result<std::collections::HashMap<String, f64>, AppError>;
 }

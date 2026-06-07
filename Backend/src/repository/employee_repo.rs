@@ -211,4 +211,32 @@ impl crate::repository::traits::EmployeeRepository for PostgresEmployeeRepositor
         let next_val: i64 = row.get(0);
         Ok(format!("E{:04}", next_val))
     }
+
+    async fn get_driver_students(
+        &self,
+        school_id: &str,
+        driver_id: &str,
+    ) -> Result<JsonList, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT s.student_id, s.name, s.class_name, s.parent_phone \
+             FROM employee_responsibilities er \
+             JOIN responsibilities r ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id \
+             JOIN space_employees se ON se.space_id = ANY(er.space_ids) AND se.school_id = er.school_id \
+             JOIN students s ON s.class_id = se.space_id AND s.school_id = er.school_id \
+             WHERE er.employee_id = $1 AND er.school_id = $2 AND r.employee_type = 'driver'"
+        )
+        .bind(driver_id).bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let students: Vec<Value> = rows.iter().map(|r| json!({
+            "studentId": r.get::<String, _>("student_id"),
+            "name": r.get::<String, _>("name"),
+            "className": r.get::<String, _>("class_name"),
+            "parentPhone": r.get::<Option<String>, _>("parent_phone"),
+        })).collect();
+
+        Ok(students)
+    }
 }

@@ -1287,6 +1287,146 @@ impl ResourceRepository for PostgresResourceRepository {
             }
         }))
     }
+
+    async fn check_space_shortages(&self, school_id: &str) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+
+        let rows = sqlx::query(
+            r#"
+            SELECT
+                req.space_name,
+                req.material_name,
+                req.required_count,
+                COALESCE(sm.quantity, 0) as available_count
+            FROM space_material_requirements req
+            LEFT JOIN space_materials sm
+                ON sm.school_id = req.school_id
+                AND sm.space_name = req.space_name
+                AND sm.material_name = req.material_name
+            WHERE req.school_id = $1
+              AND req.required_count > 0
+              AND COALESCE(sm.quantity, 0) < req.required_count
+            ORDER BY req.space_name, req.material_name
+            "#,
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        Ok(rows.into_iter().map(|row| {
+            let required_count: i32 = row.get("required_count");
+            let available_count: i32 = row.get("available_count");
+            let space_name: String = row.get("space_name");
+            let material_name: String = row.get("material_name");
+            json!({
+                "spaceName": space_name,
+                "materialName": material_name,
+                "requiredCount": required_count,
+                "availableCount": available_count,
+                "deficit": required_count - available_count,
+            })
+        }).collect())
+    }
+
+    async fn get_distinct_school_ids_with_material_requirements(&self) -> Result<Vec<String>, AppError> {
+        let rows = sqlx::query_scalar("SELECT DISTINCT school_id FROM space_material_requirements")
+            .fetch_all(&self.client.pool)
+            .await?;
+        Ok(rows)
+    }
+
+    async fn get_active_alerts_count(&self, school_id: &str) -> Result<i64, AppError> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
+        )
+        .bind(school_id)
+        .fetch_one(&self.client.pool)
+        .await?;
+        Ok(count)
+    }
+
+    async fn check_existing_active_alert(&self, school_id: &str, space_name: &str, material_name: &str) -> Result<Option<i64>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let existing: Option<(i64,)> = sqlx::query_as(
+            "SELECT id FROM material_alert_log WHERE school_id = $1 AND space_name = $2 AND material_name = $3 AND status = 'active'"
+        )
+        .bind(school_id)
+        .bind(space_name)
+        .bind(material_name)
+        .fetch_optional(&mut *conn)
+        .await?;
+        Ok(existing.map(|e| e.0))
+    }
+
+    async fn insert_material_alert(&self, school_id: &str, space_name: &str, material_name: &str, deficit: i32) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "INSERT INTO material_alert_log (school_id, space_name, material_name, deficit_count, status)
+             VALUES ($1, $2, $3, $4, 'active')"
+        )
+        .bind(school_id)
+        .bind(space_name)
+        .bind(material_name)
+        .bind(deficit)
+        .execute(&mut *conn)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_active_alert_spaces(&self, school_id: &str) -> Result<Vec<String>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT DISTINCT space_name FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+        Ok(rows.into_iter().map(|r| r.get("space_name")).collect())
+    }
+
+    async fn get_active_alerts(&self, school_id: &str) -> Result<Vec<(String, String)>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT space_name, material_name FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+        Ok(rows.into_iter().map(|r| (r.get("space_name"), r.get("material_name"))).collect())
+    }
+
+    async fn resolve_active_alert(&self, school_id: &str, space_name: &str, material_name: &str) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "UPDATE material_alert_log SET status = 'resolved', resolved_at = NOW()
+             WHERE school_id = $1 AND space_name = $2 AND material_name = $3 AND status = 'active'"
+        )
+        .bind(school_id)
+        .bind(space_name)
+        .bind(material_name)
+        .execute(&mut *conn)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_material_unit_prices(&self, school_id: &str, material_names: &[String]) -> Result<std::collections::HashMap<String, f64>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT name, unit_price FROM materials WHERE school_id = $1 AND name = ANY($2)"
+        )
+        .bind(school_id)
+        .bind(material_names)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let mut price_map = std::collections::HashMap::new();
+        for row in rows {
+            let name: String = row.get("name");
+            let price: f64 = row.get("unit_price");
+            price_map.insert(name, price);
+        }
+        Ok(price_map)
+    }
 }
 
 pub fn get_default_materials() -> std::collections::HashMap<String, Vec<Value>> {

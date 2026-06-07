@@ -1,5 +1,4 @@
 use super::AdminService;
-use sqlx::{Row, Connection};
 use std::error::Error;
 use serde_json::{json, Value};
 
@@ -10,42 +9,12 @@ impl AdminService {
         contact_info: &str,
         message: &str,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        sqlx::query(
-            "INSERT INTO support_requests (school_name, contact_info, message) VALUES ($1, $2, $3)",
-        )
-        .bind(school_name)
-        .bind(contact_info)
-        .bind(message)
-        .execute(&mut *conn)
-        .await?;
+        self.repos.school.create_support_request(school_name, contact_info, message).await?;
         Ok(())
     }
 
     pub async fn list_support_requests(&self) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        let rows = sqlx::query(
-            "SELECT id, school_name, contact_info, message, status, created_at 
-             FROM support_requests ORDER BY created_at DESC",
-        )
-        .fetch_all(&mut *conn)
-        .await?;
-
-        let requests: Vec<Value> = rows
-            .iter()
-            .map(|r| {
-                json!({
-                    "id": r.try_get::<i32, _>("id").unwrap_or(0),
-                    "schoolName": r.try_get::<String, _>("school_name").unwrap_or_default(),
-                    "contactInfo": r.try_get::<String, _>("contact_info").unwrap_or_default(),
-                    "message": r.try_get::<String, _>("message").unwrap_or_default(),
-                    "status": r.try_get::<String, _>("status").unwrap_or_default(),
-                    "createdAt": r.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-                                   .ok().map(|t| t.to_rfc3339()),
-                })
-            })
-            .collect();
-
+        let requests = self.repos.school.list_support_requests().await?;
         Ok(json!(requests))
     }
 
@@ -53,11 +22,7 @@ impl AdminService {
         &self,
         id: i32,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        sqlx::query("UPDATE support_requests SET status = 'resolved' WHERE id = $1")
-            .bind(id)
-            .execute(&mut *conn)
-            .await?;
+        self.repos.school.resolve_support_request(id).await?;
         Ok(())
     }
 }

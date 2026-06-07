@@ -74,4 +74,64 @@ pub trait AttendanceRepository: Send + Sync {
     async fn list_holidays(&self, school_id: &str, start_date: &str, end_date: &str) -> Result<JsonList, AppError>;
 
     async fn check_holiday(&self, school_id: &str, date: &str) -> Result<Option<Value>, AppError>;
+
+    async fn get_attendance_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<JsonList, AppError>;
+
+    async fn auto_assign_teachers_for_attendance(
+        &self,
+        school_id: &str,
+        date: &str,
+        day_of_week: i32,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn get_attendance_health_metrics(
+        &self,
+        school_id: &str,
+    ) -> Result<Value, AppError>;
+
+    async fn get_student_ids_with_attendance_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<Vec<String>, AppError>;
+
+    async fn get_unmarked_students_for_date(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<Vec<(String, String)>, AppError>;
+
+    async fn get_daily_attendance_report_stats(
+        &self,
+        school_id: &str,
+        date: &str,
+    ) -> Result<(i64, i64, i64), AppError>;
+
+    async fn get_unmarked_count_stats(
+        &self,
+        school_id: &str,
+        date: &str,
+        role: &str,
+    ) -> Result<(i64, i64), AppError>;
+
+    async fn create_qr_token(
+        &self,
+        school_id: &str,
+        class_id: Option<&str>,
+        token: &str,
+        expires_at: chrono::DateTime<chrono::Utc>,
+        created_by: &str,
+    ) -> Result<(), AppError>;
+
+    async fn verify_and_use_qr_token(
+        &self,
+        school_id: &str,
+        token: &str,
+        used_by: &str,
+    ) -> Result<bool, AppError>;
 }
+

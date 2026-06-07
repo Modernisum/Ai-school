@@ -419,4 +419,35 @@ impl crate::repository::traits::AcademicRepository for PostgresAcademicRepositor
             "publishedAt": now
         }))
     }
+
+    async fn clear_temporary_submission_pages(
+        &self,
+        school_id: &str,
+        submission_id: uuid::Uuid,
+    ) -> Result<Vec<String>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        
+        let rows = sqlx::query(
+            "SELECT image_url FROM exam_submission_pages WHERE school_id = $1 AND submission_id = $2 AND is_permanent = FALSE"
+        )
+        .bind(school_id)
+        .bind(submission_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let pages: Vec<String> = rows.iter().map(|r| r.get("image_url")).collect();
+
+        if !pages.is_empty() {
+            sqlx::query(
+                "DELETE FROM exam_submission_pages WHERE school_id = $1 AND submission_id = $2 AND is_permanent = FALSE"
+            )
+            .bind(school_id)
+            .bind(submission_id)
+            .execute(&mut *conn)
+            .await?;
+        }
+
+        Ok(pages)
+    }
 }
+

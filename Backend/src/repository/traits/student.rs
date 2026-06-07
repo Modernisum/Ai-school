@@ -55,4 +55,9 @@ pub trait StudentRepository: Send + Sync {
     async fn get_all_student_history(&self, school_id: &str) -> Result<JsonList, AppError>;
     async fn get_student_profile(&self, school_id: &str, student_id: &str) -> Result<Option<Value>, AppError>;
     async fn get_active_students_count(&self, school_id: &str) -> Result<i64, AppError>;
+
+    async fn get_form_status(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn get_form_autofill_data(&self, school_id: &str, student_id: &str) -> Result<Option<Value>, AppError>;
+    async fn mark_form_complete(&self, school_id: &str, student_id: &str, completed_at: &str) -> Result<(), AppError>;
+    async fn resequence_roll_numbers(&self, school_id: &str, class_name: &str) -> Result<(), AppError>;
 }

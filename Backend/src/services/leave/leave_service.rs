@@ -3,7 +3,6 @@ use crate::services::traits::*;
 use async_trait::async_trait;
 use chrono::{NaiveDate, Utc};
 use serde_json::{json, Value};
-use sqlx::Row;
 use std::sync::Arc;
 
 pub struct PostgresLeaveService {
@@ -415,44 +414,18 @@ impl LeaveService for PostgresLeaveService {
         // Generate coverage ID
         let coverage_id = format!("COV{}", chrono::Utc::now().timestamp_millis());
 
-        // Insert into responsibility_coverage table
-        let mut conn = self
-            .repos
-            .db_client
-            .acquire_tenant_connection(school_id)
-            .await
-            .map_err(|e| format!("Failed to acquire database connection: {}", e))?;
-
-        sqlx::query(
-            "INSERT INTO responsibility_coverage (
-                coverage_id, leave_id, original_employee_id, covering_employee_id,
-                responsibility_id, coverage_period_start, coverage_period_end,
-                status, notes, school_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-        )
-        .bind(&coverage_id)
-        .bind(leave_id)
-        .bind(original_employee_id)
-        .bind(covering_employee_id)
-        .bind(responsibility_id)
-        .bind(coverage_period_start)
-        .bind(coverage_period_end)
-        .bind("assigned")
-        .bind(notes)
-        .bind(school_id)
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| format!("Failed to insert coverage record: {}", e))?;
-
-        // Update leave application to mark coverage as assigned
-        sqlx::query(
-            "UPDATE leave_applications SET coverage_assigned = TRUE WHERE school_id = $1 AND leave_id = $2",
-        )
-        .bind(school_id)
-        .bind(leave_id)
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| format!("Failed to update leave application: {}", e))?;
+        // Delegate to repository
+        self.repos.leave.assign_responsibility_coverage(
+            school_id,
+            &coverage_id,
+            leave_id,
+            original_employee_id,
+            covering_employee_id,
+            responsibility_id,
+            coverage_period_start,
+            coverage_period_end,
+            notes,
+        ).await?;
 
         // Audit log
         let _ = self
@@ -482,48 +455,7 @@ impl LeaveService for PostgresLeaveService {
         school_id: &str,
         leave_id: &str,
     ) -> AppResult<Vec<Value>> {
-        // Query responsibility_coverage table for this leave
-        let mut conn = self
-            .repos
-            .db_client
-            .acquire_tenant_connection(school_id)
-            .await?;
-
-        let rows = sqlx::query(
-            "SELECT
-                coverage_id, leave_id, original_employee_id, covering_employee_id,
-                responsibility_id, coverage_period_start, coverage_period_end,
-                status, notes, created_at, updated_at
-             FROM responsibility_coverage
-             WHERE school_id = $1 AND leave_id = $2
-             ORDER BY created_at DESC",
-        )
-        .bind(school_id)
-        .bind(leave_id)
-        .fetch_all(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to query coverage records: {}", e)))?;
-
-        let coverages: Vec<Value> = rows
-            .into_iter()
-            .map(|row| {
-                json!({
-                    "coverageId": row.get::<String, _>("coverage_id"),
-                    "leaveId": row.get::<String, _>("leave_id"),
-                    "originalEmployeeId": row.get::<String, _>("original_employee_id"),
-                    "coveringEmployeeId": row.get::<String, _>("covering_employee_id"),
-                    "responsibilityId": row.get::<String, _>("responsibility_id"),
-                    "coveragePeriodStart": row.get::<NaiveDate, _>("coverage_period_start").to_string(),
-                    "coveragePeriodEnd": row.get::<NaiveDate, _>("coverage_period_end").to_string(),
-                    "status": row.get::<String, _>("status"),
-                    "notes": row.get::<Option<String>, _>("notes").unwrap_or_default(),
-                    "createdAt": row.get::<chrono::DateTime<Utc>, _>("created_at").to_rfc3339(),
-                    "updatedAt": row.get::<chrono::DateTime<Utc>, _>("updated_at").to_rfc3339(),
-                })
-            })
-            .collect();
-
-        Ok(coverages)
+        Ok(self.repos.leave.get_available_coverages(school_id, leave_id).await?)
     }
 
     async fn accept_coverage(
@@ -532,123 +464,7 @@ impl LeaveService for PostgresLeaveService {
         employee_id: &str,
         coverage_id: &str,
     ) -> AppResult<()> {
-        // Update coverage status to 'accepted' in database
-        let mut conn = self
-            .repos
-            .db_client
-            .acquire_tenant_connection(school_id)
-            .await?;
-
-        // First, verify the coverage exists and is assigned to this employee
-        let row = sqlx::query(
-            "SELECT covering_employee_id, status FROM responsibility_coverage
-             WHERE school_id = $1 AND coverage_id = $2"
-        )
-        .bind(school_id)
-        .bind(coverage_id)
-        .fetch_optional(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to query coverage: {}", e)))?;
-
-        match row {
-            Some(row) => {
-                let covering_employee_id = row.get::<String, _>("covering_employee_id");
-                let current_status = row.get::<String, _>("status");
-                
-                // Check if the employee is the covering employee
-                if covering_employee_id != employee_id {
-                    return Err("You are not authorized to accept this coverage assignment".into());
-                }
-                
-                // Check if coverage is already accepted
-                if current_status == "accepted" {
-                    return Err("Coverage has already been accepted".into());
-                }
-                
-                // Check if coverage is in a valid state to accept
-                if current_status != "assigned" {
-                    return Err(format!("Cannot accept coverage with status: {}", current_status).into());
-                }
-                
-                // Also fetch leave_id, original_employee_id, responsibility_id for delegation
-                let delegation_row = sqlx::query(
-                    "SELECT leave_id, original_employee_id, responsibility_id FROM responsibility_coverage
-                     WHERE school_id = $1 AND coverage_id = $2"
-                )
-                .bind(school_id)
-                .bind(coverage_id)
-                .fetch_optional(&mut *conn)
-                .await
-                .map_err(|e| AppError::Internal(format!("Failed to query coverage details: {}", e)))?;
-
-                // Update the coverage status
-                sqlx::query(
-                    "UPDATE responsibility_coverage
-                     SET status = 'accepted', updated_at = NOW()
-                     WHERE school_id = $1 AND coverage_id = $2"
-                )
-                .bind(school_id)
-                .bind(coverage_id)
-                .execute(&mut *conn)
-                .await
-                .map_err(|e| AppError::Internal(format!("Failed to update coverage status: {}", e)))?;
-
-                // Temporarily delegate responsibility to covering employee
-                if let Some(dr) = delegation_row {
-                    let orig_emp: String = dr.get("original_employee_id");
-                    let resp_id: String = dr.get("responsibility_id");
-                    let lid: String = dr.get("leave_id");
-
-                    // Get original employee's space_ids for this responsibility
-                    let orig_spaces: Option<Value> = sqlx::query_scalar(
-                        "SELECT space_ids FROM employee_responsibilities
-                         WHERE school_id = $1 AND employee_id = $2 AND responsibility_id = $3"
-                    )
-                    .bind(school_id)
-                    .bind(&orig_emp)
-                    .bind(&resp_id)
-                    .fetch_optional(&mut *conn)
-                    .await?;
-
-                    let space_ids: Vec<String> = orig_spaces
-                        .and_then(|v| v.as_array().map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect()))
-                        .unwrap_or_default();
-
-                    // Add covering employee to the responsibility with same spaces
-                    sqlx::query(
-                        "INSERT INTO employee_responsibilities (school_id, employee_id, responsibility_id, space_ids)
-                         VALUES ($1, $2, $3, $4)
-                         ON CONFLICT (school_id, employee_id, responsibility_id) DO UPDATE SET
-                         space_ids = EXCLUDED.space_ids, updated_at = NOW()"
-                    )
-                    .bind(school_id)
-                    .bind(&covering_employee_id)
-                    .bind(&resp_id)
-                    .bind(&space_ids)
-                    .execute(&mut *conn)
-                    .await
-                    .map_err(|e| AppError::Internal(format!("Failed to delegate responsibility: {}", e)))?;
-
-                    // Log delegation in history
-                    let _ = sqlx::query(
-                        "INSERT INTO responsibility_assignment_history (school_id, responsibility_id, employee_id,
-                         action, previous_space_ids, version, performed_by, reason, performed_at)
-                         VALUES ($1, $2, $3, 'coverage_accepted', $4, 1, $5, $6, NOW())"
-                    )
-                    .bind(school_id)
-                    .bind(&resp_id)
-                    .bind(&covering_employee_id)
-                    .bind(&space_ids)
-                    .bind(employee_id)
-                    .bind(format!("Leave coverage for {} (leave {})", orig_emp, lid))
-                    .execute(&mut *conn)
-                    .await;
-                }
-            }
-            None => {
-                return Err("Coverage record not found".into());
-            }
-        }
+        self.repos.leave.accept_responsibility_coverage(school_id, employee_id, coverage_id).await?;
 
         // Audit log
         let _ = self
@@ -742,31 +558,17 @@ impl LeaveService for PostgresLeaveService {
         }
 
         // 4. Store workload assessment in DB
-        if let Ok(mut conn) = self.repos.db_client.acquire_tenant_connection(school_id).await {
-            // Delete existing assessment for this leave to allow re-assessment
-            let _ = sqlx::query(
-                "DELETE FROM workload_assessment WHERE leave_id = $1 AND school_id = $2"
-            )
-            .bind(leave_id)
-            .bind(school_id)
-            .execute(&mut *conn)
-            .await;
-            let _ = sqlx::query(
-                "INSERT INTO workload_assessment (assessment_id, leave_id, school_id, employee_id,
-                 assessment_date, impact_score, workload_category, coverage_needed, notes)
-                 VALUES ($1, $2, $3, $4, NOW(), $5, $6, $7, $8)"
-            )
-            .bind(format!("WA{}", chrono::Utc::now().timestamp_millis()))
-            .bind(leave_id)
-            .bind(school_id)
-            .bind(employee_id)
-            .bind(impact_score)
-            .bind(workload_impact)
-            .bind(total_sessions > 0)
-            .bind(serde_json::to_string(&affected).unwrap_or_default())
-            .execute(&mut *conn)
-            .await;
-        }
+        let assessment_id = format!("WA{}", chrono::Utc::now().timestamp_millis());
+        let _ = self.repos.leave.save_workload_assessment(
+            school_id,
+            leave_id,
+            employee_id,
+            &assessment_id,
+            impact_score,
+            workload_impact,
+            total_sessions > 0,
+            &serde_json::to_string(&affected).unwrap_or_default(),
+        ).await;
 
         Ok(json!({
             "leaveId": leave_id,
@@ -782,24 +584,8 @@ impl LeaveService for PostgresLeaveService {
 
     async fn get_workload_assessment(&self, school_id: &str, leave_id: &str) -> AppResult<Value> {
         // Try DB first
-        if let Ok(mut conn) = self.repos.db_client.acquire_tenant_connection(school_id).await {
-            if let Ok(Some(row)) = sqlx::query(
-                "SELECT * FROM workload_assessment WHERE school_id = $1 AND leave_id = $2"
-            )
-            .bind(school_id)
-            .bind(leave_id)
-            .fetch_optional(&mut *conn)
-            .await
-            {
-                return Ok(json!({
-                    "leaveId": row.get::<String, _>("leave_id"),
-                    "workloadImpact": row.get::<Option<String>, _>("workload_category").unwrap_or_default(),
-                    "impactScore": row.get::<Option<i32>, _>("impact_score").unwrap_or(0),
-                    "coverageNeeded": row.get::<Option<bool>, _>("coverage_needed").unwrap_or(false),
-                    "assessmentDate": row.get::<Option<String>, _>("assessment_date").unwrap_or_default(),
-                    "notes": row.get::<Option<String>, _>("notes").unwrap_or_default()
-                }));
-            }
+        if let Ok(Some(val)) = self.repos.leave.get_workload_assessment(school_id, leave_id).await {
+            return Ok(val);
         }
         // Fallback: run fresh assessment
         self.assess_workload(school_id, leave_id).await

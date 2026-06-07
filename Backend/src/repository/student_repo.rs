@@ -2,7 +2,7 @@ use crate::db::DbClient;
 use crate::repository::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use sqlx::Row;
+use sqlx::{Row, Acquire};
 use std::sync::Arc;
 
 pub struct PostgresStudentRepository {
@@ -575,6 +575,127 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
             .await?;
         let count: i64 = row.get("count");
         Ok(count)
+    }
+
+    async fn get_form_status(&self, school_id: &str) -> Result<JsonList, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            "SELECT s.student_id, s.name, s.class_name, s.created_at, s.updated_at, \
+             s.data->>'formCompleted' as form_completed, \
+             (SELECT string_agg(file_url, ',') FROM document_box WHERE school_id = s.school_id AND user_id = s.student_id) as documents \
+             FROM students s WHERE s.school_id = $1 ORDER BY s.created_at DESC LIMIT 200"
+        )
+        .bind(school_id)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        let students: Vec<Value> = rows.iter().map(|r| {
+            let docs: Option<String> = r.get("documents");
+            let doc_urls: Vec<&str> = docs.as_deref().map(|d| d.split(',').filter(|s| !s.is_empty()).collect()).unwrap_or_default();
+            let has_docs = !doc_urls.is_empty();
+            let form_done = r.get::<Option<String>, _>("form_completed").is_some();
+            let updated_at: Option<chrono::DateTime<chrono::Utc>> = r.get("updated_at");
+            json!({
+                "studentId": r.get::<String, _>("student_id"),
+                "name": r.get::<String, _>("name"),
+                "className": r.get::<String, _>("class_name"),
+                "hasDocuments": has_docs,
+                "documentCount": doc_urls.len(),
+                "formCompleted": form_done,
+                "createdAt": updated_at.map(|d| d.to_rfc3339()),
+            })
+        }).collect();
+
+        Ok(students)
+    }
+
+    async fn get_form_autofill_data(&self, school_id: &str, student_id: &str) -> Result<Option<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let row = sqlx::query(
+            "SELECT name, class_name, data, dob, gender, father_name, mother_name, address_line1, aadhaar_number, \
+             (SELECT string_agg(file_url, ',') FROM document_box WHERE school_id = $1 AND user_id = $2) as documents \
+             FROM students WHERE school_id = $1 AND student_id = $2"
+        )
+        .bind(school_id).bind(student_id)
+        .fetch_optional(&mut *conn)
+        .await?;
+
+        if let Some(r) = row {
+            let name: String = r.get("name");
+            let class_name: String = r.get("class_name");
+            let data: Value = r.get("data");
+            let docs_str: String = r.get::<Option<String>, _>("documents").unwrap_or_default();
+
+            let dob: Option<String> = r.get("dob");
+            let gender: Option<String> = r.get("gender");
+            let father_name: Option<String> = r.get("father_name");
+            let mother_name: Option<String> = r.get("mother_name");
+            let address: Option<String> = r.get("address_line1");
+            let aadhaar: Option<String> = r.get("aadhaar_number");
+
+            Ok(Some(json!({
+                "name": name,
+                "className": class_name,
+                "data": data,
+                "documents": docs_str,
+                "dob": dob,
+                "gender": gender,
+                "fatherName": father_name,
+                "motherName": mother_name,
+                "address": address,
+                "aadhaar": aadhaar,
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn mark_form_complete(&self, school_id: &str, student_id: &str, completed_at: &str) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        sqlx::query(
+            "UPDATE students SET data = jsonb_set(data, '{formCompleted}', $1) WHERE school_id = $2 AND student_id = $3"
+        )
+        .bind(&json!(completed_at)).bind(school_id).bind(student_id)
+        .execute(&mut *conn).await?;
+        Ok(())
+    }
+
+    async fn resequence_roll_numbers(&self, school_id: &str, class_name: &str) -> Result<(), AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let mut tx = conn.begin().await?;
+
+        // Get all students for this class, ordered by current roll number
+        let students = sqlx::query(
+            "SELECT student_id, roll_number FROM students WHERE school_id = $1 AND class_name = $2 ORDER BY roll_number"
+        )
+        .bind(school_id)
+        .bind(class_name)
+        .fetch_all(&mut *tx)
+        .await?;
+
+        let section_size = 60;
+        for (i, student) in students.iter().enumerate() {
+            let new_roll = (i + 1) as i32;
+            let section_idx = (new_roll - 1) / section_size;
+            let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            let new_section = alphabet.chars().nth(section_idx as usize).unwrap_or('Z').to_string();
+            let room_index = ((new_roll - 1) % section_size) + 1;
+            let sid: String = student.get("student_id");
+
+            sqlx::query(
+                "UPDATE students SET roll_number = $1, section = $2, room_number = $3 WHERE school_id = $4 AND student_id = $5"
+            )
+            .bind(new_roll)
+            .bind(&new_section)
+            .bind(room_index.to_string())
+            .bind(school_id)
+            .bind(&sid)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
+        Ok(())
     }
 }
 

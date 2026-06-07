@@ -1,9 +1,7 @@
 //! AI Monitoring Routes for tracking usage, costs, and performance metrics
 
-use crate::{
-    AppState,
-    extractors::TenantContext,
-};
+use crate::AppState;
+use crate::middleware::rls::TenantContext;
 use axum::{
     extract::{Extension, Path, Query, State},
     Json,

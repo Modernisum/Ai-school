@@ -2,8 +2,6 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 
 use crate::repository::Repositories;
-use crate::services::utils::delta::calculate_delta;
-
 pub struct StudentQueries {
     pub repos: Arc<Repositories>,
 }
@@ -11,10 +9,6 @@ pub struct StudentQueries {
 impl StudentQueries {
     pub fn new(repos: Arc<Repositories>) -> Self {
         Self { repos }
-    }
-
-    pub fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
-        calculate_delta(old, new)
     }
 
     pub fn get_section_for_roll(&self, roll: i32, section_size: i32) -> String {

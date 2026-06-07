@@ -14,4 +14,5 @@ pub trait StorageRepository: Send + Sync {
     async fn list_files(&self, school_id: Option<&str>, user_id: Option<&str>) -> Result<JsonList, AppError>;
     async fn get_orphaned_files(&self, older_than_hours: i32) -> Result<JsonList, AppError>;
     async fn get_orphaned_files_minutes(&self, older_than_minutes: i32) -> Result<JsonList, AppError>;
+    async fn check_storage_status(&self, school_id: &str) -> Result<(), AppError>;
 }

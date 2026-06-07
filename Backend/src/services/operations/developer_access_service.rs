@@ -3,18 +3,16 @@ use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use chrono::{DateTime, Utc};
-use sqlx::{Postgres, Pool, Row};
 use crate::error::{AppError, AppResult};
 
 /// Service for managing developer access controls and security
 pub struct DeveloperAccessService {
     repos: Arc<Repositories>,
-    db_pool: Pool<Postgres>,
 }
 
 impl DeveloperAccessService {
-    pub fn new(repos: Arc<Repositories>, db_pool: Pool<Postgres>) -> Self {
-        Self { repos, db_pool }
+    pub fn new(repos: Arc<Repositories>) -> Self {
+        Self { repos }
     }
 
     /// Request access to production data for development purposes
@@ -45,39 +43,14 @@ impl DeveloperAccessService {
             return Err(AppError::Validation("Developer already has active access grants".to_string()));
         }
 
-        // Create access request
-        let request_data = json!({
-            "developer_id": developer_id,
-            "developer_email": developer_email,
-            "requested_role": requested_role,
-            "justification": justification,
-            "requested_tables": requested_tables,
-            "duration_hours": duration_hours,
-            "status": "pending"
-        });
-
-        // Store the request
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-        
-        let request = sqlx::query(
-            "INSERT INTO developer_access_requests 
-            (developer_id, developer_email, requested_role, justification, requested_tables, duration_hours, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, created_at"
-        )
-        .bind(developer_id)
-        .bind(developer_email)
-        .bind(requested_role)
-        .bind(justification)
-        .bind(&requested_tables)
-        .bind(duration_hours)
-        .bind("pending")
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to create access request: {}", e)))?;
-
-        let request_id: i32 = request.get("id");
-        let created_at: DateTime<Utc> = request.get("created_at");
+        let (request_id, created_at) = self.repos.developer_access.insert_access_request(
+            developer_id,
+            developer_email,
+            requested_role,
+            justification,
+            &requested_tables,
+            duration_hours,
+        ).await?;
 
         // Determine approvers based on role
         let approvers = self.determine_approvers(requested_role).await?;
@@ -109,42 +82,18 @@ impl DeveloperAccessService {
         approver_email: &str,
         approval_notes: Option<&str>,
     ) -> AppResult<Value> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
+        let (developer_id, developer_email, requested_role, duration_hours) = self.repos.developer_access
+            .get_pending_request_by_id(request_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Access request not found or already processed".to_string()))?;
 
-        // Get the request
-        let request = sqlx::query(
-            "SELECT * FROM developer_access_requests WHERE id = $1 AND status = 'pending'"
-        )
-        .bind(request_id)
-        .fetch_optional(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to fetch request: {}", e)))?;
-
-        let request = match request {
-            Some(r) => r,
-            None => return Err(AppError::NotFound("Access request not found or already processed".to_string())),
-        };
-
-        let developer_id: String = request.get("developer_id");
-        let developer_email: String = request.get("developer_email");
-        let requested_role: String = request.get("requested_role");
-        let duration_hours: i32 = request.get("duration_hours");
-
-        // Update request status
-        sqlx::query(
-            "UPDATE developer_access_requests 
-            SET status = 'approved', approver_id = $2, approver_email = $3, 
-                approval_notes = $4, approved_at = NOW(), expires_at = NOW() + ($5 || ' hours')::INTERVAL
-            WHERE id = $1"
-        )
-        .bind(request_id)
-        .bind(approver_id)
-        .bind(approver_email)
-        .bind(approval_notes)
-        .bind(duration_hours)
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to approve request: {}", e)))?;
+        self.repos.developer_access.update_request_and_approve(
+            request_id,
+            approver_id,
+            approver_email,
+            approval_notes,
+            duration_hours,
+        ).await?;
 
         // Grant the access
         let grant_id = self.grant_access(
@@ -181,8 +130,6 @@ impl DeveloperAccessService {
         role: &str,
         duration_hours: i32,
     ) -> AppResult<i32> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
         // Map role to PostgreSQL role name
         let pg_role = match role {
             "readonly" => "developer_readonly",
@@ -192,19 +139,12 @@ impl DeveloperAccessService {
             _ => return Err(AppError::Validation(format!("Invalid role: {}", role))),
         };
 
-        // Call the PostgreSQL function to grant access
-        let grant = sqlx::query(
-            "SELECT grant_developer_access($1, $2, $3, $4) as grant_id"
-        )
-        .bind(developer_id)
-        .bind(developer_email)
-        .bind(pg_role)
-        .bind(duration_hours)
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to grant access: {}", e)))?;
-
-        let grant_id: i32 = grant.get("grant_id");
+        let grant_id = self.repos.developer_access.call_grant_developer_access(
+            developer_id,
+            developer_email,
+            pg_role,
+            duration_hours,
+        ).await?;
 
         Ok(grant_id)
     }
@@ -217,33 +157,12 @@ impl DeveloperAccessService {
         revoker_email: &str,
         reason: &str,
     ) -> AppResult<()> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
+        let developer_id = self.repos.developer_access
+            .get_active_grant_by_id(grant_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Active access grant not found".to_string()))?;
 
-        // Get grant details
-        let grant = sqlx::query(
-            "SELECT * FROM developer_access_grants WHERE id = $1 AND is_active = TRUE"
-        )
-        .bind(grant_id)
-        .fetch_optional(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to fetch grant: {}", e)))?;
-
-        let grant = match grant {
-            Some(g) => g,
-            None => return Err(AppError::NotFound("Active access grant not found".to_string())),
-        };
-
-        let developer_id: String = grant.get("developer_id");
-
-        // Call the PostgreSQL function to revoke access
-        sqlx::query(
-            "SELECT revoke_developer_access($1, $2)"
-        )
-        .bind(grant_id)
-        .bind(reason)
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to revoke access: {}", e)))?;
+        self.repos.developer_access.call_revoke_developer_access(grant_id, reason).await?;
 
         // Log the revocation
         self.log_developer_activity(
@@ -263,59 +182,13 @@ impl DeveloperAccessService {
         &self,
         developer_id: &str,
     ) -> AppResult<Vec<Value>> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
-        let grants = sqlx::query(
-            "SELECT * FROM developer_access_grants 
-            WHERE developer_id = $1 AND is_active = TRUE AND end_time > NOW()
-            ORDER BY start_time DESC"
-        )
-        .bind(developer_id)
-        .fetch_all(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to fetch grants: {}", e)))?;
-
-        let mut result = Vec::new();
-        for grant in grants {
-            result.push(json!({
-                "id": grant.get::<i32, _>("id"),
-                "granted_role": grant.get::<String, _>("granted_role"),
-                "start_time": grant.get::<DateTime<Utc>, _>("start_time").to_rfc3339(),
-                "end_time": grant.get::<DateTime<Utc>, _>("end_time").to_rfc3339(),
-                "pg_role_name": grant.get::<String, _>("pg_role_name"),
-            }));
-        }
-
+        let result = self.repos.developer_access.get_active_grants_for_developer(developer_id).await?;
         Ok(result)
     }
 
     /// Get all pending access requests
     pub async fn get_pending_requests(&self) -> AppResult<Vec<Value>> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
-        let requests = sqlx::query(
-            "SELECT * FROM developer_access_requests 
-            WHERE status = 'pending'
-            ORDER BY created_at DESC"
-        )
-        .fetch_all(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to fetch requests: {}", e)))?;
-
-        let mut result = Vec::new();
-        for request in requests {
-            result.push(json!({
-                "id": request.get::<i32, _>("id"),
-                "developer_id": request.get::<String, _>("developer_id"),
-                "developer_email": request.get::<String, _>("developer_email"),
-                "requested_role": request.get::<String, _>("requested_role"),
-                "justification": request.get::<String, _>("justification"),
-                "duration_hours": request.get::<i32, _>("duration_hours"),
-                "created_at": request.get::<DateTime<Utc>, _>("created_at").to_rfc3339(),
-                "requested_tables": request.get::<Vec<String>, _>("requested_tables"),
-            }));
-        }
-
+        let result = self.repos.developer_access.get_pending_requests().await?;
         Ok(result)
     }
 
@@ -329,38 +202,20 @@ impl DeveloperAccessService {
         details: Option<&str>,
         query_text: Option<&str>,
     ) -> AppResult<()> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
-        sqlx::query(
-            "INSERT INTO developer_activity_audit 
-            (developer_id, developer_email, action_type, target_table, query_text, details)
-            VALUES ($1, $2, $3, $4, $5, $6)"
-        )
-        .bind(developer_id)
-        .bind(developer_email)
-        .bind(action_type)
-        .bind(target_table)
-        .bind(query_text)
-        .bind(details)
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to log activity: {}", e)))?;
-
+        self.repos.developer_access.log_developer_activity(
+            developer_id,
+            developer_email,
+            action_type,
+            target_table,
+            query_text,
+            details,
+        ).await?;
         Ok(())
     }
 
     /// Check and auto-revoke expired access grants
     pub async fn cleanup_expired_grants(&self) -> AppResult<i32> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
-        let result = sqlx::query(
-            "SELECT check_expired_access_grants() as revoked_count"
-        )
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to cleanup expired grants: {}", e)))?;
-
-        let revoked_count: i32 = result.get("revoked_count");
+        let revoked_count = self.repos.developer_access.call_check_expired_access_grants().await?;
 
         if revoked_count > 0 {
             tracing::info!("Auto-revoked {} expired developer access grants", revoked_count);
@@ -390,56 +245,12 @@ impl DeveloperAccessService {
         end_date: Option<DateTime<Utc>>,
         limit: i64,
     ) -> AppResult<Vec<Value>> {
-        let mut conn = self.db_pool.acquire().await.map_err(|e| AppError::Internal(format!("Database connection error: {}", e)))?;
-
-        let mut query = "SELECT * FROM developer_activity_audit WHERE 1=1".to_string();
-        let mut params: Vec<String> = Vec::new();
-        let mut param_count = 0;
-
-        if let Some(dev_id) = developer_id {
-            param_count += 1;
-            query.push_str(&format!(" AND developer_id = ${}", param_count));
-            params.push(dev_id.to_string());
-        }
-
-        if let Some(start) = start_date {
-            param_count += 1;
-            query.push_str(&format!(" AND created_at >= ${}", param_count));
-            params.push(start.to_rfc3339());
-        }
-
-        if let Some(end) = end_date {
-            param_count += 1;
-            query.push_str(&format!(" AND created_at <= ${}", param_count));
-            params.push(end.to_rfc3339());
-        }
-
-        query.push_str(&format!(" ORDER BY created_at DESC LIMIT {}", limit));
-
-        let mut sqlx_query = sqlx::query(&query);
-        for param in params {
-            sqlx_query = sqlx_query.bind(param);
-        }
-
-        let activities = sqlx_query
-            .fetch_all(&mut *conn)
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to fetch activity logs: {}", e)))?;
-
-        let mut result = Vec::new();
-        for activity in activities {
-            result.push(json!({
-                "id": activity.get::<i32, _>("id"),
-                "developer_id": activity.get::<String, _>("developer_id"),
-                "developer_email": activity.get::<String, _>("developer_email"),
-                "action_type": activity.get::<String, _>("action_type"),
-                "target_table": activity.get::<Option<String>, _>("target_table"),
-                "query_text": activity.get::<Option<String>, _>("query_text"),
-                "details": activity.get::<Option<String>, _>("details"),
-                "created_at": activity.get::<DateTime<Utc>, _>("created_at").to_rfc3339(),
-            }));
-        }
-
+        let result = self.repos.developer_access.get_developer_activity(
+            developer_id,
+            start_date,
+            end_date,
+            limit,
+        ).await?;
         Ok(result)
     }
 }

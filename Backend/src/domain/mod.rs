@@ -62,62 +62,23 @@ fn make_cors() -> CorsLayer {
 }
 
 pub fn create_router(state: AppState) -> Router {
-    let auth_limiter = state.auth_limiter.clone();
-    let ai_limiter = state.ai_limiter.clone();
     let general_limiter = state.general_limiter.clone();
-    let admin_limiter = state.admin_limiter.clone();
 
     let api = Router::new()
-        .nest(
-            "/auth",
-            auth::routes(state.clone())
-                .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
-                    let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
-                    let limiter = auth_limiter.clone();
-                    async move {
-                        limiter.check(&client_ip).await?;
-                        Ok::<Response, Response>(next.run(req).await)
-                    }
-                })),
-        )
-        .nest("/school/:schoolId", {
-            let ai_lim = ai_limiter.clone();
-            Router::new()
-                .nest("/people", people::routes(state.clone()))
-                .nest("/academic", academic::routes(state.clone()))
-                .nest("/finance", finance::routes(state.clone()))
-                .nest("/attendance", attendance::routes(state.clone()))
-                .nest("/leave", leave::routes(state.clone()))
-                .nest("/resources", resources::routes(state.clone()))
-                .nest("/comm", communication::routes(state.clone()))
-                .nest("/operations", operations::routes(state.clone()))
-                .nest(
-                    "/ai",
-                    ai::routes(state.clone())
-                        .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
-                            let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
-                            let limiter = ai_lim.clone();
-                            async move {
-                                limiter.check(&client_ip).await?;
-                                Ok::<Response, Response>(next.run(req).await)
-                            }
-                        })),
-                )
-                .nest("/ocr", ocr::routes(state.clone()))
-                .nest("/system", system::routes(state.clone()))
-        })
-        .nest(
-            "/admin",
-            admin::routes(state.clone())
-                .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
-                    let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
-                    let limiter = admin_limiter.clone();
-                    async move {
-                        limiter.check(&client_ip).await?;
-                        Ok::<Response, Response>(next.run(req).await)
-                    }
-                }))
-        )
+        .merge(auth::routes(state.clone()))
+        .merge(people::routes(state.clone()))
+        .merge(academic::routes(state.clone()))
+        .merge(finance::routes(state.clone()))
+        .merge(attendance::routes(state.clone()))
+        .merge(leave::routes(state.clone()))
+        .merge(resources::routes(state.clone()))
+        .merge(communication::routes(state.clone()))
+        .merge(operations::routes(state.clone()))
+        .merge(ai::routes(state.clone()))
+        .merge(ocr::routes(state.clone()))
+        .merge(system::routes(state.clone()))
+        .merge(admin::routes(state.clone()))
+        .merge(cms::routes(state.clone()))
         .merge(people::legacy_routes(state.clone()))
         .merge(attendance::legacy_routes(state.clone()))
         .merge(system::legacy_routes(state.clone()))
@@ -132,24 +93,7 @@ pub fn create_router(state: AppState) -> Router {
 
     let app = Router::new()
         .route("/", get(|| async { "Modern School Management Backend (Rust/Axum)" }))
-        .route("/health", get(crate::domain::system::health::unified_health_check))
         .nest("/api", api)
-        .route(
-            "/:schoolId/mobile/select-profile",
-            post(crate::domain::auth::auth::select_profile_handler),
-        )
-        .route(
-            "/:schoolId/mobile/fees/:studentId",
-            get(crate::domain::finance::fees::get_student_fee),
-        )
-        .route(
-            "/:schoolId/mobile/order",
-            post(crate::domain::finance::payment::create_order),
-        )
-        .route(
-            "/:schoolId/mobile/attendance",
-            post(crate::domain::attendance::attendance::mobile_mark_attendance),
-        )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             crate_middleware::rls::rls_middleware,
@@ -173,14 +117,8 @@ pub fn create_router(state: AppState) -> Router {
         )
         .layer(CompressionLayer::new())
         .layer(axum::middleware::from_fn(crate_middleware::security_headers::security_headers_middleware))
-        .nest("/api/cms", cms::public_routes(state.clone()))
         .layer(make_cors());
 
-    let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
-    let static_router = Router::new()
-        .nest_service("/uploads", ServeDir::new(upload_dir))
-        .layer(axum::middleware::from_fn(crate_middleware::upload_auth::upload_auth_middleware))
-        .layer(make_cors());
 
-    app.merge(static_router).with_state(state)
+    app.with_state(state)
 }

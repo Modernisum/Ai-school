@@ -205,7 +205,7 @@ impl AttendanceService for PostgresAttendanceService {
             )
             .await?;
 
-        let delta = self.calculate_delta(&existing, &updated);
+        let delta = calculate_delta(&existing, &updated);
         if !delta.as_object().map(|o| o.is_empty()).unwrap_or(true) {
             log_audit(&self.repos.audit, school_id, admin_id, "ATTENDANCE", user_id, "UPDATE", delta).await;
         }
@@ -268,17 +268,10 @@ impl AttendanceService for PostgresAttendanceService {
     }
 
     async fn list_attendance_by_date(&self, school_id: &str, date: &str) -> AppResult<Vec<String>> {
-        let rows = sqlx::query("SELECT user_id FROM attendance WHERE school_id = $1 AND role = 'student' AND date = $2::date")
-            .bind(school_id)
-            .bind(date)
-            .fetch_all(&self.repos.db_client.pool)
-            .await?;
-
-        Ok(rows
-            .into_iter()
-            .filter_map(|r| sqlx::Row::try_get::<String, _>(&r, "user_id").ok())
-            .collect())
+        let user_ids = self.repos.attendance.get_student_ids_with_attendance_for_date(school_id, date).await?;
+        Ok(user_ids)
     }
+
 
     async fn list_school_holidays(
         &self,
@@ -466,18 +459,10 @@ impl AttendanceService for PostgresAttendanceService {
         cutoff_time: &str,
         date: &str,
     ) -> AppResult<Value> {
-        let students = sqlx::query(
-            "SELECT s.student_id, s.name FROM students s \
-             WHERE s.school_id = $1 \
-             AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.user_id = s.student_id AND a.date = $2::date AND a.school_id = s.school_id)"
-        )
-        .bind(school_id).bind(date)
-        .fetch_all(&self.repos.db_client.pool)
-        .await?;
+        let students = self.repos.attendance.get_unmarked_students_for_date(school_id, date).await?;
 
         let mut marked = 0;
-        for row in &students {
-            let uid: String = sqlx::Row::get(row, "student_id");
+        for (uid, _) in &students {
             let data = json!({
                 "date": date,
                 "status": "absent",
@@ -485,7 +470,7 @@ impl AttendanceService for PostgresAttendanceService {
                 "markedBy": "system",
                 "inTime": ""
             });
-            if self.repos.attendance.mark_attendance(school_id, "student", &uid, date, data).await.is_ok() {
+            if self.repos.attendance.mark_attendance(school_id, "student", uid, date, data).await.is_ok() {
                 marked += 1;
             }
         }
@@ -498,18 +483,7 @@ impl AttendanceService for PostgresAttendanceService {
         school_id: &str,
         date: &str,
     ) -> AppResult<Value> {
-        let count_row = sqlx::query(
-            "SELECT COUNT(*) FILTER (WHERE data->>'status' = 'present') as present, \
-             COUNT(*) FILTER (WHERE data->>'status' = 'absent') as absent, \
-             COUNT(*) as total FROM attendance \
-             WHERE school_id = $1 AND date = $2::date AND role = 'student'"
-        )
-        .bind(school_id).bind(date)
-        .fetch_one(&self.repos.db_client.pool)
-        .await?;
-        let present: i64 = count_row.get("present");
-        let absent: i64 = count_row.get("absent");
-        let total: i64 = count_row.get("total");
+        let (present, absent, total) = self.repos.attendance.get_daily_attendance_report_stats(school_id, date).await?;
         let pct = if total > 0 { (present as f64 / total as f64) * 100.0 } else { 0.0 };
         Ok(json!({"summary": {"attendance_percentage": pct, "present_count": present, "absent_count": absent, "total_users": total}}))
     }
@@ -521,19 +495,7 @@ impl AttendanceService for PostgresAttendanceService {
         role: Option<&str>,
     ) -> AppResult<Value> {
         let r = role.unwrap_or("student");
-        let (total, marked) = if r == "student" {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM students WHERE school_id = $1")
-                .bind(school_id).fetch_one(&self.repos.db_client.pool).await?;
-            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = 'student'")
-                .bind(school_id).bind(date).fetch_one(&self.repos.db_client.pool).await?;
-            (total, marked)
-        } else {
-            let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM employees WHERE school_id = $1 AND employee_type = $2")
-                .bind(school_id).bind(r).fetch_one(&self.repos.db_client.pool).await?;
-            let marked: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM attendance WHERE school_id = $1 AND date = $2::date AND role = $3")
-                .bind(school_id).bind(date).bind(r).fetch_one(&self.repos.db_client.pool).await?;
-            (total, marked)
-        };
+        let (total, marked) = self.repos.attendance.get_unmarked_count_stats(school_id, date, r).await?;
         Ok(json!({"unmarked_count": total.saturating_sub(marked).max(0), "total": total}))
     }
 
@@ -547,11 +509,7 @@ impl AttendanceService for PostgresAttendanceService {
         let token = uuid::Uuid::new_v4().to_string();
         let expires_at = chrono::Utc::now() + chrono::Duration::minutes(expires_in_minutes as i64);
 
-        sqlx::query(
-            "INSERT INTO attendance_qr_tokens (school_id, class_id, token, expires_at, created_by) VALUES ($1, $2, $3, $4, $5)"
-        )
-        .bind(school_id).bind(class_id).bind(&token).bind(expires_at).bind(admin_id)
-        .execute(&self.repos.db_client.pool).await?;
+        self.repos.attendance.create_qr_token(school_id, class_id, &token, expires_at, admin_id).await?;
 
         Ok(json!({
             "token": token,
@@ -571,29 +529,16 @@ impl AttendanceService for PostgresAttendanceService {
         longitude: f64,
         accuracy: Option<f64>,
     ) -> AppResult<Value> {
-        // Validate token
-        let token_valid = sqlx::query(
-            "SELECT id FROM attendance_qr_tokens WHERE token = $1 AND school_id = $2 AND is_used = FALSE AND expires_at > NOW()"
-        )
-        .bind(token).bind(school_id)
-        .fetch_optional(&self.repos.db_client.pool).await?;
-
-        if token_valid.is_none() {
+        let token_ok = self.repos.attendance.verify_and_use_qr_token(school_id, token, user_id).await?;
+        if !token_ok {
             return Err(AppError::Validation("Invalid, expired or already used token".to_string()));
         }
 
-        // Mark token as used
-        sqlx::query("UPDATE attendance_qr_tokens SET is_used = TRUE, used_by = $1, used_at = NOW() WHERE token = $2")
-            .bind(user_id).bind(token)
-            .execute(&self.repos.db_client.pool).await?;
-
-        // GPS verification
-        let config_row = sqlx::query("SELECT config_value FROM system_config WHERE config_key = 'school_location' LIMIT 1")
-            .fetch_optional(&self.repos.db_client.pool).await?;
-
-        let (school_lat, school_lon) = if let Some(row) = config_row {
-            let val_str: String = sqlx::Row::get(&row, "config_value");
-            let data: Value = serde_json::from_str(&val_str).unwrap_or(json!({}));
+        // GPS verification using ConfigRepository
+        let config_val = self.repos.config.get(school_id, "school_location").await?;
+        let (school_lat, school_lon) = if let Some(val) = config_val {
+            let val_str = val.as_str().unwrap_or("{}");
+            let data: Value = serde_json::from_str(val_str).unwrap_or(val);
             (data["latitude"].as_f64().unwrap_or(0.0), data["longitude"].as_f64().unwrap_or(0.0))
         } else {
             (0.0, 0.0)
@@ -620,6 +565,7 @@ impl AttendanceService for PostgresAttendanceService {
     }
 }
 
+
 impl PostgresAttendanceService {
     fn calculate_duration(&self, in_time: &str, out_time: &str) -> String {
         match (
@@ -634,9 +580,5 @@ impl PostgresAttendanceService {
             }
             _ => "".to_string(),
         }
-    }
-
-    fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
-        calculate_delta(old, new)
     }
 }

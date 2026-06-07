@@ -1,5 +1,4 @@
 use super::AdminService;
-use sqlx::{Row, Connection};
 use std::error::Error;
 use serde_json::{json, Value};
 use crate::logic::password_helper::{hash_password, verify_password};
@@ -10,23 +9,16 @@ impl AdminService {
         username: &str,
         password: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        let row = sqlx::query("SELECT password_hash FROM super_admin WHERE username = $1")
-            .bind(username)
-            .fetch_optional(&mut *conn)
-            .await?;
-
-        if let Some(r) = row {
-            let hash: String = r.try_get("password_hash")?;
+        if let Some(hash) = self.repos.super_admin.get_password_hash(username).await? {
             let is_valid = verify_password(password, &hash)
                 .unwrap_or(false);
             if is_valid {
-                    let secret = std::env::var("SUPER_ADMIN_SECRET")
-                        .expect("SUPER_ADMIN_SECRET environment variable must be set");
-                    let ts = chrono::Utc::now().timestamp();
-                    let raw = format!("{}:{}:{}", username, ts, secret);
-                    use base64::{engine::general_purpose, Engine as _};
-                    let token = general_purpose::STANDARD.encode(raw.as_bytes());
+                let secret = std::env::var("SUPER_ADMIN_SECRET")
+                    .expect("SUPER_ADMIN_SECRET environment variable must be set");
+                let ts = chrono::Utc::now().timestamp();
+                let raw = format!("{}:{}:{}", username, ts, secret);
+                use base64::{engine::general_purpose, Engine as _};
+                let token = general_purpose::STANDARD.encode(raw.as_bytes());
                 return Ok(token);
             } else {
                 tracing::warn!("Failed super admin login attempt for '{}'", username);
@@ -45,25 +37,11 @@ impl AdminService {
         new_password: &str,
         profile_image_url: Option<String>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        let mut tx = conn.begin().await?;
-
         // 1. Verify access via current password
-        let mut authorized = false;
-        let mut old_photo: Option<String> = None;
+        let hash = self.repos.super_admin.get_password_hash(current_username).await?
+            .ok_or_else(|| "Authorization failed: Invalid current credentials")?;
 
-        let row = sqlx::query("SELECT password_hash, profile_image_url FROM super_admin WHERE username = $1")
-            .bind(current_username)
-            .fetch_optional(&mut *tx)
-            .await?;
-
-        if let Some(r) = row {
-            let hash: String = r.try_get("password_hash")?;
-            old_photo = r.try_get("profile_image_url").ok();
-            if let Ok(true) = verify_password(current_password, &hash) { authorized = true; }
-        }
-
-        if !authorized {
+        if !verify_password(current_password, &hash).unwrap_or(false) {
             return Err("Authorization failed: Invalid current credentials".into());
         }
 
@@ -71,48 +49,13 @@ impl AdminService {
         let hashed_pwd = hash_password(new_password)
             .map_err(|e| format!("Password hashing error: {}", e))?;
         
-        if current_username != new_username {
-            sqlx::query("DELETE FROM super_admin WHERE username = $1")
-                .bind(current_username)
-                .execute(&mut *tx)
-                .await?;
-        }
+        self.repos.super_admin.update_super_admin(
+            current_username,
+            new_username,
+            &hashed_pwd,
+            profile_image_url,
+        ).await?;
 
-        sqlx::query(
-            "INSERT INTO super_admin (username, password_hash, profile_image_url) VALUES ($1, $2, $3)
-             ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, profile_image_url = EXCLUDED.profile_image_url"
-        )
-        .bind(new_username)
-        .bind(hashed_pwd)
-        .bind(&profile_image_url)
-        .execute(&mut *tx)
-        .await?;
-
-        // 3. Handle photo transitions
-        if let Some(url) = &profile_image_url {
-            sqlx::query("UPDATE app_files SET is_permanent = TRUE WHERE public_url = $1")
-                .bind(url)
-                .execute(&mut *tx)
-                .await?;
-        }
-
-        if let Some(old_url) = old_photo {
-            if let Some(new_url) = &profile_image_url {
-                if old_url != *new_url {
-                    sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
-                        .bind(old_url)
-                        .execute(&mut *tx)
-                        .await?;
-                }
-            } else {
-                 sqlx::query("UPDATE app_files SET is_permanent = FALSE WHERE public_url = $1")
-                    .bind(old_url)
-                    .execute(&mut *tx)
-                    .await?;
-            }
-        }
-
-        tx.commit().await?;
         Ok(())
     }
 
@@ -120,18 +63,13 @@ impl AdminService {
         &self,
         username: &str,
     ) -> Result<Value, Box<dyn Error + Send + Sync>> {
-        let mut conn = self.db.acquire_super_admin_connection().await?;
-        let row = sqlx::query("SELECT username, profile_image_url FROM super_admin WHERE username = $1")
-            .bind(username)
-            .fetch_optional(&mut *conn)
-            .await?;
-
-        match row {
-            Some(r) => Ok(json!({
-                "username": r.get::<String, _>("username"),
-                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url")
-            })),
-            None => Err("Admin not found".into()),
+        if let Some((u, img)) = self.repos.super_admin.get_super_admin_profile(username).await? {
+            Ok(json!({
+                "username": u,
+                "profileImageUrl": img
+            }))
+        } else {
+            Err("Admin not found".into())
         }
     }
 
@@ -155,3 +93,4 @@ impl AdminService {
         Ok(())
     }
 }
+

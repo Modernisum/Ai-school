@@ -18,6 +18,9 @@ Vidhyam is a multi-school platform. **Data Isolation is absolute.**
 ## 🛡️ 3. Security & Authentication Strictness
 - **Zero Trust Boundaries:** No page, screen, or backend API endpoint is allowed to be accessed without a strict Authentication (Auth) Check.
 - **Secret Management:** Hardcoded API keys, passwords, database URLs, or sensitive tokens are strictly banned. Always utilize secure environment variables.
+- **Never Trust User Input:** Always validate and sanitize inputs on the backend.
+ **Prevent SQLi:** Use Prepared Statements / Parameterized Queries only.**Prevent XSS:** Implement strict Output Encoding and Content Security Policy (CSP).
+- **File Uploads:** Validate file headers, restrict extensions, and rename uploaded files.**Rate Limiting:** Protect all endpoints from automated bot attacks using rate limits or CAPTCHA.**Use Frameworks:** Rely on built-in security features of the framework rather than custom regex.
 
 ## ⚙️ 4. System Stability & Error Handling
 - **No Sudden Crashes:** Backend and frontend logic must be written to prevent sudden panics or crashes (e.g., absolutely NO raw `.unwrap()` or `.expect()` in Rust without proper fallback handling).
@@ -26,3 +29,6 @@ Vidhyam is a multi-school platform. **Data Isolation is absolute.**
 ## 🧩 5. Modularity and features Division
 - **Feature Independence:** Every feature (e.g., Student Management, Employee Payroll, Inventory) is an independent module. 
 - **Strict Boundaries:** The internal logic of one feature must not tightly couple with another. If cross-feature communication is required, it must happen through defined Service channels, not by directly altering another module's core files.
+- **System test:**
+    - **backend ke ander db schema ko test karne ke liya schema.rs se test ho vaha se sari information nikali ja sakti hai 
+    backend mai testing ke liya apki bin folder ke ander check karna chiya .

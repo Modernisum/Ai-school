@@ -46,4 +46,12 @@ pub trait AcademicRepository: Send + Sync {
     async fn add_chapter(&self, school_id: &str, responsibility_id: &str, data: Value) -> Result<Value, AppError>;
     async fn get_chapters(&self, school_id: &str, responsibility_id: &str) -> Result<JsonList, AppError>;
     async fn update_chapter(&self, school_id: &str, chapter_id: i32, data: Value) -> Result<(), AppError>;
+
+    // Scanned Submission Pages Cleanup
+    async fn clear_temporary_submission_pages(
+        &self,
+        school_id: &str,
+        submission_id: uuid::Uuid,
+    ) -> Result<Vec<String>, AppError>;
 }
+

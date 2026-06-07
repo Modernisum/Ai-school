@@ -332,29 +332,8 @@ pub async fn get_attendance_public(
             .into_response();
     }
 
-    use sqlx::Row;
-    match sqlx::query(
-        "SELECT user_id, role, status, reason FROM attendance WHERE school_id = $1 AND date = $2",
-    )
-    .bind(&ctx.school_id)
-    .bind(&date)
-    .fetch_all(&state.db.pool)
-    .await
-    {
-        Ok(rows) => {
-            let data: Vec<_> = rows
-                .iter()
-                .map(|r| {
-                    json!({
-                        "user_id": r.get::<String, _>("user_id"),
-                        "role": r.get::<String, _>("role"),
-                        "status": r.get::<String, _>("status"),
-                        "reason": r.get::<Option<String>, _>("reason")
-                    })
-                })
-                .collect();
-            Json(json!({"success": true, "date": date, "attendance": data})).into_response()
-        }
+    match state.repos.attendance.get_attendance_for_date(&ctx.school_id, &date).await {
+        Ok(data) => Json(json!({"success": true, "date": date, "attendance": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

@@ -21,4 +21,10 @@ pub trait EmployeeRepository: Send + Sync {
     ) -> Result<(), AppError>;
     async fn delete_employee(&self, school_id: &str, employee_id: &str) -> Result<(), AppError>;
     async fn generate_employee_id(&self) -> Result<String, AppError>;
+
+    async fn get_driver_students(
+        &self,
+        school_id: &str,
+        driver_id: &str,
+    ) -> Result<JsonList, AppError>;
 }

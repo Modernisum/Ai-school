@@ -86,18 +86,10 @@ impl AttendanceHealthMonitor {
 
     /// Check database connectivity
     async fn check_database_connectivity(&self, school_id: &str) -> AppResult<()> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        // Simple query to test connectivity
-        let result: i64 = sqlx::query_scalar("SELECT 1")
-            .fetch_one(&mut *conn)
+        // Verify connectivity by running a lightweight query through system_log repository
+        self.repos.system_log.get_failed_jobs_count(school_id, Utc::now())
             .await
             .map_err(|e| AppError::Internal(format!("Database connectivity check failed: {}", e)))?;
-        
-        if result != 1 {
-            return Err(AppError::Internal("Database query returned unexpected result".to_string()));
-        }
-
         Ok(())
     }
 
@@ -105,35 +97,11 @@ impl AttendanceHealthMonitor {
     async fn check_background_jobs(&self, school_id: &str) -> AppResult<Value> {
         let twenty_four_hours_ago = Utc::now() - ChronoDuration::hours(24);
         
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        // Check for failed jobs in last 24 hours
-        let failed_jobs_query = "
-            SELECT COUNT(*) as failed_count
-            FROM system_logs 
-            WHERE school_id = $1 
-            AND log_type = 'background_job_error'
-            AND created_at >= $2
-        ";
-        
-        let failed_count: i64 = sqlx::query_scalar(failed_jobs_query)
-            .bind(school_id)
-            .bind(twenty_four_hours_ago)
-            .fetch_one(&mut *conn)
+        let failed_count = self.repos.system_log.get_failed_jobs_count(school_id, twenty_four_hours_ago)
             .await
             .unwrap_or(0);
         
-        // Check last successful automation run
-        let last_success_query = "
-            SELECT MAX(created_at) as last_success
-            FROM system_logs 
-            WHERE school_id = $1 
-            AND log_type = 'automation_success'
-        ";
-        
-        let last_success: Option<chrono::DateTime<Utc>> = sqlx::query_scalar(last_success_query)
-            .bind(school_id)
-            .fetch_optional(&mut *conn)
+        let last_success = self.repos.system_log.get_last_success_time(school_id, "automation_success")
             .await
             .unwrap_or(None);
         
@@ -156,34 +124,24 @@ impl AttendanceHealthMonitor {
     async fn check_recent_automation_runs(&self, school_id: &str) -> AppResult<Value> {
         let one_hour_ago = Utc::now() - ChronoDuration::hours(1);
         
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        let log_types = vec![
+            "auto_mark_run".to_string(),
+            "daily_report_run".to_string(),
+            "notification_run".to_string(),
+        ];
         
-        // Get recent automation runs
-        let recent_runs_query = "
-            SELECT log_type, status, created_at, details
-            FROM system_logs 
-            WHERE school_id = $1 
-            AND log_type IN ('auto_mark_run', 'daily_report_run', 'notification_run')
-            AND created_at >= $2
-            ORDER BY created_at DESC
-            LIMIT 10
-        ";
-        
-        let rows = sqlx::query(recent_runs_query)
-            .bind(school_id)
-            .bind(one_hour_ago)
-            .fetch_all(&mut *conn)
+        let runs_data = self.repos.system_log.get_recent_runs(school_id, one_hour_ago, &log_types, 10)
             .await?;
         
         let mut runs = Vec::new();
         let mut success_count = 0;
         let mut total_count = 0;
         
-        for row in rows {
-            let log_type: String = sqlx::Row::get(&row, "log_type");
-            let status: String = sqlx::Row::get(&row, "status");
-            let created_at: chrono::DateTime<Utc> = sqlx::Row::get(&row, "created_at");
-            let details: Option<Value> = sqlx::Row::get(&row, "details");
+        for item in runs_data {
+            let log_type = item["log_type"].as_str().unwrap_or("").to_string();
+            let status = item["status"].as_str().unwrap_or("").to_string();
+            let created_at = item["created_at"].as_str().unwrap_or("").to_string();
+            let details = item["details"].clone();
             
             if status == "success" {
                 success_count += 1;
@@ -193,15 +151,15 @@ impl AttendanceHealthMonitor {
             runs.push(json!({
                 "type": log_type,
                 "status": status,
-                "timestamp": created_at.to_rfc3339(),
-                "details": details.unwrap_or(json!({}))
+                "timestamp": created_at,
+                "details": details
             }));
         }
         
         let success_rate = if total_count > 0 {
             (success_count as f64 / total_count as f64) * 100.0
         } else {
-            100.0 // No runs means nothing failed
+            100.0
         };
         
         let status = if success_rate < 50.0 {
@@ -223,20 +181,8 @@ impl AttendanceHealthMonitor {
 
     /// Check notification service
     async fn check_notification_service(&self, school_id: &str) -> AppResult<Value> {
-        // For now, just check if there are pending notifications
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let pending_query = "
-            SELECT COUNT(*) as pending_count
-            FROM notifications 
-            WHERE school_id = $1 
-            AND status = 'pending'
-            AND created_at >= NOW() - INTERVAL '24 hours'
-        ";
-        
-        let pending_count: i64 = sqlx::query_scalar(pending_query)
-            .bind(school_id)
-            .fetch_one(&mut *conn)
+        let twenty_four_hours_ago = Utc::now() - ChronoDuration::hours(24);
+        let pending_count = self.repos.notification.get_pending_notifications_count(school_id, twenty_four_hours_ago)
             .await
             .unwrap_or(0);
         
@@ -256,18 +202,11 @@ impl AttendanceHealthMonitor {
 
     /// Check storage availability
     async fn check_storage_availability(&self, school_id: &str) -> AppResult<Value> {
-        // Check if storage table exists and is accessible
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        // Try to query storage metadata
-        let storage_check = sqlx::query("SELECT COUNT(*) FROM storage_metadata WHERE school_id = $1")
-            .bind(school_id)
-            .fetch_optional(&mut *conn)
-            .await;
+        let storage_check = self.repos.storage.check_storage_status(school_id).await;
         
         let status = match storage_check {
             Ok(_) => "healthy",
-            Err(e) if e.to_string().contains("does not exist") => "degraded", // Table might not exist yet
+            Err(e) if e.to_string().contains("does not exist") => "degraded",
             Err(_) => "unhealthy"
         };
         
@@ -279,56 +218,18 @@ impl AttendanceHealthMonitor {
 
     /// Collect system metrics
     async fn collect_metrics(&self, school_id: &str) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
+        let attendance_metrics = self.repos.attendance.get_attendance_health_metrics(school_id).await?;
         
-        // Get attendance metrics
-        let attendance_metrics_query = "
-            SELECT 
-                COUNT(*) as total_records,
-                COUNT(CASE WHEN status = 'present' THEN 1 END) as present_count,
-                COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent_count,
-                COUNT(CASE WHEN auto_marked = true THEN 1 END) as auto_marked_count,
-                COUNT(CASE WHEN date = CURRENT_DATE THEN 1 END) as today_count
-            FROM attendance 
-            WHERE school_id = $1
-        ";
+        let total_records = attendance_metrics["total_records"].as_i64().unwrap_or(0);
+        let present_count = attendance_metrics["present_count"].as_i64().unwrap_or(0);
+        let absent_count = attendance_metrics["absent_count"].as_i64().unwrap_or(0);
+        let auto_marked_count = attendance_metrics["auto_marked_count"].as_i64().unwrap_or(0);
+        let today_count = attendance_metrics["today_count"].as_i64().unwrap_or(0);
         
-        let attendance_row = sqlx::query(attendance_metrics_query)
-            .bind(school_id)
-            .fetch_one(&mut *conn)
-            .await?;
-        
-        let total_records: i64 = sqlx::Row::get(&attendance_row, "total_records");
-        let present_count: i64 = sqlx::Row::get(&attendance_row, "present_count");
-        let absent_count: i64 = sqlx::Row::get(&attendance_row, "absent_count");
-        let auto_marked_count: i64 = sqlx::Row::get(&attendance_row, "auto_marked_count");
-        let today_count: i64 = sqlx::Row::get(&attendance_row, "today_count");
-        
-        // Get system performance metrics
-        let performance_query = "
-            SELECT 
-                AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) * 1000 as avg_job_time_ms,
-                COUNT(*) as total_jobs_24h
-            FROM system_logs 
-            WHERE school_id = $1 
-            AND log_type LIKE '%_run'
-            AND created_at >= NOW() - INTERVAL '24 hours'
-            AND completed_at IS NOT NULL
-        ";
-        
-        let performance_row = sqlx::query(performance_query)
-            .bind(school_id)
-            .fetch_one(&mut *conn)
-            .await;
-        
-        let (avg_job_time_ms, total_jobs_24h): (Option<f64>, i64) = match performance_row {
-            Ok(row) => {
-                let avg: Option<f64> = sqlx::Row::try_get(&row, "avg_job_time_ms").ok();
-                let total: i64 = sqlx::Row::try_get(&row, "total_jobs_24h").unwrap_or(0);
-                (avg, total)
-            },
-            Err(_) => (None, 0)
-        };
+        let twenty_four_hours_ago = Utc::now() - ChronoDuration::hours(24);
+        let (avg_job_time_ms, total_jobs_24h) = self.repos.system_log.get_performance_metrics(school_id, twenty_four_hours_ago)
+            .await
+            .unwrap_or((None, 0));
         
         Ok(json!({
             "attendance": {
@@ -357,29 +258,19 @@ impl AttendanceHealthMonitor {
 
     /// Get memory usage (simplified)
     fn get_memory_usage(&self) -> f64 {
-        // This is a simplified implementation
-        // In production, you would use system-specific APIs
         128.0 // Placeholder value in MB
     }
 
     /// Log health check result
     pub async fn log_health_check(&self, school_id: &str, health_status: &Value) -> AppResult<()> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let log_query = "
-            INSERT INTO system_logs (
-                school_id, log_type, status, details, created_at
-            ) VALUES ($1, $2, $3, $4, $5)
-        ";
-        
-        sqlx::query(log_query)
-            .bind(school_id)
-            .bind("health_check")
-            .bind(health_status["status"].as_str().unwrap_or("unknown"))
-            .bind(health_status)
-            .bind(Utc::now())
-            .execute(&mut *conn)
-            .await?;
+        let status = health_status["status"].as_str().unwrap_or("unknown");
+        self.repos.system_log.insert_log(
+            school_id,
+            "health_check",
+            status,
+            health_status.clone(),
+            Utc::now(),
+        ).await?;
         
         Ok(())
     }

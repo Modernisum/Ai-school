@@ -203,4 +203,12 @@ impl StorageRepository for PostgresStorageRepository {
         }
         Ok(files)
     }
+
+    async fn check_storage_status(&self, school_id: &str) -> Result<(), AppError> {
+        sqlx::query("SELECT COUNT(*) FROM app_files WHERE school_id = $1")
+            .bind(school_id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(())
+    }
 }

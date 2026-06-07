@@ -9,7 +9,6 @@ use crate::middleware::rls::TenantContext;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sqlx::Row;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;
@@ -65,26 +64,8 @@ pub async fn get_driver_students(
     Path(school_id): Path<String>,
 ) -> impl IntoResponse {
     let driver_id = &tenant_ctx.admin_id;
-    let rows = sqlx::query(
-        "SELECT s.student_id, s.name, s.class_name, s.parent_phone \
-         FROM employee_responsibilities er \
-         JOIN responsibilities r ON r.responsibility_id = er.responsibility_id AND r.school_id = er.school_id \
-         JOIN space_employees se ON se.space_id = ANY(er.space_ids) AND se.school_id = er.school_id \
-         JOIN students s ON s.class_id = se.space_id AND s.school_id = er.school_id \
-         WHERE er.employee_id = $1 AND er.school_id = $2 AND r.employee_type = 'driver'"
-    )
-    .bind(driver_id).bind(&school_id)
-    .fetch_all(&state.db.pool)
-    .await;
-
-    match rows {
-        Ok(rows) => {
-            let students: Vec<serde_json::Value> = rows.iter().map(|r| json!({
-                "studentId": r.get::<String, _>("student_id"),
-                "name": r.get::<String, _>("name"),
-                "className": r.get::<String, _>("class_name"),
-                "parentPhone": r.get::<Option<String>, _>("parent_phone"),
-            })).collect();
+    match state.repos.employee.get_driver_students(&school_id, driver_id).await {
+        Ok(students) => {
             Json(json!({"success": true, "data": students, "count": students.len()})).into_response()
         }
         Err(e) => (

@@ -3,7 +3,6 @@ use crate::logic::ai::providers::{LLMProvider, ProviderConfig};
 use crate::repository::Repositories;
 use async_trait::async_trait;
 use serde_json::Value;
-use sqlx::Row;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -35,16 +34,9 @@ impl PostgresEmbeddingService {
         let mut providers = self.providers.write().await;
         
         // Load provider configurations from database
-        let rows = sqlx::query("SELECT provider_type, provider_name, config FROM ai_providers WHERE is_active = true")
-            .fetch_all(&self.repos.db_client.pool)
-            .await
-            .map_err(crate::error::AppError::Database)?;
+        let rows = self.repos.ai.get_active_ai_providers().await?;
         
-        for row in rows {
-            let provider_type: String = row.get("provider_type");
-            let provider_name: String = row.get("provider_name");
-            let config_json: Value = row.get("config");
-            
+        for (provider_type, provider_name, config_json) in rows {
             // Convert JSON config to HashMap
             let config_map: HashMap<String, String> = config_json
                 .as_object()
@@ -113,23 +105,8 @@ impl PostgresEmbeddingService {
         }
         
         // Load school provider configuration from database
-        let row = sqlx::query(
-            "SELECT p.provider_type FROM school_ai_config s
-             JOIN ai_providers p ON s.provider_id = p.provider_id
-             WHERE s.school_id = $1 AND p.is_active = true
-             LIMIT 1"
-        )
-        .bind(school_id)
-        .fetch_optional(&self.repos.db_client.pool)
-        .await
-        .map_err(crate::error::AppError::Database)?;
-        
-        let provider_type = if let Some(row) = row {
-            row.get::<String, _>("provider_type")
-        } else {
-            // Default to Gemini if no school-specific config
-            "google_gemini".to_string()
-        };
+        let provider_type = self.repos.ai.get_school_ai_provider_type(school_id).await?
+            .unwrap_or_else(|| "google_gemini".to_string());
         
         // Get provider from registry
         let providers = self.providers.read().await;
@@ -214,26 +191,11 @@ impl EmbeddingService for PostgresEmbeddingService {
         // Generate embedding for query
         let query_embedding = self.generate_embedding(school_id, query).await?;
         
-        // Get database connection for the school
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
         // Search for similar documents using cosine similarity
-        let rows = sqlx::query(
-            "SELECT content, embedding FROM document_embeddings
-             WHERE embedding IS NOT NULL
-             ORDER BY embedding <=> $1::real[]
-             LIMIT $2"
-        )
-        .bind(&query_embedding)
-        .bind(limit as i64)
-        .fetch_all(&mut *conn)
-        .await
-        .map_err(crate::error::AppError::Database)?;
+        let rows = self.repos.ai.search_similar_documents(school_id, &query_embedding, limit as i64).await?;
         
         let mut results = Vec::with_capacity(rows.len());
-        for row in rows {
-            let content: String = row.get("content");
-            let doc_embedding: Vec<f32> = row.get("embedding");
+        for (content, doc_embedding) in rows {
             let similarity = self.calculate_similarity(&query_embedding, &doc_embedding);
             results.push((similarity, content));
         }
@@ -252,23 +214,8 @@ impl EmbeddingService for PostgresEmbeddingService {
         // Generate embedding
         let embedding = self.generate_embedding(school_id, content).await?;
         
-        // Get database connection for the school
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
         // Store in document_embeddings table
-        let row = sqlx::query(
-            "INSERT INTO document_embeddings (content, embedding, metadata, created_at)
-             VALUES ($1, $2, $3, NOW())
-             RETURNING id"
-        )
-        .bind(content)
-        .bind(&embedding)
-        .bind(metadata)
-        .fetch_one(&mut *conn)
-        .await
-        .map_err(crate::error::AppError::Database)?;
-        
-        let id: i64 = row.get("id");
+        let id = self.repos.ai.store_document_embedding(school_id, content, &embedding, metadata).await?;
         Ok(id)
     }
     

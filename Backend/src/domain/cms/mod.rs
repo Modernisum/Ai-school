@@ -5,12 +5,16 @@ use axum::{
     Router,
 };
 
-pub fn public_routes(state: AppState) -> Router<AppState> {
+pub fn routes(state: AppState) -> Router<AppState> {
     Router::new()
-        .route("/blog", get(cms::list_blog_posts))
-        .route("/blog/:slug", get(cms::get_blog_post))
-        .route("/testimonials", get(cms::list_testimonials))
-        .route("/school-request", post(cms::create_school_access_request))
+        .nest(
+            "/cms",
+            Router::new()
+                .route("/blog", get(cms::list_blog_posts))
+                .route("/blog/:slug", get(cms::get_blog_post))
+                .route("/testimonials", get(cms::list_testimonials))
+                .route("/school-request", post(cms::create_school_access_request))
+        )
         .with_state(state)
 }
 

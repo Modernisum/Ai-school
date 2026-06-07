@@ -1,4 +1,3 @@
-use crate::db;
 use crate::logic::analytics_engine::AnalyticsEngine;
 use crate::logic::encryption_service::{create_encryption_service, EncryptionService};
 use crate::logic::email_service::EmailService;
@@ -12,6 +11,7 @@ use tokio::time::sleep;
 #[allow(dead_code)]
 pub async fn start_background_workers(state: AppState) {
     let analytics = AnalyticsEngine::new(state.db.pool.clone());
+    let state_clone_analytics = state.clone();
 
     // Background loop for Analytics
     tokio::spawn(async move {
@@ -25,7 +25,7 @@ pub async fn start_background_workers(state: AppState) {
             }
 
             // 2. Student Risk Analysis
-            match db::get_active_school_ids(&analytics.pool).await {
+            match state_clone_analytics.repos.school.get_active_school_ids().await {
                 Ok(schools) => {
                     for school_id in schools {
                         if let Err(e) = analytics.analyze_student_risks(&school_id).await {
@@ -33,7 +33,7 @@ pub async fn start_background_workers(state: AppState) {
                         }
                     }
                 }
-Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
+                Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
             }
 
             tracing::info!("Daily analytics run completed.");
@@ -135,7 +135,7 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
             match create_encryption_service().await {
                 Ok(encryption_service) => {
                     match encryption_service.rotate_keys().await {
-                        Ok(new_keys) => {
+                        Ok(_new_keys) => {
                             tracing::info!("Key rotation completed successfully.");
                         }
                         Err(e) => {
@@ -176,7 +176,7 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
             tracing::info!("Starting daily attendance automation...");
             
             // Get all active schools
-            match db::get_active_school_ids(&state_clone.db.pool).await {
+            match state_clone.repos.school.get_active_school_ids().await {
                 Ok(schools) => {
                     for school_id in schools {
                         // 1. Auto-mark absent after cutoff time (10 AM)
@@ -217,28 +217,21 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
                                     let email_svc = EmailService::new();
                                     if email_svc.is_enabled() {
                                         // Try to get school admin email
-                                        if let Ok(Some(school_row)) = sqlx::query("SELECT admin_email FROM schools WHERE school_id = $1")
-                                            .bind(&school_id)
-                                            .fetch_optional(&state_clone.db.pool)
-                                            .await
-                                        {
-                                            let admin_email: Option<String> = sqlx::Row::try_get(&school_row, "admin_email").unwrap_or(None);
-                                            if let Some(email) = admin_email {
-                                                let subject = format!("Daily Attendance Report - {} - {}", school_id, today);
-                                                let body = format!(
-                                                    "Daily Attendance Summary\n\nDate: {}\nTotal: {}\nPresent: {} ({:.1}%)\nAbsent: {}\n\nThis is an automated report.",
-                                                    today, total, present, attendance_percentage, absent
-                                                );
-                                                let _ = email_svc.send_email(&email, &subject, &body).await;
+                                        if let Ok(Some(email)) = state_clone.repos.school.get_school_admin_email(&school_id).await {
+                                            let subject = format!("Daily Attendance Report - {} - {}", school_id, today);
+                                            let body = format!(
+                                                "Daily Attendance Summary\n\nDate: {}\nTotal: {}\nPresent: {} ({:.1}%)\nAbsent: {}\n\nThis is an automated report.",
+                                                today, total, present, attendance_percentage, absent
+                                            );
+                                            let _ = email_svc.send_email(&email, &subject, &body).await;
 
-                                                // Send push notification to admin topic
-                                                let _ = state_clone.services.fcm.send_to_topic(
-                                                    &format!("{}_admins", school_id),
-                                                    "Daily Attendance Summary",
-                                                    &format!("Overall Attendance: {:.1}%. Present: {}, Absent: {}.", attendance_percentage, present, absent),
-                                                    Some(json!({"type": "daily_report", "date": today}))
-                                                ).await;
-                                            }
+                                            // Send push notification to admin topic
+                                            let _ = state_clone.services.fcm.send_to_topic(
+                                                &format!("{}_admins", school_id),
+                                                "Daily Attendance Summary",
+                                                &format!("Overall Attendance: {:.1}%. Present: {}, Absent: {}.", attendance_percentage, present, absent),
+                                                Some(json!({"type": "daily_report", "date": today}))
+                                            ).await;
                                         }
                                     }
                                 }
@@ -264,7 +257,7 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
             tracing::info!("Checking for pending notifications...");
             
             // Check for unmarked attendance and send reminders
-            match db::get_active_school_ids(&state_clone.db.pool).await {
+            match state_clone.repos.school.get_active_school_ids().await {
                 Ok(schools) => {
                     for school_id in schools {
                         let today = Utc::now().format("%Y-%m-%d").to_string();
@@ -278,21 +271,14 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
                                     // Send notification email to admin
                                     let email_svc = EmailService::new();
                                     if email_svc.is_enabled() {
-                                        if let Ok(Some(school_row)) = sqlx::query("SELECT admin_email FROM schools WHERE school_id = $1")
-                                            .bind(&school_id)
-                                            .fetch_optional(&state_clone.db.pool)
-                                            .await
-                                        {
-                                            let admin_email: Option<String> = sqlx::Row::try_get(&school_row, "admin_email").unwrap_or(None);
-                                            if let Some(email) = admin_email {
-                                                let subject = format!("⚠ {} students/employees not marked today - {}", unmarked_count, school_id);
-                                                let body = format!(
-                                                    "Attendance Alert\n\nSchool: {}\nDate: {}\nUnmarked: {} people have not had attendance recorded today.\n\nPlease ensure attendance is marked before end of day.",
-                                                    school_id, today, unmarked_count
-                                                );
-                                                let _ = email_svc.send_email(&email, &subject, &body).await;
-                                                tracing::info!("Sent unmarked attendance alert for school {}", school_id);
-                                            }
+                                        if let Ok(Some(email)) = state_clone.repos.school.get_school_admin_email(&school_id).await {
+                                            let subject = format!("⚠ {} students/employees not marked today - {}", unmarked_count, school_id);
+                                            let body = format!(
+                                                "Attendance Alert\n\nSchool: {}\nDate: {}\nUnmarked: {} people have not had attendance recorded today.\n\nPlease ensure attendance is marked before end of day.",
+                                                school_id, today, unmarked_count
+                                            );
+                                            let _ = email_svc.send_email(&email, &subject, &body).await;
+                                            tracing::info!("Sent unmarked attendance alert for school {}", school_id);
                                         }
                                     }
                                 }
@@ -309,32 +295,27 @@ Err(e) => tracing::error!("Failed to fetch schools for churn analysis: {}", e),
 
 /// Generate scheduled responsibility reports for all active schools
 async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use chrono::{Datelike, Timelike};
-    
     let now = Utc::now();
     let end_date = now.format("%Y-%m-%d").to_string();
     let start_date = (now - ChronoDuration::days(7)).format("%Y-%m-%d").to_string();
     
     // Get all active schools
-    let schools = db::get_active_school_ids(&state.db.pool).await?;
+    let schools = state.repos.school.get_active_school_ids().await?;
 
     for school_id in schools {
-        
         tracing::info!("Generating reports for school: {}", school_id);
         
         // Generate utilization report
         if let Ok(report_data) = state.services.responsibility.generate_utilization_report(&school_id, &start_date, &end_date).await {
             // Store report in history table
-            let _ = sqlx::query(
-                "INSERT INTO scheduled_reports (school_id, report_type, report_data, period_start, period_end, generated_at)
-                 VALUES ($1, 'utilization', $2, $3, $4, CURRENT_TIMESTAMP)"
-            )
-            .bind(&school_id)
-            .bind(&report_data)
-            .bind(&start_date)
-            .bind(&end_date)
-            .execute(&state.db.pool)
-            .await;
+            let _ = state.repos.school.insert_scheduled_report(
+                &school_id,
+                "utilization",
+                Some(&report_data),
+                &start_date,
+                &end_date,
+                Utc::now(),
+            ).await;
             
             // Generate PDF
             if let Ok(pdf_bytes) = state.services.responsibility.generate_utilization_report_pdf(&school_id, &start_date, &end_date).await {
@@ -349,12 +330,14 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
         
         // Generate workload report
         if let Ok(report_data) = state.services.responsibility.generate_workload_report(&school_id, &start_date, &end_date).await {
-            let _ = sqlx::query(
-                "INSERT INTO scheduled_reports (school_id, report_type, report_data, period_start, period_end, generated_at)
-                 VALUES ($1, 'workload', $2, $3, $4, CURRENT_TIMESTAMP)"
-            )
-            .bind(&school_id).bind(&report_data).bind(&start_date).bind(&end_date)
-            .execute(&state.db.pool).await;
+            let _ = state.repos.school.insert_scheduled_report(
+                &school_id,
+                "workload",
+                Some(&report_data),
+                &start_date,
+                &end_date,
+                Utc::now(),
+            ).await;
             
             if let Ok(pdf_bytes) = state.services.responsibility.generate_workload_report_pdf(&school_id, &start_date, &end_date).await {
                 let report_path = format!("reports/{}/workload_{}_{}.pdf", school_id, start_date, end_date);
@@ -368,12 +351,14 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
         
         // Generate space distribution report
         if let Ok(report_data) = state.services.responsibility.generate_space_distribution_report(&school_id, &start_date, &end_date).await {
-            let _ = sqlx::query(
-                "INSERT INTO scheduled_reports (school_id, report_type, report_data, period_start, period_end, generated_at)
-                 VALUES ($1, 'space_distribution', $2, $3, $4, CURRENT_TIMESTAMP)"
-            )
-            .bind(&school_id).bind(&report_data).bind(&start_date).bind(&end_date)
-            .execute(&state.db.pool).await;
+            let _ = state.repos.school.insert_scheduled_report(
+                &school_id,
+                "space_distribution",
+                Some(&report_data),
+                &start_date,
+                &end_date,
+                Utc::now(),
+            ).await;
             
             if let Ok(pdf_bytes) = state.services.responsibility.generate_space_distribution_report_pdf(&school_id, &start_date, &end_date).await {
                 let report_path = format!("reports/{}/space_distribution_{}_{}.pdf", school_id, start_date, end_date);
@@ -387,12 +372,14 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
         
         // Generate revenue report
         if let Ok(report_data) = state.services.responsibility.generate_revenue_report(&school_id, &start_date, &end_date).await {
-            let _ = sqlx::query(
-                "INSERT INTO scheduled_reports (school_id, report_type, report_data, period_start, period_end, generated_at)
-                 VALUES ($1, 'revenue', $2, $3, $4, CURRENT_TIMESTAMP)"
-            )
-            .bind(&school_id).bind(&report_data).bind(&start_date).bind(&end_date)
-            .execute(&state.db.pool).await;
+            let _ = state.repos.school.insert_scheduled_report(
+                &school_id,
+                "revenue",
+                Some(&report_data),
+                &start_date,
+                &end_date,
+                Utc::now(),
+            ).await;
             
             if let Ok(pdf_bytes) = state.services.responsibility.generate_revenue_report_pdf(&school_id, &start_date, &end_date).await {
                 let report_path = format!("reports/{}/revenue_{}_{}.pdf", school_id, start_date, end_date);
@@ -405,17 +392,14 @@ async fn generate_scheduled_reports(state: &AppState) -> Result<(), Box<dyn std:
         }
         
         // Store report generation log
-        let _ = sqlx::query(
-            "INSERT INTO scheduled_reports (school_id, report_type, period_start, period_end, generated_at)
-             VALUES ($1, $2, $3, $4, $5)"
-        )
-        .bind(&school_id)
-        .bind("weekly_summary")
-        .bind(&start_date)
-        .bind(&end_date)
-        .bind(now)
-        .execute(&state.db.pool)
-        .await;
+        let _ = state.repos.school.insert_scheduled_report(
+            &school_id,
+            "weekly_summary",
+            None,
+            &start_date,
+            &end_date,
+            now,
+        ).await;
     }
     
     Ok(())

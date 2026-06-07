@@ -5,16 +5,13 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
-
-
 
 pub async fn list_tasks(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
     Query(filter): Query<TaskFilter>,
 ) -> impl IntoResponse {
-    match state.services.task.list_tasks(&school_id, filter.start_date.as_deref(), filter.end_date.as_deref()).await {
+    match state.repos.task.get_tasks(&school_id, filter.start_date.as_deref(), filter.end_date.as_deref()).await {
         Ok(list) => Json(serde_json::json!({"success": true, "data": list})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -29,7 +26,7 @@ pub async fn update_task_status(
     Path((school_id, task_id)): Path<(String, String)>,
     Json(payload): Json<UpdateTaskStatusPayload>,
 ) -> impl IntoResponse {
-    match state.services.task.update_task_status(&school_id, &task_id, &payload.status).await {
+    match state.repos.task.update_task_status(&school_id, &task_id, &payload.status).await {
         Ok(_) => Json(serde_json::json!({"success": true})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,

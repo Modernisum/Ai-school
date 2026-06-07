@@ -9,12 +9,8 @@ use axum::{
 use hex;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use sqlx::Row;
-
-
 
 /// POST /api/school/:schoolId/api-keys
 /// Generates a new API key. Returns the plaintext key ONLY ONCE.
@@ -43,19 +39,8 @@ pub async fn generate_api_key(
     hasher.update(full_key.as_bytes());
     let key_hash = hex::encode(hasher.finalize());
 
-    // 3. Save metadata to DB
-    match sqlx::query(
-        "INSERT INTO api_keys (school_id, key_id, key_hash, name, scopes, status)
-         VALUES ($1, $2, $3, $4, $5, 'active')",
-    )
-    .bind(&school_id)
-    .bind(&key_id)
-    .bind(&key_hash)
-    .bind(&payload.name)
-    .bind(&payload.scopes)
-    .execute(&state.db.pool)
-    .await
-    {
+    // 3. Save metadata to DB via repository
+    match state.repos.api_key.generate_api_key(&school_id, &key_id, &key_hash, &payload.name, &payload.scopes).await {
         Ok(_) => Json(json!({
             "success": true,
             "key_id": key_id,
@@ -76,28 +61,8 @@ pub async fn list_api_keys(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
 ) -> impl IntoResponse {
-    match sqlx::query(
-        "SELECT id, key_id, name, scopes, status, last_used_at, created_at 
-         FROM api_keys WHERE school_id = $1",
-    )
-    .bind(&school_id)
-    .fetch_all(&state.db.pool)
-    .await
-    {
-        Ok(rows) => {
-            let keys: Vec<_> = rows.iter().map(|r| {
-                json!({
-                    "id": r.get::<i32, _>("id"),
-                    "key_id": r.get::<String, _>("key_id"),
-                    "name": r.get::<String, _>("name"),
-                    "scopes": r.get::<Vec<String>, _>("scopes"),
-                    "status": r.get::<String, _>("status"),
-                    "last_used_at": r.get::<Option<chrono::DateTime<chrono::Utc>>, _>("last_attempt_at").map(|d| d.to_rfc3339()),
-                    "created_at": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                })
-            }).collect();
-            Json(json!({"success": true, "api_keys": keys})).into_response()
-        }
+    match state.repos.api_key.list_api_keys(&school_id).await {
+        Ok(keys) => Json(json!({"success": true, "api_keys": keys})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),
@@ -111,15 +76,7 @@ pub async fn revoke_api_key(
     State(state): State<AppState>,
     Path((school_id, key_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    match sqlx::query(
-        "UPDATE api_keys SET status = 'revoked', updated_at = NOW() 
-         WHERE school_id = $1 AND key_id = $2",
-    )
-    .bind(&school_id)
-    .bind(&key_id)
-    .execute(&state.db.pool)
-    .await
-    {
+    match state.repos.api_key.revoke_api_key(&school_id, &key_id).await {
         Ok(_) => Json(json!({"success": true, "message": "API key revoked"})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -128,4 +85,3 @@ pub async fn revoke_api_key(
             .into_response(),
     }
 }
-

@@ -1,6 +1,8 @@
 pub struct AdminService {
     pub db: std::sync::Arc<crate::db::DbClient>,
+    pub repos: std::sync::Arc<crate::repository::Repositories>,
 }
+
 
 pub mod auth;
 pub mod school;

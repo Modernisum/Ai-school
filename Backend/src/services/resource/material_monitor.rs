@@ -1,7 +1,6 @@
 use crate::error::{AppError, AppResult};
 use crate::repository::Repositories;
 use serde_json::{json, Value};
-use sqlx::Row;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -15,50 +14,12 @@ impl MaterialMonitor {
     }
 
     pub async fn check_space_shortages(&self, school_id: &str) -> AppResult<Vec<Value>> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                req.space_name,
-                req.material_name,
-                req.required_count,
-                COALESCE(sm.quantity, 0) as available_count
-            FROM space_material_requirements req
-            LEFT JOIN space_materials sm
-                ON sm.school_id = req.school_id
-                AND sm.space_name = req.space_name
-                AND sm.material_name = req.material_name
-            WHERE req.school_id = $1
-              AND req.required_count > 0
-              AND COALESCE(sm.quantity, 0) < req.required_count
-            ORDER BY req.space_name, req.material_name
-            "#,
-        )
-        .bind(school_id)
-        .fetch_all(&mut *conn)
-        .await?;
-
-        Ok(rows.into_iter().map(|row| {
-            let required_count: i32 = row.get("required_count");
-            let available_count: i32 = row.get("available_count");
-            let space_name: String = row.get("space_name");
-            let material_name: String = row.get("material_name");
-            json!({
-                "spaceName": space_name,
-                "materialName": material_name,
-                "requiredCount": required_count,
-                "availableCount": available_count,
-                "deficit": required_count - available_count,
-            })
-        }).collect())
+        let shortages = self.repos.resource.check_space_shortages(school_id).await?;
+        Ok(shortages)
     }
 
     pub async fn check_and_alert_all_schools(&self) {
-        let school_ids: Vec<String> = match sqlx::query_scalar("SELECT DISTINCT school_id FROM space_material_requirements")
-            .fetch_all(&self.repos.db_client.pool)
-            .await
-        {
+        let school_ids = match self.repos.resource.get_distinct_school_ids_with_material_requirements().await {
             Ok(ids) => ids,
             Err(_) => return,
         };
@@ -72,9 +33,6 @@ impl MaterialMonitor {
 
     pub async fn check_and_alert_school(&self, school_id: &str) -> AppResult<Vec<Value>> {
         let deficits = self.check_space_shortages(school_id).await?;
-
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-
         let mut alerts_created = Vec::new();
 
         for d in &deficits {
@@ -82,26 +40,10 @@ impl MaterialMonitor {
             let material_name = d["materialName"].as_str().unwrap();
             let deficit = d["deficit"].as_i64().unwrap_or(0) as i32;
 
-            let existing: Option<(i64,)> = sqlx::query_as(
-                "SELECT id FROM material_alert_log WHERE school_id = $1 AND space_name = $2 AND material_name = $3 AND status = 'active'"
-            )
-            .bind(school_id)
-            .bind(space_name)
-            .bind(material_name)
-            .fetch_optional(&mut *conn)
-            .await?;
+            let existing = self.repos.resource.check_existing_active_alert(school_id, space_name, material_name).await?;
 
             if existing.is_none() {
-                sqlx::query(
-                    "INSERT INTO material_alert_log (school_id, space_name, material_name, deficit_count, status)
-                     VALUES ($1, $2, $3, $4, 'active')"
-                )
-                .bind(school_id)
-                .bind(space_name)
-                .bind(material_name)
-                .bind(deficit)
-                .execute(&mut *conn)
-                .await?;
+                self.repos.resource.insert_material_alert(school_id, space_name, material_name, deficit).await?;
 
                 self.repos.task.add_task(
                     school_id,
@@ -124,14 +66,9 @@ impl MaterialMonitor {
             }
         }
 
-        let active_alert_spaces: Vec<(String,)> = sqlx::query_as(
-            "SELECT DISTINCT space_name FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
-        )
-        .bind(school_id)
-        .fetch_all(&mut *conn)
-        .await?;
+        let active_alert_spaces = self.repos.resource.get_active_alert_spaces(school_id).await?;
 
-        for (space_name,) in &active_alert_spaces {
+        for space_name in &active_alert_spaces {
             let space_deficits: Vec<&Value> = deficits.iter()
                 .filter(|d| d["spaceName"].as_str() == Some(space_name))
                 .collect();
@@ -165,24 +102,11 @@ impl MaterialMonitor {
             .map(|d| (d["spaceName"].as_str().unwrap_or("").to_string(), d["materialName"].as_str().unwrap_or("").to_string()))
             .collect();
 
-        let active_alerts: Vec<(String, String)> = sqlx::query_as(
-            "SELECT space_name, material_name FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
-        )
-        .bind(school_id)
-        .fetch_all(&mut *conn)
-        .await?;
+        let active_alerts = self.repos.resource.get_active_alerts(school_id).await?;
 
         for (space_name, material_name) in &active_alerts {
             if !all_deficit_keys.contains(&(space_name.clone(), material_name.clone())) {
-                sqlx::query(
-                    "UPDATE material_alert_log SET status = 'resolved', resolved_at = NOW()
-                     WHERE school_id = $1 AND space_name = $2 AND material_name = $3 AND status = 'active'"
-                )
-                .bind(school_id)
-                .bind(space_name)
-                .bind(material_name)
-                .execute(&mut *conn)
-                .await?;
+                self.repos.resource.resolve_active_alert(school_id, space_name, material_name).await?;
             }
         }
 
@@ -193,12 +117,7 @@ impl MaterialMonitor {
         let deficits = self.check_space_shortages(school_id).await?;
 
         if deficits.is_empty() {
-            let active_alert_count: i64 = sqlx::query_scalar(
-                "SELECT COUNT(*) FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
-            )
-            .bind(school_id)
-            .fetch_one(&self.repos.db_client.pool)
-            .await?;
+            let active_alert_count = self.repos.resource.get_active_alerts_count(school_id).await?;
 
             return Ok(json!({
                 "success": true,
@@ -211,25 +130,11 @@ impl MaterialMonitor {
             }));
         }
 
-        let material_names: Vec<&str> = deficits.iter()
-            .filter_map(|d| d["materialName"].as_str())
+        let material_names: Vec<String> = deficits.iter()
+            .filter_map(|d| d["materialName"].as_str().map(|s| s.to_string()))
             .collect();
 
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        let price_rows = sqlx::query(
-            "SELECT name, unit_price FROM materials WHERE school_id = $1 AND name = ANY($2)"
-        )
-        .bind(school_id)
-        .bind(&material_names)
-        .fetch_all(&mut *conn)
-        .await?;
-
-        let mut price_map: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
-        for row in &price_rows {
-            let name: String = row.get("name");
-            let price: f64 = row.get("unit_price");
-            price_map.insert(name, price);
-        }
+        let price_map = self.repos.resource.get_material_unit_prices(school_id, &material_names).await?;
 
         let mut per_space: std::collections::BTreeMap<String, Vec<Value>> = std::collections::BTreeMap::new();
         for d in &deficits {
@@ -268,12 +173,7 @@ impl MaterialMonitor {
             }));
         }
 
-        let active_alert_count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM material_alert_log WHERE school_id = $1 AND status = 'active'"
-        )
-        .bind(school_id)
-        .fetch_one(&self.repos.db_client.pool)
-        .await?;
+        let active_alert_count = self.repos.resource.get_active_alerts_count(school_id).await?;
 
         Ok(json!({
             "success": true,

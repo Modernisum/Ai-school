@@ -26,6 +26,16 @@ pub mod global_user;
 pub mod notification;
 pub mod storage;
 pub mod grading;
+pub mod config;
+pub mod geo;
+pub mod api_key;
+pub mod cms;
+pub mod communication;
+pub mod system_log;
+pub mod super_admin;
+pub mod admin_automation;
+pub mod developer_access;
+pub mod ai;
 
 // Re-export all traits for convenience
 pub use auth::AuthRepository;
@@ -49,3 +59,14 @@ pub use global_user::GlobalUserRepository;
 pub use notification::NotificationRepository;
 pub use storage::StorageRepository;
 pub use grading::GradingRepository;
+pub use config::ConfigRepository;
+pub use geo::GeoRepository;
+pub use api_key::ApiKeyRepository;
+pub use cms::CmsRepository;
+pub use communication::CommunicationRepository;
+pub use system_log::SystemLogRepository;
+pub use super_admin::SuperAdminRepository;
+pub use admin_automation::AdminAutomationRepository;
+pub use developer_access::DeveloperAccessRepository;
+pub use ai::{AiRepository, SchoolAiConfig};
+

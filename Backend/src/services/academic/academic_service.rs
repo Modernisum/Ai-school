@@ -316,27 +316,16 @@ impl AcademicService for PostgresAcademicService {
         if let Some(ref storage) = self.storage {
             let sid = uuid::Uuid::parse_str(submission_id).ok();
             if let Some(sid) = sid {
-                let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-                let pages: Vec<String> = sqlx::query_scalar(
-                    "SELECT image_url FROM exam_submission_pages WHERE school_id = $1 AND submission_id = $2::uuid AND is_permanent = FALSE"
-                )
-                .bind(school_id).bind(sid)
-                .fetch_all(&mut *conn)
-                .await
-                .unwrap_or_default();
+                let pages = self.repos.academic.clear_temporary_submission_pages(school_id, sid).await
+                    .unwrap_or_default();
                 for url in &pages {
                     if let Some(relative_path) = url.strip_prefix("/uploads/") {
                         let _ = storage.delete_file(relative_path).await;
                     }
                 }
-                if !pages.is_empty() {
-                    let _ = sqlx::query("DELETE FROM exam_submission_pages WHERE school_id = $1 AND submission_id = $2::uuid AND is_permanent = FALSE")
-                        .bind(school_id).bind(sid)
-                        .execute(&mut *conn)
-                        .await;
-                }
             }
         }
+
 
         Ok(json!({"success": true, "submissionId": submission_id, "status": "approved"}))
     }

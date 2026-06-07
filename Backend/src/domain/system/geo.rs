@@ -9,16 +9,11 @@ use crate::AppState;
 use crate::models::system::{Country, StateModel, District};
 use std::fs;
 
-
-
 // GET /api/geo/countries
 pub async fn get_countries(State(state): State<AppState>) -> Json<Vec<Country>> {
-    let countries = sqlx::query_as::<_, Country>(
-        "SELECT id, name, code, phone_code FROM countries ORDER BY name"
-    )
-    .fetch_all(&state.db.pool)
-    .await
-    .unwrap_or_default();
+    let countries = state.repos.geo.get_countries()
+        .await
+        .unwrap_or_default();
 
     Json(countries)
 }
@@ -28,13 +23,9 @@ pub async fn get_states(
     State(state): State<AppState>,
     Path(country_id): Path<i32>,
 ) -> Json<Vec<StateModel>> {
-    let states = sqlx::query_as::<_, StateModel>(
-        "SELECT id, country_id, name FROM states WHERE country_id = $1 ORDER BY name",
-    )
-    .bind(country_id)
-    .fetch_all(&state.db.pool)
-    .await
-    .unwrap_or_default();
+    let states = state.repos.geo.get_states(country_id)
+        .await
+        .unwrap_or_default();
 
     Json(states)
 }
@@ -44,13 +35,9 @@ pub async fn get_districts(
     State(state): State<AppState>,
     Path(state_id): Path<i32>,
 ) -> Json<Vec<District>> {
-    let districts = sqlx::query_as::<_, District>(
-        "SELECT id, state_id, name FROM districts WHERE state_id = $1 ORDER BY name",
-    )
-    .bind(state_id)
-    .fetch_all(&state.db.pool)
-    .await
-    .unwrap_or_default();
+    let districts = state.repos.geo.get_districts(state_id)
+        .await
+        .unwrap_or_default();
 
     Json(districts)
 }

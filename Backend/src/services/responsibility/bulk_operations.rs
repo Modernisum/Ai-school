@@ -2,7 +2,6 @@ use crate::repository::Repositories;
 use crate::services::traits::*;
 use serde_json::{json, Value};
 use std::sync::Arc;
-use sqlx::Row;
 
 pub struct ResponsibilityBulkOperations {
     pub repos: Arc<Repositories>,
@@ -20,10 +19,10 @@ impl ResponsibilityBulkOperations {
         admin_id: &str,
         updates: Vec<(String, Vec<String>)>,
     ) -> AppResult<(usize, Vec<String>)> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
         let mut count = 0;
         let mut warnings = Vec::new();
         let updates_for_log = updates.clone();
+        let mut assignments_to_perform = Vec::new();
 
         for (employee_id, space_ids) in updates.iter() {
             // Verify employee exists
@@ -64,21 +63,12 @@ impl ResponsibilityBulkOperations {
                 }
             }
 
-            // UPSERT employee_responsibility
-            sqlx::query(
-                "INSERT INTO employee_responsibilities (school_id, employee_id, responsibility_id, space_ids, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, NOW(), NOW())
-                 ON CONFLICT (school_id, employee_id, responsibility_id)
-                 DO UPDATE SET space_ids = EXCLUDED.space_ids, updated_at = NOW()"
-            )
-            .bind(school_id)
-            .bind(employee_id)
-            .bind(responsibility_id)
-            .bind(space_ids)
-            .execute(&mut *conn)
-            .await?;
-
+            assignments_to_perform.push((employee_id.clone(), space_ids.clone()));
             count += 1;
+        }
+
+        if !assignments_to_perform.is_empty() {
+            self.repos.responsibility.assign_employees_with_spaces(school_id, responsibility_id, assignments_to_perform).await?;
         }
 
         // Log bulk update action
@@ -96,15 +86,16 @@ impl ResponsibilityBulkOperations {
 
         Ok((count, warnings))
     }
+
     pub async fn bulk_assign_responsibilities(
         &self,
         school_id: &str,
         admin_id: &str,
         assignments: Vec<(String, String, Vec<String>)>, // (employee_id, responsibility_id, space_ids)
     ) -> AppResult<usize> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
         let mut count = 0;
         let assignments_for_log = assignments.clone();
+        let mut assignments_to_perform = Vec::new();
 
         for (employee_id, responsibility_id, space_ids) in assignments.iter() {
             // Verify employee exists
@@ -137,20 +128,12 @@ impl ResponsibilityBulkOperations {
                 continue;
             }
 
-            // Create employee_responsibility
-            sqlx::query(
-                "INSERT INTO employee_responsibilities
-                 (school_id, employee_id, responsibility_id, space_ids, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, NOW(), NOW())"
-            )
-            .bind(school_id)
-            .bind(employee_id)
-            .bind(responsibility_id)
-            .bind(space_ids)
-            .execute(&mut *conn)
-            .await?;
-
+            assignments_to_perform.push((employee_id.clone(), responsibility_id.clone(), space_ids.clone()));
             count += 1;
+        }
+
+        if !assignments_to_perform.is_empty() {
+            self.repos.responsibility.bulk_create_employee_assignments(school_id, assignments_to_perform).await?;
         }
 
         // Log bulk assign action
@@ -175,25 +158,17 @@ impl ResponsibilityBulkOperations {
         admin_id: &str,
         removals: Vec<(String, String)>, // (employee_id, responsibility_id)
     ) -> AppResult<usize> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        let mut count = 0;
         let removals_for_log = removals.clone();
+        let mut removals_to_perform = Vec::new();
+        let mut count = 0;
 
         for (employee_id, responsibility_id) in removals.iter() {
-            // Delete employee_responsibility
-            let result = sqlx::query(
-                "DELETE FROM employee_responsibilities
-                 WHERE school_id = $1 AND employee_id = $2 AND responsibility_id = $3"
-            )
-            .bind(school_id)
-            .bind(employee_id)
-            .bind(responsibility_id)
-            .execute(&mut *conn)
-            .await?;
+            removals_to_perform.push((employee_id.clone(), responsibility_id.clone()));
+            count += 1;
+        }
 
-            if result.rows_affected() > 0 {
-                count += 1;
-            }
+        if !removals_to_perform.is_empty() {
+            self.repos.responsibility.bulk_remove_employee_responsibilities(school_id, removals_to_perform).await?;
         }
 
         // Log bulk remove action
@@ -212,3 +187,4 @@ impl ResponsibilityBulkOperations {
         Ok(count)
     }
 }
+

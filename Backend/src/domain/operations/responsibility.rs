@@ -9,7 +9,6 @@ use crate::domain::operations::responsibility_ws::publish_responsibility_event;
 use crate::models::operations::ResponsibilityEvent;
 use crate::services::responsibility::notifications::ResponsibilityNotificationService;
 use serde_json::{json, Value};
-use sqlx::Row;
 use std::collections::HashMap;
 use chrono::Utc;
 
@@ -98,50 +97,14 @@ pub async fn get_missing_responsibility_alerts(
     State(state): State<AppState>,
     Path(school_id): Path<String>,
 ) -> impl IntoResponse {
-    let mut conn = match state.repos.db_client.acquire_tenant_connection(&school_id).await {
-        Ok(c) => c,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
-    };
-
-    // Find space_requirements that are NOT fulfilled by any employee_responsibilities assignment
-    let rows = match sqlx::query(
-        "SELECT sr.space_id, sr.responsibility_id, sr.requirement_type, r.name as responsibility_name,
-                s.name as space_name,
-                CASE WHEN er.employee_id IS NOT NULL THEN true ELSE false END as is_fulfilled
-         FROM space_requirements sr
-         JOIN responsibilities r ON sr.responsibility_id = r.responsibility_id AND sr.school_id = r.school_id
-         JOIN spaces s ON sr.space_id = s.space_id AND sr.school_id = s.school_id
-         LEFT JOIN employee_responsibilities er ON er.school_id = sr.school_id 
-             AND er.responsibility_id = sr.responsibility_id 
-             AND er.space_ids @> to_jsonb(sr.space_id::text)
-         WHERE sr.school_id = $1 AND sr.requirement_type = 'mandatory'
-         ORDER BY sr.space_id"
-    )
-    .bind(&school_id)
-    .fetch_all(&mut *conn)
-    .await {
-        Ok(r) => r,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
-    };
-
-    let mut alerts: Vec<Value> = Vec::new();
-    for row in rows {
-        let is_fulfilled: bool = row.get("is_fulfilled");
-        if !is_fulfilled {
-            alerts.push(json!({
-                "spaceId": row.get::<String, _>("space_id"),
-                "spaceName": row.get::<String, _>("space_name"),
-                "responsibilityId": row.get::<String, _>("responsibility_id"),
-                "responsibilityName": row.get::<String, _>("responsibility_name"),
-                "requirementType": row.get::<String, _>("requirement_type"),
-                "severity": "critical"
-            }));
+    match state.repos.responsibility.get_missing_responsibility_alerts(&school_id).await {
+        Ok(alerts) => {
+            Json(json!({ "success": true, "data": alerts, "total": alerts.len() })).into_response()
         }
+        Err(e) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
     }
-
-    Json(json!({ "success": true, "data": alerts, "total": alerts.len() })).into_response() }
+}
 
 pub async fn create_responsibility(
     State(state): State<AppState>,
@@ -369,59 +332,20 @@ pub async fn search_responsibilities(
     
     let pattern = format!("%{}%", search_q.replace('%', "\\%").replace('_', "\\_"));
     
-    let mut conn = match state.repos.db_client.acquire_tenant_connection(&school_id).await {
-        Ok(c) => c,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
-    };
-    
-    let total: i64 = match sqlx::query_scalar(
-        "SELECT COUNT(*) FROM responsibilities WHERE school_id = $1 AND (name ILIKE $2 OR description ILIKE $2 OR employee_type ILIKE $2)"
-    )
-    .bind(&school_id)
-    .bind(&pattern)
-    .fetch_one(&mut *conn)
-    .await {
-        Ok(t) => t,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
-    };
-    
-    let rows = match sqlx::query(
-        "SELECT responsibility_id, name, description, employee_type, monthly_price, student_fee, created_at
-         FROM responsibilities WHERE school_id = $1 AND (name ILIKE $2 OR description ILIKE $2 OR employee_type ILIKE $2)
-         ORDER BY created_at DESC LIMIT $3 OFFSET $4"
-    )
-    .bind(&school_id)
-    .bind(&pattern)
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&mut *conn)
-    .await {
-        Ok(r) => r,
-        Err(e) => return (axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()}))).into_response(),
-    };
-    
-    let data: Vec<Value> = rows.iter().map(|row| {
-        json!({
-            "responsibilityId": row.get::<String, _>("responsibility_id"),
-            "name": row.get::<String, _>("name"),
-            "description": row.get::<Option<String>, _>("description"),
-            "employeeType": row.get::<Option<String>, _>("employee_type"),
-            "monthlyPrice": row.get::<bigdecimal::BigDecimal, _>("monthly_price").to_string(),
-            "studentFee": row.get::<bigdecimal::BigDecimal, _>("student_fee").to_string(),
-            "createdAt": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-        })
-    }).collect();
-    
-    let pages = ((total as f64) / (limit as f64)).ceil() as i32;
-    
-    Json(json!({
-        "success": true,
-        "data": data,
-        "pagination": { "page": page, "limit": limit, "total": total, "pages": pages }
-    })).into_response()
+    match state.repos.responsibility.search_responsibilities(&school_id, &pattern, limit, offset).await {
+        Ok((data, total)) => {
+            let pages = ((total as f64) / (limit as f64)).ceil() as i32;
+            Json(json!({
+                "success": true,
+                "data": data,
+                "pagination": { "page": page, "limit": limit, "total": total, "pages": pages }
+            })).into_response()
+        }
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        ).into_response(),
+    }
 }
 
 /// POST /schools/{schoolId}/responsibilities/{responsibilityId}/bulk-assign

@@ -31,4 +31,48 @@ pub trait LeaveRepository: Send + Sync {
         from_date: &str,
         to_date: &str,
     ) -> Result<Vec<Value>, AppError>;
+
+    async fn assign_responsibility_coverage(
+        &self,
+        school_id: &str,
+        coverage_id: &str,
+        leave_id: &str,
+        original_employee_id: &str,
+        covering_employee_id: &str,
+        responsibility_id: &str,
+        coverage_period_start: chrono::NaiveDate,
+        coverage_period_end: chrono::NaiveDate,
+        notes: &str,
+    ) -> Result<(), AppError>;
+
+    async fn get_available_coverages(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn accept_responsibility_coverage(
+        &self,
+        school_id: &str,
+        employee_id: &str,
+        coverage_id: &str,
+    ) -> Result<(), AppError>;
+
+    async fn save_workload_assessment(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+        employee_id: &str,
+        assessment_id: &str,
+        impact_score: i32,
+        workload_category: &str,
+        coverage_needed: bool,
+        notes: &str,
+    ) -> Result<(), AppError>;
+
+    async fn get_workload_assessment(
+        &self,
+        school_id: &str,
+        leave_id: &str,
+    ) -> Result<Option<Value>, AppError>;
 }

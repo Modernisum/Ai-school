@@ -61,4 +61,117 @@ pub trait ResponsibilityRepository: Send + Sync {
         page: i32,
         limit: i32,
     ) -> Result<Value, AppError>;
+
+    async fn get_missing_responsibility_alerts(&self, school_id: &str) -> Result<JsonList, AppError>;
+    async fn search_responsibilities(&self, school_id: &str, pattern: &str, limit: i32, offset: i32) -> Result<(JsonList, i64), AppError>;
+
+    async fn get_space_responsibilities(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<Vec<Value>, AppError>;
+
+    async fn get_overview_analytics(&self, school_id: &str, days: i32) -> Result<Value, AppError>;
+
+    async fn export_responsibilities_csv(&self, school_id: &str) -> Result<String, AppError>;
+
+    async fn import_responsibilities_csv(
+        &self,
+        school_id: &str,
+        admin_id: &str,
+        csv_content: &str,
+    ) -> Result<usize, AppError>;
+
+    async fn sync_student_fees_for_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<usize, AppError>;
+
+    async fn recalculate_all_student_fees(&self, school_id: &str) -> Result<usize, AppError>;
+
+    async fn generate_salaries_from_responsibilities(
+        &self,
+        school_id: &str,
+        month: i32,
+        year: i32,
+    ) -> Result<Value, AppError>;
+
+    async fn get_space_financial_overview(
+        &self,
+        school_id: &str,
+        space_id: &str,
+    ) -> Result<Value, AppError>;
+
+    async fn bulk_create_employee_assignments(
+        &self,
+        school_id: &str,
+        assignments: Vec<(String, String, Vec<String>)>,
+    ) -> Result<(), AppError>;
+
+    async fn bulk_remove_employee_responsibilities(
+        &self,
+        school_id: &str,
+        removals: Vec<(String, String)>,
+    ) -> Result<(), AppError>;
+
+    async fn get_assignment_history(
+        &self,
+        school_id: &str,
+        responsibility_id: Option<&str>,
+        employee_id: Option<&str>,
+        limit: i64,
+    ) -> Result<JsonList, AppError>;
+
+    async fn get_responsibility_versions(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+    ) -> Result<JsonList, AppError>;
+
+    async fn rollback_responsibility(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        version: i32,
+        admin_id: &str,
+    ) -> Result<(), AppError>;
+
+    async fn create_responsibility_version(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        admin_id: &str,
+    ) -> Result<i32, AppError>;
+
+    async fn get_responsibility_utilization_metrics(
+        &self,
+        school_id: &str,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, AppError>;
+
+    async fn get_employee_workload_metrics(
+        &self,
+        school_id: &str,
+        employee_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, AppError>;
+
+    async fn get_space_distribution_metrics(
+        &self,
+        school_id: &str,
+        space_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, AppError>;
+
+    async fn get_revenue_metrics(
+        &self,
+        school_id: &str,
+        responsibility_id: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<Value, AppError>;
 }

@@ -51,17 +51,21 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .nest("/ws", responsibility_ws::router());
 
     Router::new()
-        .nest("/responsibility", responsibility_routes)
-        // Tasks
-        .route("/tasks", get(task::list_tasks))
-        .route("/tasks/:taskId/status", put(task::update_task_status))
-        .route("/tasks/ai/generate", post(crate::domain::ai::ai::ai_generate_tasks))
-        .route("/tasks/ai/reorganize", post(crate::domain::ai::ai::ai_reorganize_tasks))
-        // Complaints
-        .route("/complains/:summaryId/complainlist", get(complains::list_complains))
-        .route("/complains/student/:studentId", get(complains::list_complains))
-        .route("/complains", post(complains::create_complain).get(complains::list_complains))
-        // Reminders
-        .route("/reminders", get(reminder::list_reminders))
+        .nest(
+            "/school/:schoolId/operations",
+            Router::new()
+                .nest("/responsibility", responsibility_routes)
+                // Tasks
+                .route("/tasks", get(task::list_tasks))
+                .route("/tasks/:taskId/status", put(task::update_task_status))
+                .route("/tasks/ai/generate", post(crate::domain::ai::ai::ai_generate_tasks))
+                .route("/tasks/ai/reorganize", post(crate::domain::ai::ai::ai_reorganize_tasks))
+                // Complaints
+                .route("/complains/:summaryId/complainlist", get(complains::list_complains))
+                .route("/complains/student/:studentId", get(complains::list_complains))
+                .route("/complains", post(complains::create_complain).get(complains::list_complains))
+                // Reminders
+                .route("/reminders", get(reminder::list_reminders))
+        )
         .with_state(state)
 }

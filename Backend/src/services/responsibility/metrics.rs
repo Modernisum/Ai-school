@@ -2,7 +2,6 @@ use crate::repository::Repositories;
 use crate::services::traits::*;
 use serde_json::{json, Value};
 use std::sync::Arc;
-use sqlx::Row;
 
 pub struct ResponsibilityMetrics {
     pub repos: Arc<Repositories>,
@@ -19,50 +18,8 @@ impl ResponsibilityMetrics {
         start_date: Option<&str>,
         end_date: Option<&str>,
     ) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let has_date_range = start_date.is_some() && end_date.is_some();
-        
-        let total_responsibilities: i64 = {
-            let mut q = "SELECT COUNT(*) FROM responsibilities WHERE school_id = $1".to_string();
-            if has_date_range {
-                q.push_str(" AND created_at BETWEEN $2 AND $3");
-            }
-            let mut query = sqlx::query_scalar::<_, i64>(&q).bind(school_id);
-            if let (Some(start), Some(end)) = (start_date, end_date) {
-                query = query.bind(start).bind(end);
-            }
-            query.fetch_one(&mut *conn).await.map_err(|e| AppError::Internal(e.to_string()))?
-        };
-        
-        let assigned_responsibilities: i64 = {
-            let mut q = "SELECT COUNT(DISTINCT er.responsibility_id) FROM employee_responsibilities er
-                         JOIN responsibilities r ON er.responsibility_id = r.responsibility_id
-                         WHERE r.school_id = $1".to_string();
-            if has_date_range {
-                q.push_str(" AND er.created_at BETWEEN $2 AND $3");
-            }
-            let mut query = sqlx::query_scalar::<_, i64>(&q).bind(school_id);
-            if let (Some(start), Some(end)) = (start_date, end_date) {
-                query = query.bind(start).bind(end);
-            }
-            query.fetch_one(&mut *conn).await.map_err(|e| AppError::Internal(e.to_string()))?
-        };
-        
-        let utilization_rate = if total_responsibilities > 0 {
-            (assigned_responsibilities as f64 / total_responsibilities as f64) * 100.0
-        } else {
-            0.0
-        };
-        
-        Ok(json!({
-            "totalResponsibilities": total_responsibilities,
-            "assignedResponsibilities": assigned_responsibilities,
-            "unassignedResponsibilities": total_responsibilities - assigned_responsibilities,
-            "utilizationRate": utilization_rate,
-            "startDate": start_date,
-            "endDate": end_date
-        }))
+        let metrics = self.repos.responsibility.get_responsibility_utilization_metrics(school_id, start_date, end_date).await?;
+        Ok(metrics)
     }
     
     pub async fn get_employee_workload_metrics(
@@ -72,46 +29,8 @@ impl ResponsibilityMetrics {
         start_date: Option<&str>,
         end_date: Option<&str>,
     ) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let mut query = "SELECT e.employee_id, e.name, COUNT(DISTINCT er.responsibility_id) as responsibility_count,
-                        COUNT(DISTINCT er.space_ids) as space_count
-                        FROM employees e
-                        LEFT JOIN employee_responsibilities er ON e.employee_id = er.employee_id
-                        WHERE e.school_id = $1".to_string();
-        
-        let mut param_count = 1;
-        
-        if let Some(eid) = employee_id {
-            query.push_str(&format!(" AND e.employee_id = ${}", param_count + 1));
-            param_count += 1;
-        }
-        
-        query.push_str(" GROUP BY e.employee_id, e.name ORDER BY responsibility_count DESC");
-        
-        let rows = sqlx::query(&query)
-            .bind(school_id)
-            .bind(employee_id.unwrap_or(""))
-            .fetch_all(&mut *conn)
-            .await
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-        
-        let mut employees = Vec::new();
-        for row in rows {
-            employees.push(json!({
-                "employeeId": row.get::<String, _>("employee_id"),
-                "name": row.get::<String, _>("name"),
-                "responsibilityCount": row.get::<i64, _>("responsibility_count"),
-                "spaceCount": row.get::<i64, _>("space_count")
-            }));
-        }
-        
-        Ok(json!({
-            "employees": employees,
-            "totalEmployees": employees.len(),
-            "startDate": start_date,
-            "endDate": end_date
-        }))
+        let metrics = self.repos.responsibility.get_employee_workload_metrics(school_id, employee_id, start_date, end_date).await?;
+        Ok(metrics)
     }
     
     pub async fn get_space_distribution_metrics(
@@ -121,46 +40,8 @@ impl ResponsibilityMetrics {
         start_date: Option<&str>,
         end_date: Option<&str>,
     ) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let mut query = "SELECT s.space_id, s.name, COUNT(DISTINCT er.employee_id) as employee_count,
-                        COUNT(DISTINCT er.responsibility_id) as responsibility_count
-                        FROM spaces s
-                        LEFT JOIN employee_responsibilities er ON s.space_id = ANY(er.space_ids)
-                        WHERE s.school_id = $1".to_string();
-        
-        let mut param_count = 1;
-        
-        if let Some(sid) = space_id {
-            query.push_str(&format!(" AND s.space_id = ${}", param_count + 1));
-            param_count += 1;
-        }
-        
-        query.push_str(" GROUP BY s.space_id, s.name ORDER BY employee_count DESC");
-        
-        let rows = sqlx::query(&query)
-            .bind(school_id)
-            .bind(space_id.unwrap_or(""))
-            .fetch_all(&mut *conn)
-            .await
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-        
-        let mut spaces = Vec::new();
-        for row in rows {
-            spaces.push(json!({
-                "spaceId": row.get::<String, _>("space_id"),
-                "name": row.get::<String, _>("name"),
-                "employeeCount": row.get::<i64, _>("employee_count"),
-                "responsibilityCount": row.get::<i64, _>("responsibility_count")
-            }));
-        }
-        
-        Ok(json!({
-            "spaces": spaces,
-            "totalSpaces": spaces.len(),
-            "startDate": start_date,
-            "endDate": end_date
-        }))
+        let metrics = self.repos.responsibility.get_space_distribution_metrics(school_id, space_id, start_date, end_date).await?;
+        Ok(metrics)
     }
     
     pub async fn get_revenue_metrics(
@@ -170,52 +51,8 @@ impl ResponsibilityMetrics {
         start_date: Option<&str>,
         end_date: Option<&str>,
     ) -> AppResult<Value> {
-        let mut conn = self.repos.db_client.acquire_tenant_connection(school_id).await?;
-        
-        let mut query = "SELECT r.responsibility_id, r.name, r.monthly_price,
-                        COUNT(DISTINCT er.employee_id) as assigned_count,
-                        r.monthly_price * COUNT(DISTINCT er.employee_id) as total_revenue
-                        FROM responsibilities r
-                        LEFT JOIN employee_responsibilities er ON r.responsibility_id = er.responsibility_id
-                        WHERE r.school_id = $1".to_string();
-        
-        let mut param_count = 1;
-        
-        if let Some(rid) = responsibility_id {
-            query.push_str(&format!(" AND r.responsibility_id = ${}", param_count + 1));
-            param_count += 1;
-        }
-        
-        query.push_str(" GROUP BY r.responsibility_id, r.name, r.monthly_price ORDER BY total_revenue DESC");
-        
-        let rows = sqlx::query(&query)
-            .bind(school_id)
-            .bind(responsibility_id.unwrap_or(""))
-            .fetch_all(&mut *conn)
-            .await
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-        
-        let mut responsibilities = Vec::new();
-        let mut total_revenue = 0.0;
-        
-        for row in rows {
-            let revenue: f64 = row.get::<f64, _>("total_revenue");
-            total_revenue += revenue;
-            responsibilities.push(json!({
-                "responsibilityId": row.get::<String, _>("responsibility_id"),
-                "name": row.get::<String, _>("name"),
-                "monthlyPrice": row.get::<f64, _>("monthly_price"),
-                "assignedCount": row.get::<i64, _>("assigned_count"),
-                "totalRevenue": revenue
-            }));
-        }
-        
-        Ok(json!({
-            "responsibilities": responsibilities,
-            "totalRevenue": total_revenue,
-            "startDate": start_date,
-            "endDate": end_date
-        }))
+        let metrics = self.repos.responsibility.get_revenue_metrics(school_id, responsibility_id, start_date, end_date).await?;
+        Ok(metrics)
     }
     
     pub async fn generate_utilization_report(
@@ -298,3 +135,4 @@ impl ResponsibilityMetrics {
         }))
     }
 }
+

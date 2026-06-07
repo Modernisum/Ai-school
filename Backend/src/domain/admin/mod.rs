@@ -2,6 +2,9 @@ use crate::AppState;
 use axum::{
     routing::{delete, get, patch, post, put},
     Router,
+    middleware::Next,
+    response::Response,
+    extract::Request,
 };
 
 // ─── Macros ───
@@ -72,8 +75,10 @@ pub fn extract_admin_token(headers: &axum::http::HeaderMap) -> Option<String> {
 pub fn make_admin_service(state: &AppState) -> crate::services::super_admin::AdminService {
     crate::services::super_admin::AdminService {
         db: state.db.clone(),
+        repos: state.repos.clone(),
     }
 }
+
 
 // ─── Submodules ───
 #[macro_use]
@@ -97,49 +102,62 @@ pub use support::*;
 pub use system::*;
 
 pub fn routes(state: AppState) -> Router<AppState> {
+    let admin_limiter = state.admin_limiter.clone();
     Router::new()
-        // Auth
-        .route("/login", post(auth::admin_login))
-        .route("/profile", get(auth::get_admin_profile))
-        .route("/update-credentials", post(auth::update_admin_credentials))
-        // Dashboard Stats
-        .route("/stats", get(billing::get_admin_dashboard_stats))
-        .route("/stats/advanced", get(billing::get_admin_stats_advanced))
-        // Churn Radar
-        .route("/churn-radar", get(billing::get_churn_radar))
-        // Promos
-        .route("/promos", get(promo::list_promo_codes).post(promo::create_promo_code))
-        .route("/promos/:promoId/usage", get(promo::get_promo_usage))
-        // Config
-        .route("/config/:key", get(system::get_config))
-        .route("/config", post(system::update_config))
-        // Schools CRUD
-        .route("/schools", get(school::list_all_schools))
-        .route("/schools/export/all", get(system::export_all_schools))
-        .route("/schools/:schoolId", get(school::get_school)
-            .put(school::update_school)
-            .delete(school::delete_school))
-        .route("/schools/:schoolId/status", patch(school::set_school_status))
-        .route("/schools/:schoolId/password", patch(school::change_school_password))
-        .route("/schools/:schoolId/session", patch(school::set_session_duration))
-        .route("/schools/:schoolId/sessions", get(school::get_school_sessions)
-            .delete(school::expire_school_sessions))
-        .route("/schools/:schoolId/notify", post(school::send_notification)
-            .delete(school::clear_notification))
-        .route("/schools/:schoolId/apply-promo", post(promo::apply_promo_to_school))
-        .route("/schools/:schoolId/ledger", get(billing::get_wallet_ledger))
-        .route("/schools/:schoolId/refund", post(billing::process_refund))
-        .route("/schools/:schoolId/export", get(system::export_school))
-        .route("/schools/:schoolId/import", post(system::import_school))
-        // Support
-        .route("/support", get(support::list_support_requests))
-        .route("/support/:id/resolve", patch(support::resolve_support_request))
-        // Global Backup
-        .route("/backup", post(system::manual_backup))
-        // Global Notifications
-        .route("/notify/global", post(system::send_global_notification)
-            .delete(system::clear_global_notification))
-        // CMS Admin
-        .nest("/cms", crate::domain::cms::admin_routes(state.clone()))
+        .nest(
+            "/admin",
+            Router::new()
+                // Auth
+                .route("/login", post(auth::admin_login))
+                .route("/profile", get(auth::get_admin_profile))
+                .route("/update-credentials", post(auth::update_admin_credentials))
+                // Dashboard Stats
+                .route("/stats", get(billing::get_admin_dashboard_stats))
+                .route("/stats/advanced", get(billing::get_admin_stats_advanced))
+                // Churn Radar
+                .route("/churn-radar", get(billing::get_churn_radar))
+                // Promos
+                .route("/promos", get(promo::list_promo_codes).post(promo::create_promo_code))
+                .route("/promos/:promoId/usage", get(promo::get_promo_usage))
+                // Config
+                .route("/config/:key", get(system::get_config))
+                .route("/config", post(system::update_config))
+                // Schools CRUD
+                .route("/schools", get(school::list_all_schools))
+                .route("/schools/export/all", get(system::export_all_schools))
+                .route("/schools/:schoolId", get(school::get_school)
+                    .put(school::update_school)
+                    .delete(school::delete_school))
+                .route("/schools/:schoolId/status", patch(school::set_school_status))
+                .route("/schools/:schoolId/password", patch(school::change_school_password))
+                .route("/schools/:schoolId/session", patch(school::set_session_duration))
+                .route("/schools/:schoolId/sessions", get(school::get_school_sessions)
+                    .delete(school::expire_school_sessions))
+                .route("/schools/:schoolId/notify", post(school::send_notification)
+                    .delete(school::clear_notification))
+                .route("/schools/:schoolId/apply-promo", post(promo::apply_promo_to_school))
+                .route("/schools/:schoolId/ledger", get(billing::get_wallet_ledger))
+                .route("/schools/:schoolId/refund", post(billing::process_refund))
+                .route("/schools/:schoolId/export", get(system::export_school))
+                .route("/schools/:schoolId/import", post(system::import_school))
+                // Support
+                .route("/support", get(support::list_support_requests))
+                .route("/support/:id/resolve", patch(support::resolve_support_request))
+                // Global Backup
+                .route("/backup", post(system::manual_backup))
+                // Global Notifications
+                .route("/notify/global", post(system::send_global_notification)
+                    .delete(system::clear_global_notification))
+                // CMS Admin
+                .nest("/cms", crate::domain::cms::admin_routes(state.clone()))
+        )
+        .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
+            let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
+            let limiter = admin_limiter.clone();
+            async move {
+                limiter.check(&client_ip).await?;
+                Ok::<Response, Response>(next.run(req).await)
+            }
+        }))
         .with_state(state)
 }

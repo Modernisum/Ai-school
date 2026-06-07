@@ -38,4 +38,21 @@ pub trait PayrollRepository: Send + Sync {
         action: &str,
         data: Value,
     ) -> Result<(), AppError>;
+    async fn get_payroll_history(
+        &self,
+        school_id: &str,
+        employee_id: Option<&str>,
+    ) -> Result<Vec<Value>, AppError>;
+    async fn get_payment_history_list(
+        &self,
+        school_id: &str,
+        employee_id: Option<&str>,
+    ) -> Result<Vec<Value>, AppError>;
+    async fn get_payroll_report_data(
+        &self,
+        school_id: &str,
+        month: i32,
+        year: i32,
+    ) -> Result<Vec<Value>, AppError>;
 }
+
