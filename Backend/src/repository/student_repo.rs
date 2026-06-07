@@ -445,37 +445,42 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
     ) -> Result<Option<Value>, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         
-        // 1. Get base student data
-        let student_row = sqlx::query("SELECT * FROM students WHERE school_id = $1 AND student_id = $2")
+        // 1. Get base student data with legacy student_fees joined
+        let student_row = sqlx::query(
+            "SELECT s.*, \
+                    sf.total_fees AS sf_total_fees, \
+                    sf.pending_amount AS sf_pending_amount, \
+                    sf.discount AS sf_discount \
+             FROM students s \
+             LEFT JOIN student_fees sf ON s.school_id = sf.school_id AND s.student_id = sf.student_id \
+             WHERE s.school_id = $1 AND s.student_id = $2"
+        )
             .bind(school_id)
             .bind(student_id)
             .fetch_optional(&mut *conn)
             .await?;
 
-        let student = match student_row {
+        let row = match student_row {
             Some(r) => r,
             None => return Ok(None),
         };
 
-        let class_name = student.get::<Option<String>, _>("class_name").unwrap_or_default();
-        let enrolled_subjects: Value = student.get::<Option<Value>, _>("enrolled_subjects").unwrap_or(json!([]));
-        let total_fees_str = student.get::<Option<sqlx::types::BigDecimal>, _>("total_fees")
+        let class_name = row.get::<Option<String>, _>("class_name").unwrap_or_default();
+        let enrolled_subjects: Value = row.get::<Option<Value>, _>("enrolled_subjects").unwrap_or(json!([]));
+        let total_fees_str = row.get::<Option<sqlx::types::BigDecimal>, _>("total_fees")
             .map(|d| d.to_string())
             .unwrap_or_else(|| "0".to_string());
         let subject_fees: f64 = total_fees_str.parse().unwrap_or(0.0);
         let total_subjects = enrolled_subjects.as_array().map(|a| a.len()).unwrap_or(0);
 
-        // 2. Get student_fees (legacy fee system)
-        let fee_row = sqlx::query("SELECT * FROM student_fees WHERE school_id = $1 AND student_id = $2")
-            .bind(school_id)
-            .bind(student_id)
-            .fetch_optional(&mut *conn)
-            .await?;
+        let sf_total_opt = row.try_get::<Option<sqlx::types::BigDecimal>, _>("sf_total_fees").ok().flatten();
+        let sf_pending_opt = row.try_get::<Option<sqlx::types::BigDecimal>, _>("sf_pending_amount").ok().flatten();
+        let sf_discount_opt = row.try_get::<Option<sqlx::types::BigDecimal>, _>("sf_discount").ok().flatten();
 
-        let (legacy_total, legacy_paid, legacy_discount) = if let Some(fr) = fee_row {
-            let total: f64 = fr.get::<sqlx::types::BigDecimal, _>("total_fees").to_string().parse().unwrap_or(0.0);
-            let pending: f64 = fr.get::<sqlx::types::BigDecimal, _>("pending_amount").to_string().parse().unwrap_or(0.0);
-            let disc = fr.get::<Option<sqlx::types::BigDecimal>, _>("discount")
+        let (legacy_total, legacy_paid, legacy_discount) = if let (Some(t_dec), Some(p_dec)) = (sf_total_opt, sf_pending_opt) {
+            let total: f64 = t_dec.to_string().parse().unwrap_or(0.0);
+            let pending: f64 = p_dec.to_string().parse().unwrap_or(0.0);
+            let disc = sf_discount_opt
                 .map(|d| d.to_string().parse().unwrap_or(0.0))
                 .unwrap_or(0.0);
             let paid = total - pending - disc;
@@ -531,23 +536,23 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
 
         Ok(Some(json!({
             "student": {
-                "studentId": student.get::<String, _>("student_id"),
-                "name": student.get::<Option<String>, _>("name"),
+                "studentId": row.get::<String, _>("student_id"),
+                "name": row.get::<Option<String>, _>("name"),
                 "className": &class_name,
-                "rollNumber": student.get::<Option<i32>, _>("roll_number"),
-                "section": student.get::<Option<String>, _>("section"),
-                "status": student.get::<String, _>("status"),
-                "dob": student.get::<Option<String>, _>("dob"),
-                "gender": student.get::<Option<String>, _>("gender"),
-                "fatherName": student.get::<Option<String>, _>("father_name"),
-                "motherName": student.get::<Option<String>, _>("mother_name"),
-                "contact": student.get::<Option<String>, _>("contact"),
-                "email": student.get::<Option<String>, _>("email"),
-                "admissionDate": student.get::<Option<String>, _>("admission_date"),
-                "studentType": student.get::<Option<String>, _>("student_type"),
-                "aadhaarNumber": student.get::<Option<String>, _>("aadhaar_number"),
-                "createdAt": student.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                "updatedAt": student.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
+                "rollNumber": row.get::<Option<i32>, _>("roll_number"),
+                "section": row.get::<Option<String>, _>("section"),
+                "status": row.get::<String, _>("status"),
+                "dob": row.get::<Option<String>, _>("dob"),
+                "gender": row.get::<Option<String>, _>("gender"),
+                "fatherName": row.get::<Option<String>, _>("father_name"),
+                "motherName": row.get::<Option<String>, _>("mother_name"),
+                "contact": row.get::<Option<String>, _>("contact"),
+                "email": row.get::<Option<String>, _>("email"),
+                "admissionDate": row.get::<Option<String>, _>("admission_date"),
+                "studentType": row.get::<Option<String>, _>("student_type"),
+                "aadhaarNumber": row.get::<Option<String>, _>("aadhaar_number"),
+                "createdAt": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+                "updatedAt": row.get::<chrono::DateTime<chrono::Utc>, _>("updated_at").to_rfc3339(),
                 "enrolledSubjects": &enrolled_subjects
             },
             "className": &class_name,
