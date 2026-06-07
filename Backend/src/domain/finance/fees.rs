@@ -1,5 +1,6 @@
 use crate::middleware::rls::TenantContext;
 use crate::AppState;
+use crate::models::finance::PendingFeesQuery;
 
 use axum::{
     extract::{Path, State, Query},
@@ -10,13 +11,7 @@ use serde::Deserialize;
 use serde_json::json;
 use crate::error::AppResult;
 
-#[derive(Deserialize)]
-pub struct PendingFeesQuery {
-    #[serde(rename = "minPercentage")]
-    pub min_percentage: f64,
-    #[serde(rename = "className")]
-    pub class_name: Option<String>,
-}
+
 
 pub async fn create_school_fee(
     State(state): State<AppState>,

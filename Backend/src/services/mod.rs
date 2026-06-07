@@ -1,42 +1,59 @@
-pub mod academic_service;
-pub mod academic_utils;
-pub mod admin_automation_service;
-pub mod ai_config_service;
-pub mod ai_service;
-pub mod attendance_analytics_service;
-pub mod attendance_health_monitor;
-pub mod attendance_service;
-pub mod auth_service;
-pub mod auxiliary_service;
-pub mod content_generation_service;
-pub mod developer_access_service;
-pub mod embedding_service;
-pub mod employee_service;
-pub mod encrypted_employee_service;
-pub mod feedback_service;
-pub mod fee_service;
-pub mod gradebook_service;
-pub mod grading_service;
-pub mod leave_service;
-pub mod material_monitor;
-
-pub mod notification_service;
-pub mod ocr_service;
-pub mod operations_service;
-pub mod payroll;
-pub mod payroll_service;
-pub mod plagiarism_service;
+pub mod academic;
+pub mod ai;
+pub mod attendance;
+pub mod auth;
+pub mod leave;
+pub mod ocr;
+pub mod operations;
+pub mod people;
+pub mod finance;
+pub mod system;
 pub mod resource;
-pub mod resource_service;
 pub mod responsibility;
-pub mod responsibility_permissions;
-pub mod responsibility_notifications;
-pub mod setup_service;
+pub mod payroll;
 pub mod student;
-pub mod student_service;
-pub mod task_service;
-pub mod recovery_service;
+pub mod super_admin;
 pub mod traits;
+pub mod utils;
+
+// Re-exports to preserve backward compatibility:
+pub use academic::academic_service;
+pub use academic::academic_utils;
+pub use academic::feedback_service;
+pub use academic::gradebook_service;
+pub use academic::grading_service;
+pub use academic::plagiarism_service;
+
+pub use ai::ai_service;
+pub use ai::ai_config_service;
+pub use ai::embedding_service;
+pub use ai::content_generation_service;
+
+pub use attendance::attendance_service;
+pub use attendance::attendance_analytics_service;
+pub use attendance::attendance_health_monitor;
+
+pub use auth::auth_service;
+pub use leave::leave_service;
+pub use ocr::ocr_service;
+
+pub use operations::operations_service;
+pub use operations::task_service;
+pub use operations::developer_access_service;
+pub use operations::admin_automation_service;
+
+pub use people::employee_service;
+pub use people::encrypted_employee_service;
+
+pub use finance::fee_service;
+
+pub use system::setup_service;
+pub use system::recovery_service;
+pub use system::notification_service;
+pub use system::auxiliary_service;
+
+pub use resource::material_monitor;
+pub use responsibility::responsibility_permissions;
 
 use crate::repository::Repositories;
 use crate::services::academic_service::PostgresAcademicService;
@@ -60,14 +77,14 @@ use crate::services::grading_service::GradingService;
 use crate::services::leave_service::PostgresLeaveService;
 use crate::services::notification_service::PostgresNotificationService;
 use crate::services::ocr_service::OcrService;
-use crate::services::operations_service::PostgresOperationsService;
-use crate::services::payroll_service::PostgresPayrollService;
+use crate::services::operations::operations_service::PostgresOperationsService;
+use crate::services::payroll::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
-use crate::services::resource_service::PostgresResourceService;
+use crate::services::resource::PostgresResourceService;
 use crate::services::responsibility::PostgresResponsibilityService;
 use crate::services::setup_service::PostgresSetupService;
-use crate::services::student_service::PostgresStudentService;
-use crate::services::task_service::PostgresTaskService;
+use crate::services::student::PostgresStudentService;
+use crate::services::operations::task_service::PostgresTaskService;
 use crate::services::recovery_service::PostgresRecoveryService;
 use crate::services::material_monitor::MaterialMonitor;
 use crate::services::traits::*;

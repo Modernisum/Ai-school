@@ -1,7 +1,8 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
+use crate::services::utils::audit::log_audit;
 use async_trait::async_trait;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::sync::Arc;
 
 pub struct MaterialOperations {
@@ -13,37 +14,16 @@ impl MaterialOperations {
         Self { repos }
     }
 
-    pub async fn create_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        data: Value,
-    ) -> AppResult<Value> {
+    pub async fn create_material(&self, school_id: &str, admin_id: &str, data: Value) -> AppResult<Value> {
         let res = self.repos.resource.add_material(school_id, data.clone()).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            res["materialName"].as_str().unwrap_or("unknown"),
-            "CREATE",
-            data.clone()
-        ).await;
+        log_audit(&self.repos.audit, school_id, admin_id, "MATERIAL", res["materialName"].as_str().unwrap_or("unknown"), "CREATE", data).await;
         Ok(res)
     }
 
-    pub async fn list_materials(
-        &self,
-        school_id: &str,
-        search: Option<String>,
-        filter: Option<String>,
-        page: i64,
-        limit: i64,
-    ) -> AppResult<Value> {
+    pub async fn list_materials(&self, school_id: &str, search: Option<String>, filter: Option<String>, page: i64, limit: i64) -> AppResult<Value> {
         let response = self.repos.resource.get_materials(school_id, search, filter, page, limit).await?;
         let dashboard = self.repos.resource.get_materials_dashboard(school_id).await?;
-        
-        Ok(serde_json::json!({
+        Ok(json!({
             "success": true,
             "data": response["materials"],
             "metadata": response["metadata"],
@@ -55,96 +35,43 @@ impl MaterialOperations {
         Ok(self.repos.resource.get_material(school_id, material_name).await?)
     }
 
-    pub async fn update_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        material_name: &str,
-        data: Value,
-    ) -> AppResult<()> {
-        self.repos
-            .resource
-            .update_material(school_id, admin_id, material_name, data.clone())
-            .await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            material_name,
-            "UPDATE",
-            data
-        ).await;
+    pub async fn update_material(&self, school_id: &str, admin_id: &str, material_name: &str, data: Value) -> AppResult<()> {
+        self.repos.resource.update_material(school_id, admin_id, material_name, data.clone()).await?;
+        log_audit(&self.repos.audit, school_id, admin_id, "MATERIAL", material_name, "UPDATE", data).await;
         Ok(())
     }
 
-    pub async fn delete_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        material_name: &str,
-    ) -> AppResult<()> {
+    pub async fn delete_material(&self, school_id: &str, admin_id: &str, material_name: &str) -> AppResult<()> {
         let material = self.repos.resource.get_material(school_id, material_name).await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
-
         self.repos.resource.delete_material(school_id, material_name).await?;
-
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            material_name,
-            "DELETE",
-            material
-        ).await;
-
+        log_audit(&self.repos.audit, school_id, admin_id, "MATERIAL", material_name, "DELETE", material).await;
         Ok(())
     }
 
-    pub async fn sell_material(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        material_name: &str,
-        data: Value,
-    ) -> AppResult<()> {
+    pub async fn sell_material(&self, school_id: &str, admin_id: &str, material_name: &str, data: Value) -> AppResult<()> {
         self.repos.resource.sell_material(school_id, admin_id, material_name, data.clone()).await?;
-        
-        let _ = self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "MATERIAL",
-            material_name,
-            "SELL",
-            data
-        ).await;
+        log_audit(&self.repos.audit, school_id, admin_id, "MATERIAL", material_name, "SELL", data).await;
         Ok(())
     }
 
-    pub async fn bulk_create_materials(
-        &self,
-        school_id: &str,
-        admin_id: &str,
-        data: Vec<Value>,
-    ) -> AppResult<Value> {
+    pub async fn bulk_create_materials(&self, school_id: &str, admin_id: &str, data: Vec<Value>) -> AppResult<Value> {
         let mut success_count = 0;
         let mut fail_count = 0;
         let mut results = Vec::new();
-
         for (i, row) in data.into_iter().enumerate() {
             match self.create_material(school_id, admin_id, row.clone()).await {
                 Ok(_) => {
                     success_count += 1;
-                    results.push(serde_json::json!({"row": i + 1, "status": "success"}));
+                    results.push(json!({"row": i + 1, "status": "success"}));
                 }
                 Err(e) => {
                     fail_count += 1;
-                    results.push(serde_json::json!({"row": i + 1, "status": "error", "message": e.to_string()}));
+                    results.push(json!({"row": i + 1, "status": "error", "message": e.to_string()}));
                 }
             }
         }
-
-        Ok(serde_json::json!({
+        Ok(json!({
             "success": true,
             "message": format!("{} materials imported, {} failed", success_count, fail_count),
             "results": results,

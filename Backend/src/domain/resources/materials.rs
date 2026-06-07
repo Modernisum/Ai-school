@@ -6,17 +6,11 @@ use axum::{
 use crate::middleware::rls::TenantContext;
 use serde_json::{json, Value};
 use crate::error::AppResult;
-use crate::models::resource::CreateMaterialRequest;
-use serde::Deserialize;
-use crate::domain::operations::responsibility_ws::{publish_responsibility_event, ResponsibilityEvent};
+use crate::models::resource::{CreateMaterialRequest, MaterialListQuery};
+use crate::domain::operations::responsibility_ws::publish_responsibility_event;
+use crate::models::operations::ResponsibilityEvent;
 
-#[derive(Debug, Deserialize)]
-pub struct MaterialListQuery {
-    pub search: Option<String>,
-    pub filter: Option<String>,
-    pub page: Option<i64>,
-    pub limit: Option<i64>,
-}
+
 
 
 pub async fn list_materials(

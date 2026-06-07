@@ -1,5 +1,6 @@
-use crate::domain::system::api_keys::ApiKeyContext;
+use crate::models::system::ApiKeyContext;
 use crate::AppState;
+use crate::models::system::{StudentSearchParams, EmployeeSearchParams};
 use axum::{
     extract::{Extension, Path, Query, State},
     response::IntoResponse,
@@ -16,21 +17,7 @@ fn has_scope(scopes: &[String], required: &str) -> bool {
 
 /* ════════════ QUERY PARAMS ════════════ */
 
-#[derive(Deserialize)]
-pub struct StudentSearchParams {
-    pub search: Option<String>,
-    pub class_name: Option<String>,
-    pub section: Option<String>,
-    pub status: Option<String>,
-    pub page: Option<i32>,
-    pub limit: Option<i32>,
-}
 
-#[derive(Deserialize)]
-pub struct EmployeeSearchParams {
-    pub search: Option<String>,
-    pub employee_type: Option<String>,
-}
 
 /* ════════════ STUDENT ENDPOINTS ════════════ */
 

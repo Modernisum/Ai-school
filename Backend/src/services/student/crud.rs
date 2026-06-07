@@ -1,7 +1,9 @@
 use crate::repository::Repositories;
 use crate::services::traits::*;
+use crate::services::utils::{audit::log_audit, global_sync};
 use async_trait::async_trait;
 use serde_json::{json, Value};
+use sqlx::Row;
 use std::sync::Arc;
 
 use super::queries::StudentQueries;
@@ -103,29 +105,10 @@ impl StudentCrud {
         );
 
         // Audit Log
-        self.repos.audit.log_action(
-            school_id,
-            admin_id,
-            "STUDENT",
-            &student_id,
-            "CREATE",
-            result.clone()
-        ).await.ok(); // ok() because logging failure shouldn't crash the main action
+        log_audit(&self.repos.audit, school_id, admin_id, "STUDENT", &student_id, "CREATE", result.clone()).await;
 
         // Sync to Global User Table
-        let sync_data = json!({
-            "phone": student_data["contact"],
-            "email": student_data["email"],
-            "alternativePhone": student_data["alternativeContact"],
-            "aadhaarNumber": student_data["aadhaarNumber"],
-            "schoolId": school_id,
-            "userId": student_id,
-            "userType": "student",
-            "name": student_data["name"],
-            "className": student_data["className"],
-            "imageUrl": student_data["imageUrl"]
-        });
-        self.repos.global_user.sync_user(sync_data).await.ok();
+        global_sync::sync(&self.repos.global_user, global_sync::build_sync_payload("student", school_id, &student_id, &student_data)).await;
 
         // Fetch responsibilities to embed in the response
         let responsibilities = self.repos.responsibility.get_student_responsibilities(school_id, &student_id).await.unwrap_or(vec![]);
@@ -242,31 +225,9 @@ impl StudentCrud {
             {
                 Ok(_) => {
                     successful += 1;
-                    // Log each creation (optional, could be noisy but accurate)
                     let student_id_str = student_data["studentId"].as_str().unwrap_or("unknown").to_string();
-                    self.repos.audit.log_action(
-                        school_id,
-                        admin_id,
-                        "STUDENT",
-                        &student_id_str,
-                        "CREATE_BULK",
-                        student_data.clone()
-                    ).await.ok();
-
-                    // Sync to Global
-                    let sync_data = json!({
-                        "phone": student_data["contact"],
-                        "email": student_data["email"],
-                        "alternativePhone": student_data["alternativeContact"],
-                        "aadhaarNumber": student_data["aadhaarNumber"],
-                        "schoolId": school_id,
-                        "userId": student_id_str,
-                        "userType": "student",
-                        "name": student_data["name"],
-                        "className": student_data["className"],
-                        "imageUrl": student_data["imageUrl"]
-                    });
-                    self.repos.global_user.sync_user(sync_data).await.ok();
+                    log_audit(&self.repos.audit, school_id, admin_id, "STUDENT", &student_id_str, "CREATE_BULK", student_data.clone()).await;
+                    global_sync::sync(&self.repos.global_user, global_sync::build_sync_payload("student", school_id, &student_id_str, &student_data)).await;
                 },
                 Err(e) => {
                     failed += 1;
@@ -390,14 +351,7 @@ impl StudentCrud {
         
         // Universal Audit Log
         if !delta.as_object().map(|obj| obj.is_empty()).unwrap_or(true) {
-            self.repos.audit.log_action(
-                school_id,
-                admin_id,
-                "STUDENT",
-                student_id,
-                "UPDATE",
-                delta.clone()
-            ).await.ok();
+            log_audit(&self.repos.audit, school_id, admin_id, "STUDENT", student_id, "UPDATE", delta.clone()).await;
             
             // Legacy Audit History Logic
             self.repos.student.add_history(school_id, student_id, rev_no, final_data.clone(), delta).await?;
@@ -411,19 +365,7 @@ impl StudentCrud {
 
         // Sync Updated Data to Global
         let updated_student = self.repos.student.get_student(school_id, student_id).await?.unwrap_or(final_data);
-        let sync_data = json!({
-            "phone": updated_student["contact"],
-            "email": updated_student["email"],
-            "alternativePhone": updated_student["alternativeContact"],
-            "aadhaarNumber": updated_student["aadhaarNumber"],
-            "schoolId": school_id,
-            "userId": student_id,
-            "userType": "student",
-            "name": updated_student["name"],
-            "className": updated_student["className"],
-            "imageUrl": updated_student["imageUrl"]
-        });
-        self.repos.global_user.sync_user(sync_data).await.ok();
+        global_sync::sync(&self.repos.global_user, global_sync::build_sync_payload("student", school_id, student_id, &updated_student)).await;
 
         Ok(())
     }
@@ -447,21 +389,14 @@ impl StudentCrud {
                 .await?;
 
             // Audit Log
-            self.repos.audit.log_action(
-                school_id,
-                admin_id,
-                "STUDENT",
-                student_id,
-                "DELETE",
-                s
-            ).await.ok();
+            log_audit(&self.repos.audit, school_id, admin_id, "STUDENT", student_id, "DELETE", s).await;
 
             if !class_name.is_empty() {
                 self.resequence_roll_numbers(school_id, &class_name).await?;
             }
 
             // Remove from Global
-            self.repos.global_user.delete_user(school_id, student_id, "student").await.ok();
+            global_sync::delete(&self.repos.global_user, school_id, student_id, "student").await;
         }
         Ok(())
     }
@@ -471,31 +406,32 @@ impl StudentCrud {
         school_id: &str,
         class_name: &str,
     ) -> AppResult<()> {
-        let students = self.repos.student.get_students(school_id).await?;
-        let mut class_students: Vec<Value> = students
-            .into_iter()
-            .filter(|s| s["className"].as_str() == Some(class_name))
-            .collect();
+        let section_size = 60;
 
-        class_students.sort_by_key(|s| s["rollNumber"].as_i64().unwrap_or(0));
+        // Get all students for this class, ordered by current roll number
+        let students = sqlx::query(
+            "SELECT student_id, roll_number FROM students WHERE school_id = $1 AND class_name = $2 ORDER BY roll_number"
+        )
+        .bind(school_id)
+        .bind(class_name)
+        .fetch_all(&self.repos.db_client.pool)
+        .await?;
 
-        for (i, student) in class_students.into_iter().enumerate() {
+        for (i, student) in students.iter().enumerate() {
             let new_roll = (i + 1) as i32;
-            let section_size = 60;
+            let (new_section, room_index, _full_section_name) = self.queries.calculate_room_and_section(new_roll, section_size, class_name);
+            let sid: String = student.get("student_id");
 
-            let (new_section, room_index, full_section_name) = self.queries.calculate_room_and_section(new_roll, section_size, class_name);
-            
-            let sid = student["studentId"].as_str().unwrap_or("");
-            let update_data = json!({
-                "rollNumber": new_roll,
-                "section": new_section,
-                "roomNumber": room_index.to_string(),
-                "sectionRoom": full_section_name
-            });
-            self.repos
-                .student
-                .update_student(school_id, sid, update_data)
-                .await?;
+            sqlx::query(
+                "UPDATE students SET roll_number = $1, section = $2, room_number = $3 WHERE school_id = $4 AND student_id = $5"
+            )
+            .bind(new_roll)
+            .bind(&new_section)
+            .bind(room_index.to_string())
+            .bind(school_id)
+            .bind(&sid)
+            .execute(&self.repos.db_client.pool)
+            .await?;
         }
         Ok(())
     }

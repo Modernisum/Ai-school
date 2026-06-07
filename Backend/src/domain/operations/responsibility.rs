@@ -6,8 +6,8 @@ use axum::{
 };
 use crate::middleware::rls::TenantContext;
 use crate::domain::operations::responsibility_ws::publish_responsibility_event;
-use crate::domain::operations::responsibility_ws::ResponsibilityEvent;
-use crate::services::responsibility_notifications::ResponsibilityNotificationService;
+use crate::models::operations::ResponsibilityEvent;
+use crate::services::responsibility::notifications::ResponsibilityNotificationService;
 use serde_json::{json, Value};
 use sqlx::Row;
 use std::collections::HashMap;

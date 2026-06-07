@@ -1,4 +1,4 @@
-use crate::logic::encryption_middleware::DataEncryptionMiddleware;
+use crate::logic::encryption_helper::DataEncryptionHelper;
 use crate::services::traits::*;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -7,23 +7,23 @@ use std::sync::Arc;
 /// Student service wrapper that adds encryption/decryption to sensitive data
 pub struct EncryptedStudentService {
     inner: Arc<dyn StudentService + Send + Sync>,
-    encryption_middleware: Arc<DataEncryptionMiddleware>,
+    encryption_helper: Arc<DataEncryptionHelper>,
 }
 
 impl EncryptedStudentService {
     pub fn new(
         inner: Arc<dyn StudentService + Send + Sync>,
-        encryption_middleware: Arc<DataEncryptionMiddleware>,
+        encryption_helper: Arc<DataEncryptionHelper>,
     ) -> Self {
         Self {
             inner,
-            encryption_middleware,
+            encryption_helper,
         }
     }
 
     /// Encrypt sensitive data before passing to inner service
     async fn encrypt_student_data(&self, school_id: &str, data: Value) -> AppResult<Value> {
-        self.encryption_middleware
+        self.encryption_helper
             .encrypt_student_data(school_id, data)
             .await
             .map_err(|e| AppError::Internal(format!("Encryption failed: {}", e)))
@@ -31,7 +31,7 @@ impl EncryptedStudentService {
 
     /// Decrypt sensitive data after retrieving from inner service
     async fn decrypt_student_data(&self, school_id: &str, data: Value) -> AppResult<Value> {
-        self.encryption_middleware
+        self.encryption_helper
             .decrypt_student_data(school_id, data)
             .await
             .map_err(|e| AppError::Internal(format!("Decryption failed: {}", e)))
@@ -81,7 +81,7 @@ impl EncryptedStudentService {
             if let Some(aadhaar) = student.get("aadhaarNumber") {
                 if let Some(aadhaar_str) = aadhaar.as_str() {
                     if aadhaar_str.starts_with("enc:") {
-                        match self.encryption_middleware.encryption_service().decrypt_field(
+                        match self.encryption_helper.encryption_service().decrypt_field(
                             school_id,
                             "aadhaarNumber",
                             aadhaar_str,
@@ -113,7 +113,7 @@ impl EncryptedStudentService {
                 if let Some(contact_value) = student.get(field) {
                     if let Some(contact_str) = contact_value.as_str() {
                         if contact_str.starts_with("enc:") {
-                            match self.encryption_middleware.encryption_service().decrypt_field(
+                            match self.encryption_helper.encryption_service().decrypt_field(
                                 school_id,
                                 field,
                                 contact_str,

@@ -17,4 +17,5 @@ pub trait AuthService: Send + Sync {
         new_pass: &str,
     ) -> AppResult<()>;
     async fn change_id(&self, old_id: &str, pass: &str, new_id: &str) -> AppResult<String>;
+    async fn change_password_self(&self, school_id: &str, new_password: &str) -> AppResult<()>;
 }

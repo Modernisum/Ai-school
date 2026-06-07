@@ -12,10 +12,10 @@ const getInitialTheme = () => {
 
 const getInitialScreenScale = () => {
   try {
-    const saved = localStorage.getItem('screenScale');
-    return saved ? parseFloat(saved) : 1.0;
+    const saved = localStorage.getItem('screenScale_v2');
+    return saved ? parseFloat(saved) : 0.9;
   } catch (e) {
-    return 1.0;
+    return 0.9;
   }
 };
 
@@ -46,7 +46,7 @@ const settingsSlice = createSlice({
     setScreenScale: (state, action) => {
       const scale = Math.min(Math.max(parseFloat(action.payload), 0.5), 2.0);
       state.screenScale = scale;
-      localStorage.setItem('screenScale', scale.toString());
+      localStorage.setItem('screenScale_v2', scale.toString());
     },
     toggleTheme: (state) => {
       state.theme = {
@@ -56,8 +56,8 @@ const settingsSlice = createSlice({
       localStorage.setItem('theme', JSON.stringify(state.theme));
     },
     resetScreenScale: (state) => {
-      state.screenScale = 1.0;
-      localStorage.setItem('screenScale', '1.0');
+      state.screenScale = 0.9;
+      localStorage.setItem('screenScale_v2', '0.9');
     }
   },
 });

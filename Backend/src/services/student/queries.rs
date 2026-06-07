@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 
 use crate::repository::Repositories;
+use crate::services::utils::delta::calculate_delta;
 
 pub struct StudentQueries {
     pub repos: Arc<Repositories>,
@@ -13,29 +14,7 @@ impl StudentQueries {
     }
 
     pub fn calculate_delta(&self, old: &Value, new: &Value) -> Value {
-        let mut delta = json!({});
-        if let (Some(old_obj), Some(new_obj)) = (old.as_object(), new.as_object()) {
-            for (key, new_val) in new_obj {
-                // Skip tracking fields that are internal or updated automatically
-                if key == "updatedAt" || key == "updated_at" || key == "createdAt" || key == "created_at" {
-                    continue;
-                }
-                if let Some(old_val) = old_obj.get(key) {
-                    if old_val != new_val {
-                        delta[key] = json!({
-                            "old": old_val.clone(),
-                            "new": new_val.clone()
-                        });
-                    }
-                } else {
-                    delta[key] = json!({
-                        "old": null,
-                        "new": new_val.clone()
-                    });
-                }
-            }
-        }
-        delta
+        calculate_delta(old, new)
     }
 
     pub fn get_section_for_roll(&self, roll: i32, section_size: i32) -> String {

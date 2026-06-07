@@ -88,19 +88,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
             .bind(school_id)
             .fetch_all(&mut *conn)
             .await?;
-        Ok(rows.into_iter().map(|r| {
-            json!({
-                "studentId": r.get::<String, _>("student_id"),
-                "name": r.get::<Option<String>, _>("name"),
-                "className": r.get::<Option<String>, _>("class_name"),
-                "rollNumber": r.get::<Option<i32>, _>("roll_number"),
-                "section": r.get::<Option<String>, _>("section"),
-                "status": r.get::<String, _>("status"),
-                "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                "studentType": r.get::<Option<String>, _>("student_type"),
-                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
-            })
-        }).collect())
+        Ok(rows.into_iter().map(|r| map_student_summary(&r)).collect())
     }
 
     async fn get_students_paginated(
@@ -191,19 +179,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         
         let rows = data_query_builder.fetch_all(&mut *conn).await?;
         
-        let students: JsonList = rows.into_iter().map(|r| {
-            json!({
-                "studentId": r.get::<String, _>("student_id"),
-                "name": r.get::<Option<String>, _>("name"),
-                "className": r.get::<Option<String>, _>("class_name"),
-                "rollNumber": r.get::<Option<i32>, _>("roll_number"),
-                "section": r.get::<Option<String>, _>("section"),
-                "status": r.get::<String, _>("status"),
-                "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
-                "studentType": r.get::<Option<String>, _>("student_type"),
-                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
-            })
-        }).collect();
+        let students: JsonList = rows.into_iter().map(|r| map_student_summary(&r)).collect();
         
         Ok((students, total_count))
     }
@@ -236,38 +212,7 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
             .bind(student_id)
             .fetch_optional(&mut *conn)
             .await?;
-        Ok(row.map(|r| {
-            json!({
-                "studentId": r.get::<String, _>("student_id"),
-                "name": r.get::<Option<String>, _>("name"),
-                "className": r.get::<Option<String>, _>("class_name"),
-                "rollNumber": r.get::<Option<i32>, _>("roll_number"),
-                "section": r.get::<Option<String>, _>("section"),
-                "status": r.get::<String, _>("status"),
-                "dob": r.get::<Option<String>, _>("dob"),
-                "gender": r.get::<Option<String>, _>("gender"),
-                "fatherName": r.get::<Option<String>, _>("father_name"),
-                "motherName": r.get::<Option<String>, _>("mother_name"),
-                "aadhaarNumber": r.get::<Option<String>, _>("aadhaar_number"),
-                "addressLine1": r.get::<Option<String>, _>("address_line1"),
-                "addressCity": r.get::<Option<String>, _>("address_city"),
-                "addressState": r.get::<Option<String>, _>("address_state"),
-                "addressPincode": r.get::<Option<String>, _>("address_pincode"),
-                "tcNumber": r.get::<Option<String>, _>("tc_number"),
-                "contact": r.get::<Option<String>, _>("contact"),
-                "alternativeContact": r.get::<Option<String>, _>("alternative_contact"),
-                "email": r.get::<Option<String>, _>("email"),
-                "transportEnabled": r.get::<Option<bool>, _>("transport_enabled").unwrap_or(false),
-                "transportRadius": r.get::<Option<String>, _>("transport_radius"),
-                "additionalSubjects": r.get::<Option<String>, _>("additional_subjects"),
-                "admissionDate": r.get::<Option<String>, _>("admission_date"),
-                "roomNumber": r.get::<Option<String>, _>("room_number"),
-                "studentType": r.get::<Option<String>, _>("student_type"),
-                "enrolledSubjects": r.get::<Option<Value>, _>("enrolled_subjects").unwrap_or(json!([])),
-                "totalFees": r.get::<Option<bigdecimal::BigDecimal>, _>("total_fees").map(|d| d.to_string()).unwrap_or_else(|| "0.00".to_string()),
-                "profileImageUrl": r.get::<Option<String>, _>("profile_image_url"),
-            })
-        }))
+        Ok(row.map(|r| map_student_detail(&r)))
     }
 
     async fn update_student(
@@ -483,28 +428,14 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let row = sqlx::query("SELECT id, student_id, rev_no, snapshot, delta, created_at FROM student_history WHERE school_id = $1 AND id = $2")
             .bind(school_id).bind(id).fetch_optional(&mut *conn).await?;
-        Ok(row.map(|r| json!({
-            "id": r.get::<i32, _>("id"), 
-            "studentId": r.get::<String, _>("student_id"), 
-            "revisionNo": r.get::<i32, _>("rev_no"),
-            "snapshot": r.get::<Value, _>("snapshot"),
-            "delta": r.get::<Value, _>("delta"),
-            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
-        })))
+        Ok(row.map(|r| map_student_history(&r)))
     }
 
     async fn get_all_student_history(&self, school_id: &str) -> Result<JsonList, AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
         let rows = sqlx::query("SELECT id, student_id, rev_no, snapshot, delta, created_at FROM student_history WHERE school_id = $1 ORDER BY created_at DESC")
             .bind(school_id).fetch_all(&mut *conn).await?;
-        Ok(rows.into_iter().map(|r| json!({
-            "id": r.get::<i32, _>("id"), 
-            "studentId": r.get::<String, _>("student_id"), 
-            "revisionNo": r.get::<i32, _>("rev_no"),
-            "snapshot": r.get::<Value, _>("snapshot"),
-            "delta": r.get::<Value, _>("delta"),
-            "date": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
-        })).collect())
+        Ok(rows.into_iter().map(|r| map_student_history(&r)).collect())
     }
 
     async fn get_student_profile(
@@ -640,4 +571,62 @@ impl crate::repository::traits::StudentRepository for PostgresStudentRepository 
         let count: i64 = row.get("count");
         Ok(count)
     }
+}
+
+fn map_student_summary(row: &sqlx::postgres::PgRow) -> Value {
+    json!({
+        "studentId": row.get::<String, _>("student_id"),
+        "name": row.get::<Option<String>, _>("name"),
+        "className": row.get::<Option<String>, _>("class_name"),
+        "rollNumber": row.get::<Option<i32>, _>("roll_number"),
+        "section": row.get::<Option<String>, _>("section"),
+        "status": row.get::<String, _>("status"),
+        "createdAt": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339(),
+        "studentType": row.get::<Option<String>, _>("student_type"),
+        "profileImageUrl": row.get::<Option<String>, _>("profile_image_url"),
+    })
+}
+
+fn map_student_detail(row: &sqlx::postgres::PgRow) -> Value {
+    json!({
+        "studentId": row.get::<String, _>("student_id"),
+        "name": row.get::<Option<String>, _>("name"),
+        "className": row.get::<Option<String>, _>("class_name"),
+        "rollNumber": row.get::<Option<i32>, _>("roll_number"),
+        "section": row.get::<Option<String>, _>("section"),
+        "status": row.get::<String, _>("status"),
+        "dob": row.get::<Option<String>, _>("dob"),
+        "gender": row.get::<Option<String>, _>("gender"),
+        "fatherName": row.get::<Option<String>, _>("father_name"),
+        "motherName": row.get::<Option<String>, _>("mother_name"),
+        "aadhaarNumber": row.get::<Option<String>, _>("aadhaar_number"),
+        "addressLine1": row.get::<Option<String>, _>("address_line1"),
+        "addressCity": row.get::<Option<String>, _>("address_city"),
+        "addressState": row.get::<Option<String>, _>("address_state"),
+        "addressPincode": row.get::<Option<String>, _>("address_pincode"),
+        "tcNumber": row.get::<Option<String>, _>("tc_number"),
+        "contact": row.get::<Option<String>, _>("contact"),
+        "alternativeContact": row.get::<Option<String>, _>("alternative_contact"),
+        "email": row.get::<Option<String>, _>("email"),
+        "transportEnabled": row.get::<Option<bool>, _>("transport_enabled").unwrap_or(false),
+        "transportRadius": row.get::<Option<String>, _>("transport_radius"),
+        "additionalSubjects": row.get::<Option<String>, _>("additional_subjects"),
+        "admissionDate": row.get::<Option<String>, _>("admission_date"),
+        "roomNumber": row.get::<Option<String>, _>("room_number"),
+        "studentType": row.get::<Option<String>, _>("student_type"),
+        "enrolledSubjects": row.get::<Option<Value>, _>("enrolled_subjects").unwrap_or(json!([])),
+        "totalFees": row.get::<Option<bigdecimal::BigDecimal>, _>("total_fees").map(|d| d.to_string()).unwrap_or_else(|| "0.00".to_string()),
+        "profileImageUrl": row.get::<Option<String>, _>("profile_image_url"),
+    })
+}
+
+fn map_student_history(row: &sqlx::postgres::PgRow) -> Value {
+    json!({
+        "id": row.get::<i32, _>("id"),
+        "studentId": row.get::<String, _>("student_id"),
+        "revisionNo": row.get::<i32, _>("rev_no"),
+        "snapshot": row.get::<Value, _>("snapshot"),
+        "delta": row.get::<Value, _>("delta"),
+        "date": row.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
+    })
 }

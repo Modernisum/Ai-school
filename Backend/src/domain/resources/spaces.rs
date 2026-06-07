@@ -1,6 +1,7 @@
-use crate::models::resource::{CreateSpaceRequest, CreateSpaceCategoryRequest};
+use crate::models::resource::{CreateSpaceRequest, CreateSpaceCategoryRequest, RemoveSpaceMaterialReq, TransferMaterialRequest};
 use crate::AppState;
-use crate::domain::operations::responsibility_ws::{publish_responsibility_event, ResponsibilityEvent};
+use crate::domain::operations::responsibility_ws::publish_responsibility_event;
+use crate::models::operations::ResponsibilityEvent;
 
 use axum::{
     extract::{Path, State},
@@ -240,11 +241,7 @@ pub async fn get_space_materials(
     })))
 }
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemoveSpaceMaterialReq {
-    pub quantity: i32,
-}
+
 
 pub async fn remove_space_material(
     State(state): State<AppState>,
@@ -342,12 +339,7 @@ pub async fn update_space_budget(
     Ok(Json(json!({"success": true, "message": "Budget updated successfully"})))
 }
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransferMaterialRequest {
-    pub to_space: String,
-    pub quantity: i32,
-}
+
 
 pub async fn transfer_space_material(
     State(state): State<AppState>,

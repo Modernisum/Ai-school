@@ -63,8 +63,7 @@ impl crate::repository::traits::AcademicRepository for PostgresAcademicRepositor
 
     async fn add_student_exam(&self, school_id: &str, student_id: &str, data: Value) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'exam', $2, 'submit_marks', $3)")
-            .bind(school_id).bind(student_id).bind(data).execute(&mut *conn).await?;
+        crate::repository::base::insert_audit_log(&mut *conn, school_id, "exam", student_id, "submit_marks", data).await?;
         Ok(())
     }
 

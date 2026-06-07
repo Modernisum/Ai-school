@@ -39,3 +39,25 @@ pub struct Material {
     pub need_unit: i32,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoveSpaceMaterialReq {
+    pub quantity: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferMaterialRequest {
+    pub to_space: String,
+    pub quantity: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MaterialListQuery {
+    pub search: Option<String>,
+    pub filter: Option<String>,
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+}
+

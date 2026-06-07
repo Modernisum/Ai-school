@@ -292,3 +292,28 @@ impl PostgresBaseRepository {
         Ok(Value::Object(map))
     }
 }
+
+pub async fn insert_audit_log<'a, E>(
+    executor: E,
+    school_id: &str,
+    target_type: &str,
+    target_id: &str,
+    action: &str,
+    data: Value,
+) -> Result<(), AppError>
+where
+    E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+{
+    sqlx::query(
+        "INSERT INTO audit_logs (school_id, target_type, target_id, action, data) 
+         VALUES ($1, $2, $3, $4, $5)"
+    )
+    .bind(school_id)
+    .bind(target_type)
+    .bind(target_id)
+    .bind(action)
+    .bind(data)
+    .execute(executor)
+    .await?;
+    Ok(())
+}

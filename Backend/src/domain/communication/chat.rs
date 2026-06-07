@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::models::communication::{SendMessageRequest, ChatMessage, AiHistoryEntry};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -11,27 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::Row;
 
-#[derive(Deserialize)]
-pub struct SendMessageRequest {
-    pub sender_id: String,
-    pub sender_type: String, // 'employee', 'student', 'parent'
-    pub receiver_id: String,
-    pub receiver_type: String, // 'employee', 'student', 'parent', 'group'
-    pub content: String,
-    pub attachment_url: Option<String>,
-}
 
-#[derive(Serialize)]
-pub struct ChatMessage {
-    pub message_id: i32,
-    pub sender_id: String,
-    pub sender_type: String,
-    pub receiver_id: String,
-    pub receiver_type: String,
-    pub content: String,
-    pub attachment_url: Option<String>,
-    pub created_at: String,
-}
 
 pub async fn send_message(
     State(state): State<AppState>,
@@ -138,12 +119,7 @@ pub async fn get_history(
 
 // ── AI Chat History ──────────────────────────────────────────────────────
 
-#[derive(Serialize)]
-pub struct AiHistoryEntry {
-    pub role: String,
-    pub content: String,
-    pub created_at: String,
-}
+
 
 pub async fn get_ai_chat_history(
     State(state): State<AppState>,

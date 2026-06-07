@@ -14,23 +14,9 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 use crate::AppState;
+use crate::models::system::{WsAuthPayload, WsEnvelope};
 
-#[derive(Deserialize)]
-pub struct WsAuthPayload {
-    pub token: String,
-    pub school_id: String,
-    pub vehicle_id: Option<String>,
-}
 
-#[derive(Serialize)]
-struct WsEnvelope {
-    version: &'static str,
-    #[serde(rename = "type")]
-    msg_type: String,
-    id: String,
-    timestamp: String,
-    payload: serde_json::Value,
-}
 
 impl WsEnvelope {
     fn new(msg_type: &str, payload: serde_json::Value) -> Self {

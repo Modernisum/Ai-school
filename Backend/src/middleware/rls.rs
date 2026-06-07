@@ -1,34 +1,23 @@
 use axum::{
     extract::{Request, State},
     middleware::Next,
-    response::Response,
+    response::{IntoResponse, Response},
     http::StatusCode,
 };
 use crate::AppState;
-use jsonwebtoken;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct AdminJwtClaims {
-    sub: String,
-    school_id: String,
-    role: String,
-    permissions: Vec<String>,
-    exp: usize,
-}
 
 pub async fn rls_middleware(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     mut request: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, Response> {
     let request_id = request.headers()
         .get("X-Request-ID")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    let school_id = request.headers()
+    let mut school_id = request.headers()
         .get("X-School-ID")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
@@ -37,27 +26,78 @@ pub async fn rls_middleware(
         .get("X-Is-Super-Admin")
         .and_then(|v| v.to_str().ok()) == Some("true");
 
-    let admin_id = request.headers()
+    let mut admin_id = request.headers()
         .get("X-Admin-ID")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
         .unwrap_or_else(|| "unknown_admin".to_string());
 
-    // Try to extract permissions from JWT Authorization header
+    let path = request.uri().path();
+    let is_public = path == "/"
+        || path == "/health"
+        || path.starts_with("/uploads")
+        || path.starts_with("/api/cms")
+        || path.starts_with("/api/geo")
+        || path.starts_with("/api/setup")
+        || path.starts_with("/api/admin")
+        || path.ends_with("/login")
+        || path == "/api/auth/school/forgot-password"
+        || path == "/api/auth/school/verify-otp"
+        || path == "/api/auth/school/change-password"
+        || path == "/api/auth/school/support"
+        || path.ends_with("/mobile/select-profile");
+
     let mut user_permissions = vec!["authenticated".to_string()];
+    let mut has_valid_token = false;
+
     if let Some(auth_header) = request.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set in production");
-                if let Ok(jwt_data) = jsonwebtoken::decode::<AdminJwtClaims>(
-                    token,
-                    &jsonwebtoken::DecodingKey::from_secret(secret.as_ref()),
-                    &jsonwebtoken::Validation::default(),
-                ) {
-                    user_permissions = jwt_data.claims.permissions;
+                match state.services.auth.verify_token(token).await {
+                    Ok(token_data) => {
+                        has_valid_token = true;
+                        
+                        // Extract school_id if available in token
+                        if let Some(sid) = token_data["schoolId"].as_str() {
+                            school_id = Some(sid.to_string());
+                        }
+                        
+                        // Extract user/admin ID
+                        if let Some(sub) = token_data["sub"].as_str() {
+                            admin_id = sub.to_string();
+                        }
+                        
+                        // Extract permissions/roles
+                        if let Some(perms) = token_data["permissions"].as_array() {
+                            user_permissions = perms.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+                        } else if let Some(role) = token_data["role"].as_str() {
+                            user_permissions = vec![role.to_string()];
+                        }
+                    }
+                    Err(e) => {
+                        if !is_public {
+                            return Err((
+                                StatusCode::UNAUTHORIZED,
+                                axum::Json(serde_json::json!({
+                                    "success": false,
+                                    "message": format!("Invalid or expired token: {}", e)
+                                }))
+                            ).into_response());
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if !has_valid_token && !is_public {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            axum::Json(serde_json::json!({
+                "success": false,
+                "message": "Missing authorization token"
+            }))
+        ).into_response());
     }
 
     let span = tracing::Span::current();
@@ -75,7 +115,7 @@ pub async fn rls_middleware(
 
     let mut response = next.run(request).await;
     
-    // 7. Propagate Request ID back to client
+    // Propagate Request ID back to client
     if let Ok(header_value) = request_id.parse() {
         response.headers_mut().insert("X-Request-ID", header_value);
     }

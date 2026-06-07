@@ -1,0 +1,31 @@
+[
+  {
+    "approved_at": null,
+    "approved_by": null,
+    "chapters": null,
+    "checked_at": null,
+    "checked_by": null,
+    "checker_assigned_at": null,
+    "checker_employee_id": null,
+    "class_name": null,
+    "created_at": "2026-06-05T05:27:08.020847+00:00",
+    "duration_minutes": null,
+    "end_date": "2026-05-20",
+    "exam_date": null,
+    "exam_id": null,
+    "exam_time": null,
+    "exam_type": "MAIN",
+    "id": 1,
+    "name": "Mid-Term Academic",
+    "paper": null,
+    "quarter": "Q1",
+    "results_published": false,
+    "results_published_at": null,
+    "school_id": "689225",
+    "start_date": "2026-05-15",
+    "status": "DRAFT",
+    "strictness_level": "medium",
+    "subject_name": null,
+    "updated_at": "2026-06-05T05:27:08.020847+00:00"
+  }
+]

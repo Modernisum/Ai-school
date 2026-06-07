@@ -33,9 +33,9 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/school", get(school::get_school_details)
             .put(school::update_school_self)
             .patch(school::change_password_self))
-        .route("/school/notification", get(crate::super_admin::routes::get_school_notification)
-            .delete(crate::super_admin::routes::clear_school_notification))
-        .route("/school/notify/global", get(crate::super_admin::routes::get_global_notification))
+        .route("/school/notification", get(crate::domain::admin::get_school_notification)
+            .delete(crate::domain::admin::clear_school_notification))
+        .route("/school/notify/global", get(crate::domain::admin::get_global_notification))
         // Setup
         .route("/setup", get(setup::get_setup))
         .route("/setup/school", post(setup::setup_school_handler))
@@ -65,7 +65,7 @@ pub fn routes(state: AppState) -> Router<AppState> {
             .route("/attendance/:date", get(public_api::get_attendance_public))
             .layer(axum::middleware::from_fn_with_state(
                 state.clone(),
-                api_keys::api_key_auth,
+                crate::middleware::api_key_auth::api_key_auth,
             )))
         // Transport
         .nest("/transport", transport::router())
@@ -90,5 +90,26 @@ pub fn routes(state: AppState) -> Router<AppState> {
             .route("/:id", get(generic_handlers::generic_get)
                 .put(generic_handlers::generic_update)
                 .delete(generic_handlers::generic_delete)))
+        .with_state(state)
+}
+
+pub fn legacy_routes(state: AppState) -> Router<AppState> {
+    Router::new()
+        .route("/geo/countries", get(geo::get_countries))
+        .route("/geo/states/:country_id", get(geo::get_states))
+        .route("/geo/districts/:state_id", get(geo::get_districts))
+        .route("/geo/export", get(geo::export_geo_json))
+        .route("/geo/import", post(geo::import_geo_json).layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::rls::rls_middleware,
+        )))
+        .route("/setup/school", post(setup::setup_school_handler))
+        .route("/setup/:schoolId", get(setup::get_setup))
+        .route("/school/:schoolId/notification", get(crate::domain::admin::get_school_notification)
+            .delete(crate::domain::admin::clear_school_notification))
+        .route("/global/notification", get(crate::domain::admin::get_global_notification))
+        .route("/dashboard/:schoolId/leaves/proxy-suggestions", get(crate::domain::leave::leave::get_proxy_suggestions))
+        .route("/dashboard/:schoolId/overview", get(dashboard::get_dashboard_overview))
+        .route("/dashboard/:schoolId/stats", get(dashboard::get_dashboard_stats))
         .with_state(state)
 }

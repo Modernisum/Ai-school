@@ -40,7 +40,7 @@ export const useScreenScale = () => {
   return {
     scale,
     setScale: (newScale) => dispatch(setScreenScale(newScale)),
-    resetScale: () => dispatch(setScreenScale(1.0))
+    resetScale: () => dispatch(setScreenScale(0.9))
   };
 };
 

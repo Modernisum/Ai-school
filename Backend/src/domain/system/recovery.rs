@@ -4,18 +4,13 @@ use axum::{
     Json,
 };
 use crate::AppState;
+use crate::models::system::AuditQuery;
 
 use serde::Deserialize;
 use serde_json::json;
 use crate::error::AppResult;
 
-#[derive(Deserialize)]
-pub struct AuditQuery {
-    #[allow(dead_code)]
-    pub module: Option<String>,
-    #[allow(dead_code)]
-    pub limit: Option<i64>,
-}
+
 
 pub async fn list_student_history(
     State(state): State<AppState>,

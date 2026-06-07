@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::models::operations::{TaskFilter, UpdateTaskStatusPayload};
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse,
@@ -6,16 +7,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-#[derive(Deserialize)]
-pub struct TaskFilter {
-    pub start_date: Option<String>,
-    pub end_date: Option<String>,
-}
 
-#[derive(Deserialize)]
-pub struct UpdateTaskStatusPayload {
-    pub status: String,
-}
 
 pub async fn list_tasks(
     State(state): State<AppState>,

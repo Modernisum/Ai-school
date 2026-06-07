@@ -5,6 +5,36 @@ use serde_json::{json, Value};
 use sqlx::Row;
 use std::sync::Arc;
 
+fn map_school_fee(r: &sqlx::postgres::PgRow) -> Value {
+    json!({
+        "id": r.get::<String, _>("id"),
+        "feesName": r.get::<String, _>("fees_name"),
+        "feesReason": r.get::<Option<String>, _>("fees_reason"),
+        "feesPeriod": r.get::<Option<String>, _>("fees_period"),
+        "feesAmount": r.get::<f64, _>("fees_amount"),
+        "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
+    })
+}
+
+fn map_pending_fee(r: &sqlx::postgres::PgRow) -> Value {
+    json!({
+        "studentId": r.get::<String, _>("student_id"),
+        "studentName": r.get::<String, _>("name"),
+        "className": r.get::<String, _>("class_name"),
+        "section": r.get::<Option<String>, _>("section"),
+        "totalFees": r.get::<f64, _>("total_fees"),
+        "pendingAmount": r.get::<f64, _>("pending_amount"),
+    })
+}
+
+fn map_student_fee(r: &sqlx::postgres::PgRow) -> Value {
+    json!({"studentId": r.get::<String, _>("student_id"), "totalFees": r.get::<f64, _>("total_fees"), "pendingAmount": r.get::<f64, _>("pending_amount")})
+}
+
+fn map_custom_fee(r: &sqlx::postgres::PgRow) -> Value {
+    json!({"id": r.get::<String, _>("id"), "feeName": r.get::<String, _>("fee_name"), "amount": r.get::<f64, _>("amount")})
+}
+
 pub struct PostgresFeeRepository {
     pub client: Arc<DbClient>,
 }
@@ -39,14 +69,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
         .fetch_all(&mut *conn)
         .await?;
 
-        Ok(rows.into_iter().map(|r| json!({
-            "id": r.get::<String, _>("id"),
-            "feesName": r.get::<String, _>("fees_name"),
-            "feesReason": r.get::<Option<String>, _>("fees_reason"),
-            "feesPeriod": r.get::<Option<String>, _>("fees_period"),
-            "feesAmount": r.get::<f64, _>("fees_amount"),
-            "createdAt": r.get::<chrono::DateTime<chrono::Utc>, _>("created_at").to_rfc3339()
-        })).collect())
+        Ok(rows.into_iter().map(|r| map_school_fee(&r)).collect())
     }
 
     async fn get_pending_fees(
@@ -83,19 +106,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
                 .await?
         };
 
-        Ok(rows
-            .into_iter()
-            .map(|r| {
-                json!({
-                    "studentId": r.get::<String, _>("student_id"),
-                    "studentName": r.get::<String, _>("name"),
-                    "className": r.get::<String, _>("class_name"),
-                    "section": r.get::<Option<String>, _>("section"),
-                    "totalFees": r.get::<f64, _>("total_fees"),
-                    "pendingAmount": r.get::<f64, _>("pending_amount"),
-                })
-            })
-            .collect())
+        Ok(rows.into_iter().map(|r| map_pending_fee(&r)).collect())
     }
 
     async fn add_student_fee(
@@ -122,7 +133,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
                 .bind(student_id)
                 .fetch_optional(&mut *conn)
                 .await?;
-        Ok(row.map(|r| json!({"studentId": r.get::<String, _>("student_id"), "totalFees": r.get::<f64, _>("total_fees"), "pendingAmount": r.get::<f64, _>("pending_amount")})))
+        Ok(row.map(|r| map_student_fee(&r)))
     }
 
     async fn update_student_fee(
@@ -175,8 +186,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'fee', $2, $3, $4)")
-            .bind(school_id).bind(fee_id).bind(action).bind(data).execute(&mut *conn).await?;
+        crate::repository::base::insert_audit_log(&mut *conn, school_id, "fee", fee_id, action, data).await?;
         Ok(())
     }
 
@@ -205,7 +215,7 @@ impl crate::repository::traits::FeeRepository for PostgresFeeRepository {
         .bind(school_id)
         .fetch_all(&mut *conn)
         .await?;
-        Ok(rows.into_iter().map(|r| json!({"id": r.get::<String, _>("id"), "feeName": r.get::<String, _>("fee_name"), "amount": r.get::<f64, _>("amount")})).collect())
+        Ok(rows.into_iter().map(|r| map_custom_fee(&r)).collect())
     }
 
     async fn delete_custom_fee(&self, school_id: &str, fee_id: &str) -> Result<(), AppError> {

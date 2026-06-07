@@ -539,8 +539,9 @@ impl SchemaSetup {
         // Seed default super admin if table is empty
         let default_password = std::env::var("DEFAULT_SUPERADMIN_PASSWORD")
             .unwrap_or_else(|_| "admin@123".to_string());
-        let initial_hash = bcrypt::hash(&default_password, 10)
-            .unwrap_or_else(|_| "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/lfkj7.wU3Kz9s1PFe".to_string());
+        let initial_hash = crate::logic::password_helper::hash_password(&default_password)
+            .unwrap_or_else(|_| "$argon2id$v=19$m=19456,t=2,p=1$placeholder$placeholder".to_string());
+
         sqlx::query(
             "INSERT INTO super_admin (username, password_hash)
              VALUES ('superadmin', $1)

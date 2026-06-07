@@ -29,9 +29,9 @@
   --bg-glow-2: rgba(255, 255, 255, 0.003);
   --bg-glow-3: rgba(255, 255, 255, 0.003);
 
-  --font-scale: 1;
-  --scale-factor: 1;
-  --ui-scale: 1;
+  --font-scale: 0.9;
+  --scale-factor: 0.9;
+  --ui-scale: 0.9;
 
   --radius-xs: 6px;
   --radius-sm: 8px;

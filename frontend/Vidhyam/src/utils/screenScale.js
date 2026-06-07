@@ -4,13 +4,13 @@
  */
 
 export const DENSITY_PRESETS = {
-  ULTRA: 0.75,
-  DENSE: 0.85,
-  STANDARD: 1.0,
-  RELAXED: 1.15
+  ULTRA: 0.7,
+  DENSE: 0.8,
+  STANDARD: 0.9,
+  RELAXED: 1.05
 };
 
-const STORAGE_KEY = 'vidhyam_ui_scale';
+const STORAGE_KEY = 'vidhyam_ui_scale_v2';
 
 /**
  * Initialize font scale based on stored preference or screen width
@@ -19,12 +19,12 @@ export const initializeScreenScale = () => {
   try {
     const calculateAutoScale = () => {
       const screenWidth = window.innerWidth;
-      if (screenWidth < 640) return 0.85; 
-      if (screenWidth < 768) return 0.9;  
-      if (screenWidth < 1024) return 0.95; 
-      if (screenWidth < 1280) return 1.0;  
-      if (screenWidth < 1536) return 1.05; 
-      return 1.1; 
+      if (screenWidth < 640) return 0.75; 
+      if (screenWidth < 768) return 0.8;  
+      if (screenWidth < 1024) return 0.85; 
+      if (screenWidth < 1280) return 0.9;  
+      if (screenWidth < 1536) return 0.95; 
+      return 1.0; 
     };
 
     const applyScale = () => {
@@ -77,7 +77,7 @@ export const updateScreenScale = (scale) => {
     return validScale;
   } catch (error) {
     console.error('Failed to update screen scale:', error);
-    return 1.0;
+    return 0.9;
   }
 };
 
@@ -91,10 +91,10 @@ export const getCurrentScreenScale = () => {
     if (savedScale) return parseFloat(savedScale);
     
     const root = document.documentElement;
-    const scale = parseFloat(root.style.getPropertyValue('--scale-factor') || '1');
-    return isNaN(scale) ? 1.0 : scale;
+    const scale = parseFloat(root.style.getPropertyValue('--scale-factor') || '0.9');
+    return isNaN(scale) ? 0.9 : scale;
   } catch (error) {
-    return 1.0;
+    return 0.9;
   }
 };
 

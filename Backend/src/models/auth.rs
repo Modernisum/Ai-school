@@ -81,3 +81,15 @@ pub struct SelectProfileRequest {
     #[serde(alias = "userType", alias = "user_type")]
     pub user_type: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileListQuery {
+    pub school_id: Option<String>,
+    pub user_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DeleteByUrlQuery {
+    pub url: String,
+}
+

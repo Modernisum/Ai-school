@@ -41,13 +41,7 @@ pub async fn change_password_self(
         return Err(AppError::Validation("Password must be at least 6 characters".into()));
     }
 
-    let hashed = bcrypt::hash(new_password, 10).map_err(|e| AppError::Internal(e.to_string()))?;
-
-    sqlx::query("UPDATE auth SET password = $1, updated_at = NOW() WHERE school_id = $2")
-        .bind(&hashed)
-        .bind(&school_id)
-        .execute(&state.db.pool)
-        .await?;
+    state.services.auth.change_password_self(&school_id, new_password).await?;
 
     Ok(Json(json!({"success": true, "message": "Password updated successfully"})))
 }

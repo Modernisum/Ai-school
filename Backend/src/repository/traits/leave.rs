@@ -23,4 +23,12 @@ pub trait LeaveRepository: Send + Sync {
         days: i32,
     ) -> Result<(), AppError>;
     async fn delete_leave_application(&self, school_id: &str, leave_id: &str) -> Result<(), AppError>;
+    async fn find_matching_employees(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        exclude_employee_id: &str,
+        from_date: &str,
+        to_date: &str,
+    ) -> Result<Vec<Value>, AppError>;
 }

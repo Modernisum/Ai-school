@@ -2,7 +2,6 @@ use crate::error::{AppError, AppResult};
 use crate::models::auth::*;
 use crate::AppState;
 use axum::{extract::State, Json};
-use bcrypt::verify;
 use rand::{distributions::Alphanumeric, Rng};
 use serde_json::{json, Value};
 
@@ -30,7 +29,7 @@ fn generate_token_id() -> String {
 
 #[allow(dead_code)]
 async fn verify_password(stored: &str, candidate: &str) -> bool {
-    verify(candidate, stored).unwrap_or(false)
+    crate::logic::password_helper::verify_password(candidate, stored).unwrap_or(false)
 }
 
 /* ----------------------- Handlers ----------------------- */

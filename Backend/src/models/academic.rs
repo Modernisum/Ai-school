@@ -54,3 +54,19 @@ pub struct ExamModel {
     pub created_at: String,
     pub updated_at: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateTimetableRequest {
+    pub class_id: String,
+    pub class_name: String,
+    pub periods_per_day: Option<usize>,
+    pub working_days: Option<Vec<usize>>,
+    pub requirements: Vec<crate::logic::timetable_engine::SubjectRequirement>,
+    pub season: Option<String>,
+    pub start_time: Option<String>,
+    pub end_time: Option<String>,
+    pub period_duration_minutes: Option<i32>,
+    pub break_duration_minutes: Option<i32>,
+}
+

@@ -95,4 +95,25 @@ pub trait AttendanceService: Send + Sync {
         date: &str,
         role: Option<&str>,
     ) -> AppResult<Value>;
+
+    // QR Attendance
+    async fn create_qr_token(
+        &self,
+        school_id: &str,
+        class_id: Option<&str>,
+        admin_id: &str,
+        expires_in_minutes: u32,
+    ) -> AppResult<Value>;
+
+    async fn verify_qr_and_mark(
+        &self,
+        school_id: &str,
+        token: &str,
+        user_id: &str,
+        role: &str,
+        admin_id: &str,
+        latitude: f64,
+        longitude: f64,
+        accuracy: Option<f64>,
+    ) -> AppResult<Value>;
 }

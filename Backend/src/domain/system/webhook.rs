@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::models::system::CreateWebhookRequest;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -7,12 +8,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::Row;
-#[derive(Deserialize)]
-pub struct CreateWebhookRequest {
-    pub url: String,
-    pub secret: String,
-    pub event_types: Vec<String>,
-}
+
 
 /// POST /api/school/:schoolId/webhooks
 pub async fn register_webhook(

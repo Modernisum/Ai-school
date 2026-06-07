@@ -9,7 +9,7 @@ use axum::{
 pub fn routes(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/:userType/login", post(auth::login_handler))
-        .route("/school/support", post(crate::super_admin::routes::create_support_request))
+        .route("/school/support", post(crate::domain::admin::create_support_request))
         .route("/school/verify-token", post(auth::verify_token_handler))
         .route("/school/logout", post(auth::logout_handler))
         .route("/school/set-security", post(auth::set_security_handler))

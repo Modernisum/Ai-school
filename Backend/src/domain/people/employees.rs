@@ -1,4 +1,4 @@
-use crate::models::user::CreateEmployeeRequest;
+use crate::models::people::CreateEmployeeRequest;
 use crate::AppState;
 use axum::{
     extract::{Path, State},

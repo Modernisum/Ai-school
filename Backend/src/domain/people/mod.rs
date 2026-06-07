@@ -35,3 +35,28 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/employees/:employeeId/salary", post(emppay::set_base_salary))
         .with_state(state)
 }
+
+pub fn legacy_routes(state: AppState) -> Router<AppState> {
+    Router::new()
+        .route("/students/:schoolId", get(students::list_students).post(students::create_student))
+        .route("/students/:schoolId/validate", post(students::validate_student))
+        .route("/students/:schoolId/bulk", post(students::bulk_import_students))
+        .route("/students/:schoolId/paginated", get(students::list_students_paginated))
+        .route("/students/:schoolId/studentIds", get(students::list_student_ids))
+        .route("/students/:schoolId/:studentId", get(students::get_student).put(students::update_student).delete(students::delete_student))
+        .route("/students/:schoolId/form-status", get(student_forms::get_form_status))
+        .route("/students/:schoolId/:studentId/auto-fill", get(student_forms::auto_fill_form))
+        .route("/students/:schoolId/:studentId/form-complete", post(student_forms::mark_form_complete))
+        
+        .route("/employees/:schoolId", get(employees::list_employees).post(employees::create_employee))
+        .route("/employees/:schoolId/validate", post(employees::validate_employee))
+        .route("/employees/:schoolId/bulk", post(employees::bulk_import_employees))
+        .route("/employees/:schoolId/:employeeId", get(employees::get_employee).put(employees::update_employee).delete(employees::delete_employee))
+        .route("/employees/:schoolId/:employeeId/salary-breakdown", get(emppay::get_salary_breakdown))
+        .route("/employees/:schoolId/:employeeId/bonus", post(emppay::add_bonus))
+        .route("/employees/:schoolId/:employeeId/aid", post(emppay::add_aid))
+        .route("/employees/:schoolId/:employeeId/close-month", post(emppay::auto_close_month))
+        .route("/employees/:schoolId/:employeeId/pay", post(emppay::record_salary_payment))
+        .route("/employees/:schoolId/:employeeId/salary", post(emppay::set_base_salary))
+        .with_state(state)
+}

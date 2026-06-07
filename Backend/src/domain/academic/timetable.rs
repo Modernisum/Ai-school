@@ -1,5 +1,6 @@
-﻿use crate::logic::timetable_engine::{SubjectRequirement, TimetableEngine};
+use crate::logic::timetable_engine::{SubjectRequirement, TimetableEngine};
 use crate::AppState;
+use crate::models::academic::GenerateTimetableRequest;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -8,19 +9,7 @@ use axum::{
 use serde::Deserialize;
 use serde_json::json;
 
-#[derive(Debug, Deserialize)]
-pub struct GenerateTimetableRequest {
-    pub class_id: String,
-    pub class_name: String,
-    pub periods_per_day: Option<usize>,
-    pub working_days: Option<Vec<usize>>,
-    pub requirements: Vec<SubjectRequirement>,
-    pub season: Option<String>,
-    pub start_time: Option<String>,
-    pub end_time: Option<String>,
-    pub period_duration_minutes: Option<i32>,
-    pub break_duration_minutes: Option<i32>,
-}
+
 
 pub async fn generate_timetable(
     State(state): State<AppState>,

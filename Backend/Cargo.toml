@@ -29,7 +29,6 @@ tracing-subscriber = "0.3"
 hex = "0.4"
 hmac = "0.12"
 sha1 = "0.10"
-bcrypt = "0.15"
 printpdf = "0.5"
 jsonwebtoken = "9.2"
 validator = { version = "0.19", features = ["derive"] }

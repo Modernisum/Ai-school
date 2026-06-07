@@ -3,6 +3,7 @@ mod crud;
 mod history;
 mod metrics;
 pub mod notifications;
+pub mod responsibility_permissions;
 
 pub use bulk_operations::ResponsibilityBulkOperations;
 pub use crud::ResponsibilityCrud;

@@ -1,4 +1,4 @@
-use crate::models::user::CreateStudentRequest;
+use crate::models::people::{CreateStudentRequest, StudentListQuery, StudentPaginatedQuery};
 use crate::AppState;
 use axum::{
     extract::{Path, State, Query},
@@ -177,19 +177,7 @@ pub async fn list_students(
     Ok(Json(json!({"success": true, "data": students})))
 }
 
-#[derive(serde::Deserialize)]
-pub struct StudentListQuery {
-    pub section: Option<String>,
-}
 
-#[derive(serde::Deserialize)]
-pub struct StudentPaginatedQuery {
-    pub page: Option<i32>,
-    pub limit: Option<i32>,
-    pub space_id: Option<String>,
-    pub status: Option<String>,
-    pub search: Option<String>,
-}
 
 pub async fn list_students_by_space(
     State(state): State<AppState>,

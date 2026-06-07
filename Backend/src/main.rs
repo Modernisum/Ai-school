@@ -10,14 +10,12 @@ mod backup;
 mod db;
 mod domain;
 mod error;
-mod extractors;
 mod logic;
 mod middleware;
 mod models;
 mod repository;
-mod routes;
+
 mod services;
-pub mod super_admin;
 pub mod query;
 pub mod response;
 
@@ -99,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Starting background tasks (Billing & Backup)...");
-    crate::super_admin::billing_job::start_daily_billing_job(state.clone()).await;
+    crate::services::super_admin::start_daily_billing_job(state.clone()).await;
 
     // Start 15-min auto backup
     let backup_clone = backup_svc.clone();
@@ -110,18 +108,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start combined background workers (Analytics, Webhooks, Cleanup)
     crate::background_jobs::start_background_workers(state.clone()).await;
 
-    let app = routes::create_router(state);
+    let app = domain::create_router(state);
 
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    // Seeding (Temporary)
-    let _ = sqlx::query("INSERT INTO schools (school_id, school_name, wallet_balance, status) VALUES ('689225', 'Test School', 1000, 'active') ON CONFLICT (school_id) DO NOTHING")
-        .execute(&db_client.pool).await;
-    let _ = sqlx::query("INSERT INTO auth (school_id, password) VALUES ('689225', '$2b$10$RzVqIytcb7w2Nyr31aUAauU.AVAk70tHMjHBgovoX4kYMmyMbnZDS') ON CONFLICT (school_id) DO NOTHING")
-        .execute(&db_client.pool).await;
 
     println!("listening on {}", addr);
 

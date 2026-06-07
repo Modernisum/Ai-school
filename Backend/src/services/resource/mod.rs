@@ -12,7 +12,8 @@ pub use equipment::EquipmentOperations;
 pub use inventory::InventoryOperations;
 pub use material::MaterialOperations;
 
-use super::material_monitor::MaterialMonitor;
+pub mod material_monitor;
+use material_monitor::MaterialMonitor;
 
 pub struct PostgresResourceService {
     pub repos: Arc<Repositories>,

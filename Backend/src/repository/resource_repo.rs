@@ -238,8 +238,7 @@ impl ResourceRepository for PostgresResourceRepository {
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, $2, $3, $4, $5)")
-            .bind(school_id).bind("material").bind(material_id).bind(action).bind(data).execute(&mut *conn).await?;
+        crate::repository::base::insert_audit_log(&mut *conn, school_id, "material", material_id, action, data).await?;
         Ok(())
     }
 

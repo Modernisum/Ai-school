@@ -6,29 +6,10 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::AppState;
+use crate::models::system::{Country, StateModel, District};
 use std::fs;
 
-#[derive(Serialize, sqlx::FromRow)]
-pub struct Country {
-    pub id: i32,
-    pub name: String,
-    pub code: String,
-    pub phone_code: String,
-}
 
-#[derive(Serialize, sqlx::FromRow)]
-pub struct StateModel {
-    pub id: i32,
-    pub country_id: Option<i32>,
-    pub name: String,
-}
-
-#[derive(Serialize, sqlx::FromRow)]
-pub struct District {
-    pub id: i32,
-    pub state_id: Option<i32>,
-    pub name: String,
-}
 
 // GET /api/geo/countries
 pub async fn get_countries(State(state): State<AppState>) -> Json<Vec<Country>> {

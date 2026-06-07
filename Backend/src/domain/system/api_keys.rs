@@ -1,4 +1,6 @@
 use crate::AppState;
+use crate::models::system::CreateApiKeyRequest;
+
 use axum::{
     extract::{Path, State},
     response::IntoResponse,
@@ -12,11 +14,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use sqlx::Row;
 
-#[derive(Deserialize)]
-pub struct CreateApiKeyRequest {
-    pub name: String,
-    pub scopes: Vec<String>,
-}
+
 
 /// POST /api/school/:schoolId/api-keys
 /// Generates a new API key. Returns the plaintext key ONLY ONCE.
@@ -131,60 +129,3 @@ pub async fn revoke_api_key(
     }
 }
 
-// --- Middleware Implementation ---
-
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use axum::middleware::Next;
-
-#[derive(Debug, Clone)]
-pub struct ApiKeyContext {
-    pub school_id: String,
-    pub scopes: Vec<String>,
-}
-
-pub async fn api_key_auth(
-    State(state): State<AppState>,
-    mut req: Request<Body>,
-    next: Next,
-) -> Result<impl IntoResponse, StatusCode> {
-    let auth_header = req
-        .headers()
-        .get("X-API-Key")
-        .and_then(|h| h.to_str().ok())
-        .ok_or(StatusCode::UNAUTHORIZED)?;
-
-    // 1. Hash the incoming key to compare with stored hash
-    let mut hasher = Sha256::new();
-    hasher.update(auth_header.as_bytes());
-    let key_hash = hex::encode(hasher.finalize());
-
-    // 2. Look up key in DB
-    let row = sqlx::query(
-        "SELECT school_id, scopes, status FROM api_keys WHERE key_hash = $1 AND status = 'active'",
-    )
-    .bind(&key_hash)
-    .fetch_optional(&state.db.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    .ok_or(StatusCode::UNAUTHORIZED)?;
-
-    let school_id: String = row.get("school_id");
-    let scopes: Vec<String> = row.get("scopes");
-
-    // 3. Update last_used_at (fire and forget)
-    let pool_clone = state.db.pool.clone();
-    let key_hash_clone = key_hash.clone();
-    tokio::spawn(async move {
-        let _ = sqlx::query("UPDATE api_keys SET last_used_at = NOW() WHERE key_hash = $1")
-            .bind(key_hash_clone)
-            .execute(&pool_clone)
-            .await;
-    });
-
-    // 4. Inject context into request extensions
-    req.extensions_mut()
-        .insert(ApiKeyContext { school_id, scopes });
-
-    Ok(next.run(req).await)
-}

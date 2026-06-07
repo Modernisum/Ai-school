@@ -26,6 +26,7 @@ pub mod notification_repo;
 pub mod storage_repo;
 pub mod query_builder;
 pub mod grading_repo;
+pub mod config_repo;
 
 use std::sync::Arc;
 pub use traits::*;

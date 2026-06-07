@@ -232,12 +232,12 @@ export default function GeneralSettings() {
                   }
                 }}
                 options={[
-                  { value: 0.75, label: "75% (Small)" },
-                  { value: 0.85, label: "85% (Compact)" },
-                  { value: 1.0, label: "100% (Normal)" },
-                  { value: 1.15, label: "115% (Large)" },
-                  { value: 1.25, label: "125% (Ultra)" },
-                  { value: 1.5, label: "150% (Accessible)" },
+                  { value: 0.7, label: "70% (Tiny)" },
+                  { value: 0.8, label: "80% (Compact)" },
+                  { value: 0.9, label: "90% (Normal)" },
+                  { value: 1.0, label: "100% (Large)" },
+                  { value: 1.15, label: "115% (Extra Large)" },
+                  { value: 1.3, label: "130% (Ultra)" },
                 ]}
               />
             </SettingRow>

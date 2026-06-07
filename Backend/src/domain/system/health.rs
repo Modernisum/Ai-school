@@ -16,71 +16,11 @@ use std::sync::OnceLock;
 use std::time::Instant;
 
 use crate::AppState;
+use crate::models::system::{
+    UnifiedHealthResponse, DependencyChecks, DependencyStatus, SystemMetrics, HealthAlert,
+};
 
-// ── Response Structures ──────────────────────────────────────────────────
 
-/// Unified health response – the single source of truth for system status
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UnifiedHealthResponse {
-    /// "healthy" | "degraded" | "critical"
-    pub status: String,
-    pub timestamp: String,
-    pub version: String,
-    pub service: String,
-    pub uptime_seconds: u64,
-    pub uptime_human: String,
-    /// Individual dependency check results
-    pub dependencies: DependencyChecks,
-    /// System-level performance metrics
-    pub metrics: SystemMetrics,
-    /// Non-empty when any dependency is unhealthy
-    pub alerts: Vec<HealthAlert>,
-}
-
-/// All dependency check results
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DependencyChecks {
-    pub database: DependencyStatus,
-    pub redis: DependencyStatus,
-    pub storage: DependencyStatus,
-}
-
-/// Status of a single dependency
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DependencyStatus {
-    /// "healthy" | "unhealthy"
-    pub status: String,
-    /// Response latency in milliseconds
-    pub latency_ms: u128,
-    /// Human-readable detail (e.g. connection info, error message)
-    pub detail: Option<String>,
-}
-
-/// System-level performance metrics
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SystemMetrics {
-    /// PostgreSQL pool size
-    pub db_pool_size: u32,
-    /// Active DB connections
-    pub db_pool_active: u32,
-    /// Idle DB connections
-    pub db_pool_idle: u32,
-    /// Process memory usage in bytes (approximate)
-    pub memory_usage_bytes: u64,
-    /// Memory usage formatted human-readable
-    pub memory_usage_human: String,
-    /// Total check duration in ms
-    pub total_check_duration_ms: u128,
-}
-
-/// An alert for a failing or degraded dependency
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct HealthAlert {
-    pub severity: String, // "critical" | "warning"
-    pub dependency: String,
-    pub message: String,
-    pub timestamp: String,
-}
 
 // ── Global start time (set once at process launch) ──────────────────────
 

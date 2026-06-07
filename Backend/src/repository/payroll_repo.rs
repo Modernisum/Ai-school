@@ -88,8 +88,7 @@ impl crate::repository::traits::PayrollRepository for PostgresPayrollRepository 
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, $2, $3, $4, $5)")
-            .bind(school_id).bind("payroll").bind(employee_id).bind(action).bind(data).execute(&mut *conn).await?;
+        crate::repository::base::insert_audit_log(&mut *conn, school_id, "payroll", employee_id, action, data).await?;
         Ok(())
     }
 }

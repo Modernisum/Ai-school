@@ -167,4 +167,66 @@ impl LeaveRepository for PostgresLeaveRepository {
             .await?;
         Ok(())
     }
+
+    async fn find_matching_employees(
+        &self,
+        school_id: &str,
+        responsibility_id: &str,
+        exclude_employee_id: &str,
+        from_date: &str,
+        to_date: &str,
+    ) -> Result<Vec<Value>, AppError> {
+        let mut conn = self.client.acquire_tenant_connection(school_id).await?;
+        let rows = sqlx::query(
+            r#"SELECT
+                e.employee_id,
+                e.data->>'name' as employee_name,
+                e.employee_type,
+                CASE WHEN er2.employee_id IS NOT NULL THEN true ELSE false END as already_assigned,
+                COALESCE(
+                    (SELECT COUNT(*) FROM responsibility_coverage rc2
+                     WHERE rc2.covering_employee_id = e.employee_id
+                       AND rc2.status IN ('assigned', 'accepted')
+                       AND rc2.coverage_period_start <= $5::date
+                       AND rc2.coverage_period_end >= $4::date),
+                    0
+                )::int as active_coverages
+            FROM employees e
+            LEFT JOIN employee_responsibilities er2
+                ON er2.school_id = e.school_id
+                AND er2.employee_id = e.employee_id
+                AND er2.responsibility_id = $2
+            WHERE e.school_id = $1
+              AND e.employee_type = (
+                  SELECT employee_type FROM responsibilities
+                  WHERE school_id = $1 AND responsibility_id = $2
+              )
+              AND e.employee_id != $3
+            ORDER BY already_assigned DESC, active_coverages ASC
+            LIMIT 10"#,
+        )
+        .bind(school_id)
+        .bind(responsibility_id)
+        .bind(exclude_employee_id)
+        .bind(from_date)
+        .bind(to_date)
+        .fetch_all(&mut *conn)
+        .await?;
+
+        Ok(rows.iter().map(|row| {
+            let already_assigned: bool = row.get("already_assigned");
+            let active_coverages: i32 = row.get("active_coverages");
+            let mut match_score = 0i32;
+            if already_assigned { match_score += 50; }
+            if active_coverages == 0 { match_score += 30; }
+            json!({
+                "employeeId": row.get::<String, _>("employee_id"),
+                "employeeName": row.get::<String, _>("employee_name"),
+                "employeeType": row.get::<String, _>("employee_type"),
+                "alreadyAssigned": already_assigned,
+                "activeCoverages": active_coverages,
+                "matchScore": match_score
+            })
+        }).collect())
+    }
 }

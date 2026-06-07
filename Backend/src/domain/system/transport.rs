@@ -13,22 +13,9 @@ use sqlx::Row;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;
+use crate::models::system::{GpsUpdatePayload, GpsEvent, PickupRequest};
 
-#[derive(Deserialize)]
-pub struct GpsUpdatePayload {
-    pub lat: f64,
-    pub lng: f64,
-    pub speed: Option<f64>,
-}
 
-#[derive(Serialize, Deserialize)]
-pub struct GpsEvent {
-    pub vehicle_id: String,
-    pub lat: f64,
-    pub lng: f64,
-    pub speed: f64,
-    pub timestamp: u64,
-}
 
 pub async fn publish_gps(
     State(_state): State<AppState>,
@@ -107,12 +94,7 @@ pub async fn get_driver_students(
     }
 }
 
-#[derive(Deserialize)]
-pub struct PickupRequest {
-    pub student_ids: Vec<String>,
-    pub status: String,
-    pub vehicle_id: Option<String>,
-}
+
 
 pub async fn mark_pickup_attendance(
     State(state): State<AppState>,

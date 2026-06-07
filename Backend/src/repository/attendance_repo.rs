@@ -1,5 +1,7 @@
 use crate::db::DbClient;
 use crate::repository::traits::*;
+use crate::logic::time_utils::parse_to_rfc3339;
+
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use sqlx::{Row, Acquire, Column};
@@ -58,21 +60,7 @@ impl crate::repository::traits::AttendanceRepository for PostgresAttendanceRepos
         .bind(user_id)
         .fetch_all(&mut *conn)
         .await?;
-        Ok(rows
-            .into_iter()
-            .map(|r| {
-                let date = r.get::<chrono::NaiveDate, _>("date");
-                json!({
-                    "date": date.to_string(),
-                    "status": r.get::<String, _>("status"),
-                    "month": date.month(),
-                    "year": date.year(),
-                    "inTime": r.get::<Option<chrono::DateTime<chrono::Utc>>, _>("in_time"),
-                    "outTime": r.get::<Option<chrono::DateTime<chrono::Utc>>, _>("out_time"),
-                    "totalTime": r.get::<Option<String>, _>("total_time")
-                })
-            })
-            .collect())
+        Ok(rows.into_iter().map(|r| map_attendance(&r)).collect())
     }
 
     async fn delete_attendance(
@@ -104,12 +92,7 @@ impl crate::repository::traits::AttendanceRepository for PostgresAttendanceRepos
         data: Value,
     ) -> Result<(), AppError> {
         let mut conn = self.client.acquire_tenant_connection(school_id).await?;
-        sqlx::query("INSERT INTO audit_logs (school_id, target_type, target_id, action, data) VALUES ($1, 'attendance', $2, $3, $4)")
-            .bind(school_id)
-            .bind(user_id)
-            .bind(action)
-            .bind(data)
-            .execute(&mut *conn).await?;
+        crate::repository::base::insert_audit_log(&mut *conn, school_id, "attendance", user_id, action, data).await?;
         Ok(())
     }
     
@@ -341,35 +324,15 @@ impl crate::repository::traits::AttendanceRepository for PostgresAttendanceRepos
     }
 }
 
-// Helper to normalize input time string (like "09:00") into a timezone-aware RFC3339 timestamp combined with YYYY-MM-DD date.
-fn parse_to_rfc3339(time_str: &str, date_str: &str) -> Option<String> {
-    let t_trimmed = time_str.trim();
-    if t_trimmed.is_empty() {
-        return None;
-    }
-    // If it's already a full RFC3339 date-time
-    if chrono::DateTime::parse_from_rfc3339(t_trimmed).is_ok() {
-        return Some(t_trimmed.to_string());
-    }
-    // Otherwise, check if it is in HH:MM or HH:MM:SS format
-    let parts: Vec<&str> = t_trimmed.split(':').collect();
-    if parts.len() >= 2 {
-        let hr = parts[0].parse::<u32>().ok()?;
-        let min = parts[1].parse::<u32>().ok()?;
-        let sec = if parts.len() > 2 { parts[2].parse::<u32>().ok().unwrap_or(0) } else { 0 };
-        if hr < 24 && min < 60 && sec < 60 {
-            // date_str should be in YYYY-MM-DD format
-            let date_parts: Vec<&str> = date_str.split('-').collect();
-            if date_parts.len() == 3 {
-                let yr = date_parts[0].parse::<i32>().ok()?;
-                let mo = date_parts[1].parse::<u32>().ok()?;
-                let dy = date_parts[2].parse::<u32>().ok()?;
-                if mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31 {
-                    // Assemble into UTC RFC3339 string
-                    return Some(format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", yr, mo, dy, hr, min, sec));
-                }
-            }
-        }
-    }
-    None
+fn map_attendance(row: &sqlx::postgres::PgRow) -> Value {
+    let date = row.get::<chrono::NaiveDate, _>("date");
+    json!({
+        "date": date.to_string(),
+        "status": row.get::<String, _>("status"),
+        "month": date.month(),
+        "year": date.year(),
+        "inTime": row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("in_time"),
+        "outTime": row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("out_time"),
+        "totalTime": row.get::<Option<String>, _>("total_time")
+    })
 }

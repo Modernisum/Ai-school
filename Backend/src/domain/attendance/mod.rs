@@ -29,3 +29,11 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .route("/auto-assign-teacher", get(attendance_automation::auto_assign_teacher))
         .with_state(state)
 }
+
+pub fn legacy_routes(state: AppState) -> Router<AppState> {
+    Router::new()
+        .route("/school/:schoolId/holidays", get(attendance::list_school_holidays).post(attendance::create_school_holiday))
+        .route("/school/:schoolId/holidays/check", get(attendance::check_school_holiday))
+        .route("/school/:schoolId/holidays/:holidayId", delete(attendance::delete_school_holiday))
+        .with_state(state)
+}

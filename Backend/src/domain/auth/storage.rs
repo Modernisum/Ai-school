@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::models::auth::{FileListQuery, DeleteByUrlQuery};
 use axum::{
     extract::{Path, Query, State, Multipart},
     response::IntoResponse,
@@ -24,11 +25,7 @@ const ALLOWED_MIME_TYPES: &[&str] = &[
 ];
 
 
-#[derive(Deserialize)]
-pub struct FileListQuery {
-    pub school_id: Option<String>,
-    pub user_id: Option<String>,
-}
+
 
 /// POST /api/storage/upload
 /// Uploads a file via multipart form data.
@@ -339,10 +336,7 @@ pub async fn delete_file(
     }
 }
 
-#[derive(Deserialize)]
-pub struct DeleteByUrlQuery {
-    pub url: String,
-}
+
 
 /// DELETE /api/storage/file-by-url
 pub async fn delete_file_by_url(

@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::error::AppResult;
 use crate::middleware::rls::TenantContext;
+use crate::models::system::NotificationListQuery;
 use axum::{
     extract::{Path, Query, State, Extension},
     Json,
@@ -8,19 +9,13 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-#[derive(Deserialize)]
-pub struct ListQuery {
-    pub category: Option<String>,
-    pub unread_only: Option<bool>,
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
+
 
 pub async fn list_notifications(
     State(state): State<AppState>,
     Extension(tenant_ctx): Extension<TenantContext>,
     Path(school_id): Path<String>,
-    Query(query): Query<ListQuery>,
+    Query(query): Query<NotificationListQuery>,
 ) -> AppResult<Json<Value>> {
     let list = state.services.notification.list_notifications(
         &school_id,

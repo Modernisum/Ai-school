@@ -1,6 +1,9 @@
 use sqlx::postgres::PgPoolOptions;
 use std::env;
-use bcrypt::{hash, verify};
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString, PasswordHasher, PasswordVerifier, PasswordHash},
+    Argon2,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +26,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     let admin_pwd = "admin@123";
-    let admin_hash = hash(admin_pwd, 10).unwrap();
+    let salt = SaltString::generate(&mut OsRng);
+    let admin_hash = Argon2::default()
+        .hash_password(admin_pwd.as_bytes(), &salt)
+        .expect("argon2 hash failed")
+        .to_string();
     println!("Ensuring auth for school 689225 exists with password: {}", admin_pwd);
     sqlx::query(
         "INSERT INTO auth (school_id, password, password_temp) 
@@ -62,7 +69,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .fetch_one(&pool)
         .await?;
     let db_hash: String = sqlx::Row::get(&auth_row, "password");
-    println!("Bcrypt verification of 'admin@123' against DB hash: {}", verify("admin@123", &db_hash).unwrap());
+    let parsed = PasswordHash::new(&db_hash).expect("invalid hash");
+    let is_valid = Argon2::default().verify_password("admin@123".as_bytes(), &parsed).is_ok();
+    println!("Argon2id verification of 'admin@123' against DB hash: {}", is_valid);
 
     Ok(())
 }
