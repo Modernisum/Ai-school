@@ -1,55 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-// --- WebSocket (ws.rs) ---
-#[derive(Debug, Deserialize, Serialize)]
-pub struct WsAuthPayload {
-    pub token: String,
-    pub school_id: String,
-    pub vehicle_id: Option<String>,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WsEnvelope {
-    pub version: &'static str,
-    #[serde(rename = "type")]
-    pub msg_type: String,
-    pub id: String,
-    pub timestamp: String,
-    pub payload: Value,
-}
-
-// --- Webhook (webhook.rs) ---
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreateWebhookRequest {
-    pub url: String,
-    pub secret: String,
-    pub event_types: Vec<String>,
-}
-
-// --- Transport (transport.rs) ---
-#[derive(Debug, Deserialize, Serialize)]
-pub struct GpsUpdatePayload {
-    pub lat: f64,
-    pub lng: f64,
-    pub speed: Option<f64>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GpsEvent {
-    pub vehicle_id: String,
-    pub lat: f64,
-    pub lng: f64,
-    pub speed: f64,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct PickupRequest {
-    pub student_ids: Vec<String>,
-    pub status: String,
-    pub vehicle_id: Option<String>,
-}
 
 // --- Recovery (recovery.rs) ---
 #[derive(Debug, Deserialize, Serialize)]
@@ -58,31 +10,6 @@ pub struct AuditQuery {
     pub limit: Option<i64>,
 }
 
-// --- Public API (public_api.rs) ---
-#[derive(Debug, Deserialize, Serialize)]
-pub struct StudentSearchParams {
-    pub search: Option<String>,
-    pub class_name: Option<String>,
-    pub section: Option<String>,
-    pub status: Option<String>,
-    pub page: Option<i32>,
-    pub limit: Option<i32>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct EmployeeSearchParams {
-    pub search: Option<String>,
-    pub employee_type: Option<String>,
-}
-
-// --- Notification (notification.rs) ---
-#[derive(Debug, Deserialize, Serialize)]
-pub struct NotificationListQuery {
-    pub category: Option<String>,
-    pub unread_only: Option<bool>,
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 // --- Health (health.rs) ---
 #[derive(Debug, Serialize, Deserialize)]

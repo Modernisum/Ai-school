@@ -2,6 +2,7 @@ pub mod employees;
 pub mod emppay;
 pub mod student_forms;
 pub mod students;
+pub mod user_api;
 use crate::AppState;
 use axum::{
     routing::{delete, get, post, put},
@@ -12,6 +13,18 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .nest(
             "/school/:schoolId/people",
             Router::new()
+                // User API endpoints (migrated from public API)
+                .nest("/user", Router::new()
+                    .route("/students", get(user_api::get_students_user))
+                    .route("/students/search", get(user_api::search_students_user))
+                    .route("/students/:studentId", get(user_api::get_student_user))
+                    .route("/employees", get(user_api::get_employees_user))
+                    .route("/employees/search", get(user_api::search_employees_user))
+                    .route("/employees/:employeeId", get(user_api::get_employee_user))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        crate::middleware::api_key_auth::api_key_auth,
+                    )))
                 // Students
                 .route("/students", post(students::create_student).get(students::list_students))
                 .route("/students/validate", post(students::validate_student))

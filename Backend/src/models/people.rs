@@ -167,3 +167,20 @@ pub struct StudentPaginatedQuery {
     pub status: Option<String>,
     pub search: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct StudentSearchParams {
+    pub search: Option<String>,
+    pub class_name: Option<String>,
+    pub section: Option<String>,
+    pub status: Option<String>,
+    pub page: Option<i32>,
+    pub limit: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EmployeeSearchParams {
+    pub search: Option<String>,
+    pub employee_type: Option<String>,
+}
+

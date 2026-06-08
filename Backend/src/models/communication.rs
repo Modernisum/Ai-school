@@ -28,3 +28,38 @@ pub struct AiHistoryEntry {
     pub content: String,
     pub created_at: String,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct NotificationListQuery {
+    pub category: Option<String>,
+    pub unread_only: Option<bool>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct WsAuthPayload {
+    pub token: String,
+    pub school_id: String,
+    pub vehicle_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WsEnvelope {
+    pub version: &'static str,
+    #[serde(rename = "type")]
+    pub msg_type: String,
+    pub id: String,
+    pub timestamp: String,
+    pub payload: serde_json::Value,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateWebhookRequest {
+    pub url: String,
+    pub secret: String,
+    pub event_types: Vec<String>,
+}
+
+
+

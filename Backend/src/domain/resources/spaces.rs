@@ -376,3 +376,32 @@ pub async fn transfer_space_material(
     Ok(Json(data))
 }
 
+fn has_scope(scopes: &[String], required: &str) -> bool {
+    scopes.contains(&required.to_string()) || scopes.contains(&"*".to_string())
+}
+
+/// GET /public/spaces
+/// List all spaces for the school.
+pub async fn get_spaces_public(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<crate::models::system::ApiKeyContext>,
+) -> impl IntoResponse {
+    if !has_scope(&ctx.scopes, "read:students") {
+        return (
+            axum::http::StatusCode::FORBIDDEN,
+            Json(json!({"success": false, "message": "Missing required scope: read:students"})),
+        )
+            .into_response();
+    }
+
+    match state.repos.resource.get_spaces(&ctx.school_id, None).await {
+        Ok(spaces) => Json(json!({"success": true, "data": spaces})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+

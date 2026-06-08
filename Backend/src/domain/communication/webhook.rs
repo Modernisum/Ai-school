@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::models::system::CreateWebhookRequest;
+use crate::models::communication::CreateWebhookRequest;
 use axum::{
     extract::{Path, State},
     response::IntoResponse,

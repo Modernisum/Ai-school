@@ -81,6 +81,7 @@ pub fn create_router(state: AppState) -> Router {
         .merge(cms::routes(state.clone()))
         .merge(people::legacy_routes(state.clone()))
         .merge(attendance::legacy_routes(state.clone()))
+        .merge(communication::legacy_routes(state.clone()))
         .merge(system::legacy_routes(state.clone()))
         .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
             let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);

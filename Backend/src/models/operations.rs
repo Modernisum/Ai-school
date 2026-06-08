@@ -111,3 +111,27 @@ pub enum ResponsibilityEvent {
         timestamp: String,
     },
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct GpsUpdatePayload {
+    pub lat: f64,
+    pub lng: f64,
+    pub speed: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GpsEvent {
+    pub vehicle_id: String,
+    pub lat: f64,
+    pub lng: f64,
+    pub speed: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PickupRequest {
+    pub student_ids: Vec<String>,
+    pub status: String,
+    pub vehicle_id: Option<String>,
+}
+

@@ -14,9 +14,7 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 use crate::AppState;
-use crate::models::system::{WsAuthPayload, WsEnvelope};
-
-
+use crate::models::communication::{WsAuthPayload, WsEnvelope};
 
 impl WsEnvelope {
     fn new(msg_type: &str, payload: serde_json::Value) -> Self {
@@ -125,7 +123,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
         }
     });
 
-    let mut recv_task = tokio::spawn(async move {
+    let mut receiver_task = tokio::spawn(async move {
         while let Some(Ok(msg)) = receiver.next().await {
             match msg {
                 Message::Close(_) => break,
@@ -154,9 +152,9 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     });
 
     tokio::select! {
-        _ = (&mut send_task) => { recv_task.abort(); forward_task.abort(); },
-        _ = (&mut recv_task) => { send_task.abort(); forward_task.abort(); },
-        _ = (&mut forward_task) => { send_task.abort(); recv_task.abort(); },
+        _ = (&mut send_task) => { receiver_task.abort(); forward_task.abort(); },
+        _ = (&mut receiver_task) => { send_task.abort(); forward_task.abort(); },
+        _ = (&mut forward_task) => { send_task.abort(); receiver_task.abort(); },
     }
 }
 

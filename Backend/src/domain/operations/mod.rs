@@ -3,6 +3,7 @@ pub mod reminder;
 pub mod responsibility;
 pub mod responsibility_ws;
 pub mod task;
+pub mod transport;
 use crate::middleware;
 use crate::AppState;
 use axum::{
@@ -55,6 +56,7 @@ pub fn routes(state: AppState) -> Router<AppState> {
             "/school/:schoolId/operations",
             Router::new()
                 .nest("/responsibility", responsibility_routes)
+                .nest("/transport", transport::router())
                 // Tasks
                 .route("/tasks", get(task::list_tasks))
                 .route("/tasks/:taskId/status", put(task::update_task_status))

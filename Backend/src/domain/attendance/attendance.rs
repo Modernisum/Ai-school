@@ -462,3 +462,32 @@ pub async fn offline_sync_attendance(
         "sync_timestamp": payload.sync_timestamp
     })))
 }
+
+fn has_scope(scopes: &[String], required: &str) -> bool {
+    scopes.contains(&required.to_string()) || scopes.contains(&"*".to_string())
+}
+
+/// GET /public/attendance/:date
+pub async fn get_attendance_public(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<crate::models::system::ApiKeyContext>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    if !has_scope(&ctx.scopes, "read:attendance") {
+        return (
+            axum::http::StatusCode::FORBIDDEN,
+            Json(json!({"success": false, "message": "Missing required scope: read:attendance"})),
+        )
+            .into_response();
+    }
+
+    match state.repos.attendance.get_attendance_for_date(&ctx.school_id, &date).await {
+        Ok(data) => Json(json!({"success": true, "date": date, "attendance": data})).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"success": false, "message": e.to_string()})),
+        )
+            .into_response(),
+    }
+}
+

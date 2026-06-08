@@ -1,15 +1,13 @@
 use crate::AppState;
 use crate::error::AppResult;
 use crate::middleware::rls::TenantContext;
-use crate::models::system::NotificationListQuery;
+use crate::models::communication::NotificationListQuery;
 use axum::{
     extract::{Path, Query, State, Extension},
+    response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
 use serde_json::{json, Value};
-
-
 
 pub async fn list_notifications(
     State(state): State<AppState>,
@@ -90,6 +88,45 @@ pub async fn delete_notification(
 ) -> AppResult<Json<Value>> {
     state.services.notification.delete_notification(&school_id, notification_id).await?;
     Ok(Json(json!({"success": true, "data": {"deleted": notification_id}})))
+}
+
+pub async fn get_school_notification(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    let svc = crate::domain::admin::make_admin_service(&state);
+    match svc.get_notification(&school_id).await {
+        Ok(data) => crate::ok_json!(data),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("not found") {
+                crate::not_found_json!(msg)
+            } else {
+                crate::err_json!(e)
+            }
+        }
+    }
+}
+
+pub async fn clear_school_notification(
+    State(state): State<AppState>,
+    Path(school_id): Path<String>,
+) -> impl IntoResponse {
+    let svc = crate::domain::admin::make_admin_service(&state);
+    match svc.clear_notification(&school_id).await {
+        Ok(_) => crate::ok_json!("Notification cleared"),
+        Err(e) => crate::err_json!(e),
+    }
+}
+
+pub async fn get_global_notification(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let svc = crate::domain::admin::make_admin_service(&state);
+    match svc.get_global_notification().await {
+        Ok(data) => crate::ok_json!(data),
+        Err(e) => crate::err_json!(e),
+    }
 }
 
 pub fn router() -> axum::Router<AppState> {

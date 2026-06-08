@@ -12,9 +12,7 @@ use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;
-use crate::models::system::{GpsUpdatePayload, GpsEvent, PickupRequest};
-
-
+use crate::models::operations::{GpsUpdatePayload, GpsEvent, PickupRequest};
 
 pub async fn publish_gps(
     State(_state): State<AppState>,
@@ -74,8 +72,6 @@ pub async fn get_driver_students(
         ).into_response(),
     }
 }
-
-
 
 pub async fn mark_pickup_attendance(
     State(state): State<AppState>,

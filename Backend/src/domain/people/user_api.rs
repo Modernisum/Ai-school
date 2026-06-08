@@ -1,12 +1,11 @@
 use crate::models::system::ApiKeyContext;
 use crate::AppState;
-use crate::models::system::{StudentSearchParams, EmployeeSearchParams};
+use crate::models::people::{StudentSearchParams, EmployeeSearchParams};
 use axum::{
     extract::{Extension, Path, Query, State},
     response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
 use serde_json::json;
 
 /* ════════════ SCOPE HELPER ════════════ */
@@ -15,15 +14,11 @@ fn has_scope(scopes: &[String], required: &str) -> bool {
     scopes.contains(&required.to_string()) || scopes.contains(&"*".to_string())
 }
 
-/* ════════════ QUERY PARAMS ════════════ */
-
-
-
 /* ════════════ STUDENT ENDPOINTS ════════════ */
 
-/// GET /public/students
+/// GET /user/students
 /// Returns all students for the school associated with the API key.
-pub async fn get_students_public(
+pub async fn get_students_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
 ) -> impl IntoResponse {
@@ -45,9 +40,9 @@ pub async fn get_students_public(
     }
 }
 
-/// GET /public/students/search
+/// GET /user/students/search
 /// Search/filter students with pagination.
-pub async fn search_students_public(
+pub async fn search_students_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
     Query(q): Query<StudentSearchParams>,
@@ -107,9 +102,9 @@ pub async fn search_students_public(
     }
 }
 
-/// GET /public/students/:studentId
+/// GET /user/students/:studentId
 /// Get a single student by ID.
-pub async fn get_student_public(
+pub async fn get_student_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
     Path(student_id): Path<String>,
@@ -152,9 +147,9 @@ pub async fn get_student_public(
 
 /* ════════════ EMPLOYEE ENDPOINTS ════════════ */
 
-/// GET /public/employees
+/// GET /user/employees
 /// Returns all employees for the school associated with the API key.
-pub async fn get_employees_public(
+pub async fn get_employees_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
 ) -> impl IntoResponse {
@@ -176,9 +171,9 @@ pub async fn get_employees_public(
     }
 }
 
-/// GET /public/employees/search
+/// GET /user/employees/search
 /// Search/filter employees.
-pub async fn search_employees_public(
+pub async fn search_employees_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
     Query(q): Query<EmployeeSearchParams>,
@@ -247,9 +242,9 @@ pub async fn search_employees_public(
     }
 }
 
-/// GET /public/employees/:employeeId
+/// GET /user/employees/:employeeId
 /// Get a single employee by ID.
-pub async fn get_employee_public(
+pub async fn get_employee_user(
     State(state): State<AppState>,
     Extension(ctx): Extension<ApiKeyContext>,
     Path(employee_id): Path<String>,
@@ -282,58 +277,6 @@ pub async fn get_employee_public(
             Json(json!({"success": false, "message": "Employee not found"})),
         )
             .into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-/* ════════════ SPACES ENDPOINT ════════════ */
-
-/// GET /public/spaces
-/// List all spaces for the school.
-pub async fn get_spaces_public(
-    State(state): State<AppState>,
-    Extension(ctx): Extension<ApiKeyContext>,
-) -> impl IntoResponse {
-    if !has_scope(&ctx.scopes, "read:students") {
-        return (
-            axum::http::StatusCode::FORBIDDEN,
-            Json(json!({"success": false, "message": "Missing required scope: read:students"})),
-        )
-            .into_response();
-    }
-
-    match state.repos.resource.get_spaces(&ctx.school_id, None).await {
-        Ok(spaces) => Json(json!({"success": true, "data": spaces})).into_response(),
-        Err(e) => (
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"success": false, "message": e.to_string()})),
-        )
-            .into_response(),
-    }
-}
-
-/* ════════════ ATTENDANCE ENDPOINT ════════════ */
-
-/// GET /public/attendance/:date
-pub async fn get_attendance_public(
-    State(state): State<AppState>,
-    Extension(ctx): Extension<ApiKeyContext>,
-    axum::extract::Path(date): axum::extract::Path<String>,
-) -> impl IntoResponse {
-    if !has_scope(&ctx.scopes, "read:attendance") {
-        return (
-            axum::http::StatusCode::FORBIDDEN,
-            Json(json!({"success": false, "message": "Missing required scope: read:attendance"})),
-        )
-            .into_response();
-    }
-
-    match state.repos.attendance.get_attendance_for_date(&ctx.school_id, &date).await {
-        Ok(data) => Json(json!({"success": true, "date": date, "attendance": data})).into_response(),
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"success": false, "message": e.to_string()})),

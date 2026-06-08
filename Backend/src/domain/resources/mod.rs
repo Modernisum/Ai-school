@@ -15,6 +15,13 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .nest(
             "/school/:schoolId/resources",
             Router::new()
+                // Public API for spaces
+                .nest("/public", Router::new()
+                    .route("/spaces", get(spaces::get_spaces_public))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        crate::middleware::api_key_auth::api_key_auth,
+                    )))
                 // Space Categories
                 .route("/spaces/categories", get(spaces::list_space_categories).post(spaces::create_space_category))
                 .route("/spaces/categories/:categoryName", delete(spaces::delete_space_category))

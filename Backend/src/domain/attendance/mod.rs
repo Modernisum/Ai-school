@@ -11,6 +11,13 @@ pub fn routes(state: AppState) -> Router<AppState> {
         .nest(
             "/school/:schoolId/attendance",
             Router::new()
+                // Public API for attendance
+                .nest("/public", Router::new()
+                    .route("/attendance/:date", get(attendance::get_attendance_public))
+                    .layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        crate::middleware::api_key_auth::api_key_auth,
+                    )))
                 .route("/:role/:userId/present", post(attendance::mark_present))
                 .route("/:role/:userId/holiday", post(attendance::mark_holiday))
                 .route("/:role/:userId/:date", put(attendance::update_attendance).delete(attendance::delete_attendance))

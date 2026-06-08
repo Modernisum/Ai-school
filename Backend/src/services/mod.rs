@@ -8,11 +8,11 @@ pub mod operations;
 pub mod people;
 pub mod finance;
 pub mod system;
-pub mod resource;
+pub mod resources;         // renamed from resource
 pub mod responsibility;
 pub mod payroll;
-pub mod student;
 pub mod super_admin;
+pub mod communication;    // new: notification_service moved here
 pub mod traits;
 pub mod utils;
 
@@ -44,12 +44,12 @@ pub use people::employee_service;
 
 pub use finance::fee_service;
 
-pub use system::setup_service;
+pub use auth::setup_service;
 pub use system::recovery_service;
-pub use system::notification_service;
+pub use communication::notification_service;  // moved from system
 pub use system::auxiliary_service;
 
-pub use resource::material_monitor;
+pub use resources::material_monitor;           // renamed from resource
 pub use responsibility::responsibility_permissions;
 
 use crate::repository::Repositories;
@@ -75,10 +75,10 @@ use crate::services::notification_service::PostgresNotificationService;
 use crate::services::ocr_service::OcrService;
 use crate::services::payroll::PostgresPayrollService;
 use crate::services::plagiarism_service::PlagiarismService;
-use crate::services::resource::PostgresResourceService;
+use crate::services::resources::PostgresResourceService;
 use crate::services::responsibility::PostgresResponsibilityService;
 use crate::services::setup_service::PostgresSetupService;
-use crate::services::student::PostgresStudentService;
+use crate::services::people::student::PostgresStudentService;
 use crate::services::recovery_service::PostgresRecoveryService;
 use crate::services::material_monitor::MaterialMonitor;
 use crate::services::traits::*;

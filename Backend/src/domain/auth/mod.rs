@@ -1,7 +1,9 @@
 pub mod auth;
+pub mod setup;
+pub mod school;
 use crate::AppState;
 use axum::{
-    routing::post,
+    routing::{get, post, put, patch},
     Router,
     middleware::Next,
     response::Response,
@@ -24,6 +26,11 @@ pub fn routes(state: AppState) -> Router<AppState> {
                 .route("/school/forgot-password", post(auth::forgot_password_handler))
                 .route("/school/change-password", post(auth::change_password_handler))
                 .route("/register-device", post(auth::register_device_handler))
+                .route("/setup/:schoolId", get(setup::get_setup))
+                .route("/setup/school", post(setup::setup_school_handler))
+                .route("/school/:schoolId", get(school::get_school_details)
+                    .put(school::update_school_self)
+                    .patch(school::change_password_self))
         )
         .layer(axum::middleware::from_fn(move |req: Request, next: Next| {
             let client_ip = crate::middleware::rate_limiter::RateLimiter::extract_client_ip(&req);
