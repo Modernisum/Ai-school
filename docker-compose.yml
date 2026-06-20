@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: school_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1234"
+      POSTGRES_DB: ai_school
+    ports:
+      - "5433:5432"
+    volumes:
+      - school_pg_data:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c shared_preload_libraries=vector
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d ai_school" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: school_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - school_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend/rust
+      dockerfile: Dockerfile
+      target: production
+    image: school-backend-rust:latest
+    container_name: school_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://postgres:1234@postgres:5432/ai_school?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change_me_to_strong_random_hex}
+      - SUPER_ADMIN_SECRET=${SUPER_ADMIN_SECRET:-change_me_to_strong_random_hex}
+      - API_BASE_URL=${API_BASE_URL:-http://localhost:8080}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://localhost:5174}
+      - AI_BACKEND_URL=http://ai_backend:8080
+      - AI_BACKEND_GRPC_URL=http://ai_backend:50051
+      - ENVIRONMENT=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai_backend:
+    build:
+      context: ./backend/python
+      dockerfile: Dockerfile
+    image: school-backend-python:latest
+    container_name: school_ai_backend
+    ports:
+      - "8081:8080"
+      - "50051:50051"
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
+    environment:
+      - DATABASE_URL=postgres://postgres:1234@postgres:5432/ai_school?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change_me_to_strong_random_hex}
+      - SUPER_ADMIN_SECRET=${SUPER_ADMIN_SECRET:-change_me_to_strong_random_hex}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - ENVIRONMENT=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  school_pg_data:
+  school_redis_data:

@@ -1,0 +1,10 @@
+pub mod academic;
+pub mod attendance;
+pub mod auth;
+pub mod people;
+pub mod resource;
+pub mod cms;
+pub mod communication;
+pub mod finance;
+pub mod operations;
+pub mod system;

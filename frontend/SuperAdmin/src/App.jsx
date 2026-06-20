@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Shield, LayoutDashboard, School, Database, Plus, LogOut, MessageSquare, Ticket, Search, FileText,
-    Settings, UserCheck, Users, BarChart3, ShieldCheck
+    Settings, UserCheck, Users, BarChart3, ShieldCheck, Cpu
 } from 'lucide-react'
 import { isLoggedIn, logout } from './api.js'
 import Login from './pages/Login.jsx'
@@ -24,6 +24,7 @@ const SupportPage = lazy(() => import('./pages/SupportPage.jsx'))
 const BillingPage = lazy(() => import('./pages/Billing/BillingPage.jsx'))
 const PromoPage = lazy(() => import('./pages/PromoPage.jsx'))
 const AISettings = lazy(() => import('./pages/AISettings.jsx'))
+const SystemSettings = lazy(() => import('./pages/SystemSettings.jsx'))
 const Monitoring = lazy(() => import('./pages/Monitoring.jsx'))
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage.jsx'))
 
@@ -53,7 +54,8 @@ function PrivateLayout() {
         { to: '/setup-templates', icon: <FileText size={16} />, label: 'Setup Templates', permission: PERMISSIONS.VIEW_SETUP_TEMPLATES },
         { to: '/support', icon: <MessageSquare size={16} />, label: 'Support', permission: PERMISSIONS.VIEW_SUPPORT },
         { to: '/backup', icon: <Database size={16} />, label: 'Backup', permission: PERMISSIONS.VIEW_BACKUP },
-        { to: '/ai-settings', icon: <Settings size={16} />, label: 'AI Configuration', permission: PERMISSIONS.VIEW_AI_SETTINGS },
+        { to: '/settings', icon: <Settings size={16} />, label: 'Global API Keys', permission: PERMISSIONS.VIEW_AI_SETTINGS },
+        { to: '/ai-settings', icon: <Cpu size={16} />, label: 'AI Configuration', permission: PERMISSIONS.VIEW_AI_SETTINGS },
         { to: '/user-management', icon: <Users size={16} />, label: 'User Management', permission: PERMISSIONS.VIEW_USERS, adminOnly: true },
         { to: '/audit-logs', icon: <ShieldCheck size={16} />, label: 'Audit Logs', permission: PERMISSIONS.VIEW_AUDIT_LOGS, adminOnly: true },
         { to: '/monitoring', icon: <BarChart3 size={16} />, label: 'Monitoring', permission: PERMISSIONS.VIEW_MONITORING, adminOnly: true },
@@ -196,6 +198,7 @@ function PrivateLayout() {
                                 <Route path="billing" element={<BillingPage />} />
                                 <Route path="promos" element={<PromoPage />} />
                                 <Route path="backup" element={<BackupPage />} />
+                                <Route path="settings" element={<SystemSettings />} />
                                 <Route path="ai-settings" element={<AISettings />} />
                                 <Route path="monitoring" element={<Monitoring />} />
                                 <Route path="audit-logs" element={<AuditLogsPage />} />

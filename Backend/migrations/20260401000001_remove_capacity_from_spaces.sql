@@ -1,1 +1,0 @@
-ALTER TABLE spaces DROP COLUMN IF EXISTS capacity;

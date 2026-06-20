@@ -1,0 +1,12 @@
+{
+  "Senior (DeepSeek API)": {
+    "success": true,
+    "sql": "SELECT s.first_name, s.last_name\nFROM students s\nJOIN fees f ON s.id = f.student_id\nWHERE f.amount_due > 5000\n  AND (f.last_payment_date IS NULL OR f.last_payment_date < '2026-01-01');",
+    "time": "3.08 seconds"
+  },
+  "Junior (qwen2.5-coder:3b)": {
+    "success": true,
+    "sql": "```sql\nSELECT s.first_name, s.last_name\nFROM students s\nJOIN fees f ON s.id = f.student_id\nWHERE f.amount_due > 5000 AND f.amount_paid = 0 AND f.last_payment_date < '2026-01-01';\n```",
+    "time": "13.12 seconds"
+  }
+}

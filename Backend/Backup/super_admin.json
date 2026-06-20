@@ -2,7 +2,7 @@
   {
     "created_at": "2026-06-04T16:47:54.235055+00:00",
     "id": 1,
-    "password_hash": "$2b$10$hyUUwXr7J9o24qpHeN/D5.D6zauD3N2draAIE17r.BNUl0vZm6Axm",
+    "password_hash": "$argon2id$v=19$m=19456,t=2,p=1$X+sQhs2mkBUzxWvZDa8wfQ$7vehhUKMrBKB/OXVj1ozBA3phMoMcb5ohBdFePiNOGk",
     "profile_image_url": null,
     "username": "superadmin"
   }

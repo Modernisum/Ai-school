@@ -1,7 +1,7 @@
 [
   {
     "config_key": "GEMINI_API_KEY",
-    "config_value": "AIzaSyAcpd2loWLizjNP1TgenvHiA7WbaEguvbU",
+    "config_value": "YOUR_GEMINI_API_KEY_HERE",
     "updated_at": "2026-06-05T03:47:59.416160+00:00"
   }
 ]

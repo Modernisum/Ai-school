@@ -1,60 +1,268 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Sparkles, Send, Upload, FileText, Brain, 
-  ChevronRight, Mic, Download, Share2, Plus,
-  Info, MessageSquare, Trash2, Zap
-} from "lucide-react";
-import StandardButton from "../../../components/ui/StandardButton";
+import { Sparkles } from "lucide-react";
 import PageHeader from "../../../components/ui/PageHeader";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8080/api`;
-const getSchoolId = () => localStorage.getItem("schoolId") || "";
+import AiChatWindow from "../components/AiChatWindow";
+import AiContextSidebar from "../components/AiContextSidebar";
+import { API_BASE_URL, getSchoolIdFromStorage, getTokenFromStorage } from "../../../utils/api";
 
 export default function AiStudio() {
-  const schoolId = getSchoolId();
+  const schoolId = getSchoolIdFromStorage() || "default";
+  const token = getTokenFromStorage();
+
+  const [chatHistory, setChatHistory] = useState([]);
   const [query, setQuery] = useState("");
-  const [chat, setChat] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(() => {
+    return localStorage.getItem(`ai_session_${schoolId}`) || null;
+  });
+  
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [file, setFile] = useState(null);
+
+  // Autocomplete suggestions
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  
   const scrollRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const streamBufferRef = useRef(""); // accumulates raw SSE content for XML stripping
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [chat]);
+  // Authentication configuration
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  });
 
-  const handleSend = async (e) => {
-    if (e) e.preventDefault();
-    if (!query.trim() || loading) return;
-
-    const userMsg = { role: "user", text: query };
-    setChat(prev => [...prev, userMsg]);
-    setQuery("");
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/ai/${schoolId}/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
-      });
-      const data = await res.json();
-      
-      const aiResponse = data.success 
-        ? (data.data.parts?.[0]?.text || data.data.answer || "I processed your request.")
-        : "Sorry, I encountered an error.";
-
-      setChat(prev => [...prev, { role: "ai", text: aiResponse }]);
-    } catch (err) {
-      setChat(prev => [...prev, { role: "ai", text: "Connection failed. Please check your backend." }]);
-    } finally {
+  // Stop generation
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
       setLoading(false);
     }
   };
 
+  // Fetch history for default session
+  const fetchHistory = async (sessionId) => {
+    if (!token || !sessionId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/school/${schoolId}/ai/session/${sessionId}/history`, {
+        headers: getHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setChatHistory(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch session history:", err);
+    }
+  };
+
+  // Auto-scroll chat window
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chatHistory, loading]);
+
+  // Initialize or fetch single session
+  useEffect(() => {
+    const initializeSession = async () => {
+      let currentSessionId = localStorage.getItem(`ai_session_${schoolId}`);
+      if (!currentSessionId) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/school/${schoolId}/ai/session`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({ title: "Vidhyam AI Chat" })
+          });
+          const data = await res.json();
+          if (data.success && data.session_id) {
+            currentSessionId = data.session_id;
+            localStorage.setItem(`ai_session_${schoolId}`, currentSessionId);
+            setActiveSessionId(currentSessionId);
+          }
+        } catch (err) {
+          console.error("Failed to create session:", err);
+          return;
+        }
+      }
+      
+      if (currentSessionId) {
+        await fetchHistory(currentSessionId);
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [schoolId]);
+
+  // Fetch autocomplete suggestions with debounce
+  useEffect(() => {
+    if (query.trim().length < 3) {
+      setAutocompleteSuggestions([]);
+      setShowAutocomplete(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/school/${schoolId}/ai/suggest?q=${encodeURIComponent(query)}`, {
+          headers: getHeaders()
+        });
+        const data = await res.json();
+        if (data.success && data.suggestions) {
+          setAutocompleteSuggestions(data.suggestions);
+          setShowAutocomplete(data.suggestions.length > 0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch suggestions:", err);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, schoolId, token]);
+
+  // Send message — Stream implementation
+  const handleSend = async (e, overrideQuery) => {
+    if (e) e.preventDefault();
+    const userQuery = (overrideQuery || query).trim();
+    if (!userQuery || loading || !activeSessionId) return;
+    setQuery("");
+    setLoading(true);
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    streamBufferRef.current = ""; // reset buffer for new message
+
+    // Optimistically update history locally
+    const userMsgId = Date.now();
+    const aiMsgId = userMsgId + 1;
+    
+    setChatHistory(prev => [
+      ...prev, 
+      { id: userMsgId, role: "user", content: userQuery, created_at: new Date().toISOString() },
+      { id: aiMsgId, role: "model", content: "", created_at: new Date().toISOString(), isStreaming: true }
+    ]);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/school/${schoolId}/ai/session/${activeSessionId}/query/stream`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ query: userQuery }),
+        signal: controller.signal
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP Error: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let done = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          
+          for (let line of lines) {
+            if (line.startsWith("data: ")) {
+              const dataStr = line.replace("data: ", "").trim();
+              if (dataStr) {
+                try {
+                  const dataObj = JSON.parse(dataStr);
+                  if (dataObj.answer) {
+                    // Accumulate into buffer and do full XML strip before displaying.
+                    // This is the frontend safety net for any partial tags that leak.
+                    streamBufferRef.current += dataObj.answer;
+                    let buf = streamBufferRef.current;
+
+                    // Remove complete thought blocks
+                    buf = buf.replace(/<thought[\s\S]*?<\/thought>/gi, "");
+                    // Remove open/partial thought block (still streaming)
+                    buf = buf.replace(/<thought[\s\S]*$/i, "");
+                    // Remove complete sql blocks (executed server-side)
+                    buf = buf.replace(/<sql>[\s\S]*?<\/sql>/gi, "");
+                    // Remove open/partial sql block
+                    buf = buf.replace(/<sql[\s\S]*$/i, "");
+                    // Strip message wrapper tags
+                    buf = buf.replace(/<\/?message>/gi, "");
+                    buf = buf.trim();
+
+                    if (buf !== undefined) {
+                      setChatHistory(prev => prev.map(msg =>
+                        msg.id === aiMsgId ? { ...msg, content: buf } : msg
+                      ));
+                    }
+                  } else if (dataObj.suggestions) {
+                    // Update chat history with related prompts
+                    setChatHistory(prev => prev.map(msg =>
+                      msg.id === aiMsgId ? { ...msg, relatedPrompts: dataObj.suggestions } : msg
+                    ));
+                  }
+                } catch (e) {
+                  // Partial JSON chunk, ignore until complete
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Stream finished — mark complete. Do NOT re-fetch from DB here
+      // because fetchHistory() would replace our rich local state with the
+      // plain DB text, causing messages to appear to vanish.
+      setChatHistory(prev => prev.map(msg => 
+        msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
+      ));
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setChatHistory(prev => prev.map(msg => 
+            msg.id === aiMsgId ? { ...msg, content: msg.content + "\n\n> [!WARNING]\n> Generation stopped by user.", isStreaming: false } : msg
+        ));
+      } else {
+        setChatHistory(prev => prev.map(msg => 
+            msg.id === aiMsgId ? { ...msg, content: msg.content + "\n\n> [!CAUTION]\n> **Network Disconnected**: Stream interrupted. Please check your internet connection or backend server and try again.", isStreaming: false } : msg
+        ));
+      }
+    } finally {
+      setLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Tag-Based Studio Tools
+  const handleStudioAction = (actionId) => {
+    let tag = "";
+    switch (actionId) {
+      case 'data_table': tag = "@DataTable"; break;
+      case 'slide_deck': tag = "@SlideDeck"; break;
+      case 'reports': tag = "@DetailedReport"; break;
+      case 'db_analyzer': tag = "@DbAnalyzer"; break;
+      case 'chart': tag = "@Chart"; break;
+      case 'fee_analytics': tag = "@FeeAnalytics"; break;
+      default: return;
+    }
+    
+    setQuery(prev => prev ? `${prev} ${tag} ` : `${tag} `);
+    setTimeout(() => {
+      const input = document.querySelector('textarea, input[type="text"]');
+      if (input) input.focus();
+    }, 10);
+  };
+
+  // Document context uploads
   const handleFileUpload = async (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
@@ -66,167 +274,82 @@ export default function AiStudio() {
     try {
       const res = await fetch(`${API_BASE_URL}/document_upload/${schoolId}`, {
         method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
         body: formData
       });
       if (res.ok) {
-        setChat(prev => [...prev, { role: "system", text: `Document "${selectedFile.name}" uploaded and indexed successfully.` }]);
+        setChatHistory(prev => [...prev, { 
+          id: Date.now(), 
+          role: "system", 
+          content: `Document "${selectedFile.name}" has been successfully uploaded and indexed into the school context.`, 
+          created_at: new Date().toISOString() 
+        }]);
       } else {
-        alert("Upload failed.");
+        alert("Upload failed. Check if document format is supported.");
       }
     } catch (err) {
       alert("Error uploading file.");
     } finally {
       setUploading(false);
-      setFile(null);
+    }
+  };
+
+  const handleInvalidateCache = async (questionText) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/school/${schoolId}/ai/cache/invalidate`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question_text: questionText })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Cache cleared for this query. Ask again to get a fresh AI response!");
+      } else {
+        alert("Failed to clear cache for this query.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to clear cache.");
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] p-1 gap-2 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-100px)] p-3 gap-3 overflow-hidden">
       {/* Header Info */}
       <PageHeader
         title="AI"
         accentTitle="Studio"
-        subtitle="Interact with school data, documents and generate study materials"
+        subtitle="Interact with school data, run deep analytics, and build curriculum plans"
         icon={Sparkles}
-        actions={[
-          {
-            label: "Clear History",
-            onClick: () => setChat([]),
-            variant: "ghost",
-            size: "sm",
-            icon: Trash2,
-            className: "text-rose-500 hover:bg-rose-500/10 hover:text-rose-400"
-          }
-        ]}
+        actions={[]}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-2 overflow-hidden">
-        {/* Left Panel: Research Context */}
-        <motion.div 
-          initial={{ opacity: 0, x: -10 }} 
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="w-full lg:w-56 flex flex-col gap-2"
-        >
-          <div className="border border-[var(--glass-border)] rounded-2xl bg-[var(--bg-secondary)] p-3 flex-1 flex flex-col relative overflow-hidden group">
-            <h3 className="text-micro font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Context Documents</h3>
-            
-            <div className="space-y-1 mb-4">
-              <label className="flex flex-col items-center justify-center w-full h-24 border border-dashed border-[var(--glass-border)] rounded-xl cursor-pointer hover:bg-[var(--bg-main)] hover:border-primary/30 transition-all">
-                <div className="flex flex-col items-center justify-center p-2 text-center">
-                  {uploading ? (
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <Upload className="w-5 h-5 mb-1.5 text-[var(--text-muted)]" />
-                      <span className="text-[10px] text-[var(--text-main)] font-semibold">Upload PDF/Image</span>
-                      <p className="text-[8px] text-[var(--text-muted)] mt-1">To add to AI knowledge base</p>
-                    </>
-                  )}
-                </div>
-                <input type="file" className="hidden" accept=".pdf,image/*" onChange={handleFileUpload} disabled={uploading} />
-              </label>
-            </div>
- 
-            <h3 className="text-micro font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2 mt-2">Quick Actions</h3>
-            <div className="grid grid-cols-1 gap-1.5">
-              <button className="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-main)] border border-[var(--glass-border)] hover:border-primary/30 text-[var(--text-muted)] hover:text-[var(--text-main)] text-micro font-medium transition-all">
-                <Brain size={13} className="text-primary" />
-                <span>Generate Quiz</span>
-              </button>
-              <button className="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-main)] border border-[var(--glass-border)] hover:border-violet-500/30 text-[var(--text-muted)] hover:text-[var(--text-main)] text-micro font-medium transition-all">
-                <Download size={13} className="text-violet-400" />
-                <span>Export to PDF</span>
-              </button>
-              <button className="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-main)] border border-[var(--glass-border)] hover:border-emerald-500/30 text-[var(--text-muted)] hover:text-[var(--text-main)] text-micro font-medium transition-all">
-                <Zap size={13} className="text-emerald-400" />
-                <span>Sync School Data</span>
-              </button>
-            </div>
-          </div>
-        </motion.div>
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 overflow-hidden min-h-0">
+        <AiChatWindow
+          chatHistory={chatHistory}
+          loading={loading}
+          query={query}
+          setQuery={setQuery}
+          handleSend={handleSend}
+          handleStopGeneration={handleStopGeneration}
+          handleInvalidateCache={handleInvalidateCache}
+          scrollRef={scrollRef}
+          autocompleteSuggestions={autocompleteSuggestions}
+          showAutocomplete={showAutocomplete}
+          setShowAutocomplete={setShowAutocomplete}
+        />
 
-        {/* Center: Chat Window */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex-1 border border-[var(--glass-border)] rounded-2xl bg-[var(--bg-secondary)] flex flex-col overflow-hidden relative"
-        >
-          <div 
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-4 custom-scrollbar scroll-smooth relative bg-[var(--bg-main)]/35"
-          >
-            {chat.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto opacity-75">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
-                  <Sparkles size={24} className="text-primary animate-pulse" />
-                </div>
-                <h2 className="text-sm font-semibold text-[var(--text-main)] mb-1">AI Assistant Ready</h2>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Ask questions about curriculum, schedules, or upload documents to get summaries.
-                </p>
-              </div>
-            ) : (
-              chat.map((msg, i) => (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  key={i} 
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${msg.role === 'system' ? 'justify-center' : ''}`}
-                >
-                  {msg.role === 'system' ? (
-                     <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-main)] px-2.5 py-1 rounded-full border border-[var(--glass-border)] font-medium">{msg.text}</span>
-                  ) : (
-                    <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-primary text-white rounded-tr-none' 
-                        : 'bg-[var(--bg-secondary)] text-[var(--text-main)] border border-[var(--glass-border)] rounded-tl-none'
-                    }`}>
-                      {msg.text}
-                    </div>
-                  )}
-                </motion.div>
-              ))
-            )}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-[var(--bg-secondary)] px-3 py-2.5 rounded-2xl rounded-tl-none border border-[var(--glass-border)] shadow-sm">
-                  <div className="flex gap-1.5">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          <div className="p-3 border-t border-[var(--glass-border)] bg-[var(--bg-secondary)]">
-            <form onSubmit={handleSend} className="relative group">
-              <input 
-                type="text" 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask AI anything..."
-                className="w-full bg-[var(--bg-main)] border border-[var(--glass-border)] rounded-xl h-11 pl-4 pr-24 text-xs text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-primary/50 transition-all font-medium"
-              />
-              <div className="absolute right-1 top-1 bottom-1 flex gap-1 items-center">
-                <button type="button" className="p-1 px-2 text-[var(--text-muted)] hover:text-primary transition-colors">
-                  <Mic size={14} />
-                </button>
-                <StandardButton 
-                  type="submit" 
-                  disabled={!query.trim() || loading}
-                  icon={Send}
-                  size="xs"
-                />
-              </div>
-            </form>
-          </div>
-        </motion.div>
+        {/* Right Sidebar: Context & Document uploads */}
+        <AiContextSidebar
+          handleStudioAction={handleStudioAction}
+          uploading={uploading}
+          handleFileUpload={handleFileUpload}
+        />
       </div>
     </div>
   );

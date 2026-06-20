@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package ai_service;
+
+// Optional: for compiling in Rust
+// We don't need any complex imports if we use strings for JSON payloads
+
+service AiService {
+  // OCR processing
+  rpc ProcessOcr (OcrRequest) returns (OcrResponse);
+
+  // Generate weekly tasks for an employee
+  rpc GenerateTasks (TasksRequest) returns (TasksResponse);
+
+  // Reorganize weekly tasks for an employee
+  rpc ReorganizeTasks (TasksRequest) returns (TasksResponse);
+}
+
+// Request and Response for ProcessOcr
+message OcrRequest {
+  string school_id = 1;
+  string file_url = 2;
+  string doc_type = 3;
+}
+
+message OcrResponse {
+  bool success = 1;
+  string extracted_fields_json = 2; // A JSON string containing the extracted fields
+  string error_message = 3;
+}
+
+// Request and Response for Tasks
+message TasksRequest {
+  string school_id = 1;
+  string payload_json = 2; // The raw JSON payload from the frontend/Rust
+}
+
+message TasksResponse {
+  bool success = 1;
+  string data_json = 2; // The resulting JSON data
+  string error_message = 3;
+}

@@ -43,6 +43,7 @@ const AiStudioPage = createLazyRoute(() => import("./features/ai/pages/AiStudio.
   prefetch: false, // AI Studio might be heavy, load on demand
   prefetchOnHover: true
 });
+const RagIngestionPage = createLazyRoute(() => import("./features/ai/pages/RagIngestion.jsx"));
 const RecoveryPage = createLazyRoute(() => import("./features/dashboard/pages/RecoveryPage.jsx"));
 const GeneralSettings = createLazyRoute(() => import("./features/dashboard/pages/GeneralSettings.jsx"));
 
@@ -98,6 +99,7 @@ export default function App() {
             <Route path="school-profile" element={<Suspense fallback={<PageLoader />}><SchoolProfilePage /></Suspense>} />
             <Route path="referral-coupons" element={<Suspense fallback={<PageLoader />}><ReferralCouponsPage /></Suspense>} />
             <Route path="ai-studio" element={<Suspense fallback={<PageLoader />}><AiStudioPage /></Suspense>} />
+            <Route path="rag-ingest" element={<Suspense fallback={<PageLoader />}><RagIngestionPage /></Suspense>} />
             <Route path="recovery" element={<Suspense fallback={<PageLoader />}><RecoveryPage /></Suspense>} />
             <Route path="settings" element={<Suspense fallback={<PageLoader />}><GeneralSettings /></Suspense>} />
 

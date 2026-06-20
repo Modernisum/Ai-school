@@ -1,4 +1,7 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.ignoreCMakeListsMissing": true
+    "cmake.ignoreCMakeListsMissing": true,
+    "rust-analyzer.linkedProjects": [
+        "backend/rust/Cargo.toml"
+    ]
 }

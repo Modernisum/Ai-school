@@ -35,6 +35,7 @@ export function useWebSockets(schoolId, options = {}) {
   }, []);
 
   const connect = useCallback(() => {
+    return; // TEMPORARILY DISABLED TO STOP BACKEND LOG SPAM
     if (!schoolId) return;
 
     const wsBaseUrl =
