@@ -8,13 +8,16 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     cmake \
     g++ \
+    protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-COPY .sqlx ./.sqlx
+COPY rust/Cargo.toml rust/Cargo.lock ./
+COPY rust/build.rs ./
+COPY rust/src ./src
+COPY rust/.sqlx ./.sqlx
+COPY proto ../proto
 
 ARG FEATURES=""
 ENV SQLX_OFFLINE=true

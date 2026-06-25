@@ -3,7 +3,7 @@ import logging
 import grpc
 from concurrent import futures
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.database import get_db  # Using a raw session generator, or we can use the async context manager directly
+
 from app.middleware.rls import get_db_with_rls, get_tenant_context, TenantContext
 from app.services.ai.orchestrator import AiOrchestrator
 import app.services.ai.ai_service_pb2 as pb2
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class AiServiceServicer(pb2_grpc.AiServiceServicer):
     def __init__(self):
         self.orchestrator = AiOrchestrator()
-        from app.db.database import async_session_maker
+        from app.db.session import async_session_factory as async_session_maker
         self.session_maker = async_session_maker
 
     async def _get_session(self):

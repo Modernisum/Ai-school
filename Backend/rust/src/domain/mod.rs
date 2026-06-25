@@ -92,6 +92,7 @@ pub fn create_router(state: AppState) -> Router {
 
     let app = Router::new()
         .route("/", get(|| async { "Modern School Management Backend (Rust/Axum)" }))
+        .route("/health", get(|| async { "healthy" }))
         .nest("/api", api)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),

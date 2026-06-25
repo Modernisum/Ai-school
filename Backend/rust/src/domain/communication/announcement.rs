@@ -93,7 +93,7 @@ pub async fn create_announcement(
                 }
             }
 
-            if !notification_sent {
+            if !is_notification_sent {
                 // Global broadcast if no class targeted or lookup failed
                 let _ = state.services.notification.create_notification(
                     &school_id, 

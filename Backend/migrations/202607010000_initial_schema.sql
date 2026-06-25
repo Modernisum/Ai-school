@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ga9kNUFf5eSutvgQPab7OqxMnEDGZTmxqUlPDrPvhA7ldsSEsxdetq9hFfwOhjn
+-- \restrict ga9kNUFf5eSutvgQPab7OqxMnEDGZTmxqUlPDrPvhA7ldsSEsxdetq9hFfwOhjn
 
 -- Dumped from database version 16.14 (Debian 16.14-1.pgdg12+1)
 -- Dumped by pg_dump version 16.14 (Debian 16.14-1.pgdg12+1)
@@ -1556,7 +1556,7 @@ CREATE VIEW public.ai_provider_status AS
     p.is_active,
     p.created_at,
     p.updated_at,
-    h.healthy,
+    h.is_healthy AS healthy,
     h.latency_ms,
     h.checked_at AS last_health_check,
     count(DISTINCT s.school_id) AS school_count,
@@ -1568,7 +1568,7 @@ CREATE VIEW public.ai_provider_status AS
           WHERE (ai_provider_health.provider_id = p.provider_id))))))
      LEFT JOIN public.school_ai_config s ON ((p.provider_id = s.provider_id)))
      LEFT JOIN public.ai_provider_usage u ON ((p.provider_id = u.provider_id)))
-  GROUP BY p.provider_id, p.provider_type, p.provider_name, p.is_active, p.created_at, p.updated_at, h.healthy, h.latency_ms, h.checked_at;
+  GROUP BY p.provider_id, p.provider_type, p.provider_name, p.is_active, p.created_at, p.updated_at, h.is_healthy, h.latency_ms, h.checked_at;
 
 
 ALTER VIEW public.ai_provider_status OWNER TO postgres;
@@ -3426,7 +3426,7 @@ CREATE VIEW public.developer_students_view AS
     address_state,
     address_pincode,
     tc_number,
-    transport_enabled,
+    is_transport_enabled AS transport_enabled,
     transport_radius,
     additional_subjects,
     admission_date,
@@ -5684,7 +5684,7 @@ ALTER SEQUENCE public.scheduled_reports_scheduled_report_id_seq OWNED BY public.
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.schema_migrations (
+CREATE TABLE IF NOT EXISTS public.schema_migrations (
     version character varying(255) NOT NULL
 );
 
@@ -9085,8 +9085,8 @@ ALTER TABLE ONLY public.scheduled_reports
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.schema_migrations
-    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+-- ALTER TABLE ONLY public.schema_migrations
+--     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --
@@ -14297,6 +14297,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON TABL
 
 COMMIT; -- Bug #1 Fix: Transaction commit — agar koi error nahi aayi toh sab changes save honge
 
-\unrestrict ga9kNUFf5eSutvgQPab7OqxMnEDGZTmxqUlPDrPvhA7ldsSEsxdetq9hFfwOhjn
+-- \unrestrict ga9kNUFf5eSutvgQPab7OqxMnEDGZTmxqUlPDrPvhA7ldsSEsxdetq9hFfwOhjn
 
 

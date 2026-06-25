@@ -489,9 +489,9 @@ impl SchemaSetup {
     }
 
     async fn initialize_super_admin_tables(&self) -> Result<(), Box<dyn Error>> {
-        println!("Ensuring super_admin table exists...");
+        println!("Ensuring super_admins table exists...");
         sqlx::query(
-            "CREATE TABLE IF NOT EXISTS super_admin (
+            "CREATE TABLE IF NOT EXISTS super_admins (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(100) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
@@ -1464,7 +1464,7 @@ impl SchemaSetup {
         sqlx::query("ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_logo_url TEXT")
             .execute(&self.pool)
             .await?;
-        sqlx::query("ALTER TABLE super_admin ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
+        sqlx::query("ALTER TABLE super_admins ADD COLUMN IF NOT EXISTS profile_image_url TEXT")
             .execute(&self.pool)
             .await?;
 
